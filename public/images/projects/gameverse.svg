@@ -1,0 +1,42 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="450" fill="#0F172A"/>
+  <!-- Decorative Grid -->
+  <path d="M0 50H800M0 100H800M0 150H800M0 200H800M0 250H800M0 300H800M0 350H800M0 400H800" stroke="#1E293B" stroke-width="1"/>
+  
+  <!-- Java Gaming Window Mockup -->
+  <rect x="150" y="50" width="500" height="350" rx="8" fill="#18181B" stroke="#A855F7" stroke-width="2"/>
+  <!-- Title bar -->
+  <rect x="150" y="50" width="500" height="32" fill="#27272A"/>
+  <text x="170" y="71" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#F4F4F5">GameVerse - Java Multi-Game Suite</text>
+  <rect x="615" y="60" width="12" height="12" fill="#EF4444" rx="2"/>
+  <rect x="595" y="60" width="12" height="12" fill="#F59E0B" rx="2"/>
+  
+  <!-- App Workspace -->
+  <rect x="170" y="95" width="460" height="290" rx="4" fill="#09090B"/>
+  
+  <!-- Header -->
+  <text x="320" y="130" font-family="Inter, sans-serif" font-weight="800" font-size="20" fill="#C084FC" text-anchor="middle">GAMEVERSE SUITE</text>
+  <text x="320" y="148" font-family="Inter, sans-serif" font-size="11" fill="#71717A" text-anchor="middle">Select a game to start playing</text>
+  
+  <!-- Game Cards Grid -->
+  <rect x="190" y="170" width="130" height="180" rx="8" fill="#18181B" stroke="#27272A"/>
+  <rect x="205" y="185" width="100" height="70" rx="4" fill="#3B82F6"/>
+  <text x="255" y="225" font-family="Inter, sans-serif" font-weight="700" font-size="14" fill="#FFFFFF" text-anchor="middle">TETRIS</text>
+  <text x="255" y="280" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#F4F4F5" text-anchor="middle">Block Puzzle</text>
+  <rect x="210" y="305" width="90" height="26" rx="4" fill="#A855F7"/>
+  <text x="255" y="322" font-family="Inter, sans-serif" font-weight="600" font-size="11" fill="#FFFFFF" text-anchor="middle">PLAY NOW</text>
+  
+  <rect x="335" y="170" width="130" height="180" rx="8" fill="#18181B" stroke="#27272A"/>
+  <rect x="350" y="185" width="100" height="70" rx="4" fill="#10B981"/>
+  <text x="400" y="225" font-family="Inter, sans-serif" font-weight="700" font-size="14" fill="#FFFFFF" text-anchor="middle">SNAKE</text>
+  <text x="400" y="280" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#F4F4F5" text-anchor="middle">Classic Snake</text>
+  <rect x="355" y="305" width="90" height="26" rx="4" fill="#A855F7"/>
+  <text x="400" y="322" font-family="Inter, sans-serif" font-weight="600" font-size="11" fill="#FFFFFF" text-anchor="middle">PLAY NOW</text>
+  
+  <rect x="480" y="170" width="130" height="180" rx="8" fill="#18181B" stroke="#27272A"/>
+  <rect x="495" y="185" width="100" height="70" rx="4" fill="#F59E0B"/>
+  <text x="545" y="225" font-family="Inter, sans-serif" font-weight="700" font-size="14" fill="#FFFFFF" text-anchor="middle">PONG</text>
+  <text x="545" y="280" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#F4F4F5" text-anchor="middle">2P Arcade</text>
+  <rect x="500" y="305" width="90" height="26" rx="4" fill="#A855F7"/>
+  <text x="545" y="322" font-family="Inter, sans-serif" font-weight="600" font-size="11" fill="#FFFFFF" text-anchor="middle">PLAY NOW</text>
+</svg>

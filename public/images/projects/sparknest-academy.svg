@@ -1,0 +1,41 @@
+<svg width="800" height="450" viewBox="0 0 800 450" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="450" fill="#0F172A"/>
+  <!-- Decorative Grid -->
+  <path d="M0 50H800M0 100H800M0 150H800M0 200H800M0 250H800M0 300H800M0 350H800M0 400H800" stroke="#1E293B" stroke-width="1"/>
+  
+  <!-- App Container Mockup -->
+  <rect x="120" y="60" width="560" height="330" rx="12" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  <circle cx="145" cy="82" r="5" fill="#EF4444"/>
+  <circle cx="160" cy="82" r="5" fill="#F59E0B"/>
+  <circle cx="175" cy="82" r="5" fill="#10B981"/>
+  
+  <!-- UI Dashboard mockup -->
+  <rect x="140" y="105" width="520" height="265" rx="6" fill="#0F172A"/>
+  <!-- Sidebar -->
+  <rect x="140" y="105" width="120" height="265" fill="#1E293B"/>
+  <text x="155" y="135" font-family="Inter, sans-serif" font-weight="700" font-size="13" fill="#3B82F6">SparkNest</text>
+  <rect x="155" y="160" width="90" height="20" rx="4" fill="#2563EB"/>
+  <rect x="155" y="190" width="90" height="15" rx="3" fill="#334155"/>
+  <rect x="155" y="215" width="90" height="15" rx="3" fill="#334155"/>
+  <rect x="155" y="240" width="90" height="15" rx="3" fill="#334155"/>
+  
+  <!-- Dashboard Main Area -->
+  <text x="280" y="140" font-family="Inter, sans-serif" font-weight="700" font-size="16" fill="#FFFFFF">Student Learning Platform</text>
+  
+  <rect x="280" y="160" width="170" height="90" rx="8" fill="#1E293B" stroke="#334155"/>
+  <text x="295" y="185" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#38BDF8">Full-Stack Web Dev</text>
+  <text x="295" y="205" font-family="Inter, sans-serif" font-size="10" fill="#94A3B8">12 / 16 Modules Completed</text>
+  <rect x="295" y="220" width="140" height="6" rx="3" fill="#334155"/>
+  <rect x="295" y="220" width="105" height="6" rx="3" fill="#38BDF8"/>
+  
+  <rect x="465" y="160" width="170" height="90" rx="8" fill="#1E293B" stroke="#334155"/>
+  <text x="480" y="185" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#818CF8">Data Structures</text>
+  <text x="480" y="205" font-family="Inter, sans-serif" font-size="10" fill="#94A3B8">8 / 10 Modules Completed</text>
+  <rect x="480" y="220" width="140" height="6" rx="3" fill="#334155"/>
+  <rect x="480" y="220" width="112" height="6" rx="3" fill="#818CF8"/>
+  
+  <rect x="280" y="265" width="355" height="90" rx="8" fill="#1E293B" stroke="#334155"/>
+  <text x="295" y="290" font-family="Inter, sans-serif" font-weight="600" font-size="12" fill="#F1F5F9">Interactive Quiz &amp; Progress Tracker</text>
+  <rect x="295" y="305" width="200" height="8" rx="4" fill="#334155"/>
+  <rect x="295" y="322" width="280" height="8" rx="4" fill="#334155"/>
+</svg>
