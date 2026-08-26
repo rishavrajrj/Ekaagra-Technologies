@@ -70,8 +70,30 @@ export default function HomePage() {
                 Beautiful, fast and conversion-focused websites designed around your business — not another generic template. We craft custom digital experiences that turn visitors into loyal customers.
               </p>
 
+              {/* Core Value Checkmarks */}
+              <div className="space-y-2 pt-1 text-xs sm:text-[13px] text-[#475569] font-medium">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </div>
+                  <span>Custom UI/UX crafted for your business — zero cookie-cutter templates</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </div>
+                  <span>Blazing fast load times with 100% mobile-first responsive design</span>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </div>
+                  <span>1-click WhatsApp inquiries, lead capture forms &amp; Google Search SEO</span>
+                </div>
+              </div>
+
               {/* CTAs */}
-              <div className="pt-0.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <Link
                   href="/get-quote"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
@@ -88,10 +110,10 @@ export default function HomePage() {
               </div>
 
               {/* Micro specs / Real credibility pill grid */}
-              <div className="pt-4 border-t border-[#E2E8F0] grid grid-cols-3 gap-3 max-w-md">
+              <div className="pt-4 border-t border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg">
                 <div>
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Specialty</span>
-                  <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">High-Converting Web</span>
+                  <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">High-Converting</span>
                 </div>
                 <div>
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Performance</span>
@@ -100,6 +122,10 @@ export default function HomePage() {
                 <div>
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Engagement</span>
                   <span className="text-xs font-extrabold text-[#F97360] block mt-0.5">WhatsApp Ready</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Ownership</span>
+                  <span className="text-xs font-extrabold text-[#4338CA] block mt-0.5">100% Code &amp; Domain</span>
                 </div>
               </div>
             </div>
