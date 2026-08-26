@@ -21,17 +21,17 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 pb-12 border-b border-[#E2E8F0]">
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2.5 group" aria-label="Ekaagra Technologies Home">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#4338CA] to-[#6366F1] flex items-center justify-center text-white font-extrabold text-sm shadow-md">
-                E
-              </div>
-              <div className="flex flex-col">
-                <span className="text-base font-extrabold text-[#131B2E] tracking-tight leading-tight">
-                  EKAAGRA
-                </span>
-                <span className="text-[9px] font-semibold text-[#F97360] tracking-wider uppercase font-mono leading-none">
-                  TECHNOLOGIES
-                </span>
+            <Link href="/" className="inline-flex items-center gap-2 group" aria-label="Ekaagra Technologies Home">
+              <div className="h-10 w-auto flex items-center justify-center overflow-hidden rounded-xl group-hover:scale-105 transition-transform">
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="h-10 w-auto max-w-[180px] object-contain pointer-events-none"
+                >
+                  <source src="/images/logo/logo.mp4" type="video/mp4" />
+                </video>
               </div>
             </Link>
             

@@ -65,22 +65,22 @@ export default function Navbar() {
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between"
           aria-label="Main navigation"
         >
-          {/* Logo */}
+          {/* Logo Video */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 group shrink-0"
+            className="flex items-center gap-2 group shrink-0"
             aria-label="Ekaagra Technologies Home"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#4338CA] to-[#6366F1] flex items-center justify-center text-white shadow-md shadow-[#4338CA]/20 group-hover:scale-105 transition-transform">
-              <span className="font-extrabold text-lg">E</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-base font-extrabold text-[#131B2E] tracking-tight leading-tight group-hover:text-[#4338CA] transition-colors">
-                EKAAGRA
-              </span>
-              <span className="text-[10px] font-semibold text-[#F97360] tracking-wider uppercase font-mono leading-none">
-                TECHNOLOGIES
-              </span>
+            <div className="h-10 sm:h-11 w-auto flex items-center justify-center overflow-hidden rounded-xl group-hover:scale-105 transition-transform">
+              <video
+                autoPlay
+                loop
+                muted
+                playsInline
+                className="h-10 sm:h-11 w-auto max-w-[160px] sm:max-w-[200px] object-contain pointer-events-none"
+              >
+                <source src="/images/logo/logo.mp4" type="video/mp4" />
+              </video>
             </div>
           </Link>
 
