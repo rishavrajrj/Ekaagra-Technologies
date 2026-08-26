@@ -102,16 +102,6 @@ export default function HeroVisual() {
       <div className="absolute -top-12 -left-12 w-56 h-56 bg-[#F97360]/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-[#4338CA]/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Floating Capability Badge 1 */}
-      <div className="hidden sm:flex absolute -top-5 -right-3 z-30 bg-white border border-[#E2E8F0] rounded-2xl p-3 shadow-xl items-center gap-3 animate-float">
-        <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-extrabold text-sm border border-emerald-200">
-          <Globe className="w-5 h-5" />
-        </div>
-        <div>
-          <div className="text-[11px] font-bold text-[#131B2E]">Live Interactive Preview</div>
-          <div className="text-[10px] text-[#64748B]">Real Client Website</div>
-        </div>
-      </div>
 
       {/* Floating Capability Badge 2 */}
       <div className="hidden sm:flex absolute -bottom-4 -left-4 z-30 bg-white border border-[#E2E8F0] rounded-2xl p-3 shadow-xl items-center gap-3 animate-float-slow">
