@@ -43,22 +43,22 @@ export default function HomePage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] overflow-hidden">
       {/* ─── 1. HERO SECTION ───────────────────────────────────── */}
-      <section className="relative pt-10 sm:pt-16 pb-20 md:pb-28 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden">
+      <section className="relative pt-6 sm:pt-10 pb-12 sm:pb-16 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden">
         {/* Ambient Top Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-8 items-center">
             {/* Left Content (42% width on desktop) */}
-            <div className="lg:col-span-5 space-y-6 text-left">
+            <div className="lg:col-span-5 space-y-5 text-left">
               {/* Eyebrow badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
                 <span>WEBSITE DESIGN &amp; DEVELOPMENT STUDIO</span>
               </div>
 
               {/* Main Headline */}
-              <h1 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-extrabold text-[#131B2E] tracking-tight leading-[1.12]">
+              <h1 className="text-3xl sm:text-4xl lg:text-[3.15rem] font-extrabold text-[#131B2E] tracking-tight leading-[1.12]">
                 Your business deserves a website{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C]">
                   people remember.
@@ -71,7 +71,7 @@ export default function HomePage() {
               </p>
 
               {/* CTAs */}
-              <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+              <div className="pt-0.5 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <Link
                   href="/get-quote"
                   className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
@@ -88,7 +88,7 @@ export default function HomePage() {
               </div>
 
               {/* Micro specs / Real credibility pill grid */}
-              <div className="pt-5 border-t border-[#E2E8F0] grid grid-cols-3 gap-3 max-w-md">
+              <div className="pt-4 border-t border-[#E2E8F0] grid grid-cols-3 gap-3 max-w-md">
                 <div>
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Specialty</span>
                   <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">High-Converting Web</span>
