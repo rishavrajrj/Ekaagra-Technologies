@@ -129,7 +129,7 @@ export default function HeroVisual() {
           fallbackImage={activeProject.image}
           autoLoad={true}
           showDeviceControls={true}
-          heightClass="h-[360px] sm:h-[440px] md:h-[480px]"
+          heightClass="h-[330px] sm:h-[390px] md:h-[430px]"
           isFeatured={true}
           isFrameRestricted={Boolean(activeProject.isFrameRestricted)}
           className="shadow-2xl hover:border-[#4338CA]/40"
