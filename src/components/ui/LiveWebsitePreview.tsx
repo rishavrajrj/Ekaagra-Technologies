@@ -191,9 +191,9 @@ export default function LiveWebsitePreview({
         <div className="flex items-center gap-2">
           {/* Status Indicator */}
           {isFrameRestricted ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-              <ShieldCheck className="w-3 h-3 text-amber-600" />
-              Secure Institutional Portal
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Interactive ERP
             </span>
           ) : isValidUrl && viewMode === 'live' && isActivated ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
