@@ -11,7 +11,6 @@ import {
   RotateCw,
   Sparkles,
   AlertCircle,
-  Eye,
   Play,
   CheckCircle2,
   Maximize2
@@ -207,7 +206,7 @@ export default function LiveWebsitePreview({
           )}
 
           {/* Refresh Iframe Button */}
-          {isValidUrl && viewMode === 'live' && isActivated && (
+          {isValidUrl && isActivated && (
             <button
               type="button"
               onClick={handleRefresh}
@@ -218,27 +217,6 @@ export default function LiveWebsitePreview({
               }`}
             >
               <RotateCw className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {/* Toggle Live vs Screenshot */}
-          {isValidUrl && fallbackImage && (
-            <button
-              type="button"
-              onClick={() => {
-                if (viewMode === 'screenshot') {
-                  setIsActivated(true);
-                  setViewMode('live');
-                } else {
-                  setViewMode('screenshot');
-                }
-              }}
-              aria-label={viewMode === 'live' ? 'View Screenshot' : 'View Live Website'}
-              title={viewMode === 'live' ? 'Switch to Screenshot View' : 'Switch to Interactive Live View'}
-              className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold rounded-lg bg-white border border-[#E2E8F0] text-[#475569] hover:text-[#131B2E] transition-all cursor-pointer"
-            >
-              <Eye className="w-3 h-3 text-[#4338CA]" />
-              <span>{viewMode === 'live' ? 'Screenshot' : 'Live'}</span>
             </button>
           )}
 
