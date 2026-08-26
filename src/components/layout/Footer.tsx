@@ -1,50 +1,61 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { services } from '@/lib/data';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowRight, Sparkles, Mail, ShieldCheck, Heart } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[#060911] text-slate-400 border-t border-white/10 relative overflow-hidden" role="contentinfo">
-      {/* Subtle background watermark */}
+    <footer className="bg-[#FAF7F2] text-[#475569] border-t border-[#E2E8F0] relative overflow-hidden" role="contentinfo">
+      {/* Subtle background ambient blur */}
       <div 
         aria-hidden="true" 
-        className="absolute bottom-0 right-0 translate-x-1/4 translate-y-1/3 select-none pointer-events-none opacity-[0.02] text-white font-extrabold text-[14vw] tracking-tighter leading-none whitespace-nowrap"
-      >
-        EKAAGRA
-      </div>
+        className="absolute top-0 right-0 w-96 h-96 bg-[#4338CA]/5 rounded-full blur-3xl pointer-events-none"
+      />
+      <div 
+        aria-hidden="true" 
+        className="absolute bottom-0 left-0 w-96 h-96 bg-[#F97360]/5 rounded-full blur-3xl pointer-events-none"
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 pb-12 border-b border-white/[0.08]">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 pb-12 border-b border-[#E2E8F0]">
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-block" aria-label="Ekaagra Technologies Home">
-              <span className="text-xl font-black text-white tracking-wider uppercase font-mono">
-                EKAAGRA <span className="text-blue-500 font-bold text-sm">TECH</span>
-              </span>
+            <Link href="/" className="inline-flex items-center gap-2.5 group" aria-label="Ekaagra Technologies Home">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#4338CA] to-[#6366F1] flex items-center justify-center text-white font-extrabold text-sm shadow-md">
+                E
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base font-extrabold text-[#131B2E] tracking-tight leading-tight">
+                  EKAAGRA
+                </span>
+                <span className="text-[9px] font-semibold text-[#F97360] tracking-wider uppercase font-mono leading-none">
+                  TECHNOLOGIES
+                </span>
+              </div>
             </Link>
-            <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
-              Independent digital product studio. We design and develop custom websites, web applications, mobile software, and enterprise ERP solutions.
+            
+            <p className="text-sm text-[#64748B] max-w-sm leading-relaxed">
+              We design and build websites, web applications, mobile apps, and custom business systems designed to make your organization look world-class.
             </p>
-            <div className="flex items-center gap-2 text-xs text-slate-400 tracking-wider uppercase font-semibold">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span>Available for new projects</span>
+
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#131B2E]">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span>Available for new website &amp; software projects</span>
             </div>
           </div>
 
           {/* Services Column */}
           <div>
-            <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-4">
-              Services
+            <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
+              What We Build
             </h3>
             <ul className="space-y-2.5">
               {services.slice(0, 6).map((service) => (
                 <li key={service.slug}>
                   <Link
                     href={`/services/${service.slug}`}
-                    className="text-xs text-slate-400 hover:text-white transition-colors duration-200"
+                    className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
                   >
                     {service.shortTitle}
                   </Link>
@@ -55,37 +66,42 @@ export default function Footer() {
 
           {/* Navigation Column */}
           <div>
-            <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-4">
-              Company
+            <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
+              Navigation
             </h3>
             <ul className="space-y-2.5">
               <li>
-                <Link href="/solutions" className="text-xs text-slate-400 hover:text-white transition-colors">
-                  Solutions
+                <Link href="/projects" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
+                  Our Work &amp; Portfolio
                 </Link>
               </li>
               <li>
-                <Link href="/projects" className="text-xs text-slate-400 hover:text-white transition-colors">
-                  Projects Showcase
+                <Link href="/solutions" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
+                  Industry Solutions
                 </Link>
               </li>
               <li>
-                <Link href="/process" className="text-xs text-slate-400 hover:text-white transition-colors">
-                  Our Process
+                <Link href="/services" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
+                  All Services
                 </Link>
               </li>
               <li>
-                <Link href="/pricing" className="text-xs text-slate-400 hover:text-white transition-colors">
+                <Link href="/process" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
+                  How We Work
+                </Link>
+              </li>
+              <li>
+                <Link href="/pricing" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
                   Pricing &amp; Rates
                 </Link>
               </li>
               <li>
-                <Link href="/about" className="text-xs text-slate-400 hover:text-white transition-colors">
-                  About Ekaagra
+                <Link href="/about" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
+                  About Studio
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-xs text-slate-400 hover:text-white transition-colors">
+                <Link href="/contact" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
                   Contact Us
                 </Link>
               </li>
@@ -93,33 +109,35 @@ export default function Footer() {
           </div>
 
           {/* Direct Action Column */}
-          <div>
-            <h3 className="text-xs font-bold text-white uppercase tracking-widest mb-4">
-              Get Started
+          <div className="space-y-4">
+            <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest">
+              Ready to Upgrade?
             </h3>
-            <p className="text-xs text-slate-400 mb-4 leading-relaxed">
-              Have a project requirement? Talk to our technology team today.
+            <p className="text-xs text-[#64748B] leading-relaxed">
+              Get a tailored design estimate for your business or school website within 24 hours.
             </p>
             <Link
               href="/get-quote"
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold tracking-wider uppercase rounded border border-white/15 transition-all duration-200"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20"
             >
-              <span>Request Quote</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span>Build My Website</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748B]">
           <p>© {currentYear} Ekaagra Technologies. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <span className="hover:text-slate-300">Web • Mobile • Software • ERP</span>
+            <span>Designed for businesses that want to stand out.</span>
           </div>
         </div>
       </div>
     </footer>
   );
 }
+
+
 
 

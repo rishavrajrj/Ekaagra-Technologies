@@ -5,18 +5,19 @@ import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Ekaagra Technologies | Web, Software & Android Development',
+    default: 'Ekaagra Technologies | Premium Website & Digital Product Studio',
     template: '%s | Ekaagra Technologies',
   },
   description:
-    'Ekaagra Technologies builds professional websites, web applications, Android apps, custom software, and ERP solutions for businesses and organizations.',
+    'Ekaagra Technologies designs and develops beautiful, fast, and conversion-focused websites, web applications, mobile apps, and custom software systems.',
   keywords: [
-    'web development',
-    'software development',
-    'android development',
-    'school ERP',
-    'custom software',
+    'website design agency',
+    'custom web development',
+    'business websites',
+    'school website design',
+    'school ERP systems',
     'web applications',
+    'android app development',
     'Ekaagra Technologies',
   ],
   authors: [{ name: 'Ekaagra Technologies' }],
@@ -24,9 +25,9 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_IN',
     siteName: 'Ekaagra Technologies',
-    title: 'Ekaagra Technologies | Web, Software & Android Development',
+    title: 'Ekaagra Technologies | Premium Website & Digital Product Studio',
     description:
-      'Ekaagra Technologies builds professional websites, web applications, Android apps, custom software, and ERP solutions for businesses and organizations.',
+      'Beautiful, fast and conversion-focused websites designed around your business — not another generic template.',
   },
   robots: {
     index: true,
@@ -40,12 +41,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="light" style={{ colorScheme: 'light' }}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
         <script
@@ -56,39 +57,41 @@ export default function RootLayout({
               '@type': 'ProfessionalService',
               name: 'Ekaagra Technologies',
               description:
-                'Software development business focused on creating practical digital solutions for businesses, educational institutions, organizations, and startups.',
+                'Premium website design and digital product development studio creating high-converting websites, web applications, Android apps, and School ERP systems.',
               url: 'https://ekaagratechnologies.in',
               serviceType: [
-                'Web Development',
-                'Software Development',
-                'Android App Development',
+                'Website Design & Development',
+                'Web Application Development',
+                'Mobile App Development',
                 'School ERP Systems',
-                'Business Management Software',
+                'Custom Business Software',
               ],
               areaServed: {
                 '@type': 'Country',
                 name: 'India',
               },
               knowsAbout: [
-                'Web Development',
-                'React',
+                'Website Design',
                 'Next.js',
-                'Java',
-                'Spring Boot',
+                'React',
+                'TypeScript',
+                'Tailwind CSS',
                 'Android Development',
                 'PostgreSQL',
-                'MySQL',
+                'Supabase',
               ],
             }),
           }}
         />
       </head>
-      <body className="min-h-screen flex flex-col bg-[#090d16] text-slate-100 antialiased font-sans selection:bg-blue-600 selection:text-white">
+      <body className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#131B2E] antialiased font-sans selection:bg-[#4338CA] selection:text-white">
         <Navbar />
-        <main className="flex-1 pt-16 lg:pt-18">{children}</main>
+        <main className="flex-1 pt-18">{children}</main>
         <Footer />
       </body>
     </html>
   );
 }
+
+
 

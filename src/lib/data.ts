@@ -308,6 +308,35 @@ export const solutions: Solution[] = [
 // ─── Projects ────────────────────────────────────────────────────
 export const projects: Project[] = [
   {
+    slug: 'roshani-public-school-erp',
+    title: 'Roshani Public School ERP',
+    category: 'School ERP',
+    description:
+      'Enterprise School ERP solution featuring multi-role authentication (Admin, Principal, Teacher, Accountant, Parent, Student), student records, real-time attendance, fee collections & automated report card publishing.',
+    overview:
+      'A full-scale School Enterprise Resource Planning (ERP) web application engineered for Roshani Public School to digitize and automate daily operations. The system centralizes academic administration, live attendance tracking, fee payment processing with instant receipt generation, examination grading with automated report cards, and role-based communication across 6 dedicated user portals.',
+    problem:
+      'Managing academic records, fee reconciliations, daily attendance tracking, report cards compilation, and parent notices via physical registers and disconnected spreadsheets caused operational bottlenecks, communication delays, and high administrative overhead.',
+    solution:
+      'We engineered a comprehensive, responsive School Management ERP platform built on Next.js, React, and Supabase / PostgreSQL. With fine-grained Role-Based Access Control (RBAC), the platform provides tailored dashboards for administrators, faculty, accountants, parents, and students, automating routine processes and enabling instant data synchronization.',
+    features: [
+      'Multi-Role Portals (Admin, Principal, Teacher, Accountant, Parent, Student)',
+      'Student & Staff Records Management with Dynamic Filters',
+      'Fee Collection, Dues Tracking & Instant Receipt Engine',
+      'Daily & Subject-Wise Attendance Tracking with Analytics',
+      'Examination Scheduling, Result Grading & Digital Report Cards',
+      'Real-Time Institutional Notice Board & Announcements',
+      'Parent & Student Performance Monitoring Dashboards',
+      'Secure Authentication & Role-Based Access Control (RBAC)',
+    ],
+    technologies: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'PostgreSQL', 'Supabase', 'Vercel'],
+    image: '/images/projects/roshani-public-school-erp/roshani-erp-1.jpg',
+    images: [
+      '/images/projects/roshani-public-school-erp/roshani-erp-1.jpg',
+    ],
+    liveUrl: 'https://roshani-public-school-erp.vercel.app/login',
+  },
+  {
     slug: 'roshani-public-school',
     title: 'Roshani Public School',
     category: 'Website',
@@ -370,6 +399,35 @@ export const projects: Project[] = [
       '/images/projects/sparknest-academy/sparknest-5.png',
     ],
     liveUrl: 'https://www.sparknestacademy.in/',
+  },
+  {
+    slug: 'palak-enterprises',
+    title: 'Palak Enterprises',
+    category: 'Web Application',
+    description:
+      'Digital printing and online service platform featuring instant document uploads, customizable print orders, Razorpay payment gateway, real-time order tracking, and CSC services in Chakia.',
+    overview:
+      'A comprehensive digital printing and CSC service web application engineered for Palak Enterprises in Chakia, East Champaran, Bihar. The platform modernizes print shop workflows by enabling customers to upload files directly, choose print and binding specifications, make online payments via Razorpay or choose pay-on-pickup, and track their order status in real time — significantly reducing in-shop wait times.',
+    problem:
+      'Local customers experienced long counter wait times for routine document printing, urgent passport photos, online government applications, and stationery orders. Manual file transfers via USB drives and counter cash exchanges created operational bottlenecks during peak shop hours.',
+    solution:
+      'We designed and developed an intuitive "Send • Choose • Collect" web platform. Users can securely upload documents from mobile or desktop, select precise print settings (B&W/color, copies, paper dimensions), pay instantly with Razorpay or at pickup, and monitor order processing live. The platform also showcases wedding stationery, banner printing, and digital CSC assistance services.',
+    features: [
+      'Direct Document & PDF Upload Engine',
+      'Streamlined "Send • Choose • Collect" Ordering Flow',
+      'Integrated Razorpay Online Payment Gateway',
+      'Pay Online (Skip Queue) & Pay-on-Pickup Options',
+      'Live Order Tracking & Status Lookup System',
+      'Digital & Offset Print Catalog (Cards, Banners, Photo Prints)',
+      'CSC Citizen & Digital Government Services Hub',
+      'Mobile-First Responsive Interface with Fast Performance',
+    ],
+    technologies: ['React', 'TypeScript', 'Tailwind CSS', 'Supabase', 'Razorpay', 'Vercel'],
+    image: '/images/projects/palak-enterprises.svg',
+    images: [
+      '/images/projects/palak-enterprises.svg',
+    ],
+    liveUrl: 'https://palak-enterprises-ghit.vercel.app/',
   },
   {
     slug: 'bankgeu',

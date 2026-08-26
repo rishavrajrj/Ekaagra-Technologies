@@ -1,216 +1,177 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-200: #bfdbfe;
-  --color-brand-400: #60a5fa;
-  --color-brand-500: #3b82f6;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
+  --font-sans: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+  /* Brand Palette: Deep Royal Indigo, Warm Coral Orange, Golden Amber, Soft Lavender, Warm Cream */
+  --color-brand-indigo: #4338ca;
+  --color-brand-indigo-dark: #312e81;
+  --color-brand-indigo-light: #6366f1;
   
-  --color-navy-950: #060911;
-  --color-navy-900: #090d16;
-  --color-navy-850: #0e1320;
-  --color-navy-800: #131a2b;
-  --color-navy-750: #1a2337;
-  --color-navy-700: #212c44;
+  --color-brand-coral: #f97360;
+  --color-brand-coral-dark: #ea580c;
+  --color-brand-coral-light: #ff8a7a;
+
+  --color-brand-amber: #f4c95d;
+  --color-brand-amber-dark: #d97706;
+  --color-brand-amber-light: #fef08a;
+
+  --color-brand-lavender: #e9e7ff;
+  --color-brand-lavender-dark: #8b5cf6;
+  --color-brand-lavender-light: #f5f3ff;
+
+  --color-surface-ivory: #faf7f2;
+  --color-surface-warm: #f5f0e8;
+  --color-surface-card: #ffffff;
+
+  --color-text-navy: #131b2e;
+  --color-text-body: #334155;
+  --color-text-muted: #64748b;
 }
 
 @layer base {
   html {
     scroll-behavior: smooth;
+    color-scheme: light;
   }
 
   body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    background-color: #faf7f2;
+    color: #131b2e;
   }
 
-  html.dark body {
-    background-color: #090d16;
-    color: #f8fafc;
-  }
-
-  html.light body {
-    background-color: #f8fafc;
-    color: #0f172a;
-  }
-
-  /* Focus visible styles for accessibility */
+  /* Accessible focus indicators */
   :focus-visible {
-    outline: 2px solid #3b82f6;
+    outline: 2px solid #4338ca;
     outline-offset: 2px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.025em;
   }
 }
 
-/* Technical Grid Overlay for Dark & Light */
-html.dark .bg-tech-grid {
+/* Warm subtle background patterns */
+.bg-warm-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(67, 56, 202, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(67, 56, 202, 0.04) 1px, transparent 1px);
+}
+
+html.dark .bg-warm-grid {
   background-size: 32px 32px;
   background-image: 
     linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
 }
 
-html.light .bg-tech-grid {
-  background-size: 32px 32px;
-  background-image: 
-    linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+.bg-warm-dots {
+  background-size: 20px 20px;
+  background-image: radial-gradient(rgba(67, 56, 202, 0.08) 1.2px, transparent 1.2px);
 }
 
-/* ─────────────────────────────────────────────────────────────
-   LIGHT MODE SYSTEM OVERRIDES
-   Automatically converts dark mode utility classes to high-contrast
-   light enterprise surfaces when html.light class is toggled.
-   ───────────────────────────────────────────────────────────── */
-html.light .bg-\[\#090d16\] {
-  background-color: #f8fafc !important;
+html.dark .bg-warm-dots {
+  background-size: 20px 20px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1.2px, transparent 1.2px);
 }
 
-html.light .bg-\[\#0b0f19\] {
-  background-color: #ffffff !important;
+/* Ambient glow gradients */
+.bg-warm-glow {
+  background: radial-gradient(circle at 50% 20%, rgba(249, 115, 96, 0.12) 0%, rgba(67, 56, 202, 0.08) 45%, rgba(250, 247, 242, 0) 70%);
 }
 
-html.light .bg-\[\#0e1320\] {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05) !important;
+html.dark .bg-warm-glow {
+  background: radial-gradient(circle at 50% 20%, rgba(249, 115, 96, 0.14) 0%, rgba(67, 56, 202, 0.2) 50%, rgba(13, 18, 31, 0) 70%);
 }
 
-html.light .bg-\[\#080b13\],
-html.light .bg-\[\#060911\] {
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
+/* Custom premium card styling */
+.premium-card {
+  background-color: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  box-shadow: 0 4px 24px -2px rgba(19, 27, 46, 0.05), 0 2px 6px -1px rgba(19, 27, 46, 0.02);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-html.light .bg-\[\#070a12\],
-html.light .bg-\[\#101726\],
-html.light .bg-\[\#131a2b\] {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
+.premium-card:hover {
+  border-color: rgba(67, 56, 202, 0.3);
+  box-shadow: 0 16px 36px -6px rgba(67, 56, 202, 0.12), 0 6px 12px -2px rgba(19, 27, 46, 0.04);
+  transform: translateY(-2px);
 }
 
-html.light .text-white {
-  color: #0f172a !important;
+html.dark .premium-card {
+  background-color: #131b2e;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.4);
 }
 
-html.light .text-slate-400,
-html.light .text-slate-300 {
-  color: #475569 !important;
+html.dark .premium-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 16px 40px -6px rgba(67, 56, 202, 0.25);
+  transform: translateY(-2px);
 }
 
-html.light .text-slate-500 {
-  color: #64748b !important;
+/* Browser mockup frame */
+.browser-frame {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 20px 40px -10px rgba(19, 27, 46, 0.08), 0 0 1px 1px rgba(19, 27, 46, 0.04);
 }
 
-html.light .border-white\/10,
-html.light .border-white\/5,
-html.light .border-white\/\[0\.08\],
-html.light .border-white\/\[0\.06\],
-html.light .border-white\/\[0\.04\] {
-  border-color: #e2e8f0 !important;
+html.dark .browser-frame {
+  background: #131b2e;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.6);
 }
 
-html.light header {
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  border-color: #e2e8f0 !important;
+/* Mobile mockup frame */
+.mobile-frame {
+  background: #ffffff;
+  border: 3px solid #1e293b;
+  border-radius: 2rem;
+  overflow: hidden;
+  box-shadow: 0 24px 48px -12px rgba(19, 27, 46, 0.15);
 }
 
-html.light footer {
-  background-color: #f1f5f9 !important;
-  border-color: #cbd5e1 !important;
-  color: #475569 !important;
-}
-
-html.light .bg-white\/\[0\.03\],
-html.light .bg-white\/\[0\.04\],
-html.light .bg-white\/5,
-html.light .bg-white\/10 {
-  background-color: rgba(15, 23, 42, 0.05) !important;
-  color: #0f172a !important;
-}
-
-/* Force solid opaque backgrounds on select dropdowns & menus */
-select, select option {
-  background-color: #090d16 !important;
-  color: #ffffff !important;
-}
-
-html.light select, html.light select option {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-}
-
-.dropdown-menu-surface {
-  background-color: #090d16 !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.8) !important;
-}
-
-html.light .dropdown-menu-surface {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.15) !important;
-}
-
-html.light input,
-html.light textarea,
-html.light select {
-  background-color: #ffffff !important;
-  color: #0f172a !important;
-  border-color: #cbd5e1 !important;
-}
-
-html.light input::placeholder,
-html.light textarea::placeholder {
-  color: #94a3b8 !important;
-}
-
-.bg-radial-gradient {
-  background: radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.12) 0%, rgba(9, 13, 22, 0) 70%);
-}
-
-.bg-radial-glow {
-  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, rgba(9, 13, 22, 0) 60%);
+html.dark .mobile-frame {
+  background: #131b2e;
+  border-color: #334155;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7);
 }
 
 @layer utilities {
-  /* Scroll reveal animation */
   .animate-fade-up {
     animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    opacity: 0;
   }
 
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out forwards;
-    opacity: 0;
-  }
-
-  .animate-pulse-subtle {
-    animation: pulseSubtle 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   .animate-float {
-    animation: float 6s ease-in-out infinite;
+    animation: float 5s ease-in-out infinite;
   }
 
-  /* Stagger delays */
-  .delay-100 { animation-delay: 100ms; }
-  .delay-200 { animation-delay: 200ms; }
-  .delay-300 { animation-delay: 300ms; }
-  .delay-400 { animation-delay: 400ms; }
+  .animate-float-slow {
+    animation: floatSlow 7s ease-in-out infinite;
+  }
+
+  .animate-pulse-gentle {
+    animation: pulseGentle 3s ease-in-out infinite;
+  }
 }
 
 @keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;
@@ -227,25 +188,44 @@ html.light textarea::placeholder {
   }
 }
 
-@keyframes pulseSubtle {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 0.8; }
-}
-
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
-/* Respect reduced motion */
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.5deg);
+  }
+}
+
+@keyframes pulseGentle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+/* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-up,
   .animate-fade-in,
-  .animate-pulse-subtle,
-  .animate-float {
-    animation: none;
-    opacity: 1;
-    transform: none;
+  .animate-float,
+  .animate-float-slow,
+  .animate-pulse-gentle {
+    animation: none !important;
+    transform: none !important;
   }
 
   html {

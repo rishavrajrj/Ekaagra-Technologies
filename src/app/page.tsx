@@ -2,125 +2,104 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   ArrowRight,
-  ArrowUpRight,
-  Shield,
-  Cpu,
-  Headphones,
-  Target,
-  Puzzle,
-  Eye,
-  TrendingUp,
-  Globe,
-  LayoutDashboard,
-  Smartphone,
-  Code2,
-  GraduationCap,
-  Building2,
-  Server,
-  Wrench,
-  Check,
-  Zap,
-  ChevronRight,
-  Layers,
   Sparkles,
   ExternalLink,
+  Check,
+  Zap,
+  Globe,
+  Building2,
+  GraduationCap,
+  Smartphone,
+  Code2,
+  Layers,
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import {
   services,
-  solutions,
   projects,
   technologyCategories,
-  differentiators,
   faqs,
   pricingTiers,
+  projectPricingBenchmark,
+  schoolSalesStrategies,
 } from '@/lib/data';
-import type { LucideIcon } from 'lucide-react';
 import FAQItem from '@/components/ui/FAQItem';
 import HeroVisual from '@/components/ui/HeroVisual';
+import ImagineBusinessSection from '@/components/ui/ImagineBusinessSection';
+import IndustryShowcase from '@/components/ui/IndustryShowcase';
+import BeforeAfterSection from '@/components/ui/BeforeAfterSection';
+import BenefitsSection from '@/components/ui/BenefitsSection';
 import ServicesList from '@/components/ui/ServicesList';
 import ProcessTimeline from '@/components/ui/ProcessTimeline';
 import ProjectCard from '@/components/ui/ProjectCard';
-
-const iconMap: Record<string, LucideIcon> = {
-  Globe,
-  LayoutDashboard,
-  Smartphone,
-  Code2,
-  GraduationCap,
-  Building2,
-  Server,
-  Wrench,
-  Target,
-  Puzzle,
-  Eye,
-  TrendingUp,
-  Headphones,
-};
+import LiveWebsitePreview from '@/components/ui/LiveWebsitePreview';
 
 export default function HomePage() {
   const featuredProject = projects.find((p) => p.slug === 'roshani-public-school') || projects[0];
   const secondaryProjects = projects.filter((p) => p.slug !== featuredProject.slug);
 
   return (
-    <div className="bg-[#090d16] text-slate-100 overflow-hidden">
+    <div className="bg-[#FAF7F2] text-[#131B2E] overflow-hidden">
       {/* ─── 1. HERO SECTION ───────────────────────────────────── */}
-      <section className="relative pt-12 sm:pt-20 pb-20 md:pb-32 bg-tech-grid border-b border-white/[0.08]">
-        {/* Subtle Glow Overlay */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-radial-gradient pointer-events-none"></div>
+      <section className="relative pt-10 sm:pt-16 pb-20 md:pb-28 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden">
+        {/* Ambient Top Glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-6 text-left">
-              {/* Eyebrow */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 border border-blue-500/20 rounded-full text-[11px] font-mono font-bold text-blue-400 uppercase tracking-widest">
-                <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse"></span>
-                <span>INDEPENDENT DIGITAL PRODUCT STUDIO</span>
+              {/* Eyebrow badge */}
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
+                <span>PREMIUM WEBSITE &amp; DIGITAL PRODUCT STUDIO</span>
               </div>
 
-              {/* Main Heading */}
-              <h1 className="text-4xl sm:text-6xl lg:text-[4.25rem] font-extrabold text-white tracking-tight leading-[1.08]">
-                We turn ideas into <br className="hidden sm:inline" />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-300 to-white">
-                  digital products.
+              {/* Main Headline */}
+              <h1 className="text-4xl sm:text-5xl lg:text-[4rem] font-extrabold text-[#131B2E] tracking-tight leading-[1.1]">
+                Your business deserves a website{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C]">
+                  people remember.
                 </span>
               </h1>
 
-              {/* Supporting Text */}
-              <p className="text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl">
-                Ekaagra Technologies designs and develops websites, applications, custom software and scalable digital systems built around real business needs.
+              {/* Supporting Copy */}
+              <p className="text-base sm:text-lg text-[#64748B] leading-relaxed max-w-2xl font-normal">
+                Beautiful, fast and conversion-focused websites designed around your business — not another generic template. We craft custom digital experiences that turn visitors into loyal customers.
               </p>
 
               {/* CTAs */}
-              <div className="pt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                 <Link
                   href="/get-quote"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-blue-950/80 hover:shadow-blue-600/30 active:scale-[0.98]"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
                 >
-                  <span>Start a Project</span>
-                  <ArrowUpRight className="w-4 h-4" />
+                  <span>Build My Website</span>
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  href="/projects"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 font-semibold text-xs tracking-wider uppercase rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200"
+                  href="#portfolio"
+                  className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white/90 hover:bg-white text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/30 transition-all duration-200 shadow-sm"
                 >
                   <span>Explore Our Work</span>
                 </Link>
               </div>
 
-              {/* Micro specs */}
-              <div className="pt-8 border-t border-white/[0.08] grid grid-cols-3 gap-4 max-w-lg">
+              {/* Micro specs / Real credibility pill grid */}
+              <div className="pt-6 border-t border-[#E2E8F0] grid grid-cols-3 gap-4 max-w-lg">
                 <div>
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block">Positioning</span>
-                  <span className="text-xs font-bold text-slate-300 block mt-0.5">Web • Mobile • Software</span>
+                  <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Specialty</span>
+                  <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">High-Converting Web</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block">Solutions</span>
-                  <span className="text-xs font-bold text-slate-300 block mt-0.5">ERP &amp; Custom Apps</span>
+                  <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Performance</span>
+                  <span className="text-xs font-extrabold text-emerald-600 block mt-0.5">Fast &amp; Optimized</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block">Standards</span>
-                  <span className="text-xs font-bold text-slate-300 block mt-0.5">Production Grade</span>
+                  <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Engagement</span>
+                  <span className="text-xs font-extrabold text-[#F97360] block mt-0.5">WhatsApp Ready</span>
                 </div>
               </div>
             </div>
@@ -134,303 +113,109 @@ export default function HomePage() {
       </section>
 
       {/* ─── 2. TRUST STRIP ────────────────────────────────────── */}
-      <section className="bg-[#060911] border-b border-white/[0.08] py-6 overflow-x-auto">
+      <section className="bg-[#FAF7F2] border-b border-[#E2E8F0] py-6 overflow-x-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-8 min-w-[600px] text-xs font-mono font-bold tracking-widest text-slate-400 uppercase">
-            <div className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              <span>CUSTOM BUILT</span>
+          <div className="flex items-center justify-between gap-8 min-w-[700px] text-xs font-bold tracking-wider text-[#475569] uppercase">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-[#4338CA]"></span>
+              <span>100% CUSTOM DESIGNED</span>
             </div>
-            <span className="text-white/10">•</span>
-            <div className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              <span>MODERN STACK</span>
+            <span className="text-[#CBD5E1]">•</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-[#F97360]"></span>
+              <span>MOBILE-FIRST ARCHITECTURE</span>
             </div>
-            <span className="text-white/10">•</span>
-            <div className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              <span>SCALABLE ARCHITECTURE</span>
+            <span className="text-[#CBD5E1]">•</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-[#F4C95D]"></span>
+              <span>INSTANT WHATSAPP LEAD CAPTURE</span>
             </div>
-            <span className="text-white/10">•</span>
-            <div className="flex items-center gap-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-              <span>LONG-TERM SUPPORT</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── 3. INTRODUCTION SECTION ────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] relative bg-[#0b0f19]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-12 gap-12 items-start">
-            {/* Left Statement */}
-            <div className="lg:col-span-6 space-y-4">
-              <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-                Technology Built Around Your Needs
-              </span>
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                Technology should solve a problem, not create another one.
-              </h2>
-            </div>
-
-            {/* Right Explanation & Process Micro List */}
-            <div className="lg:col-span-6 space-y-8 lg:pl-6 border-l border-white/10 lg:border-l">
-              <p className="text-base text-slate-400 leading-relaxed">
-                Off-the-shelf templates and generic scripts force business workflows into rigid boxes. At Ekaagra Technologies, we analyze your exact operational requirements first, then design software built around how your business actually functions.
-              </p>
-
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                {[
-                  { num: '01', label: 'Understand', desc: 'Identify core operational requirements.' },
-                  { num: '02', label: 'Design', desc: 'Architect tailored UI/UX and workflows.' },
-                  { num: '03', label: 'Build', desc: 'Develop clean, scalable code.' },
-                  { num: '04', label: 'Improve', desc: 'Continuous updates & maintenance.' },
-                ].map((item) => (
-                  <div key={item.num} className="bg-[#0e1320] p-4 rounded-xl border border-white/5 space-y-1">
-                    <span className="text-xs font-mono font-bold text-blue-400">{item.num} — {item.label}</span>
-                    <p className="text-xs text-slate-400 leading-normal">{item.desc}</p>
-                  </div>
-                ))}
-              </div>
+            <span className="text-[#CBD5E1]">•</span>
+            <div className="flex items-center gap-2.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              <span>POST-LAUNCH CARE &amp; SUPPORT</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ─── 4. SERVICES REDESIGN ──────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] bg-[#090d16]">
+      {/* ─── 3. STAR PORTFOLIO SHOWCASE ────────────────────────── */}
+      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="portfolio">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-white/10 pb-8">
-            <div className="space-y-2">
-              <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-                Capabilities &amp; Services
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-[#E2E8F0] pb-8">
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
+                FEATURED WORK &amp; CASE STUDIES
               </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                What We Build
+              <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+                Websites that make businesses look better.
               </h2>
-            </div>
-            <p className="text-sm text-slate-400 max-w-md">
-              High-impact software engineering for schools, enterprises, startups, and local growing businesses.
-            </p>
-          </div>
-
-          {/* Numbered Editorial Services List Component */}
-          <ServicesList />
-        </div>
-      </section>
-
-      {/* ─── 5. FEATURED SOLUTIONS ──────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] bg-[#0b0f19]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-              End-to-End Products
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-              Featured Solutions
-            </h2>
-            <p className="text-base text-slate-400">
-              Purpose-built systems designed for complex operational requirements.
-            </p>
-          </div>
-
-          {/* Large Solution Panels */}
-          <div className="space-y-12">
-            {/* Solution 1: School ERP */}
-            <div className="bg-[#0e1320] border border-white/10 rounded-2xl p-8 lg:p-12 grid lg:grid-cols-12 gap-8 items-center relative overflow-hidden group hover:border-blue-500/40 transition-all duration-300">
-              <div className="lg:col-span-6 space-y-6">
-                <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-                  INSTITUTIONAL PLATFORM
-                </span>
-                <h3 className="text-2xl sm:text-4xl font-bold text-white tracking-tight">
-                  School ERP &amp; Management System
-                </h3>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Complete digital administration for K-12 schools, coaching academies, and colleges. Automate student admissions, daily attendance, fee collection receipts, exam scorecards, and parent notices.
-                </p>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  {[
-                    'Admissions & Records',
-                    'Attendance Tracking',
-                    'Fee Receipts & Ledger',
-                    'Exam & Result Portals',
-                    'Notice Board & Circulars',
-                    'Parent & Staff Access',
-                  ].map((feat) => (
-                    <div key={feat} className="flex items-center gap-2 text-xs text-slate-300 font-medium">
-                      <Check className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-4">
-                  <Link
-                    href="/services/school-erp"
-                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300"
-                  >
-                    <span>Explore School ERP Solution</span>
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Mock Dashboard Preview Visual */}
-              <div className="lg:col-span-6 bg-[#080b13] border border-white/10 rounded-xl p-5 font-mono text-xs text-slate-300 space-y-3 shadow-2xl">
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <span className="text-white font-bold font-sans text-sm">School ERP Admin Console</span>
-                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Active Session</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 py-2">
-                  <div className="bg-[#101726] p-2.5 rounded border border-white/5">
-                    <span className="text-[9px] text-slate-400 block">Total Students</span>
-                    <span className="text-base font-bold text-white block mt-0.5">1,248</span>
-                  </div>
-                  <div className="bg-[#101726] p-2.5 rounded border border-white/5">
-                    <span className="text-[9px] text-slate-400 block">Today's Attendance</span>
-                    <span className="text-base font-bold text-emerald-400 block mt-0.5">96.4%</span>
-                  </div>
-                  <div className="bg-[#101726] p-2.5 rounded border border-white/5">
-                    <span className="text-[9px] text-slate-400 block">Fee Collection</span>
-                    <span className="text-base font-bold text-blue-400 block mt-0.5">₹4.2 Lakh</span>
-                  </div>
-                </div>
-                <div className="bg-[#0e1320] p-3 rounded border border-white/5 space-y-2 text-[11px]">
-                  <div className="flex items-center justify-between text-slate-400">
-                    <span>Recent Activity</span>
-                    <span className="text-blue-400">Just Now</span>
-                  </div>
-                  <div className="text-slate-300 font-sans text-xs">
-                    ✓ Grade 10 Exam Scorecards published to Parent Portal
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Solution 2: Business Management */}
-            <div className="bg-[#0e1320] border border-white/10 rounded-2xl p-8 lg:p-12 grid lg:grid-cols-12 gap-8 items-center relative overflow-hidden group hover:border-blue-500/40 transition-all duration-300">
-              <div className="lg:col-span-6 lg:order-2 space-y-6">
-                <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-                  ENTERPRISE OPERATIONS
-                </span>
-                <h3 className="text-2xl sm:text-4xl font-bold text-white tracking-tight">
-                  Business &amp; Operations Software
-                </h3>
-                <p className="text-sm text-slate-400 leading-relaxed">
-                  Streamline internal workflows, inventory tracking, client billing, CRM, and automated reporting into a single intuitive business platform.
-                </p>
-
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  {[
-                    'Inventory & Stock Tracking',
-                    'Automated Billing System',
-                    'Customer CRM Records',
-                    'Role-Based Staff Access',
-                    'Financial Reports & Export',
-                    'Cloud Backup & Security',
-                  ].map((feat) => (
-                    <div key={feat} className="flex items-center gap-2 text-xs text-slate-300 font-medium">
-                      <Check className="w-4 h-4 text-blue-400 shrink-0" />
-                      <span>{feat}</span>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="pt-4">
-                  <Link
-                    href="/services/business-solutions"
-                    className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300"
-                  >
-                    <span>Explore Business Solutions</span>
-                    <ArrowUpRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Visual mockup */}
-              <div className="lg:col-span-6 lg:order-1 bg-[#080b13] border border-white/10 rounded-xl p-5 font-mono text-xs text-slate-300 space-y-3 shadow-2xl">
-                <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                  <span className="text-white font-bold font-sans text-sm">Business Operations Hub</span>
-                  <span className="text-[10px] text-blue-400 font-mono">v3.2 Secure API</span>
-                </div>
-                <div className="space-y-2 py-1">
-                  <div className="flex items-center justify-between bg-[#101726] p-2.5 rounded text-xs">
-                    <span className="text-slate-300">Monthly Invoices Generated</span>
-                    <span className="font-bold text-white">412 Invoices</span>
-                  </div>
-                  <div className="flex items-center justify-between bg-[#101726] p-2.5 rounded text-xs">
-                    <span className="text-slate-300">Inventory Stock Status</span>
-                    <span className="font-bold text-emerald-400">Optimal (98.2%)</span>
-                  </div>
-                  <div className="flex items-center justify-between bg-[#101726] p-2.5 rounded text-xs">
-                    <span className="text-slate-300">System Integration Sync</span>
-                    <span className="font-bold text-blue-400">PostgreSQL Live</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── 6. PORTFOLIO SHOWCASE ─────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] bg-[#090d16]" id="projects">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-white/10 pb-8">
-            <div className="space-y-2">
-              <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-                Portfolio &amp; Showcase
-              </span>
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-                Selected Work
-              </h2>
-              <p className="text-sm text-slate-400">
-                Real products built around practical business and institutional goals.
+              <p className="text-base text-[#64748B] max-w-2xl leading-relaxed">
+                Every project is designed around the people who will use it — and the business goals behind it.
               </p>
             </div>
+
             <Link
               href="/projects"
-              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-blue-400 hover:text-blue-300"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold uppercase tracking-wider text-[#4338CA] hover:border-[#4338CA] transition-colors shadow-sm shrink-0"
             >
               <span>View All Projects</span>
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
-          {/* Featured Major Project: Roshani Public School */}
-          <div className="bg-[#0e1320] border border-white/10 rounded-2xl overflow-hidden shadow-2xl grid lg:grid-cols-12 group hover:border-blue-500/50 transition-all duration-300">
-            <div className="lg:col-span-7 relative h-72 lg:h-auto bg-[#070a12] border-b lg:border-b-0 lg:border-r border-white/10 overflow-hidden">
-              <Image
-                src={featuredProject.image || '/images/projects/roshani-public-school/roshani-2.png'}
-                alt={featuredProject.title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                priority
+          {/* Featured Major Project Spotlight: Roshani Public School with Live Interactive Preview */}
+          <div className="bg-white border border-[#E2E8F0] rounded-3xl overflow-hidden shadow-2xl grid lg:grid-cols-12 group hover:border-[#4338CA]/40 transition-all duration-300">
+            <div className="lg:col-span-7 bg-[#F3EFEA] border-b lg:border-b-0 lg:border-r border-[#E2E8F0] p-3 sm:p-4 flex flex-col justify-center">
+              <LiveWebsitePreview
+                url={featuredProject.liveUrl}
+                title={featuredProject.title}
+                fallbackImage={featuredProject.image || '/images/projects/roshani-public-school/roshani-2.png'}
+                showDeviceControls={true}
+                autoLoad={false}
+                heightClass="h-[360px] sm:h-[460px]"
+                isFeatured={true}
               />
-              <div className="absolute top-4 left-4 bg-[#090d16]/90 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[10px] font-mono font-bold text-blue-400 uppercase tracking-wider">
-                FEATURED PROJECT
-              </div>
             </div>
 
-            <div className="lg:col-span-5 p-8 lg:p-12 flex flex-col justify-between space-y-6">
+            <div className="lg:col-span-5 p-8 sm:p-10 lg:p-12 flex flex-col justify-between space-y-6">
               <div className="space-y-4">
-                <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-widest block">
-                  Education • Web Platform
-                </span>
-                <h3 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
+                    Education • School Web Platform
+                  </span>
+                  <span className="text-[10px] font-bold text-[#4338CA] bg-[#4338CA]/10 px-3 py-1 rounded-full uppercase tracking-wider">
+                    STAR PORTFOLIO PIECE
+                  </span>
+                </div>
+                <h3 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
                   {featuredProject.title}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                  {featuredProject.description}
+                <p className="text-sm text-[#64748B] leading-relaxed">
+                  An engaging digital experience designed to showcase academics, campus facilities, achievements, CBSE mandatory disclosures, and instant online admissions.
                 </p>
 
-                <div className="flex flex-wrap gap-2 pt-2">
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center gap-2 text-xs text-[#334155] font-medium">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Dedicated admissions guidelines &amp; enquiry workflow</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-[#334155] font-medium">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>Real-time digital notice board without writing code</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-[#334155] font-medium">
+                    <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>CBSE compliance &amp; mandatory disclosure ready</span>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 pt-3">
                   {featuredProject.technologies.map((tech) => (
                     <span
                       key={tech}
-                      className="text-[10px] font-mono font-medium bg-white/[0.04] text-slate-300 border border-white/[0.08] px-2.5 py-1 rounded"
+                      className="text-[10px] font-semibold bg-[#FAF7F2] text-[#475569] border border-[#E2E8F0] px-3 py-1 rounded-lg"
                     >
                       {tech}
                     </span>
@@ -438,97 +223,87 @@ export default function HomePage() {
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-white/10 flex items-center justify-between">
-                {featuredProject.liveUrl ? (
+              <div className="pt-6 border-t border-[#E2E8F0] flex items-center justify-between gap-4">
+                {featuredProject.liveUrl && (
                   <a
                     href={featuredProject.liveUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors uppercase tracking-wider"
+                    className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-[#4338CA]/25 uppercase tracking-wider"
                   >
-                    <span>Go to Website</span>
+                    <span>Visit Live Website</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
-                ) : (
-                  <Link
-                    href={`/projects/${featuredProject.slug}`}
-                    className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-5 py-2.5 rounded-lg transition-colors uppercase tracking-wider"
-                  >
-                    <span>View Details</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </Link>
                 )}
 
                 <Link
                   href={`/projects/${featuredProject.slug}`}
-                  className="text-xs font-mono text-slate-400 hover:text-white flex items-center gap-1 transition-colors uppercase tracking-wider"
+                  className="text-xs font-bold text-[#475569] hover:text-[#4338CA] flex items-center gap-1 transition-colors uppercase tracking-wider"
                 >
-                  <span>View Details</span>
-                  <ArrowUpRight className="w-3 h-3" />
+                  <span>Read Case Study</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
           </div>
 
-          {/* Secondary Projects Grid */}
+          {/* Secondary Real Projects Grid */}
           <div className="grid md:grid-cols-3 gap-8">
-            {secondaryProjects.map((project) => (
+            {secondaryProjects.slice(0, 3).map((project) => (
               <ProjectCard key={project.slug} project={project} />
             ))}
           </div>
         </div>
       </section>
 
-      {/* ─── 7. TECHNOLOGY SECTION ─────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] bg-[#0b0f19]">
+      {/* ─── 4. IMAGINE YOUR BUSINESS HERE ─────────────────────── */}
+      <ImagineBusinessSection />
+
+      {/* ─── 5. INDUSTRY SELECTOR & INTERACTIVE LIVE PREVIEW ──── */}
+      <IndustryShowcase />
+
+      {/* ─── 6. BEFORE → AFTER TRANSFORMATION ──────────────────── */}
+      <BeforeAfterSection />
+
+      {/* ─── 7. SERVICES SECTION ───────────────────────────────── */}
+      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="services">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-              Tech Stack Architecture
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-              Built With Modern Technology
-            </h2>
-            <p className="text-base text-slate-400">
-              Industry-standard languages, frameworks, and database engines.
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-[#E2E8F0] pb-8">
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
+                END-TO-END CAPABILITIES
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+                Services Built Around Your Brand
+              </h2>
+            </div>
+            <p className="text-sm text-[#64748B] max-w-md">
+              From high-converting business websites to full-scale school ERP systems and native Android apps.
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-6">
-            {technologyCategories.map((cat) => (
-              <div key={cat.key} className="bg-[#0e1320] border border-white/10 rounded-xl p-6 space-y-4">
-                <h3 className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest border-b border-white/10 pb-2">
-                  {cat.name}
-                </h3>
-                <div className="space-y-2">
-                  {cat.technologies.map((t) => (
-                    <div
-                      key={t.name}
-                      className="bg-[#080b13] border border-white/5 rounded-lg px-3.5 py-2 text-xs font-mono font-medium text-slate-300 flex items-center justify-between"
-                    >
-                      <span>{t.name}</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* Upgraded Services Card Grid */}
+          <ServicesList />
         </div>
       </section>
 
-      {/* ─── 8. PROCESS REDESIGN ───────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] bg-[#090d16]" id="process">
+      {/* ─── 8. CUSTOMER BENEFITS SECTION ──────────────────────── */}
+      <BenefitsSection />
+
+      {/* ─── 9. PROCESS SECTION ────────────────────────────────── */}
+      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="process">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
           <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-              Execution Methodology
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest">
+              <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
+              TRANSPARENT WORKFLOW
             </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-              From Idea to Launch
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+              From First Idea to Live Launch
             </h2>
-            <p className="text-base text-slate-400">
-              A transparent, predictable process focused on delivery and long-term stability.
+            <p className="text-base sm:text-lg text-[#64748B] leading-relaxed">
+              A predictable 6-step roadmap with guaranteed client review checkpoints before anything goes live.
             </p>
           </div>
 
@@ -537,127 +312,158 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── 9. PHILOSOPHY SECTION ─────────────────────────────── */}
-      <section className="py-28 sm:py-36 border-b border-white/[0.08] bg-[#060911] text-center relative overflow-hidden">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
-          <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-            STUDIO CREED
-          </span>
-
-          <h2 className="text-3xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
-            Think clearly. <br />
-            Design intentionally. <br />
-            <span className="text-blue-500">Build relentlessly.</span>
-          </h2>
-
-          <p className="text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-            We don&apos;t stop at an idea. We keep refining until the solution works for the real people who use it every single day.
-          </p>
-        </div>
-      </section>
-
-      {/* ─── 10. WHY RSM ───────────────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] bg-[#090d16]">
+      {/* ─── 10. PRICING & INVESTMENT SECTION ───────────────────── */}
+      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#F5F0E8]" id="pricing">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
           <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-              Value Proposition
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest">
+              <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
+              HONEST &amp; TRANSPARENT PRICING
             </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight uppercase">
-              WHY CLIENTS WORK WITH US
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+              Simple Packages. Real Value.
             </h2>
-          </div>
-
-          <div className="divide-y divide-white/10 border-t border-b border-white/10">
-            {differentiators.map((item, idx) => (
-              <div
-                key={item.title}
-                className="py-8 grid md:grid-cols-12 gap-6 items-start hover:bg-white/[0.02] transition-colors px-4 rounded-lg"
-              >
-                <div className="md:col-span-4 flex items-center gap-4">
-                  <span className="text-xs font-mono font-bold text-blue-400">0{idx + 1}</span>
-                  <h3 className="text-xl font-bold text-white">{item.title}</h3>
-                </div>
-                <div className="md:col-span-8">
-                  <p className="text-sm text-slate-400 leading-relaxed">{item.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── 11. PRICING REDESIGN ──────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] bg-[#0b0f19]" id="pricing">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-              Transparent Pricing Structure
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
-              Investment &amp; Rates
-            </h2>
-            <p className="text-base text-slate-400">
-              Clear, transparent pricing based on scope, feature set, and support requirements.
+            <p className="text-base sm:text-lg text-[#64748B]">
+              Clear starting packages tailored for small businesses, educational institutions, and growing enterprises.
             </p>
           </div>
 
-          {/* Clean Pricing Rows */}
-          <div className="divide-y divide-white/10 border-t border-b border-white/10 bg-[#0e1320] rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-            {pricingTiers.map((tier) => (
+          {/* Pricing Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {pricingTiers.slice(0, 3).map((tier) => (
               <div
                 key={tier.title}
-                className="p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:bg-white/[0.02] transition-colors"
+                className={`relative flex flex-col justify-between rounded-3xl p-8 border transition-all duration-300 bg-white shadow-xl ${
+                  tier.highlighted
+                    ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15 scale-[1.02]'
+                    : 'border-[#E2E8F0] hover:border-[#4338CA]/30'
+                }`}
               >
-                <div className="space-y-1.5 md:max-w-xl">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-bold text-white">{tier.title}</h3>
-                    {tier.badge && (
-                      <span className="text-[10px] font-mono font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full">
-                        {tier.badge}
-                      </span>
-                    )}
+                {tier.highlighted && (
+                  <span className="absolute -top-3 right-6 bg-[#4338CA] text-white text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
+                    Most Popular
+                  </span>
+                )}
+
+                <div className="space-y-6">
+                  <div>
+                    <span className="text-[10px] font-mono font-bold text-[#F97360] uppercase tracking-wider block">
+                      {tier.badge || 'Package'}
+                    </span>
+                    <h3 className="text-xl font-extrabold text-[#131B2E] mt-1">
+                      {tier.title}
+                    </h3>
+                    <div className="mt-3 text-3xl font-extrabold text-[#4338CA] font-mono">
+                      {tier.startingFrom}
+                    </div>
+                    <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
+                      {tier.description}
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-300 leading-relaxed">
-                    {tier.scopeAlignment || tier.description}
-                  </p>
+
+                  <div className="pt-4 border-t border-[#E2E8F0] space-y-2.5">
+                    <span className="text-[11px] font-bold text-[#131B2E] uppercase tracking-wider block">
+                      Included Deliverables:
+                    </span>
+                    {tier.features.map((feat, i) => (
+                      <div key={i} className="flex items-start gap-2.5 text-xs text-[#334155] font-medium">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-6 justify-between md:justify-end shrink-0">
-                  <div className="text-right">
-                    <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest block">Starting From</span>
-                    <span className="text-xl font-mono font-bold text-white block">{tier.startingFrom}</span>
-                  </div>
-
+                <div className="pt-8">
                   <Link
-                    href="/pricing"
-                    className="inline-flex items-center gap-1.5 px-4.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold uppercase tracking-wider rounded-lg transition-colors shadow-md shadow-blue-900/40"
+                    href="/get-quote"
+                    className={`w-full inline-flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md ${
+                      tier.highlighted
+                        ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-[#4338CA]/25'
+                        : 'bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0]'
+                    }`}
                   >
-                    <span>View Tier Details</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
+                    <span>Get a Quote</span>
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
             ))}
           </div>
 
+          {/* Featured Strategy Callout: The Prestige Combo */}
+          <div className="bg-white border border-[#E2E8F0] rounded-3xl p-8 sm:p-10 shadow-xl grid lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-8 space-y-3">
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-[#F97360]/10 text-[#F97360] font-bold text-[10px] uppercase tracking-wider rounded-full border border-[#F97360]/20">
+                  FEATURED INSTITUTIONAL BUNDLE 🚀
+                </span>
+                <span className="text-xs font-mono font-bold text-emerald-600">
+                  ₹38,000 Special Offer
+                </span>
+              </div>
+              <h3 className="text-2xl font-extrabold text-[#131B2E]">
+                The &ldquo;Prestige Combo&rdquo; Bundle (Website + Google Play Store App)
+              </h3>
+              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                Combine a full institutional Web Application with an official Play Store Android Application into a single high-impact package giving your school or business maximum authority.
+              </p>
+            </div>
 
-          <p className="text-center text-xs font-mono text-slate-500 tracking-wider">
-            Note: Final pricing depends on exact scope, complexity, third-party integrations, and ongoing support requirements.
-          </p>
+            <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end">
+              <Link
+                href="/pricing"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20"
+              >
+                <span>Explore All Packages</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ─── 12. FAQ SECTION ───────────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-white/[0.08] bg-[#090d16]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-4">
-            <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-              Got Questions?
+      {/* ─── 11. MODERN TECHNOLOGY & CREDIBILITY ────────────────── */}
+      <section className="py-20 border-b border-[#E2E8F0] bg-[#FAF7F2]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 text-center">
+          <div className="space-y-2 max-w-2xl mx-auto">
+            <span className="text-xs font-mono font-bold text-[#64748B] uppercase tracking-widest">
+              CREDIBILITY &amp; MODERN FOUNDATION
             </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E]">
+              Built with Modern Standards
+            </h3>
+            <p className="text-xs sm:text-sm text-[#64748B]">
+              We build on proven, lightning-fast foundations used by the world’s leading digital products.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap justify-center items-center gap-3 max-w-4xl mx-auto">
+            {['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS', 'Supabase', 'PostgreSQL', 'Android / Kotlin', 'Java', 'Spring Boot', 'Vercel Edge'].map((tech) => (
+              <span
+                key={tech}
+                className="px-4 py-2 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#334155] shadow-sm"
+              >
+                {tech}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── 12. FAQ ACCORDION ─────────────────────────────────── */}
+      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#F5F0E8]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-wider">
+              CLEAR ANSWERS
+            </span>
+            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
               Frequently Asked Questions
             </h2>
+            <p className="text-sm text-[#64748B]">
+              Everything you need to know about working with Ekaagra Technologies.
+            </p>
           </div>
 
           <div className="space-y-3 pt-4">
@@ -668,34 +474,39 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ─── 13. FINAL CONTACT CTA ─────────────────────────────── */}
-      <section className="py-28 sm:py-36 bg-[#060911] text-center relative overflow-hidden">
+      {/* ─── 13. FINAL MEMORABLE CTA ───────────────────────────── */}
+      <section className="py-28 sm:py-36 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center relative overflow-hidden">
+        {/* Background glow effects */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
+
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
-          <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest">
-            START YOUR JOURNEY
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4338CA]/10 text-[#4338CA] border border-[#4338CA]/20 rounded-full text-xs font-extrabold uppercase tracking-widest">
+            <Sparkles className="w-4 h-4 text-[#F97360]" />
+            TRANSFORM YOUR DIGITAL PRESENCE
           </span>
 
-          <h2 className="text-3xl sm:text-6xl font-extrabold text-white tracking-tight leading-tight">
-            Have an idea worth building?
+          <h2 className="text-3xl sm:text-6xl font-extrabold text-[#131B2E] tracking-tight leading-tight">
+            Imagine what your business <br className="hidden sm:inline" />
+            could look like online.
           </h2>
 
-          <p className="text-base sm:text-lg text-slate-400 leading-relaxed max-w-xl mx-auto">
-            Tell us what you&apos;re trying to achieve. We&apos;ll help turn the requirement into a practical digital solution.
+          <p className="text-base sm:text-xl text-[#64748B] leading-relaxed max-w-2xl mx-auto font-normal">
+            Let&apos;s turn your idea into a website people remember. Tell us what you need and receive a detailed roadmap and estimate within 24 hours.
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/get-quote"
-              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-2xl shadow-blue-900/80"
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-2xl shadow-[#4338CA]/30 hover:scale-[1.02]"
             >
-              <span>Start a Project</span>
-              <ArrowUpRight className="w-4 h-4" />
+              <span>Build My Website</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/projects"
-              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-white/[0.04] hover:bg-white/[0.08] text-slate-200 font-semibold text-xs tracking-wider uppercase rounded-xl border border-white/10 hover:border-white/20 transition-all duration-200"
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] transition-all duration-200 shadow-sm"
             >
-              <span>View Our Work</span>
+              <span>Explore Our Work</span>
             </Link>
           </div>
         </div>
@@ -703,4 +514,6 @@ export default function HomePage() {
     </div>
   );
 }
+
+
 

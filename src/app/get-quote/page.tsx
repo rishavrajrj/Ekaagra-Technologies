@@ -1,31 +1,34 @@
 import type { Metadata } from 'next';
 import QuoteForm from '@/components/forms/QuoteForm';
+import { Sparkles } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Get a Quote | Ekaagra Technologies',
-  description: 'Tell us about your project and we\'ll provide a detailed estimate based on your requirements.',
+  title: 'Build My Website & Get a Quote | Ekaagra Technologies',
+  description: 'Tell us about your project requirements and we will provide a detailed proposal and estimate within 24 hours.',
 };
 
 export default function GetQuotePage() {
   return (
-    <div className="bg-[#090d16] text-slate-100 min-h-screen">
+    <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
       {/* Hero */}
-      <section className="py-20 sm:py-24 border-b border-white/[0.08] bg-tech-grid relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <span className="text-xs font-mono font-bold text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
-            TECHNICAL ESTIMATION
+      <section className="py-20 sm:py-24 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 relative z-10">
+          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
+            <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
+            PROJECT SCOPING &amp; ESTIMATE
           </span>
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight">
-            Request a Project Estimate
+          <h1 className="text-4xl sm:text-6xl font-extrabold text-[#131B2E] tracking-tight">
+            Build My Website
           </h1>
-          <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Provide details about your project requirements and expected scale to receive a comprehensive proposal.
+          <p className="text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed">
+            Provide details about your business, target audience, and desired features to receive a comprehensive proposal within 24 hours.
           </p>
         </div>
       </section>
 
       {/* Main Form Section */}
-      <section className="py-20 border-b border-white/[0.08] bg-[#0b0f19]">
+      <section className="py-20 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <QuoteForm />
         </div>
@@ -33,4 +36,6 @@ export default function GetQuotePage() {
     </div>
   );
 }
+
+
 

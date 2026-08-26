@@ -1,195 +1,213 @@
 'use client';
 
 import { useState } from 'react';
-import { 
-  Globe, 
-  Smartphone, 
-  Code2, 
-  GraduationCap, 
-  Terminal,
-  Database,
-  ShieldCheck
+import Link from 'next/link';
+import {
+  Globe,
+  ExternalLink,
+  Zap,
+  ArrowRight,
+  GraduationCap,
+  Building2,
+  BookOpen,
+  Smartphone,
+  CheckCircle2,
+  Play
 } from 'lucide-react';
+import LiveWebsitePreview from './LiveWebsitePreview';
+
+interface HeroProject {
+  id: string;
+  number: string;
+  name: string;
+  shortLabel: string;
+  category: string;
+  badge: string;
+  badgeColor: string;
+  liveUrl: string;
+  slug: string;
+  image: string;
+  description: string;
+  capabilities: string[];
+}
+
+const HERO_PROJECTS: HeroProject[] = [
+  {
+    id: 'roshani',
+    number: '01',
+    name: 'Roshani Public School',
+    shortLabel: 'Roshani School',
+    category: 'Education Website',
+    badge: 'Live School Portal',
+    badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    liveUrl: 'https://roshani-public-school.vercel.app/',
+    slug: 'roshani-public-school',
+    image: '/images/projects/roshani-public-school/roshani-2.png',
+    description: 'Admissions, academics, CBSE mandatory disclosures, and real-time digital notice board.',
+    capabilities: ['Mobile First', 'CBSE Ready', 'Admissions Form'],
+  },
+  {
+    id: 'sparknest',
+    number: '02',
+    name: 'SparkNest Academy',
+    shortLabel: 'SparkNest',
+    category: 'EdTech Platform',
+    badge: 'EdTech Web App',
+    badgeColor: 'bg-[#4338CA]/10 text-[#4338CA] border-[#4338CA]/20',
+    liveUrl: 'https://www.sparknestacademy.in/',
+    slug: 'sparknest-academy',
+    image: '/images/projects/sparknest-academy/sparknest-1.png',
+    description: 'Structured course catalog, student learning interface, and enrollment workflows.',
+    capabilities: ['Fast UI', 'Course Catalog', 'SEO Optimized'],
+  },
+  {
+    id: 'palak',
+    number: '03',
+    name: 'Palak Enterprises',
+    shortLabel: 'Palak Enterprises',
+    category: 'Business Website',
+    badge: 'B2B & Print Shop',
+    badgeColor: 'bg-[#F97360]/10 text-[#F97360] border-[#F97360]/20',
+    liveUrl: 'https://palak-enterprises-ghit.vercel.app/',
+    slug: 'palak-enterprises',
+    image: '/images/projects/palak-enterprises.svg',
+    description: 'Commercial B2B products, custom printing uploads, and instant WhatsApp inquiries.',
+    capabilities: ['WhatsApp Leads', 'Document Upload', 'Razorpay Ready'],
+  },
+  {
+    id: 'erp',
+    number: '04',
+    name: 'Roshani Public School ERP',
+    shortLabel: 'School ERP',
+    category: 'Institutional ERP',
+    badge: 'Institutional System',
+    badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
+    liveUrl: 'https://roshani-public-school-erp.vercel.app/login',
+    slug: 'roshani-public-school-erp',
+    image: '/images/projects/roshani-public-school-erp/roshani-erp-1.jpg',
+    description: 'Multi-role authentication for Admin, Teachers, Parents, and Students with fee & attendance tracking.',
+    capabilities: ['Multi-Role RBAC', 'Fee Receipts', 'Attendance Cloud'],
+  },
+];
 
 export default function HeroVisual() {
-  const [activeTab, setActiveTab] = useState<'WEB' | 'MOBILE' | 'SOFTWARE' | 'ERP'>('WEB');
+  const [activeProjectId, setActiveProjectId] = useState<string>('roshani');
 
-  const tabDetails = {
-    WEB: {
-      title: 'High-Performance Web Platform',
-      tech: 'Next.js 16 • React 19 • Tailwind CSS',
-      status: 'Production Ready',
-      metrics: [
-        { label: 'Lighthouse Score', val: '99/100' },
-        { label: 'TTFB', val: '45ms' },
-        { label: 'Responsive Viewports', val: 'All Devices' },
-      ],
-      snippet: 'const app = createDigitalSolution({\n  stack: ["React", "Next.js", "Vercel"],\n  seo: "Optimized",\n  responsive: true\n});',
-    },
-    MOBILE: {
-      title: 'Native Android Mobile App',
-      tech: 'Java • Kotlin • Android SDK',
-      status: 'Store Approved',
-      metrics: [
-        { label: 'App Size', val: '12.4 MB' },
-        { label: 'Offline Support', val: 'Active' },
-        { label: 'Architecture', val: 'Clean MVVM' },
-      ],
-      snippet: 'class AndroidSolution : MobileApp() {\n  override fun onInit() {\n    connectAPI(baseUrl)\n    enableOfflineCache()\n  }\n}',
-    },
-    SOFTWARE: {
-      title: 'Custom Business Architecture',
-      tech: 'Java • Spring Boot • PostgreSQL',
-      status: 'Enterprise Grade',
-      metrics: [
-        { label: 'API Latency', val: '< 18ms' },
-        { label: 'Uptime SLA', val: '99.9%' },
-        { label: 'Security', val: 'Role Access' },
-      ],
-      snippet: '@RestController\n@RequestMapping("/api/v1/business")\npublic class SystemService {\n  @Autowired WorkflowEngine workflow;\n}',
-    },
-    ERP: {
-      title: 'Integrated School & Institution ERP',
-      tech: 'Full-Stack ERP System',
-      status: 'Live & Operational',
-      metrics: [
-        { label: 'Modules', val: 'Admissions, Fees, Exams' },
-        { label: 'Portals', val: 'Parent & Staff' },
-        { label: 'Database', val: 'Relational DB' },
-      ],
-      snippet: '// School ERP Sync\nsyncDatabase({\n  students: activeRoster,\n  fees: ledgerEntries,\n  results: examBoard\n});',
-    },
-  };
+  const activeProject =
+    HERO_PROJECTS.find((p) => p.id === activeProjectId) || HERO_PROJECTS[0];
 
   return (
-    <div className="relative w-full max-w-xl mx-auto">
-      {/* Glow Effect */}
-      <div className="absolute -inset-1 bg-gradient-to-r from-blue-600/30 to-indigo-600/20 rounded-2xl blur-xl opacity-70 animate-pulse-subtle"></div>
+    <div className="relative w-full max-w-xl lg:max-w-2xl mx-auto space-y-4">
+      {/* Ambient background glows */}
+      <div className="absolute -top-12 -left-12 w-56 h-56 bg-[#F97360]/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-[#4338CA]/15 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Main Terminal/Workspace Window */}
-      <div className="relative bg-[#0e1320] border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl">
-        {/* Window Topbar */}
-        <div className="flex items-center justify-between px-4 py-3 bg-[#090d16]/90 border-b border-white/[0.08]">
-          <div className="flex items-center gap-2">
-            <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block"></span>
-            <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block"></span>
-            <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block"></span>
-            <span className="ml-2 text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-              <Terminal className="w-3 h-3 text-blue-400" />
-              ekaagra-studio // build-system
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-            <span className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">System Live</span>
-          </div>
+      {/* Floating Capability Badge 1 */}
+      <div className="hidden sm:flex absolute -top-5 -right-3 z-30 bg-white border border-[#E2E8F0] rounded-2xl p-3 shadow-xl items-center gap-3 animate-float">
+        <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-extrabold text-sm border border-emerald-200">
+          <Globe className="w-5 h-5" />
         </div>
-
-        {/* Layer Tabs Selector */}
-        <div className="p-3 bg-[#0b0f19] border-b border-white/[0.06] flex items-center justify-between gap-2 overflow-x-auto">
-          {(['WEB', 'MOBILE', 'SOFTWARE', 'ERP'] as const).map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 min-w-[90px] py-2 px-3 rounded-lg text-xs font-bold tracking-wider transition-all duration-200 flex items-center justify-center gap-1.5 ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-900/40 border border-blue-400/30'
-                    : 'bg-white/[0.03] text-slate-400 hover:text-white hover:bg-white/[0.07] border border-white/[0.05]'
-                }`}
-              >
-                {tab === 'WEB' && <Globe className="w-3.5 h-3.5" />}
-                {tab === 'MOBILE' && <Smartphone className="w-3.5 h-3.5" />}
-                {tab === 'SOFTWARE' && <Code2 className="w-3.5 h-3.5" />}
-                {tab === 'ERP' && <GraduationCap className="w-3.5 h-3.5" />}
-                <span>{tab}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Inner Content Area */}
-        <div className="p-5 space-y-4">
-          {/* Active Product Preview Banner */}
-          <div className="bg-[#131a2b] border border-white/10 rounded-xl p-4 transition-all">
-            <div className="flex items-start justify-between">
-              <div>
-                <span className="text-[10px] font-mono text-blue-400 uppercase tracking-widest block mb-1">
-                  Architecture Layer
-                </span>
-                <h3 className="text-base font-semibold text-white tracking-tight">
-                  {tabDetails[activeTab].title}
-                </h3>
-                <p className="text-xs text-slate-400 mt-1 font-mono">
-                  {tabDetails[activeTab].tech}
-                </p>
-              </div>
-              <span className="text-[10px] font-bold bg-blue-500/10 text-blue-300 border border-blue-500/20 px-2.5 py-1 rounded-md">
-                {tabDetails[activeTab].status}
-              </span>
-            </div>
-
-            {/* Live Metrics Grid */}
-            <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t border-white/[0.06]">
-              {tabDetails[activeTab].metrics.map((m, i) => (
-                <div key={i} className="bg-[#090d16]/70 p-2 rounded-lg border border-white/[0.04]">
-                  <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider block">
-                    {m.label}
-                  </span>
-                  <span className="text-xs font-bold text-white tracking-tight block mt-0.5">
-                    {m.val}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Interactive Code & Process Preview */}
-          <div className="bg-[#080b13] border border-white/10 rounded-xl p-3.5 font-mono text-xs text-slate-300 relative group overflow-hidden">
-            <div className="flex items-center justify-between text-[10px] text-slate-400 mb-2 border-b border-white/[0.06] pb-1.5">
-              <span className="flex items-center gap-1">
-                <Terminal className="w-3 h-3 text-blue-400" />
-                implementation.ts
-              </span>
-              <span className="text-emerald-400 font-sans font-semibold text-[10px]">Compiled ✓</span>
-            </div>
-            <pre className="text-blue-300/90 text-[11px] leading-relaxed overflow-x-auto">
-              <code>{tabDetails[activeTab].snippet}</code>
-            </pre>
-          </div>
-
-          {/* Connected System Footprint Bar */}
-          <div className="pt-2 flex items-center justify-between text-[11px] text-slate-400 border-t border-white/[0.06]">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1 hover:text-white transition-colors">
-                <Database className="w-3.5 h-3.5 text-blue-400" />
-                Custom Database
-              </span>
-              <span className="flex items-center gap-1 hover:text-white transition-colors">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                Secure API
-              </span>
-            </div>
-            <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-              Ekaagra Core v2.4
-            </span>
-          </div>
+        <div>
+          <div className="text-[11px] font-bold text-[#131B2E]">Live Interactive Preview</div>
+          <div className="text-[10px] text-[#64748B]">Real Client Website</div>
         </div>
       </div>
 
-      {/* Subtle Bottom Connection Tag */}
-      <div className="mt-4 flex items-center justify-center gap-4 text-xs text-slate-400">
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-          Tailored Workflows
-        </span>
-        <span className="text-slate-700">•</span>
-        <span className="flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-          Clean Code Architecture
-        </span>
+      {/* Floating Capability Badge 2 */}
+      <div className="hidden sm:flex absolute -bottom-4 -left-4 z-30 bg-white border border-[#E2E8F0] rounded-2xl p-3 shadow-xl items-center gap-3 animate-float-slow">
+        <div className="w-10 h-10 rounded-xl bg-[#F97360]/10 text-[#F97360] flex items-center justify-center border border-[#F97360]/20">
+          <Zap className="w-5 h-5" />
+        </div>
+        <div>
+          <div className="text-[11px] font-bold text-[#131B2E]">Custom Built Website</div>
+          <div className="text-[10px] text-[#64748B]">Designed to Convert</div>
+        </div>
+      </div>
+
+      {/* ─── Compact Project Selector Bar ─────────────────────────── */}
+      <div className="bg-white/90 backdrop-blur-md p-1.5 rounded-2xl border border-[#E2E8F0] shadow-md flex items-center justify-between gap-1 overflow-x-auto relative z-20">
+        {HERO_PROJECTS.map((proj) => {
+          const isActive = proj.id === activeProjectId;
+          return (
+            <button
+              key={proj.id}
+              type="button"
+              onClick={() => setActiveProjectId(proj.id)}
+              className={`flex-1 min-w-[110px] py-2 px-3 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer relative ${
+                isActive
+                  ? 'bg-[#4338CA] text-white shadow-md shadow-[#4338CA]/20 scale-[1.02]'
+                  : 'text-[#64748B] hover:text-[#131B2E] hover:bg-[#FAF7F2]'
+              }`}
+            >
+              <span
+                className={`font-mono text-[9px] ${
+                  isActive ? 'text-[#F4C95D]' : 'text-[#64748B]'
+                }`}
+              >
+                {proj.number}
+              </span>
+              <span className="truncate">{proj.shortLabel}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ─── Main Live Browser Preview Window ─────────────────────── */}
+      <div className="relative z-10">
+        <LiveWebsitePreview
+          key={activeProject.id}
+          url={activeProject.liveUrl}
+          title={activeProject.name}
+          fallbackImage={activeProject.image}
+          autoLoad={true}
+          showDeviceControls={true}
+          heightClass="h-[340px] sm:h-[420px] md:h-[460px]"
+          isFeatured={true}
+          className="shadow-2xl hover:border-[#4338CA]/40"
+        />
+      </div>
+
+      {/* ─── Project Context & Action Bar ─────────────────────────── */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+        <div className="space-y-1 max-w-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-mono font-bold text-[#F97360] uppercase tracking-wider">
+              {activeProject.category}
+            </span>
+            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" />
+              Verified Client
+            </span>
+          </div>
+          <h4 className="text-sm sm:text-base font-extrabold text-[#131B2E]">
+            {activeProject.name}
+          </h4>
+          <p className="text-xs text-[#64748B] line-clamp-1">
+            {activeProject.description}
+          </p>
+        </div>
+
+        {/* Capability Tags + Actions */}
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="hidden sm:flex items-center gap-1.5">
+            {activeProject.capabilities.map((cap) => (
+              <span
+                key={cap}
+                className="text-[10px] font-semibold bg-[#FAF7F2] text-[#475569] border border-[#E2E8F0] px-2 py-0.5 rounded-md"
+              >
+                {cap}
+              </span>
+            ))}
+          </div>
+
+          <Link
+            href={`/projects/${activeProject.slug}`}
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#3730A3] px-2.5 py-1.5 rounded-lg hover:bg-[#FAF7F2] transition-colors"
+          >
+            <span>Case Study</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
     </div>
   );

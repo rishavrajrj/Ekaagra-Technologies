@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
-import { Plus, Minus } from 'lucide-react';
+import { Plus, Minus, HelpCircle } from 'lucide-react';
 
 interface FAQItemProps {
   question: string;
@@ -15,29 +15,29 @@ export function FAQItem({ question, answer, className = '' }: FAQItemProps) {
 
   return (
     <div 
-      className={`transition-all duration-300 rounded-xl border ${
+      className={`transition-all duration-300 rounded-2xl border ${
         isOpen 
-          ? 'bg-white/[0.03] dark:bg-white/[0.03] light:bg-white border-white/15 dark:border-white/15 light:border-blue-200 shadow-lg px-5 my-3 py-1' 
-          : 'bg-transparent border-transparent border-b-white/10 dark:border-b-white/10 light:border-b-slate-200 hover:bg-white/[0.015] px-2 py-1'
+          ? 'bg-white dark:bg-[#131B2E] border-[#4338CA]/30 dark:border-indigo-500/40 shadow-md px-6 py-2 my-3' 
+          : 'bg-white/70 dark:bg-[#131B2E]/60 border-[#E2E8F0] dark:border-white/10 hover:border-[#4338CA]/20 hover:bg-white dark:hover:bg-[#131B2E] px-6 py-2 my-2'
       } ${className}`}
     >
       <button
         type="button"
-        className="group flex w-full items-center justify-between py-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg transition-colors"
+        className="group flex w-full items-center justify-between py-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4338CA] rounded-xl transition-colors cursor-pointer"
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
       >
-        <span className={`text-base sm:text-lg font-semibold tracking-tight transition-colors ${
+        <span className={`text-base sm:text-lg font-bold tracking-tight transition-colors ${
           isOpen 
-            ? 'text-blue-400 dark:text-blue-400 light:text-blue-600' 
-            : 'text-white dark:text-white light:text-slate-900 group-hover:text-blue-400 light:group-hover:text-blue-600'
+            ? 'text-[#4338CA] dark:text-indigo-400' 
+            : 'text-[#131B2E] dark:text-white group-hover:text-[#4338CA] dark:group-hover:text-indigo-400'
         }`}>
           {question}
         </span>
         <span className={`ml-4 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-all duration-300 ${
           isOpen
-            ? 'bg-blue-600 border-blue-500 text-white shadow-md shadow-blue-900/50 rotate-180'
-            : 'bg-white/5 dark:bg-white/5 light:bg-slate-100 border-white/10 dark:border-white/10 light:border-slate-300 text-slate-300 dark:text-slate-300 light:text-slate-600 group-hover:border-blue-400 group-hover:text-blue-400'
+            ? 'bg-[#4338CA] border-[#4338CA] text-white shadow-sm rotate-180'
+            : 'bg-[#FAF7F2] dark:bg-white/5 border-[#E2E8F0] dark:border-white/10 text-[#64748B] dark:text-slate-400 group-hover:border-[#4338CA] group-hover:text-[#4338CA]'
         }`}>
           {isOpen ? (
             <Minus className="h-4 w-4" aria-hidden="true" />
@@ -51,7 +51,7 @@ export function FAQItem({ question, answer, className = '' }: FAQItemProps) {
           isOpen ? 'max-h-96 pb-5 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <p className="text-slate-300 dark:text-slate-300 light:text-slate-600 text-sm sm:text-base leading-relaxed border-t border-white/5 dark:border-white/5 light:border-slate-100 pt-3">
+        <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base leading-relaxed border-t border-[#E2E8F0] dark:border-white/10 pt-3">
           {answer}
         </p>
       </div>
@@ -60,4 +60,5 @@ export function FAQItem({ question, answer, className = '' }: FAQItemProps) {
 }
 
 export default FAQItem;
+
 
