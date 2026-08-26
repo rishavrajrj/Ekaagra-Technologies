@@ -58,19 +58,26 @@ export default async function ProjectDetailPage({ params }: Props) {
             {project.description}
           </p>
 
-          {isValidUrl && (
-            <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+          <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
+            {isValidUrl && (
               <a
                 href={project.liveUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs uppercase tracking-wider px-7 py-4 rounded-xl shadow-xl shadow-[#4338CA]/25 transition-all"
+                className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-[#131B2E] border border-[#E2E8F0] font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-sm transition-all"
               >
-                <span>Visit Live Application</span>
-                <ExternalLink className="w-4 h-4" />
+                <span>Open Live Website</span>
+                <ExternalLink className="w-3.5 h-3.5" />
               </a>
-            </div>
-          )}
+            )}
+            <Link
+              href="/get-quote"
+              className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl shadow-xl shadow-[#4338CA]/25 transition-all"
+            >
+              <span>Build My Website</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </header>
 
         {/* Live Website Interactive Preview Showcase */}

@@ -36,7 +36,7 @@ const HERO_PROJECTS: HeroProject[] = [
     id: 'roshani',
     number: '01',
     name: 'Roshani Public School',
-    shortLabel: 'Roshani School',
+    shortLabel: 'Roshani',
     category: 'Education Website',
     badge: 'Live School Portal',
     badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -64,7 +64,7 @@ const HERO_PROJECTS: HeroProject[] = [
     id: 'palak',
     number: '03',
     name: 'Palak Enterprises',
-    shortLabel: 'Palak Enterprises',
+    shortLabel: 'Palak',
     category: 'Business Website',
     badge: 'B2B & Print Shop',
     badgeColor: 'bg-[#F97360]/10 text-[#F97360] border-[#F97360]/20',
@@ -78,7 +78,7 @@ const HERO_PROJECTS: HeroProject[] = [
     id: 'erp',
     number: '04',
     name: 'Roshani Public School ERP',
-    shortLabel: 'School ERP',
+    shortLabel: 'ERP',
     category: 'Institutional ERP',
     badge: 'Institutional System',
     badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
@@ -97,7 +97,7 @@ export default function HeroVisual() {
     HERO_PROJECTS.find((p) => p.id === activeProjectId) || HERO_PROJECTS[0];
 
   return (
-    <div className="relative w-full max-w-xl lg:max-w-2xl mx-auto space-y-4">
+    <div className="relative w-full max-w-2xl lg:max-w-none mx-auto space-y-3.5">
       {/* Ambient background glows */}
       <div className="absolute -top-12 -left-12 w-56 h-56 bg-[#F97360]/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-[#4338CA]/15 rounded-full blur-3xl pointer-events-none" />

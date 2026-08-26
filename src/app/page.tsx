@@ -48,17 +48,17 @@ export default function HomePage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-7 space-y-6 text-left">
+          <div className="grid lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+            {/* Left Content (42% width on desktop) */}
+            <div className="lg:col-span-5 space-y-6 text-left">
               {/* Eyebrow badge */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-                <span>PREMIUM WEBSITE &amp; DIGITAL PRODUCT STUDIO</span>
+                <span>WEBSITE DESIGN &amp; DEVELOPMENT STUDIO</span>
               </div>
 
               {/* Main Headline */}
-              <h1 className="text-4xl sm:text-5xl lg:text-[4rem] font-extrabold text-[#131B2E] tracking-tight leading-[1.1]">
+              <h1 className="text-3xl sm:text-4xl lg:text-[3.25rem] font-extrabold text-[#131B2E] tracking-tight leading-[1.12]">
                 Your business deserves a website{' '}
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C]">
                   people remember.
@@ -66,29 +66,29 @@ export default function HomePage() {
               </h1>
 
               {/* Supporting Copy */}
-              <p className="text-base sm:text-lg text-[#64748B] leading-relaxed max-w-2xl font-normal">
+              <p className="text-sm sm:text-base text-[#64748B] leading-relaxed max-w-xl font-normal">
                 Beautiful, fast and conversion-focused websites designed around your business — not another generic template. We craft custom digital experiences that turn visitors into loyal customers.
               </p>
 
               {/* CTAs */}
-              <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
                 <Link
                   href="/get-quote"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
                 >
                   <span>Build My Website</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   href="#portfolio"
-                  className="inline-flex items-center justify-center gap-2 px-7 py-4 bg-white/90 hover:bg-white text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/30 transition-all duration-200 shadow-sm"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-[#FAF7F2] text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/30 transition-all duration-200 shadow-sm"
                 >
                   <span>Explore Our Work</span>
                 </Link>
               </div>
 
               {/* Micro specs / Real credibility pill grid */}
-              <div className="pt-6 border-t border-[#E2E8F0] grid grid-cols-3 gap-4 max-w-lg">
+              <div className="pt-5 border-t border-[#E2E8F0] grid grid-cols-3 gap-3 max-w-md">
                 <div>
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Specialty</span>
                   <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">High-Converting Web</span>
@@ -104,8 +104,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Signature Visual Workspace */}
-            <div className="lg:col-span-5">
+            {/* Right Signature Visual Workspace (58% width on desktop) */}
+            <div className="lg:col-span-7">
               <HeroVisual />
             </div>
           </div>

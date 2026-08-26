@@ -631,7 +631,7 @@ export const pricingTiers: PricingTier[] = [
       'Customer Management (CRM)',
       'Multi-user Access & Daily Reports',
     ],
-    cta: 'Contact Us',
+    cta: 'Get a Quote',
   },
 ];
 

@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://ekaagratechnologies.in'),
   title: {
     default: 'Ekaagra Technologies | Premium Website & Digital Product Studio',
     template: '%s | Ekaagra Technologies',

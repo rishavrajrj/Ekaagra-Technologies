@@ -126,7 +126,7 @@ export default function SolutionsPage() {
               href="/projects"
               className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-[#131B2E] border border-[#E2E8F0] text-xs font-bold uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-sm"
             >
-              <span>Explore Case Studies</span>
+              <span>Explore Our Work</span>
             </Link>
           </div>
         </div>

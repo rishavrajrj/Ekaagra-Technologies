@@ -147,7 +147,7 @@ export default async function ServiceDetailPage({ params }: Props) {
               href="/get-quote" 
               className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-xl shadow-[#4338CA]/25"
             >
-              <span>Request Estimate</span>
+              <span>Build My {service.shortTitle}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
