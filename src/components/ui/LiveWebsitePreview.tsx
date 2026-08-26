@@ -365,43 +365,6 @@ export default function LiveWebsitePreview({
           </div>
         )}
       </div>
-
-      {/* ─── Footer Bar for Controls & Context ────────────────────── */}
-      <div className="bg-white px-5 py-3 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-2 text-[#64748B]">
-          <span className="font-bold text-[#131B2E]">{title}</span>
-          <span>•</span>
-          <span className="font-mono text-[11px] text-[#4338CA]">{cleanDisplayUrl}</span>
-        </div>
-
-        <div className="flex items-center gap-3">
-          {isValidUrl && viewMode !== 'live' && (
-            <button
-              type="button"
-              onClick={() => {
-                setIsActivated(true);
-                setViewMode('live');
-              }}
-              className="inline-flex items-center gap-1.5 text-xs font-bold text-[#4338CA] hover:underline cursor-pointer"
-            >
-              <Play className="w-3 h-3 fill-current" />
-              <span>Experience Live Site</span>
-            </button>
-          )}
-
-          {isValidUrl && (
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-xs font-bold text-[#131B2E] hover:text-[#4338CA] transition-colors"
-            >
-              <span>Open in New Tab</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
