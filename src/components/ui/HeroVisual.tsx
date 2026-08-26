@@ -1,19 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
-import {
-  Globe,
-  ExternalLink,
-  Zap,
-  ArrowRight,
-  GraduationCap,
-  Building2,
-  BookOpen,
-  Smartphone,
-  CheckCircle2,
-  Play
-} from 'lucide-react';
 import LiveWebsitePreview from './LiveWebsitePreview';
 
 interface HeroProject {
@@ -103,17 +90,6 @@ export default function HeroVisual() {
       <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-[#4338CA]/15 rounded-full blur-3xl pointer-events-none" />
 
 
-      {/* Floating Capability Badge 2 */}
-      <div className="hidden sm:flex absolute -bottom-4 -left-4 z-30 bg-white border border-[#E2E8F0] rounded-2xl p-3 shadow-xl items-center gap-3 animate-float-slow">
-        <div className="w-10 h-10 rounded-xl bg-[#F97360]/10 text-[#F97360] flex items-center justify-center border border-[#F97360]/20">
-          <Zap className="w-5 h-5" />
-        </div>
-        <div>
-          <div className="text-[11px] font-bold text-[#131B2E]">Custom Built Website</div>
-          <div className="text-[10px] text-[#64748B]">Designed to Convert</div>
-        </div>
-      </div>
-
       {/* ─── Compact Project Selector Bar ─────────────────────────── */}
       <div className="bg-white/90 backdrop-blur-md p-1.5 rounded-2xl border border-[#E2E8F0] shadow-md flex items-center justify-between gap-1 overflow-x-auto relative z-20">
         {HERO_PROJECTS.map((proj) => {
@@ -123,7 +99,7 @@ export default function HeroVisual() {
               key={proj.id}
               type="button"
               onClick={() => setActiveProjectId(proj.id)}
-              className={`flex-1 min-w-[110px] py-2 px-3 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer relative ${
+              className={`flex-1 min-w-[90px] sm:min-w-[100px] py-2 px-3 rounded-xl text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer relative ${
                 isActive
                   ? 'bg-[#4338CA] text-white shadow-md shadow-[#4338CA]/20 scale-[1.02]'
                   : 'text-[#64748B] hover:text-[#131B2E] hover:bg-[#FAF7F2]'
@@ -151,53 +127,10 @@ export default function HeroVisual() {
           fallbackImage={activeProject.image}
           autoLoad={true}
           showDeviceControls={true}
-          heightClass="h-[340px] sm:h-[420px] md:h-[460px]"
+          heightClass="h-[360px] sm:h-[440px] md:h-[480px]"
           isFeatured={true}
           className="shadow-2xl hover:border-[#4338CA]/40"
         />
-      </div>
-
-      {/* ─── Project Context & Action Bar ─────────────────────────── */}
-      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
-        <div className="space-y-1 max-w-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono font-bold text-[#F97360] uppercase tracking-wider">
-              {activeProject.category}
-            </span>
-            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-              <CheckCircle2 className="w-3 h-3" />
-              Verified Client
-            </span>
-          </div>
-          <h4 className="text-sm sm:text-base font-extrabold text-[#131B2E]">
-            {activeProject.name}
-          </h4>
-          <p className="text-xs text-[#64748B] line-clamp-1">
-            {activeProject.description}
-          </p>
-        </div>
-
-        {/* Capability Tags + Actions */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          <div className="hidden sm:flex items-center gap-1.5">
-            {activeProject.capabilities.map((cap) => (
-              <span
-                key={cap}
-                className="text-[10px] font-semibold bg-[#FAF7F2] text-[#475569] border border-[#E2E8F0] px-2 py-0.5 rounded-md"
-              >
-                {cap}
-              </span>
-            ))}
-          </div>
-
-          <Link
-            href={`/projects/${activeProject.slug}`}
-            className="inline-flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#3730A3] px-2.5 py-1.5 rounded-lg hover:bg-[#FAF7F2] transition-colors"
-          >
-            <span>Case Study</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
       </div>
     </div>
   );
