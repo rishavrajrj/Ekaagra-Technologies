@@ -16,6 +16,7 @@ import {
   Maximize2,
   ShieldCheck
 } from 'lucide-react';
+import ErpLiveDemo from './ErpLiveDemo';
 
 interface LiveWebsitePreviewProps {
   url?: string;
@@ -250,8 +251,15 @@ export default function LiveWebsitePreview({
 
       {/* ─── Main Viewport Canvas ─────────────────────────────────── */}
       <div className={`relative w-full ${heightClass} bg-[#F3EFEA] overflow-hidden flex items-center justify-center`}>
+        {/* State 0: Interactive Live Native ERP App */}
+        {isFrameRestricted && (
+          <div className="w-full h-full relative bg-[#0F172A]">
+            <ErpLiveDemo />
+          </div>
+        )}
+
         {/* State 1: Live Interactive Iframe */}
-        {isValidUrl && viewMode === 'live' && isActivated && !loadError && (
+        {!isFrameRestricted && isValidUrl && viewMode === 'live' && isActivated && !loadError && (
           <div className={`h-full transition-all duration-300 bg-white relative ${getDeviceWidthClass()}`}>
             {/* Loading Overlay */}
             {!isIframeLoaded && (
@@ -283,7 +291,7 @@ export default function LiveWebsitePreview({
         )}
 
         {/* State 2: Screenshot Image View (Fallback / Pre-activation) */}
-        {(viewMode === 'screenshot' || !isActivated || loadError || !isValidUrl) && (
+        {!isFrameRestricted && (viewMode === 'screenshot' || !isActivated || loadError || !isValidUrl) && (
           <div className="relative w-full h-full group/view overflow-hidden">
             {fallbackImage ? (
               <Image
@@ -301,20 +309,6 @@ export default function LiveWebsitePreview({
               </div>
             )}
 
-            {/* Direct Open Overlay for Auth / Frame Restricted Portals */}
-            {isValidUrl && isFrameRestricted && (
-              <div className="absolute inset-0 bg-[#131B2E]/20 hover:bg-[#131B2E]/40 transition-colors flex items-center justify-center p-4">
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-2xl hover:scale-105 transition-all"
-                >
-                  <span>Open Live Application</span>
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
-            )}
 
             {/* Click-to-launch live overlay banner if URL exists */}
             {isValidUrl && !isActivated && !isFrameRestricted && (
