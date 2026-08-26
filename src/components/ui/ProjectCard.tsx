@@ -49,15 +49,27 @@ export function ProjectCard({ project, className = '' }: ProjectCardProps) {
               Live Preview
             </span>
           ) : isValidUrl ? (
-            <button
-              type="button"
-              onClick={() => setIsLiveActive(true)}
-              aria-label={`Preview ${project.title} live website`}
-              className="text-[10px] font-bold text-[#4338CA] bg-[#4338CA]/10 hover:bg-[#4338CA] hover:text-white transition-colors px-2 py-0.5 rounded-full uppercase tracking-wider cursor-pointer flex items-center gap-1"
-            >
-              <Play className="w-2 h-2 fill-current" />
-              Preview Live
-            </button>
+            project.slug === 'roshani-public-school-erp' ? (
+              <a
+                href={project.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-[#4338CA] bg-[#4338CA]/10 hover:bg-[#4338CA] hover:text-white transition-colors px-2.5 py-0.5 rounded-full uppercase tracking-wider cursor-pointer flex items-center gap-1"
+              >
+                <span>Live App</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsLiveActive(true)}
+                aria-label={`Preview ${project.title} live website`}
+                className="text-[10px] font-bold text-[#4338CA] bg-[#4338CA]/10 hover:bg-[#4338CA] hover:text-white transition-colors px-2 py-0.5 rounded-full uppercase tracking-wider cursor-pointer flex items-center gap-1"
+              >
+                <Play className="w-2 h-2 fill-current" />
+                Preview Live
+              </button>
+            )
           ) : (
             <span className="text-[10px] font-bold text-[#4338CA] bg-[#4338CA]/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
               {project.category}
@@ -113,14 +125,26 @@ export function ProjectCard({ project, className = '' }: ProjectCardProps) {
             {/* Hover Action Overlay */}
             <div className="absolute inset-0 bg-[#131B2E]/60 opacity-0 group-hover/preview:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2.5 backdrop-blur-[2px] p-4">
               {isValidUrl && (
-                <button
-                  type="button"
-                  onClick={() => setIsLiveActive(true)}
-                  className="bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xl transition-all hover:scale-105 flex items-center gap-1.5 uppercase tracking-wider cursor-pointer"
-                >
-                  <Play className="w-3 h-3 fill-current" />
-                  <span>Preview Live</span>
-                </button>
+                project.slug === 'roshani-public-school-erp' ? (
+                  <a
+                    href={project.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xl transition-all hover:scale-105 flex items-center gap-1.5 uppercase tracking-wider"
+                  >
+                    <span>Open Live App</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsLiveActive(true)}
+                    className="bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xl transition-all hover:scale-105 flex items-center gap-1.5 uppercase tracking-wider cursor-pointer"
+                  >
+                    <Play className="w-3 h-3 fill-current" />
+                    <span>Preview Live</span>
+                  </button>
+                )
               )}
               <Link
                 href={`/projects/${project.slug}`}

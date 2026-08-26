@@ -16,6 +16,7 @@ interface HeroProject {
   image: string;
   description: string;
   capabilities: string[];
+  isFrameRestricted?: boolean;
 }
 
 const HERO_PROJECTS: HeroProject[] = [
@@ -74,6 +75,7 @@ const HERO_PROJECTS: HeroProject[] = [
     image: '/images/projects/roshani-public-school-erp/roshani-erp-1.jpg',
     description: 'Multi-role authentication for Admin, Teachers, Parents, and Students with fee & attendance tracking.',
     capabilities: ['Multi-Role RBAC', 'Fee Receipts', 'Attendance Cloud'],
+    isFrameRestricted: true,
   },
 ];
 
@@ -129,6 +131,7 @@ export default function HeroVisual() {
           showDeviceControls={true}
           heightClass="h-[360px] sm:h-[440px] md:h-[480px]"
           isFeatured={true}
+          isFrameRestricted={Boolean(activeProject.isFrameRestricted)}
           className="shadow-2xl hover:border-[#4338CA]/40"
         />
       </div>

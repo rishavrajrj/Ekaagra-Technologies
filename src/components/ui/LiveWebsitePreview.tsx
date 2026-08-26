@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Play,
   CheckCircle2,
-  Maximize2
+  Maximize2,
+  ShieldCheck
 } from 'lucide-react';
 
 interface LiveWebsitePreviewProps {
@@ -27,6 +28,7 @@ interface LiveWebsitePreviewProps {
   heightClass?: string;
   aspectRatio?: string;
   isFeatured?: boolean;
+  isFrameRestricted?: boolean;
 }
 
 export default function LiveWebsitePreview({
@@ -39,13 +41,16 @@ export default function LiveWebsitePreview({
   autoLoad = false,
   heightClass = 'h-[380px] sm:h-[480px] md:h-[540px]',
   isFeatured = false,
+  isFrameRestricted = false,
 }: LiveWebsitePreviewProps) {
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>(defaultDevice);
   const [isIframeLoaded, setIsIframeLoaded] = useState(false);
-  const [isActivated, setIsActivated] = useState(autoLoad);
+  const [isActivated, setIsActivated] = useState(autoLoad && !isFrameRestricted);
   const [loadError, setLoadError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [viewMode, setViewMode] = useState<'live' | 'screenshot'>(url && autoLoad ? 'live' : 'screenshot');
+  const [viewMode, setViewMode] = useState<'live' | 'screenshot'>(
+    url && autoLoad && !isFrameRestricted ? 'live' : 'screenshot'
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -62,14 +67,16 @@ export default function LiveWebsitePreview({
   useEffect(() => {
     setIsIframeLoaded(false);
     setLoadError(false);
-    if (url && (autoLoad || isActivated)) {
+    if (url && (autoLoad || isActivated) && !isFrameRestricted) {
       setViewMode('live');
+    } else {
+      setViewMode('screenshot');
     }
-  }, [url, autoLoad, isActivated]);
+  }, [url, autoLoad, isActivated, isFrameRestricted]);
 
   // Handle lazy activation via IntersectionObserver if not explicitly activated
   useEffect(() => {
-    if (autoLoad || isActivated || !isValidUrl) return;
+    if (autoLoad || isActivated || !isValidUrl || isFrameRestricted) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -88,7 +95,7 @@ export default function LiveWebsitePreview({
     }
 
     return () => observer.disconnect();
-  }, [autoLoad, isActivated, isFeatured, isValidUrl]);
+  }, [autoLoad, isActivated, isFeatured, isValidUrl, isFrameRestricted]);
 
   // Handle iframe reload/refresh
   const handleRefresh = () => {
@@ -182,7 +189,12 @@ export default function LiveWebsitePreview({
         {/* Right: Mode Toggles & External Link */}
         <div className="flex items-center gap-2">
           {/* Status Indicator */}
-          {isValidUrl && viewMode === 'live' && isActivated ? (
+          {isFrameRestricted ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+              <ShieldCheck className="w-3 h-3 text-amber-600" />
+              Secure Institutional Portal
+            </span>
+          ) : isValidUrl && viewMode === 'live' && isActivated ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Live Preview
@@ -289,8 +301,23 @@ export default function LiveWebsitePreview({
               </div>
             )}
 
+            {/* Direct Open Overlay for Auth / Frame Restricted Portals */}
+            {isValidUrl && isFrameRestricted && (
+              <div className="absolute inset-0 bg-[#131B2E]/20 hover:bg-[#131B2E]/40 transition-colors flex items-center justify-center p-4">
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-2xl hover:scale-105 transition-all"
+                >
+                  <span>Open Live Application</span>
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+
             {/* Click-to-launch live overlay banner if URL exists */}
-            {isValidUrl && !isActivated && (
+            {isValidUrl && !isActivated && !isFrameRestricted && (
               <div className="absolute inset-0 bg-[#131B2E]/40 opacity-0 group-hover/view:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 backdrop-blur-[2px] p-4">
                 <button
                   type="button"
