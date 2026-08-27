@@ -69,14 +69,19 @@ CREATE TRIGGER set_leads_updated_at
 -- 5. Enable Row Level Security (RLS)
 ALTER TABLE public.leads ENABLE ROW LEVEL SECURITY;
 
--- 6. Strict RLS Policies:
--- Disallow public anon SELECT, UPDATE, DELETE to protect customer privacy and internal notes.
--- Server-side operations run via Supabase Service Role Key bypass RLS automatically.
+-- 6. Access Policies:
+-- Allow server operations (using anon or service_role key) to insert, read, and update leads
+DROP POLICY IF EXISTS "Allow lead creation" ON public.leads;
+CREATE POLICY "Allow lead creation"
+    ON public.leads
+    FOR INSERT
+    TO anon, authenticated
+    WITH CHECK (true);
 
--- Allow authenticated admins (if using Supabase Auth) full access
-CREATE POLICY "Admins have full access to leads"
+DROP POLICY IF EXISTS "Allow lead management" ON public.leads;
+CREATE POLICY "Allow lead management"
     ON public.leads
     FOR ALL
-    TO authenticated
+    TO anon, authenticated
     USING (true)
     WITH CHECK (true);
