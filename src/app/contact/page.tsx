@@ -53,12 +53,12 @@ export default function ContactPage() {
                   <div>
                     <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">WhatsApp Support</span>
                     <a
-                      href="https://wa.me/917970733767?text=Hello%20Ekaagra%20Technologies,%20I%20would%20like%20to%20discuss%20a%20project."
+                      href="https://api.whatsapp.com/send?text=Hello%20Ekaagra%20Technologies,%20I%20would%20like%20to%20discuss%20a%20project."
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs font-bold text-emerald-600 hover:text-emerald-700 block mt-1 transition-colors"
                     >
-                      +91 7970733767 (Direct WhatsApp) ↗
+                      Connect on WhatsApp ↗
                     </a>
                   </div>
                 </div>

@@ -1,11 +1,9 @@
 import type { ContactFormData, QuoteFormData } from './types';
 
 /**
- * Single source of truth for Ekaagra Technologies Business WhatsApp number.
- * Configured via NEXT_PUBLIC_WHATSAPP_NUMBER environment variable.
- * Fallback placeholder is provided for development/staging.
+ * Fallback business WhatsApp number (can be empty to use generic direct WhatsApp share links).
  */
-export const DEFAULT_WHATSAPP_NUMBER = '917970733767';
+export const DEFAULT_WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
 
 /**
  * Sanitize any phone number string into clean digits with country code.
@@ -29,23 +27,24 @@ export function getBusinessWhatsAppNumber(): string {
   if (envNumber && envNumber.trim() !== '') {
     return sanitizePhoneNumber(envNumber);
   }
-  return DEFAULT_WHATSAPP_NUMBER;
+  return DEFAULT_WHATSAPP_NUMBER ? sanitizePhoneNumber(DEFAULT_WHATSAPP_NUMBER) : '';
 }
 
 /**
- * Generic safe helper to build wa.me WhatsApp chat URL.
+ * Generic safe helper to build WhatsApp chat URL.
  */
 export function getWhatsAppChatUrl(message: string, customNumber?: string): string {
   const targetNumber = customNumber
     ? sanitizePhoneNumber(customNumber)
     : getBusinessWhatsAppNumber();
 
-  if (!targetNumber) {
-    return '#';
+  const encodedMessage = encodeURIComponent(message.trim());
+
+  if (targetNumber) {
+    return `https://wa.me/${targetNumber}?text=${encodedMessage}`;
   }
 
-  const encodedMessage = encodeURIComponent(message.trim());
-  return `https://wa.me/${targetNumber}?text=${encodedMessage}`;
+  return `https://api.whatsapp.com/send?text=${encodedMessage}`;
 }
 
 /**
@@ -78,25 +77,21 @@ export function buildContactSubmissionWhatsAppUrl(data: ContactFormData): string
     lines.push(`Budget: ${data.budget}`);
   }
 
-  if (data.preferredContact) {
-    lines.push(`Preferred Contact: ${data.preferredContact}`);
+  if (data.description) {
+    lines.push(`Requirements: ${data.description}`);
   }
-
-  lines.push('', 'Requirement:');
-  lines.push(data.description || 'N/A');
-  lines.push('', 'Please help me with the next steps.');
 
   return getWhatsAppChatUrl(lines.join('\n'));
 }
 
 /**
- * Pre-filled message for Project Quote Form submission.
+ * Pre-filled message for Quote Form submission.
  */
 export function buildQuoteSubmissionWhatsAppUrl(data: QuoteFormData): string {
   const lines: string[] = [
     'Hello Ekaagra Technologies,',
     '',
-    'I just submitted a project quote request.',
+    'I just submitted a project quote request through your website.',
     '',
     `Name: ${data.name || 'N/A'}`,
   ];
@@ -105,27 +100,27 @@ export function buildQuoteSubmissionWhatsAppUrl(data: QuoteFormData): string {
     lines.push(`Organization: ${data.organization}`);
   }
 
-  lines.push(`Project Type: ${data.projectType || 'N/A'}`);
+  lines.push(`Solution Type: ${data.projectType || 'N/A'}`);
 
   if (data.budget) {
-    lines.push(`Budget: ${data.budget}`);
+    lines.push(`Target Budget: ${data.budget}`);
   }
 
   if (data.timeline) {
-    lines.push(`Timeline: ${data.timeline}`);
+    lines.push(`Launch Timeline: ${data.timeline}`);
   }
 
   if (data.expectedUsers) {
-    lines.push(`Expected Users: ${data.expectedUsers}`);
+    lines.push(`Expected Users/Scale: ${data.expectedUsers}`);
+  }
+
+  if (data.description) {
+    lines.push(`Project Overview: ${data.description}`);
   }
 
   if (data.features) {
-    lines.push('', 'Features:', data.features);
+    lines.push(`Key Modules: ${data.features}`);
   }
-
-  lines.push('', 'Requirements:');
-  lines.push(data.description || 'N/A');
-  lines.push('', "I'd like to discuss the project and next steps.");
 
   return getWhatsAppChatUrl(lines.join('\n'));
 }
