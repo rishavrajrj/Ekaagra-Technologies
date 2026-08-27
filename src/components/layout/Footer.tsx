@@ -34,6 +34,10 @@ export default function Footer() {
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span>Available for new website &amp; software projects</span>
             </div>
+
+            <p className="text-xs font-medium text-[#64748B] pt-1">
+              📍 Motihari, Bihar, India
+            </p>
           </div>
 
           {/* Services Column */}

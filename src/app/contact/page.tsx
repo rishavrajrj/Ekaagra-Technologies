@@ -62,8 +62,8 @@ export default function ContactPage() {
                     <MapPin className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Headquarters</span>
-                    <span className="text-xs text-[#64748B] block mt-1">Ekaagra Technologies • India</span>
+                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Studio Location</span>
+                    <span className="text-xs text-[#64748B] block mt-1">Motihari, Bihar, India</span>
                   </div>
                 </div>
               </div>
