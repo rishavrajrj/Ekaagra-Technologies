@@ -49,7 +49,19 @@ export async function submitContactForm(data: ContactFormData) {
     return { success: false, message: 'Please enter a valid phone number.' };
   }
 
-  // 1. Persist lead to Supabase Database (Source of truth)
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const adminEmail = process.env.ADMIN_EMAIL?.trim() || 'ekaagratechnologies@gmail.com';
+  const fromEmail = process.env.FROM_EMAIL?.trim() || 'Ekaagra Technologies <notifications@ekaagratechnologies.site>';
+
+  const resendConfigured = Boolean(resendApiKey && resendApiKey.length > 0);
+  const adminRecipientConfigured = Boolean(adminEmail && adminEmail.length > 0);
+  const fromConfigured = Boolean(fromEmail && fromEmail.length > 0);
+
+  console.log(
+    `[CONTACT EMAIL DEBUG]\nserverActionCalled=true\nemailFunctionCalled=true\nresendConfigured=${resendConfigured}\nadminRecipientConfigured=${adminRecipientConfigured}\nfromConfigured=${fromConfigured}`
+  );
+
+  // 1. Persist lead to Supabase Database (Source of truth if configured)
   let leadRecordId: string | undefined;
   try {
     const leadInsertRes = await createLead({
@@ -73,27 +85,27 @@ export async function submitContactForm(data: ContactFormData) {
     console.error('[CONTACT SUBMISSION] Database insertion exception:', dbError);
   }
 
-  const isResendConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim() !== '');
-
-  console.log(
-    `[CONTACT SUBMISSION] emailFunctionCalled=true adminRecipient=${maskEmail(ADMIN_EMAIL)} from=${FROM_EMAIL} resendConfigured=${isResendConfigured}`
-  );
-
-  // 2. Send instant email notification to Ekaagra Admin
+  // 2. Send instant email notification to Ekaagra Admin (Exactly 1 call)
   let adminResult;
   try {
     adminResult = await sendContactNotification(data);
   } catch (error) {
-    console.error('[CONTACT SUBMISSION] admin error:', error);
+    console.error('[CONTACT SUBMISSION] Admin notification exception:', error);
     adminResult = { success: false, method: 'error' as const, error: String(error) };
   }
 
-  // 3. Send confirmation email to the Client
+  if (adminResult.success) {
+    console.log(`[CONTACT EMAIL STATUS] EMAIL SENT (admin messageId=${adminResult.messageId})`);
+  } else {
+    console.error(`[CONTACT EMAIL STATUS] EMAIL FAILED (admin error=${adminResult.error})`);
+  }
+
+  // 3. Send confirmation email to the Client (independent of admin email)
   let clientResult;
   try {
     clientResult = await sendClientContactConfirmation(data);
   } catch (error) {
-    console.error('[CONTACT SUBMISSION] client confirmation error:', error);
+    console.error('[CONTACT SUBMISSION] Client confirmation exception:', error);
     clientResult = { success: false, method: 'error' as const, error: String(error) };
   }
 
@@ -125,7 +137,19 @@ export async function submitQuoteForm(data: QuoteFormData) {
     return { success: false, message: 'Please enter a valid phone number.' };
   }
 
-  // 1. Persist quote request to Supabase Database (Source of truth)
+  const resendApiKey = process.env.RESEND_API_KEY?.trim();
+  const adminEmail = process.env.ADMIN_EMAIL?.trim() || 'ekaagratechnologies@gmail.com';
+  const fromEmail = process.env.FROM_EMAIL?.trim() || 'Ekaagra Technologies <notifications@ekaagratechnologies.site>';
+
+  const resendConfigured = Boolean(resendApiKey && resendApiKey.length > 0);
+  const adminRecipientConfigured = Boolean(adminEmail && adminEmail.length > 0);
+  const fromConfigured = Boolean(fromEmail && fromEmail.length > 0);
+
+  console.log(
+    `[QUOTE EMAIL DEBUG]\nserverActionCalled=true\nemailFunctionCalled=true\nresendConfigured=${resendConfigured}\nadminRecipientConfigured=${adminRecipientConfigured}\nfromConfigured=${fromConfigured}`
+  );
+
+  // 1. Persist quote request to Supabase Database (Source of truth if configured)
   let leadRecordId: string | undefined;
   try {
     const leadInsertRes = await createLead({
@@ -151,27 +175,27 @@ export async function submitQuoteForm(data: QuoteFormData) {
     console.error('[QUOTE SUBMISSION] Database insertion exception:', dbError);
   }
 
-  const isResendConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_API_KEY.trim() !== '');
-
-  console.log(
-    `[QUOTE SUBMISSION] emailFunctionCalled=true adminRecipient=${maskEmail(ADMIN_EMAIL)} from=${FROM_EMAIL} resendConfigured=${isResendConfigured}`
-  );
-
-  // 2. Send instant quote notification to Ekaagra Admin
+  // 2. Send instant quote notification to Ekaagra Admin (Exactly 1 call)
   let adminResult;
   try {
     adminResult = await sendQuoteNotification(data);
   } catch (error) {
-    console.error('[QUOTE SUBMISSION] admin error:', error);
+    console.error('[QUOTE SUBMISSION] Admin notification exception:', error);
     adminResult = { success: false, method: 'error' as const, error: String(error) };
   }
 
-  // 3. Send confirmation email to the Client
+  if (adminResult.success) {
+    console.log(`[QUOTE EMAIL STATUS] EMAIL SENT (admin messageId=${adminResult.messageId})`);
+  } else {
+    console.error(`[QUOTE EMAIL STATUS] EMAIL FAILED (admin error=${adminResult.error})`);
+  }
+
+  // 3. Send confirmation email to the Client (independent of admin email)
   let clientResult;
   try {
     clientResult = await sendClientQuoteConfirmation(data);
   } catch (error) {
-    console.error('[QUOTE SUBMISSION] client confirmation error:', error);
+    console.error('[QUOTE SUBMISSION] Client confirmation exception:', error);
     clientResult = { success: false, method: 'error' as const, error: String(error) };
   }
 

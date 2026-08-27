@@ -46,22 +46,6 @@ export default function ContactPage() {
               </div>
 
               <div className="space-y-4 pt-4 border-t border-[#E2E8F0]">
-                <div className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
-                  <div className="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl shrink-0">
-                    <MessageCircle className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">WhatsApp Support</span>
-                    <a
-                      href="https://api.whatsapp.com/send?text=Hello%20Ekaagra%20Technologies,%20I%20would%20like%20to%20discuss%20a%20project."
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 block mt-1 transition-colors"
-                    >
-                      Connect on WhatsApp ↗
-                    </a>
-                  </div>
-                </div>
 
                 <div className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
                   <div className="p-3 bg-[#4338CA]/10 text-[#4338CA] rounded-xl shrink-0">

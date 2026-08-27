@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { submitQuoteForm } from '@/app/actions';
 import { serviceOptions, budgetOptions, timelineOptions } from '@/lib/data';
-import { buildQuoteSubmissionWhatsAppUrl } from '@/lib/whatsapp';
 import type { QuoteFormData } from '@/lib/types';
-import { Send, CheckCircle2, AlertCircle, MessageCircle, RefreshCw } from 'lucide-react';
+import { Send, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function QuoteForm() {
   const [loading, setLoading] = useState(false);
@@ -68,53 +67,28 @@ export default function QuoteForm() {
 
   return (
     <div className="space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-[#E2E8F0] shadow-2xl">
-      {/* ─── Success Screen with WhatsApp Quick Action ──────────────── */}
+      {/* ─── Success Screen ────────────────────────────────────────── */}
       {successMsg && submittedData ? (
-        <div className="space-y-6 animate-fadeIn">
-          <div className="p-6 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-3">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <h4 className="text-base font-extrabold text-emerald-950">
-                  Quote Request Received!
-                </h4>
-                <p className="text-xs sm:text-sm text-emerald-800 leading-relaxed">
-                  {successMsg} A confirmation email with your submitted scope has been sent to{' '}
-                  <strong className="font-semibold">{submittedData.email}</strong>.
-                </p>
-              </div>
+        <div className="space-y-6 animate-fadeIn py-4">
+          <div className="p-6 sm:p-8 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-4 text-center">
+            <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/30">
+              <CheckCircle2 className="w-7 h-7" />
             </div>
-          </div>
-
-          {/* Contextual WhatsApp Quick Action */}
-          <div className="p-6 bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl text-center space-y-4">
-            <div>
-              <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
-                Direct Engineering Line
-              </span>
-              <h5 className="text-base font-extrabold text-[#131B2E] mt-1">
-                Want to discuss your project now?
-              </h5>
-              <p className="text-xs text-[#64748B] mt-0.5">
-                Connect directly with our lead architect on WhatsApp with your submitted requirements.
+            <div className="space-y-2">
+              <h4 className="text-xl font-extrabold text-emerald-950">
+                Quote Request Received!
+              </h4>
+              <p className="text-xs sm:text-sm text-emerald-800 leading-relaxed max-w-md mx-auto">
+                {successMsg} A confirmation email with your submitted scope has been dispatched to{' '}
+                <strong className="font-semibold text-emerald-950">{submittedData.email}</strong>.
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-1">
-              <a
-                href={buildQuoteSubmissionWhatsAppUrl(submittedData)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-6 rounded-xl shadow-lg shadow-[#25D366]/25 transition-all text-xs uppercase tracking-wider cursor-pointer"
-              >
-                <MessageCircle className="w-4 h-4 fill-current" />
-                <span>Continue on WhatsApp</span>
-              </a>
-
+            <div className="pt-2">
               <button
                 type="button"
                 onClick={handleReset}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-white hover:bg-slate-50 text-[#64748B] hover:text-[#131B2E] font-bold py-3.5 px-5 rounded-xl border border-[#E2E8F0] transition-colors text-xs uppercase tracking-wider cursor-pointer"
+                className="inline-flex items-center justify-center gap-1.5 bg-white hover:bg-emerald-100/50 text-[#131B2E] font-bold py-3 px-5 rounded-xl border border-emerald-300 transition-colors text-xs uppercase tracking-wider cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Submit Another Request</span>
@@ -173,7 +147,7 @@ export default function QuoteForm() {
               </div>
               <div>
                 <label htmlFor="phone" className="block text-xs font-bold text-[#131B2E] uppercase tracking-wider mb-2">
-                  Phone / WhatsApp <span className="text-[#F97360]">*</span>
+                  Phone Number <span className="text-[#F97360]">*</span>
                 </label>
                 <input
                   type="tel"
