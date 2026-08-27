@@ -78,7 +78,6 @@ export interface ProjectBenchmark {
   highlights: string[];
 }
 
-
 // ─── FAQ Types ───────────────────────────────────────────────────
 export interface FAQ {
   question: string;
@@ -117,36 +116,88 @@ export interface Differentiator {
 // ─── Form Types ──────────────────────────────────────────────────
 export interface ContactFormData {
   name: string;
-  organization: string;
+  organization?: string;
   phone: string;
   email: string;
   service: string;
-  budget: string;
+  budget?: string;
   description: string;
-  preferredContact: string;
+  preferredContact?: string;
 }
 
 export interface QuoteFormData {
   name: string;
-  organization: string;
+  organization?: string;
   phone: string;
   email: string;
   projectType: string;
   description: string;
-  features: string;
-  expectedUsers: string;
-  budget: string;
-  timeline: string;
+  features?: string;
+  expectedUsers?: string;
+  budget?: string;
+  timeline?: string;
 }
 
-// ─── Enquiry Status ──────────────────────────────────────────────
-export type EnquiryStatus =
-  | 'new'
-  | 'contacted'
-  | 'in_discussion'
-  | 'proposal_sent'
-  | 'won'
-  | 'closed';
+// ─── Lead Management Types (Supabase) ────────────────────────────
+export type LeadStatus =
+  | 'NEW'
+  | 'CONTACTED'
+  | 'QUALIFIED'
+  | 'PROPOSAL_SENT'
+  | 'CONVERTED'
+  | 'LOST';
+
+export type LeadType = 'CONTACT' | 'QUOTE' | 'WHATSAPP';
+export type LeadSource = 'CONTACT_FORM' | 'QUOTE_FORM' | 'WHATSAPP';
+
+export interface Lead {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  source: LeadSource;
+  type: LeadType;
+  status: LeadStatus;
+
+  name: string;
+  organization?: string | null;
+  phone: string;
+  email: string;
+
+  service?: string | null;
+  project_type?: string | null;
+  budget?: string | null;
+  timeline?: string | null;
+  expected_users?: string | null;
+  features?: string | null;
+  description: string;
+  preferred_contact?: string | null;
+
+  contacted_at?: string | null;
+  proposal_sent_at?: string | null;
+  converted_at?: string | null;
+  lost_at?: string | null;
+
+  notes?: string | null;
+}
+
+export interface LeadFilter {
+  query?: string;
+  status?: LeadStatus | 'ALL';
+  type?: LeadType | 'ALL';
+  source?: LeadSource | 'ALL';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface LeadStats {
+  total: number;
+  new: number;
+  contacted: number;
+  qualified: number;
+  proposalSent: number;
+  converted: number;
+  lost: number;
+}
 
 // ─── Navigation Types ────────────────────────────────────────────
 export interface NavItem {
