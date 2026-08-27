@@ -9,7 +9,7 @@ import {
 
 export const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'ekaagratechnologies@gmail.com';
 export const FROM_EMAIL =
-  process.env.FROM_EMAIL || 'Ekaagra Technologies <onboarding@resend.dev>';
+  process.env.FROM_EMAIL || 'Ekaagra Technologies <notifications@ekaagratechnologies.site>';
 
 export interface EmailDispatchResult {
   success: boolean;
@@ -26,6 +26,16 @@ function getClientWhatsAppLink(phone: string, clientName: string): string {
   const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
   const greeting = `Hi ${clientName}, thank you for reaching out to Ekaagra Technologies! We received your enquiry and would love to discuss your requirements.`;
   return getWhatsAppChatUrl(greeting, formattedPhone);
+}
+
+/**
+ * Helper to mask email for safe server logging
+ */
+function maskEmail(email: string): string {
+  if (!email || !email.includes('@')) return 'unknown';
+  const [user, domain] = email.split('@');
+  if (user.length <= 2) return `*@${domain}`;
+  return `${user.slice(0, 2)}***@${domain}`;
 }
 
 /**
@@ -426,15 +436,21 @@ export async function sendEmail({
       });
 
       if (res.error) {
-        console.error(`[EMAIL FAILED] provider: resend | recipient: ${to} | error: ${res.error.message}`);
+        console.error(
+          `[RESEND RESULT] success=false recipient=${maskEmail(to)} error=${res.error.message}`
+        );
         return { success: false, method: 'resend', error: res.error.message };
       }
 
-      console.log(`[EMAIL SENT] provider: resend | messageId: ${res.data?.id} | recipient: ${to}`);
+      console.log(
+        `[RESEND RESULT] success=true messageId=${res.data?.id} recipient=${maskEmail(to)}`
+      );
       return { success: true, method: 'resend', messageId: res.data?.id };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error(`[EMAIL EXCEPTION] provider: resend | recipient: ${to} | error: ${errorMessage}`);
+      console.error(
+        `[RESEND RESULT] success=false recipient=${maskEmail(to)} exception=${errorMessage}`
+      );
       return { success: false, method: 'error', error: errorMessage };
     }
   }
@@ -465,18 +481,22 @@ export async function sendEmail({
         replyTo: replyTo || undefined,
       });
 
-      console.log(`[EMAIL SENT] provider: smtp | messageId: ${info.messageId} | recipient: ${to}`);
+      console.log(
+        `[SMTP RESULT] success=true messageId=${info.messageId} recipient=${maskEmail(to)}`
+      );
       return { success: true, method: 'smtp', messageId: info.messageId };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      console.error(`[EMAIL EXCEPTION] provider: smtp | recipient: ${to} | error: ${errorMessage}`);
+      console.error(
+        `[SMTP RESULT] success=false recipient=${maskEmail(to)} exception=${errorMessage}`
+      );
       return { success: false, method: 'error', error: errorMessage };
     }
   }
 
   // 3. Fallback when no email provider credentials exist
   console.warn(
-    `[EMAIL UNCONFIGURED] Lead received, but email delivery credentials are not set. (Set RESEND_API_KEY in .env.local or Vercel Environment Variables). Intended recipient: <${to}>`
+    `[EMAIL UNCONFIGURED] Lead received, but email delivery credentials are not set. (Set RESEND_API_KEY in .env.local or Vercel Environment Variables). Intended recipient: <${maskEmail(to)}>`
   );
   return {
     success: false,
