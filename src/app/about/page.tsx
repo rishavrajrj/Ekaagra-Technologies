@@ -3,8 +3,9 @@ import Link from 'next/link';
 import { ShieldCheck, Sparkles, Zap, HeartHandshake, ArrowRight } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'About Us | Ekaagra Technologies',
-  description: 'Ekaagra Technologies is an independent website design and technology studio focused on creating memorable digital experiences and practical software for growing organizations.',
+  title: 'About Us',
+  description:
+    'Ekaagra Technologies is an independent website design and digital development studio creating high-converting websites, web platforms, and custom software systems.',
 };
 
 export default function AboutPage() {
@@ -58,7 +59,7 @@ export default function AboutPage() {
                 <h3 className="text-xl font-extrabold text-[#131B2E]">Speed &amp; Mobile Polish</h3>
               </div>
               <p className="text-sm text-[#64748B] leading-relaxed">
-                Most visitors view your site on their phone. We engineer lightweight, responsive code with sub-500ms load times and seamless navigation.
+                Most visitors view your site on their phone. We engineer lightweight, responsive code with sub-500ms load times and fluid navigation.
               </p>
             </div>
 
@@ -105,7 +106,7 @@ export default function AboutPage() {
               { label: 'Clear communication', desc: 'Keeping you informed every step of the way without confusing technical jargon.' },
               { label: 'Practical solutions', desc: 'Focusing on what works and delivers real measurable leads and enquiries.' },
               { label: 'Maintainable code', desc: 'Building foundations that can easily grow into custom portals or mobile apps.' },
-              { label: 'Honest timelines', desc: 'Setting realistic expectations and guaranteeing client review checkpoints.' },
+              { label: 'Honest timelines', desc: 'Setting realistic expectations with clear client review checkpoints before launch.' },
             ].map((item, idx) => (
               <div key={idx} className="py-6 flex items-start gap-4">
                 <span className="text-xs font-mono font-bold text-[#4338CA] mt-1">0{idx + 1}</span>
@@ -131,7 +132,7 @@ export default function AboutPage() {
               href="/get-quote" 
               className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-xl shadow-[#4338CA]/25"
             >
-              <span>Build My Website</span>
+              <span>Work With Us</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link

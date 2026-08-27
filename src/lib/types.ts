@@ -15,7 +15,9 @@ export interface Service {
 export interface Project {
   slug: string;
   title: string;
+  shortLabel?: string;
   category: string;
+  badge?: string;
   description: string;
   overview: string;
   problem: string;
@@ -26,6 +28,7 @@ export interface Project {
   images?: string[];
   liveUrl?: string;
   githubUrl?: string;
+  isFrameRestricted?: boolean;
 }
 
 // ─── Technology Types ────────────────────────────────────────────
@@ -91,10 +94,17 @@ export interface ProcessStep {
 
 // ─── Solution Types ──────────────────────────────────────────────
 export interface Solution {
+  id?: string;
   title: string;
+  industry?: string;
+  tagline?: string;
   description: string;
+  businessProblem?: string;
   features: string[];
   icon: string;
+  badge?: string;
+  accent?: string;
+  exampleProjectSlug?: string;
 }
 
 // ─── Why Ekaagra Types ───────────────────────────────────────────

@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!project) return { title: 'Project Not Found | Ekaagra Technologies' };
 
   return {
-    title: `${project.title} — Case Study | Ekaagra Technologies`,
+    title: `${project.title} — Case Study`,
     description: project.description,
   };
 }
@@ -100,6 +100,7 @@ export default async function ProjectDetailPage({ params }: Props) {
               showDeviceControls={true}
               heightClass="h-[440px] sm:h-[560px] md:h-[620px]"
               isFeatured={true}
+              isFrameRestricted={project.isFrameRestricted}
             />
           </section>
         ) : (
@@ -113,6 +114,7 @@ export default async function ProjectDetailPage({ params }: Props) {
                   src={project.image} 
                   alt={project.title} 
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 1000px"
                   className="object-contain"
                   priority
                 />

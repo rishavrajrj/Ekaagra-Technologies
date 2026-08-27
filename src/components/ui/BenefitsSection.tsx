@@ -1,5 +1,3 @@
-'use client';
-
 import {
   Sparkles,
   Smartphone,
@@ -16,58 +14,58 @@ export default function BenefitsSection() {
     {
       icon: Sparkles,
       color: 'bg-[#4338CA]/10 text-[#4338CA] border-[#4338CA]/20',
-      title: 'Beautiful by Design',
+      title: 'Custom-Crafted Design',
       description:
-        'A customized visual identity crafted around your specific brand personality, colors, and audience — never a generic template.',
+        'A distinctive visual identity tailored to your brand, colors, and customers — never a cookie-cutter template.',
     },
     {
       icon: Smartphone,
       color: 'bg-[#F97360]/10 text-[#F97360] border-[#F97360]/20',
-      title: 'Mobile First & Responsive',
+      title: 'Built for Mobile Screens',
       description:
-        'Most of your customers visit on mobile. Every layout is handcrafted to feel fast, effortless, and intuitive on touchscreens.',
+        'Most visitors browse on their phones. Every page feels fast, clear, and easy to navigate with touch interactions.',
     },
     {
       icon: Zap,
       color: 'bg-[#F4C95D]/20 text-[#B45309] border-[#F4C95D]/40',
-      title: 'Fast & Lightweight',
+      title: 'Fast Page Speeds',
       description:
-        'Engineered with modern standards for smooth page navigation and fast loading across mobile connections.',
+        'Clean, lightweight code ensuring pages open quickly without frustrating loading delays on mobile networks.',
     },
     {
       icon: Search,
       color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      title: 'Search & SEO Foundation',
+      title: 'Google Search Foundation',
       description:
-        'Structured with clean semantic HTML, descriptive page titles, and Schema.org metadata for organic search discovery.',
+        'Structured with clean semantic HTML, clear page titles, and search metadata for organic business discovery.',
     },
     {
       icon: MessageCircle,
       color: 'bg-[#4338CA]/10 text-[#4338CA] border-[#4338CA]/20',
-      title: 'Easy to Contact & Inquire',
+      title: '1-Tap WhatsApp & Call',
       description:
-        'Direct WhatsApp chat buttons, click-to-call links, interactive Google Maps, and validated enquiry forms that deliver leads to you.',
+        'Direct WhatsApp buttons, click-to-call links, Google Maps directions, and simple forms that make reaching you effortless.',
     },
     {
       icon: ShieldCheck,
       color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      title: 'Secure & Reliable',
+      title: 'Secure & High Uptime',
       description:
-        'Automated SSL encryption, secure forms, high reliability, and dependable hosting on modern cloud infrastructure.',
+        'Automated SSL encryption, secure forms, and dependable hosting on modern cloud networks.',
     },
     {
       icon: TrendingUp,
       color: 'bg-[#F97360]/10 text-[#F97360] border-[#F97360]/20',
-      title: 'Scalable Architecture',
+      title: 'Grows with Your Business',
       description:
-        'Start with a multi-page website and upgrade seamlessly to dynamic portals, school ERP, or mobile apps as you grow.',
+        'Start with a focused multi-page website and expand into dynamic portals, ERP, or mobile apps whenever you need.',
     },
     {
       icon: Headphones,
       color: 'bg-[#F4C95D]/20 text-[#B45309] border-[#F4C95D]/40',
       title: 'Ongoing Support & Care',
       description:
-        'We stand behind our work with post-launch domain guidance, content updates, maintenance, and responsive technical support.',
+        'Post-launch assistance, domain and DNS guidance, content updates, and reliable technical help when you need it.',
     },
   ];
 

@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!service) return { title: 'Service Not Found | Ekaagra Technologies' };
 
   return {
-    title: `${service.title} | Ekaagra Technologies`,
+    title: service.title,
     description: service.description,
   };
 }
@@ -73,7 +73,7 @@ export default async function ServiceDetailPage({ params }: Props) {
               href="/get-quote" 
               className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs uppercase tracking-wider px-7 py-4 rounded-xl shadow-xl shadow-[#4338CA]/25 transition-all"
             >
-              <span>Build My {service.shortTitle}</span>
+              <span>Get a Quote</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
@@ -147,7 +147,7 @@ export default async function ServiceDetailPage({ params }: Props) {
               href="/get-quote" 
               className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white px-8 py-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-xl shadow-[#4338CA]/25"
             >
-              <span>Build My {service.shortTitle}</span>
+              <span>Get a Quote</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

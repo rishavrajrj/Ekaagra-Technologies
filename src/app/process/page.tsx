@@ -4,8 +4,9 @@ import ProcessTimeline from '@/components/ui/ProcessTimeline';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Our 6-Step Process | Ekaagra Technologies',
-  description: 'A structured, transparent development process from initial discovery to design, client approval, and final launch.',
+  title: 'How We Work',
+  description:
+    'A structured, predictable 6-step development roadmap from initial discovery to design, client review, and final launch.',
 };
 
 export default function ProcessPage() {
@@ -23,7 +24,7 @@ export default function ProcessPage() {
             How We Work
           </h1>
           <p className="text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed">
-            A structured, predictable 6-step roadmap with guaranteed client review checkpoints before anything goes live.
+            A structured, predictable 6-step roadmap with client review checkpoints before anything goes live.
           </p>
         </div>
       </section>
@@ -47,7 +48,7 @@ export default function ProcessPage() {
               href="/get-quote" 
               className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-xl shadow-[#4338CA]/25"
             >
-              <span>Build My Website</span>
+              <span>Get a Quote</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link

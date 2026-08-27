@@ -4,8 +4,9 @@ import ServicesList from '@/components/ui/ServicesList';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Our Services & Capabilities | Ekaagra Technologies',
-  description: 'Comprehensive design and technology services offered by Ekaagra Technologies including websites, web apps, Android apps, custom software, and School ERP.',
+  title: 'Services',
+  description:
+    'Explore our comprehensive design and digital development services: custom websites, web applications, Android applications, School ERP, and business software.',
 };
 
 export default function ServicesPage() {
@@ -17,13 +18,13 @@ export default function ServicesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4 relative z-10">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
             <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
-            END-TO-END CAPABILITIES
+            WHAT WE BUILD
           </span>
           <h1 className="text-4xl sm:text-6xl font-extrabold text-[#131B2E] tracking-tight">
-            Digital experiences built around your business.
+            Services Built Around Your Brand
           </h1>
           <p className="text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed">
-            Beautiful, high-converting websites, native mobile applications, and custom business software engineered around real operational needs.
+            Custom websites, interactive web applications, native Android apps, School ERP platforms, and bespoke business software.
           </p>
         </div>
       </section>
@@ -49,7 +50,7 @@ export default function ServicesPage() {
               href="/get-quote" 
               className="inline-flex items-center gap-2 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white px-8 py-4 text-xs font-bold uppercase tracking-wider shadow-xl shadow-[#4338CA]/25 transition-all"
             >
-              <span>Build My Website</span>
+              <span>Get a Quote</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link 

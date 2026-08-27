@@ -3,8 +3,8 @@ import ContactForm from '@/components/forms/ContactForm';
 import { Mail, Phone, Clock, MapPin, Sparkles, MessageCircle } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | Ekaagra Technologies',
-  description: 'Have a project, website design, or software requirement in mind? Tell us what you need and receive a detailed roadmap and estimate.',
+  title: 'Contact Us',
+  description: 'Have a project, website design, or software requirement in mind? Tell us what you need and receive a detailed proposal and estimate.',
 };
 
 export default function ContactPage() {
@@ -41,28 +41,35 @@ export default function ContactPage() {
                   Direct Consultation &amp; Inquiry
                 </h2>
                 <p className="text-sm text-[#64748B] leading-relaxed">
-                  We review every project proposal within 24 hours. Whether you need a brand-new website, an institutional School ERP, or a custom Android application, we are ready to help.
+                  We review every project proposal promptly within 24 hours. If you are planning a new business website, an institutional school portal, or custom software, we are ready to help.
                 </p>
               </div>
 
               <div className="space-y-4 pt-4 border-t border-[#E2E8F0]">
                 <div className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
-                  <div className="p-3 bg-[#4338CA]/10 text-[#4338CA] rounded-xl shrink-0">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Fast Response Guarantee</span>
-                    <span className="text-xs text-[#64748B] block mt-1">Proposal &amp; estimate within 24 hours</span>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
                   <div className="p-3 bg-emerald-500/10 text-emerald-600 rounded-xl shrink-0">
                     <MessageCircle className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Direct Collaboration</span>
-                    <span className="text-xs text-[#64748B] block mt-1">Direct communication with our technical team</span>
+                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">WhatsApp Support</span>
+                    <a
+                      href="https://wa.me/917970733767?text=Hello%20Ekaagra%20Technologies,%20I%20would%20like%20to%20discuss%20a%20project."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-emerald-600 hover:text-emerald-700 block mt-1 transition-colors"
+                    >
+                      +91 7970733767 (Direct WhatsApp) ↗
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
+                  <div className="p-3 bg-[#4338CA]/10 text-[#4338CA] rounded-xl shrink-0">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Prompt Consultation</span>
+                    <span className="text-xs text-[#64748B] block mt-1">Proposal &amp; estimate within 24 hours</span>
                   </div>
                 </div>
 

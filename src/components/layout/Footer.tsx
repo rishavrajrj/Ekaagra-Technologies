@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { services } from '@/lib/data';
 import { ArrowRight, Sparkles, Mail, ShieldCheck, Heart } from 'lucide-react';
+import Logo from '@/components/ui/Logo';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -21,22 +22,12 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 pb-12 border-b border-[#E2E8F0]">
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2 group" aria-label="Ekaagra Technologies Home">
-              <div className="h-10 w-auto flex items-center justify-center overflow-hidden rounded-xl group-hover:scale-105 transition-transform">
-                <video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="h-10 w-auto max-w-[180px] object-contain pointer-events-none"
-                >
-                  <source src="/images/logo/logo.mp4" type="video/mp4" />
-                </video>
-              </div>
+            <Link href="/" className="inline-flex items-center gap-2 group transition-transform duration-200 hover:scale-[1.02]" aria-label="Ekaagra Technologies Home">
+              <Logo size="md" />
             </Link>
             
             <p className="text-sm text-[#64748B] max-w-sm leading-relaxed">
-              We design and build websites, web applications, mobile apps, and custom business systems designed to make your organization look world-class.
+              We design and build custom websites, web applications, mobile apps, and business software systems designed to represent your organization with clarity and authority.
             </p>
 
             <div className="flex items-center gap-2 text-xs font-semibold text-[#131B2E]">
@@ -57,7 +48,7 @@ export default function Footer() {
                     href={`/services/${service.slug}`}
                     className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
                   >
-                    {service.shortTitle}
+                    {service.title}
                   </Link>
                 </li>
               ))}
@@ -72,17 +63,17 @@ export default function Footer() {
             <ul className="space-y-2.5">
               <li>
                 <Link href="/projects" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
-                  Our Work &amp; Portfolio
+                  Our Work
+                </Link>
+              </li>
+              <li>
+                <Link href="/services" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
+                  Services
                 </Link>
               </li>
               <li>
                 <Link href="/solutions" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
                   Industry Solutions
-                </Link>
-              </li>
-              <li>
-                <Link href="/services" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
-                  All Services
                 </Link>
               </li>
               <li>
@@ -92,12 +83,12 @@ export default function Footer() {
               </li>
               <li>
                 <Link href="/pricing" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
-                  Pricing &amp; Rates
+                  Pricing &amp; Packages
                 </Link>
               </li>
               <li>
                 <Link href="/about" className="text-xs text-[#64748B] hover:text-[#4338CA] transition-colors">
-                  About Studio
+                  About Us
                 </Link>
               </li>
               <li>

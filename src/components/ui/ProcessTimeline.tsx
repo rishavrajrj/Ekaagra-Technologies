@@ -1,5 +1,3 @@
-'use client';
-
 import { Sparkles, CheckCircle2, Eye, Rocket, Compass, Layout, Code2 } from 'lucide-react';
 
 export default function ProcessTimeline() {

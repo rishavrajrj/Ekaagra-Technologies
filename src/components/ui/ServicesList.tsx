@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import {
   Globe,
@@ -28,9 +26,11 @@ const iconMap: Record<string, LucideIcon> = {
 };
 
 export default function ServicesList() {
+  const coreServices = services.slice(0, 5);
+
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-      {services.map((service, index) => {
+      {coreServices.map((service, index) => {
         const Icon = iconMap[service.icon] || Code2;
         const num = String(index + 1).padStart(2, '0');
 

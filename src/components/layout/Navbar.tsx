@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
+import Logo from '@/components/ui/Logo';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -65,23 +66,13 @@ export default function Navbar() {
           className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between"
           aria-label="Main navigation"
         >
-          {/* Logo Video */}
+          {/* Logo Mark */}
           <Link
             href="/"
-            className="flex items-center gap-2 group shrink-0"
+            className="flex items-center gap-2 group shrink-0 transition-transform duration-200 hover:scale-[1.02]"
             aria-label="Ekaagra Technologies Home"
           >
-            <div className="h-10 sm:h-11 w-auto flex items-center justify-center overflow-hidden rounded-xl group-hover:scale-105 transition-transform">
-              <video
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="h-10 sm:h-11 w-auto max-w-[160px] sm:max-w-[200px] object-contain pointer-events-none"
-              >
-                <source src="/images/logo/logo.mp4" type="video/mp4" />
-              </video>
-            </div>
+            <Logo size="md" />
           </Link>
 
           {/* Desktop Navigation Links */}

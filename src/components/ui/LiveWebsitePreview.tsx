@@ -9,25 +9,51 @@ import {
   Tablet,
   Smartphone,
   RotateCw,
-  Sparkles,
-  AlertCircle,
-  Play,
-  CheckCircle2,
-  Maximize2,
-  ShieldCheck
 } from 'lucide-react';
-import ErpLiveDemo from './ErpLiveDemo';
+
+export type DeviceType = 'laptop' | 'tablet' | 'mobile';
+
+export interface DeviceConfig {
+  id: DeviceType;
+  label: string;
+  viewportWidth: number;
+  viewportHeight: number;
+  dimensionLabel: string;
+}
+
+export const DEVICE_CONFIGS: Record<DeviceType, DeviceConfig> = {
+  laptop: {
+    id: 'laptop',
+    label: 'Laptop',
+    viewportWidth: 1440,
+    viewportHeight: 900,
+    dimensionLabel: 'Laptop · 1440px',
+  },
+  tablet: {
+    id: 'tablet',
+    label: 'Tablet',
+    viewportWidth: 768,
+    viewportHeight: 1024,
+    dimensionLabel: 'Tablet · 768px',
+  },
+  mobile: {
+    id: 'mobile',
+    label: 'Mobile',
+    viewportWidth: 390,
+    viewportHeight: 844,
+    dimensionLabel: 'Mobile · 390px',
+  },
+};
 
 interface LiveWebsitePreviewProps {
   url?: string;
   title: string;
   fallbackImage?: string;
   className?: string;
-  defaultDevice?: 'desktop' | 'tablet' | 'mobile';
+  defaultDevice?: 'laptop' | 'desktop' | 'tablet' | 'mobile';
   showDeviceControls?: boolean;
   autoLoad?: boolean;
   heightClass?: string;
-  aspectRatio?: string;
   isFeatured?: boolean;
   isFrameRestricted?: boolean;
 }
@@ -37,23 +63,31 @@ export default function LiveWebsitePreview({
   title,
   fallbackImage,
   className = '',
-  defaultDevice = 'desktop',
+  defaultDevice = 'laptop',
   showDeviceControls = true,
   autoLoad = false,
   heightClass = 'h-[380px] sm:h-[480px] md:h-[540px]',
   isFeatured = false,
   isFrameRestricted = false,
 }: LiveWebsitePreviewProps) {
-  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>(defaultDevice);
+  // Normalize defaultDevice to valid DeviceType
+  const initialDevice: DeviceType =
+    defaultDevice === 'desktop' ? 'laptop' : (defaultDevice as DeviceType);
+
+  const [device, setDevice] = useState<DeviceType>(initialDevice);
   const [isIframeLoaded, setIsIframeLoaded] = useState(false);
   const [isActivated, setIsActivated] = useState(autoLoad && !isFrameRestricted);
   const [loadError, setLoadError] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [isTakingLong, setIsTakingLong] = useState(false);
   const [viewMode, setViewMode] = useState<'live' | 'screenshot'>(
     url && autoLoad && !isFrameRestricted ? 'live' : 'screenshot'
   );
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
 
   // Validate URL protocol
   const isValidUrl = Boolean(
@@ -63,6 +97,67 @@ export default function LiveWebsitePreview({
   const cleanDisplayUrl = isValidUrl
     ? url!.replace(/^https?:\/\//, '').replace(/\/$/, '')
     : `${title.toLowerCase().replace(/[^a-z0-9]/g, '')}.com`;
+
+  // Timeout guard for iframe loading overlay
+  useEffect(() => {
+    if (!isActivated || viewMode !== 'live' || !isValidUrl || isFrameRestricted) {
+      return;
+    }
+
+    setIsTakingLong(false);
+
+    const warnTimer = setTimeout(() => {
+      if (!isIframeLoaded) {
+        setIsTakingLong(true);
+      }
+    }, 3500);
+
+    const autoReleaseTimer = setTimeout(() => {
+      setIsIframeLoaded(true);
+    }, 7500);
+
+    return () => {
+      clearTimeout(warnTimer);
+      clearTimeout(autoReleaseTimer);
+    };
+  }, [isActivated, viewMode, isValidUrl, reloadKey, url, isIframeLoaded, isFrameRestricted]);
+
+  // Measure canvas size dynamically
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+
+    const updateDimensions = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        setCanvasDimensions({
+          width: Math.floor(rect.width),
+          height: Math.floor(rect.height),
+        });
+      }
+    };
+
+    updateDimensions();
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          setCanvasDimensions({
+            width: Math.floor(entry.contentRect.width),
+            height: Math.floor(entry.contentRect.height),
+          });
+        }
+      }
+    });
+
+    resizeObserver.observe(el);
+    window.addEventListener('resize', updateDimensions);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateDimensions);
+    };
+  }, []);
 
   // Handle URL change when switching projects
   useEffect(() => {
@@ -75,157 +170,148 @@ export default function LiveWebsitePreview({
     }
   }, [url, autoLoad, isActivated, isFrameRestricted]);
 
-  // Handle lazy activation via IntersectionObserver if not explicitly activated
-  useEffect(() => {
-    if (autoLoad || isActivated || !isValidUrl || isFrameRestricted) return;
+  const handleDeviceChange = (newDevice: DeviceType) => {
+    setDevice(newDevice);
+  };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && isFeatured) {
-            setIsActivated(true);
-            setViewMode('live');
-          }
-        });
-      },
-      { rootMargin: '100px' }
-    );
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [autoLoad, isActivated, isFeatured, isValidUrl, isFrameRestricted]);
-
-  // Handle iframe reload/refresh
   const handleRefresh = () => {
-    if (!iframeRef.current || !isValidUrl) return;
     setIsRefreshing(true);
     setIsIframeLoaded(false);
     setLoadError(false);
-    iframeRef.current.src = url!;
-    setTimeout(() => setIsRefreshing(false), 800);
+    setReloadKey((prev) => prev + 1);
+    setTimeout(() => setIsRefreshing(false), 600);
   };
 
-  // Device width wrappers
-  const getDeviceWidthClass = () => {
-    switch (device) {
-      case 'mobile':
-        return 'max-w-[390px] shadow-2xl rounded-2xl mx-auto border-x border-b border-[#E2E8F0]';
-      case 'tablet':
-        return 'max-w-[768px] shadow-xl rounded-xl mx-auto';
-      default:
-        return 'w-full';
-    }
-  };
+  // Viewport calculation & scale factors
+  const cWidth = canvasDimensions.width || 600;
+  const cHeight = canvasDimensions.height || 400;
+
+  let scale = 1;
+  let visualFrameWidth: number | string = '100%';
+  let visualFrameHeight: number | string = '100%';
+  let internalIframeWidth = 1440;
+  let internalIframeHeight = 900;
+  let visualScreenWidth: number | string = '100%';
+  let visualScreenHeight: number | string = '100%';
+
+  if (device === 'laptop') {
+    scale = Math.min(1, cWidth / 1440);
+    internalIframeWidth = 1440;
+    internalIframeHeight = Math.max(900, Math.round(cHeight / (scale || 1)));
+    visualFrameWidth = '100%';
+    visualFrameHeight = '100%';
+  } else if (device === 'tablet') {
+    const tabletPaddingX = 24;
+    const tabletPaddingY = 32;
+    const availableW = Math.max(280, cWidth - tabletPaddingX);
+    const availableH = Math.max(340, cHeight - tabletPaddingY);
+
+    const scaleW = availableW / 768;
+    const scaleH = availableH / 1024;
+    scale = Math.min(scaleW, scaleH, 0.85);
+
+    visualScreenWidth = Math.round(768 * scale);
+    visualScreenHeight = Math.round(1024 * scale);
+    visualFrameWidth = visualScreenWidth + 12;
+    visualFrameHeight = visualScreenHeight + 24;
+
+    internalIframeWidth = 768;
+    internalIframeHeight = Math.max(1024, Math.round(visualScreenHeight / (scale || 1)));
+  } else if (device === 'mobile') {
+    const phonePaddingX = 16;
+    const phonePaddingY = 24;
+    const availableW = Math.max(200, cWidth - phonePaddingX);
+    const availableH = Math.max(300, cHeight - phonePaddingY);
+
+    const scaleW = availableW / 390;
+    const scaleH = availableH / 844;
+    scale = Math.min(scaleW, scaleH, 0.9);
+
+    visualScreenWidth = Math.round(390 * scale);
+    visualScreenHeight = Math.round(844 * scale);
+    visualFrameWidth = visualScreenWidth + 10;
+    visualFrameHeight = visualScreenHeight + 26;
+
+    internalIframeWidth = 390;
+    internalIframeHeight = Math.max(844, Math.round(visualScreenHeight / (scale || 1)));
+  }
 
   return (
     <div
       ref={containerRef}
       className={`group relative flex flex-col rounded-3xl border border-[#E2E8F0] bg-white shadow-xl overflow-hidden transition-all duration-300 ${className}`}
     >
-      {/* ─── Browser Chrome Top Bar ───────────────────────────────── */}
-      <div className="bg-[#FAF7F2] px-4 py-3 border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-3">
-        {/* Left: Window Controls & Title */}
+      {/* ─── Browser Chrome Top Bar (Identical for ALL projects) ── */}
+      <div className="bg-[#FAF7F2] px-3.5 sm:px-4 py-2 sm:py-2.5 border-b border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 shrink-0">
+        {/* Left: Window Controls & URL */}
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5" aria-hidden="true">
-            <span className="w-3 h-3 rounded-full bg-[#F97360] inline-block shadow-sm" />
-            <span className="w-3 h-3 rounded-full bg-[#F4C95D] inline-block shadow-sm" />
-            <span className="w-3 h-3 rounded-full bg-emerald-500 inline-block shadow-sm" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#F97360] inline-block shadow-sm" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#F4C95D] inline-block shadow-sm" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block shadow-sm" />
           </div>
 
           {/* URL Pill */}
-          <div className="hidden sm:flex items-center gap-1.5 bg-white px-3.5 py-1 rounded-full border border-[#E2E8F0] text-[11px] font-mono text-[#64748B] shadow-inner max-w-xs truncate">
+          <div className="hidden sm:flex items-center gap-1.5 bg-white px-2.5 py-0.5 rounded-full border border-[#E2E8F0] text-[10.5px] font-mono text-[#64748B] shadow-inner max-w-xs truncate">
             <Globe className="w-3 h-3 text-[#4338CA] shrink-0" />
             <span className="truncate">{cleanDisplayUrl}</span>
           </div>
         </div>
 
-        {/* Center: Device Controls (Desktop / Tablet / Mobile) */}
-        {showDeviceControls && isValidUrl && viewMode === 'live' && isActivated && (
-          <div className="hidden md:flex items-center gap-1 bg-[#F1ECE4] p-1 rounded-xl border border-[#E2E8F0]">
-            <button
-              type="button"
-              onClick={() => setDevice('desktop')}
-              aria-label="Desktop Preview"
-              title="Desktop View"
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                device === 'desktop'
-                  ? 'bg-white text-[#4338CA] shadow-sm'
-                  : 'text-[#64748B] hover:text-[#131B2E]'
-              }`}
-            >
-              <Laptop className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setDevice('tablet')}
-              aria-label="Tablet Preview"
-              title="Tablet View"
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                device === 'tablet'
-                  ? 'bg-white text-[#4338CA] shadow-sm'
-                  : 'text-[#64748B] hover:text-[#131B2E]'
-              }`}
-            >
-              <Tablet className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setDevice('mobile')}
-              aria-label="Mobile Preview"
-              title="Mobile View"
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                device === 'mobile'
-                  ? 'bg-white text-[#4338CA] shadow-sm'
-                  : 'text-[#64748B] hover:text-[#131B2E]'
-              }`}
-            >
-              <Smartphone className="w-3.5 h-3.5" />
-            </button>
+        {/* Center: Device Controls (Laptop / Tablet / Mobile) */}
+        {showDeviceControls && (
+          <div
+            role="group"
+            aria-label="Device Viewport Switcher"
+            className="flex items-center gap-1 bg-[#F1ECE4] p-1 rounded-xl border border-[#E2E8F0]"
+          >
+            {(['laptop', 'tablet', 'mobile'] as DeviceType[]).map((devKey) => {
+              const config = DEVICE_CONFIGS[devKey];
+              const isActive = device === devKey;
+              const IconComp =
+                devKey === 'laptop'
+                  ? Laptop
+                  : devKey === 'tablet'
+                  ? Tablet
+                  : Smartphone;
+
+              return (
+                <button
+                  key={devKey}
+                  type="button"
+                  onClick={() => handleDeviceChange(devKey)}
+                  aria-pressed={isActive}
+                  aria-label={config.label}
+                  className={`p-1.5 rounded-lg transition-all cursor-pointer motion-reduce:transition-none ${
+                    isActive
+                      ? 'bg-white text-[#4338CA] shadow-sm'
+                      : 'text-[#64748B] hover:text-[#131B2E] hover:bg-white/60'
+                  }`}
+                >
+                  <IconComp className="w-3.5 h-3.5" />
+                </button>
+              );
+            })}
           </div>
         )}
 
-        {/* Right: Mode Toggles & External Link */}
+        {/* Right: Live Status & External Link */}
         <div className="flex items-center gap-2">
-          {/* Status Indicator */}
-          {isFrameRestricted ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Interactive ERP
-            </span>
-          ) : isValidUrl && viewMode === 'live' && isActivated ? (
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          {isValidUrl && (
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Live Preview
-            </span>
-          ) : isValidUrl ? (
-            <button
-              type="button"
-              onClick={() => {
-                setIsActivated(true);
-                setViewMode('live');
-              }}
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#4338CA]/10 text-[#4338CA] hover:bg-[#4338CA] hover:text-white transition-colors border border-[#4338CA]/20 cursor-pointer"
-            >
-              <Play className="w-2.5 h-2.5 fill-current" />
-              Launch Live Site
-            </button>
-          ) : (
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-              Screenshot Archive
             </span>
           )}
 
           {/* Refresh Iframe Button */}
-          {isValidUrl && isActivated && (
+          {isValidUrl && !isFrameRestricted && isActivated && (
             <button
               type="button"
               onClick={handleRefresh}
               aria-label="Reload website preview"
               title="Refresh Live Preview"
-              className={`p-1.5 rounded-lg text-[#64748B] hover:text-[#131B2E] hover:bg-white border border-transparent hover:border-[#E2E8F0] transition-all cursor-pointer ${
+              className={`p-1.5 rounded-lg text-[#64748B] hover:text-[#131B2E] hover:bg-white border border-transparent hover:border-[#E2E8F0] transition-all cursor-pointer motion-reduce:transition-none ${
                 isRefreshing ? 'animate-spin text-[#4338CA]' : ''
               }`}
             >
@@ -249,111 +335,214 @@ export default function LiveWebsitePreview({
         </div>
       </div>
 
-      {/* ─── Main Viewport Canvas ─────────────────────────────────── */}
-      <div className={`relative w-full ${heightClass} bg-[#F3EFEA] overflow-hidden flex items-center justify-center`}>
-        {/* State 0: Interactive Live Native ERP App */}
-        {isFrameRestricted && (
-          <div className="w-full h-full relative bg-[#0F172A]">
-            <ErpLiveDemo />
-          </div>
-        )}
+      {/* ─── Main Viewport Canvas (Identical structure for ALL projects) ─ */}
+      <div
+        ref={canvasRef}
+        className={`relative w-full ${heightClass} bg-[#F3EFEA] overflow-hidden flex items-center justify-center`}
+      >
+        {/* Live Interactive Iframe Viewport */}
+        {!isFrameRestricted && isValidUrl && viewMode === 'live' && isActivated && !loadError ? (
+          <div className="relative w-full h-full flex items-center justify-center">
+            {/* Laptop Frame */}
+            {device === 'laptop' ? (
+              <div
+                className="relative w-full h-full bg-white overflow-hidden shadow-inner"
+                style={{ width: visualFrameWidth, height: visualFrameHeight }}
+              >
+                <div
+                  style={{
+                    width: internalIframeWidth,
+                    height: internalIframeHeight,
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                  }}
+                  className="absolute top-0 left-0"
+                >
+                  <iframe
+                    key={`${url}-${device}-${reloadKey}`}
+                    src={url}
+                    title={`Live interactive preview of ${title} (Laptop Viewport)`}
+                    loading="lazy"
+                    onLoad={() => setIsIframeLoaded(true)}
+                    onError={() => {
+                      setLoadError(true);
+                      setViewMode('screenshot');
+                    }}
+                    className="w-full h-full border-0"
+                    sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                  />
+                </div>
+              </div>
+            ) : device === 'tablet' ? (
+              /* Tablet Chassis */
+              <div
+                className="relative flex flex-col rounded-2xl border-[5px] border-slate-800 bg-slate-900 shadow-2xl overflow-hidden transition-all duration-300 motion-reduce:transition-none"
+                style={{ width: visualFrameWidth, height: visualFrameHeight }}
+              >
+                <div className="h-3.5 bg-slate-900 w-full flex items-center justify-center shrink-0 relative z-10 pointer-events-none">
+                  <div className="w-2 h-2 rounded-full bg-slate-700" />
+                </div>
+                <div
+                  className="relative flex-1 w-full bg-white overflow-hidden"
+                  style={{ width: visualScreenWidth, height: visualScreenHeight }}
+                >
+                  <div
+                    style={{
+                      width: internalIframeWidth,
+                      height: internalIframeHeight,
+                      transform: `scale(${scale})`,
+                      transformOrigin: 'top left',
+                    }}
+                    className="absolute top-0 left-0"
+                  >
+                    <iframe
+                      key={`${url}-${device}-${reloadKey}`}
+                      src={url}
+                      title={`Live interactive preview of ${title} (Tablet Viewport)`}
+                      loading="lazy"
+                      onLoad={() => setIsIframeLoaded(true)}
+                      onError={() => {
+                        setLoadError(true);
+                        setViewMode('screenshot');
+                      }}
+                      className="w-full h-full border-0"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                    />
+                  </div>
+                </div>
+                <div className="h-2 bg-slate-900 w-full shrink-0 pointer-events-none" />
+              </div>
+            ) : (
+              /* Mobile Chassis */
+              <div
+                className="relative flex flex-col rounded-[28px] border-[5px] border-slate-800 bg-slate-900 shadow-2xl overflow-hidden transition-all duration-300 motion-reduce:transition-none"
+                style={{ width: visualFrameWidth, height: visualFrameHeight }}
+              >
+                <div className="h-4 bg-slate-900 w-full flex items-center justify-center shrink-0 relative z-10 pointer-events-none">
+                  <div className="w-16 h-2.5 bg-slate-950 rounded-full flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-800 ml-auto mr-1.5" />
+                  </div>
+                </div>
+                <div
+                  className="relative flex-1 w-full bg-white overflow-hidden"
+                  style={{ width: visualScreenWidth, height: visualScreenHeight }}
+                >
+                  <div
+                    style={{
+                      width: internalIframeWidth,
+                      height: internalIframeHeight,
+                      transform: `scale(${scale})`,
+                      transformOrigin: 'top left',
+                    }}
+                    className="absolute top-0 left-0"
+                  >
+                    <iframe
+                      key={`${url}-${device}-${reloadKey}`}
+                      src={url}
+                      title={`Live interactive preview of ${title} (Mobile Viewport)`}
+                      loading="lazy"
+                      onLoad={() => setIsIframeLoaded(true)}
+                      onError={() => {
+                        setLoadError(true);
+                        setViewMode('screenshot');
+                      }}
+                      className="w-full h-full border-0"
+                      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
+                    />
+                  </div>
+                </div>
+                <div className="h-2.5 bg-slate-900 w-full flex items-center justify-center shrink-0 pointer-events-none">
+                  <div className="w-20 h-1 bg-slate-700/60 rounded-full" />
+                </div>
+              </div>
+            )}
 
-        {/* State 1: Live Interactive Iframe */}
-        {!isFrameRestricted && isValidUrl && viewMode === 'live' && isActivated && !loadError && (
-          <div className={`h-full transition-all duration-300 bg-white relative ${getDeviceWidthClass()}`}>
             {/* Loading Overlay */}
             {!isIframeLoaded && (
-              <div className="absolute inset-0 bg-[#FAF7F2] flex flex-col items-center justify-center gap-3 z-20 text-center p-6">
-                <div className="w-10 h-10 rounded-2xl bg-[#4338CA]/10 text-[#4338CA] flex items-center justify-center animate-pulse border border-[#4338CA]/20">
-                  <Globe className="w-5 h-5 animate-spin" />
+              <div className="absolute inset-0 bg-[#FAF7F2]/95 backdrop-blur-[2px] flex flex-col items-center justify-center gap-3 z-30 text-center p-6 transition-opacity duration-300">
+                <div className="w-9 h-9 rounded-2xl bg-[#4338CA]/10 text-[#4338CA] flex items-center justify-center animate-pulse border border-[#4338CA]/20">
+                  <Globe className="w-4 h-4 animate-spin" />
                 </div>
                 <div>
-                  <div className="text-xs font-extrabold text-[#131B2E]">Connecting to live website...</div>
-                  <div className="text-[10px] text-[#64748B] font-mono mt-0.5">{cleanDisplayUrl}</div>
+                  <div className="text-xs font-extrabold text-[#131B2E]">
+                    Connecting to live website...
+                  </div>
+                  <div className="text-[10px] text-[#64748B] font-mono mt-0.5">
+                    {cleanDisplayUrl}
+                  </div>
                 </div>
               </div>
             )}
-
-            <iframe
-              ref={iframeRef}
-              src={url}
-              title={`Live interactive preview of ${title}`}
-              loading="lazy"
-              onLoad={() => setIsIframeLoaded(true)}
-              onError={() => {
-                setLoadError(true);
-                setViewMode('screenshot');
-              }}
-              className="w-full h-full border-0 transition-opacity duration-300"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-presentation"
-            />
           </div>
-        )}
-
-        {/* State 2: Screenshot Image View (Fallback / Pre-activation) */}
-        {!isFrameRestricted && (viewMode === 'screenshot' || !isActivated || loadError || !isValidUrl) && (
-          <div className="relative w-full h-full group/view overflow-hidden">
-            {fallbackImage ? (
-              <Image
-                src={fallbackImage}
-                alt={`${title} project preview`}
-                fill
-                className="object-cover object-top transition-transform duration-700 group-hover/view:scale-102"
-                priority={isFeatured}
-              />
-            ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-[#FAF7F2] p-8 text-center">
-                <Globe className="w-10 h-10 text-[#4338CA]/40" />
-                <span className="text-sm font-extrabold text-[#131B2E]">{title}</span>
-                <span className="text-xs text-[#64748B] font-mono">{cleanDisplayUrl}</span>
-              </div>
-            )}
-
-
-            {/* Click-to-launch live overlay banner if URL exists */}
-            {isValidUrl && !isActivated && !isFrameRestricted && (
-              <div className="absolute inset-0 bg-[#131B2E]/40 opacity-0 group-hover/view:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-3 backdrop-blur-[2px] p-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsActivated(true);
-                    setViewMode('live');
-                  }}
-                  className="inline-flex items-center gap-2 px-5 py-3 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-2xl hover:scale-105 transition-all cursor-pointer"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" />
-                  <span>Launch Live Interactive Preview</span>
-                </button>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-3 bg-white hover:bg-slate-100 text-[#131B2E] text-xs font-bold uppercase tracking-wider rounded-xl shadow-2xl transition-all"
-                >
-                  <span>Open in Tab</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              </div>
-            )}
-
-            {/* If embedded mode failed or blocked by CSP */}
-            {loadError && (
-              <div className="absolute bottom-4 left-4 right-4 bg-white/95 border border-amber-200 p-3 rounded-xl shadow-lg flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2 text-amber-800">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>Embedded iframe restricted by domain policies. View directly in browser.</span>
-                </div>
-                {isValidUrl && (
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#4338CA] text-white font-bold rounded-lg text-[11px] shrink-0"
-                  >
-                    <span>Open Live Site</span>
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
+        ) : (
+          /* Clean Device Screenshot View (Zero obstructing dark overlays or buttons) */
+          <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
+            {device === 'laptop' ? (
+              <div className={`relative w-full h-full overflow-hidden ${
+                isFrameRestricted || title.toLowerCase().includes('erp') ? 'bg-[#031B3A]' : ''
+              }`}>
+                {fallbackImage ? (
+                  <Image
+                    src={fallbackImage}
+                    alt={`${title} project preview`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 800px"
+                    className={`${
+                      isFrameRestricted || title.toLowerCase().includes('erp')
+                        ? 'object-contain object-center scale-[0.98]'
+                        : 'object-cover object-top'
+                    } transition-transform duration-700`}
+                    priority={isFeatured}
+                  />
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 bg-[#FAF7F2] p-8 text-center">
+                    <Globe className="w-10 h-10 text-[#4338CA]/40" />
+                    <span className="text-sm font-extrabold text-[#131B2E]">{title}</span>
+                    <span className="text-xs text-[#64748B] font-mono">{cleanDisplayUrl}</span>
+                  </div>
                 )}
+              </div>
+            ) : device === 'tablet' ? (
+              <div
+                className="relative flex flex-col rounded-2xl border-[5px] border-slate-800 bg-slate-900 shadow-2xl overflow-hidden transition-all duration-300"
+                style={{ width: visualFrameWidth, height: visualFrameHeight }}
+              >
+                <div className="h-3 bg-slate-900 w-full flex items-center justify-center shrink-0">
+                  <div className="w-2 h-2 rounded-full bg-slate-700" />
+                </div>
+                <div className="relative flex-1 w-full bg-white overflow-hidden">
+                  {fallbackImage && (
+                    <Image
+                      src={fallbackImage}
+                      alt={`${title} tablet preview`}
+                      fill
+                      sizes="400px"
+                      className="object-cover object-top"
+                    />
+                  )}
+                </div>
+                <div className="h-2 bg-slate-900 w-full shrink-0" />
+              </div>
+            ) : (
+              <div
+                className="relative flex flex-col rounded-[24px] border-[5px] border-slate-800 bg-slate-900 shadow-2xl overflow-hidden transition-all duration-300"
+                style={{ width: visualFrameWidth, height: visualFrameHeight }}
+              >
+                <div className="h-3.5 bg-slate-900 w-full flex items-center justify-center shrink-0">
+                  <div className="w-14 h-2 bg-slate-950 rounded-full" />
+                </div>
+                <div className="relative flex-1 w-full bg-white overflow-hidden">
+                  {fallbackImage && (
+                    <Image
+                      src={fallbackImage}
+                      alt={`${title} mobile preview`}
+                      fill
+                      sizes="280px"
+                      className="object-cover object-top"
+                    />
+                  )}
+                </div>
+                <div className="h-2 bg-slate-900 w-full shrink-0" />
               </div>
             )}
           </div>

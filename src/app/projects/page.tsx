@@ -1,12 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import ProjectCard from '@/components/ui/ProjectCard';
+import FeaturedProjectCarousel from '@/components/ui/FeaturedProjectCarousel';
 import { projects } from '@/lib/data';
 import { ArrowRight, Sparkles } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Our Work & Portfolio | Ekaagra Technologies',
-  description: 'Explore our portfolio of websites, web applications, and custom software systems designed for businesses, schools, and startups.',
+  title: 'Our Work',
+  description:
+    'Explore our portfolio of real websites, web applications, and custom software systems designed for businesses, schools, and organizations.',
 };
 
 export default function ProjectsPage() {
@@ -28,23 +29,31 @@ export default function ProjectsPage() {
         </div>
       </section>
 
-      {/* Projects Grid */}
-      <section className="py-24 border-b border-[#E2E8F0] bg-[#FAF7F2]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
-            <div className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest">
-              Interactive Showroom • Click &quot;Preview Live&quot; on any card to experience the website
-            </div>
-            <div className="text-xs text-[#64748B] font-medium">
-              Showing {projects.length} Case Studies
+      {/* Featured Showcase & Case Studies Section with Arrow Carousel */}
+      <section className="py-24 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="portfolio">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-[#E2E8F0] pb-8">
+            <div className="space-y-3">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
+                FEATURED WORK &amp; CASE STUDIES
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+                Websites that make businesses look better.
+              </h2>
+              <p className="text-base text-[#64748B] max-w-2xl leading-relaxed">
+                Every project is designed around the people who will use it — and the business goals behind it.
+              </p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects.map((project) => (
-              <ProjectCard key={project.slug} project={project} />
-            ))}
-          </div>
+          {/* Interactive Featured Project Carousel & Connected Case Studies Grid */}
+          <FeaturedProjectCarousel
+            projects={projects}
+            gridProjects={projects}
+            gridTitle="Interactive Showroom • Click any card to load in the showcase above"
+            gridSubtitle={`Showing all ${projects.length} Case Studies`}
+          />
         </div>
       </section>
 

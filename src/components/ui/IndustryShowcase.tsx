@@ -5,301 +5,178 @@ import Link from 'next/link';
 import {
   GraduationCap,
   Building2,
+  Stethoscope,
+  Rocket,
   BookOpen,
   Utensils,
-  Stethoscope,
-  ShoppingBag,
-  Rocket,
-  User,
-  Check,
   ArrowRight,
   Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 
-interface Industry {
+interface IndustrySector {
   id: string;
   name: string;
   badge: string;
   icon: typeof GraduationCap;
   tagline: string;
   description: string;
-  keyFeatures: string[];
-  ctaText: string;
-  mockup: {
-    heroTitle: string;
-    heroSubtitle: string;
-    heroCta: string;
-    secondaryCta: string;
-    accentColor: string;
-    themeBg: string;
-    components: {
-      title: string;
-      items: { name: string; detail: string; tag?: string }[];
-    };
-  };
+  outcomes: { title: string; detail: string }[];
+  highlight: string;
 }
 
-const industries: Industry[] = [
+const industrySectors: IndustrySector[] = [
   {
     id: 'education',
     name: 'Schools & Education',
-    badge: 'High Demand',
+    badge: 'Education',
     icon: GraduationCap,
-    tagline: 'Inspire parents and streamline student admissions.',
+    tagline: 'Admissions, notices, and parent-facing institutional experiences.',
     description:
-      'Complete school websites featuring admissions guidelines, curriculum, faculty directories, mandatory CBSE disclosures, dynamic notices, and photo galleries.',
-    keyFeatures: [
-      'Online Admissions & Enquiry Forms',
-      'CBSE Mandatory Disclosure Ready',
-      'Instant Notice Board & Circulars',
-      'Campus Facilities & Photo Gallery',
-    ],
-    ctaText: 'Build a School Website',
-    mockup: {
-      heroTitle: 'Excellence in Modern Education & Character',
-      heroSubtitle: 'Admissions open for Academic Year 2026-27. Shaping tomorrow’s leaders today.',
-      heroCta: 'Apply for Admission',
-      secondaryCta: 'View Curriculum',
-      accentColor: 'bg-[#4338CA] text-white',
-      themeBg: 'from-[#4338CA]/10 via-[#FAF7F2] to-[#FAF7F2]',
-      components: {
-        title: 'School Quick Access',
-        items: [
-          { name: 'Admissions 2026', detail: 'Application criteria & fee schedule', tag: 'Open Now' },
-          { name: 'CBSE Disclosures', detail: 'Mandatory public institutional files', tag: 'Compliant' },
-          { name: 'Latest Circulars', detail: 'Annual sports day & holiday schedule', tag: 'Updated' },
-        ],
+      'Purpose-built digital platforms that inspire parent trust, satisfy regulatory disclosures, and eliminate administrative friction.',
+    highlight: 'CBSE Affiliation & Admission Ready',
+    outcomes: [
+      {
+        title: 'Admissions & Enquiry Workflows',
+        detail: 'Clear criteria, fee guidance, and direct parent enquiry capture.',
       },
-    },
-  },
-  {
-    id: 'business',
-    name: 'Business & Services',
-    badge: 'Conversion Focused',
-    icon: Building2,
-    tagline: 'Turn visitors into paying customers and qualified leads.',
-    description:
-      'Professional corporate and local business websites designed to build immediate credibility, rank well on Google Maps, and capture enquiries directly on WhatsApp.',
-    keyFeatures: [
-      'Direct WhatsApp & Click-to-Call',
-      'Service Showcase & Transparent Pricing',
-      'Customer Testimonials & Case Studies',
-      'Google Maps & Location Integration',
-    ],
-    ctaText: 'Build a Business Website',
-    mockup: {
-      heroTitle: 'Professional Solutions Tailored to Your Business',
-      heroSubtitle: 'Helping organizations streamline operations, cut costs, and scale with confidence.',
-      heroCta: 'Request a Free Consultation',
-      secondaryCta: 'Our Capabilities',
-      accentColor: 'bg-[#0D9488] text-white',
-      themeBg: 'from-teal-500/10 via-[#FAF7F2] to-[#FAF7F2]',
-      components: {
-        title: 'Core Business Services',
-        items: [
-          { name: 'Enterprise Consulting', detail: 'Strategic planning & workflow optimization', tag: 'Popular' },
-          { name: 'Custom Implementation', detail: 'Tailored technology execution', tag: 'Fast Turnaround' },
-          { name: 'Dedicated Support', detail: 'Continuous monitoring & maintenance', tag: 'Reliable' },
-        ],
+      {
+        title: 'Real-Time Digital Notice Board',
+        detail: 'Publish circulars, holiday calendars, and academic updates instantly.',
       },
-    },
-  },
-  {
-    id: 'coaching',
-    name: 'Coaching & Institutes',
-    badge: 'Lead Magnet',
-    icon: BookOpen,
-    tagline: 'Attract students with proven results and course catalogs.',
-    description:
-      'High-impact websites for competitive exam academies, tuition centers, and coaching institutes to showcase topper results, faculty credentials, and batch schedules.',
-    keyFeatures: [
-      'Batch Schedules & Fee Structures',
-      'Topper Testimonials & Results Wall',
-      'Downloadable Syllabus & Study Material',
-      'Fast Enquiry & Scholarship Registration',
-    ],
-    ctaText: 'Build an Institute Website',
-    mockup: {
-      heroTitle: 'Target Your Dream Rank with Proven Mentors',
-      heroSubtitle: 'New batches starting this Monday. Limited seats per batch for personalized attention.',
-      heroCta: 'Book a Free Demo Class',
-      secondaryCta: 'Check Recent Results',
-      accentColor: 'bg-[#4338CA] text-white',
-      themeBg: 'from-[#4338CA]/10 via-[#FAF7F2] to-[#FAF7F2]',
-      components: {
-        title: 'Upcoming Batches & Programs',
-        items: [
-          { name: 'Target Batch 2026', detail: 'Comprehensive 1-year intensive program', tag: 'Starts Monday' },
-          { name: 'Weekend Crash Course', detail: 'Doubt resolution & mock test series', tag: 'Limited Seats' },
-          { name: 'Scholarship Test', detail: 'Up to 90% scholarship for top performers', tag: 'Register Free' },
-        ],
+      {
+        title: 'CBSE Mandatory Disclosures',
+        detail: 'Structured compliance repository ensuring zero regulatory hassle.',
       },
-    },
-  },
-  {
-    id: 'restaurant',
-    name: 'Restaurants & Cafes',
-    badge: 'Appetizing UI',
-    icon: Utensils,
-    tagline: 'Make mouths water with interactive digital menus and reservations.',
-    description:
-      'Vibrant culinary websites with categorized food menus, price tags, table reservation forms, food photography, and direct WhatsApp takeout ordering.',
-    keyFeatures: [
-      'Interactive Digital Menu with Prices',
-      'Table Reservation & Booking Engine',
-      'Direct WhatsApp Takeaway Orders',
-      'Opening Hours & Google Maps Directions',
     ],
-    ctaText: 'Build a Restaurant Website',
-    mockup: {
-      heroTitle: 'Artisanal Flavors Crafted with Passion',
-      heroSubtitle: 'Fresh farm-to-table ingredients, cozy ambiance, and memorable dining experiences.',
-      heroCta: 'Reserve a Table',
-      secondaryCta: 'View Full Menu',
-      accentColor: 'bg-[#F97360] text-white',
-      themeBg: 'from-[#F97360]/10 via-[#FAF7F2] to-[#FAF7F2]',
-      components: {
-        title: "Chef's Specials This Week",
-        items: [
-          { name: 'Wood-Fired Truffle Pizza', detail: 'San Marzano tomatoes, fresh mozzarella & basil', tag: 'Signature' },
-          { name: 'Smoked Butter Garlic Bowls', detail: 'Infused herb broth served with artisanal toast', tag: 'Chef Choice' },
-          { name: 'Handcrafted Tiramisu', detail: 'Espresso-soaked savoiardi with mascarpone cream', tag: 'Dessert' },
-        ],
-      },
-    },
   },
   {
     id: 'healthcare',
     name: 'Healthcare & Clinics',
-    badge: 'Trust Building',
+    badge: 'Healthcare',
     icon: Stethoscope,
-    tagline: 'Build patient trust with doctor profiles and online appointments.',
+    tagline: 'Doctor profiles, OPD schedules, and patient appointment requests.',
     description:
-      'Reassuring and clean medical websites for clinics, hospitals, and doctors with specialty details, OPD consultation timings, and easy booking forms.',
-    keyFeatures: [
-      'Doctor Specialties & Qualification Profiles',
-      'OPD Timings & Direct Appointment Request',
-      'Patient FAQs & Pre-Visit Guidelines',
-      'Emergency Contact & Ambulance Direct Line',
-    ],
-    ctaText: 'Build a Healthcare Website',
-    mockup: {
-      heroTitle: 'Compassionate Care, Modern Medical Excellence',
-      heroSubtitle: 'Experienced medical specialists dedicated to your health and family wellbeing.',
-      heroCta: 'Book an Appointment',
-      secondaryCta: 'Our Doctors & OPD',
-      accentColor: 'bg-emerald-600 text-white',
-      themeBg: 'from-emerald-500/10 via-[#FAF7F2] to-[#FAF7F2]',
-      components: {
-        title: 'Specialty Departments & OPD',
-        items: [
-          { name: 'Cardiology & Heart Care', detail: 'Dr. Sharma (MD, DM) • Mon-Sat 10am-2pm', tag: 'Available Today' },
-          { name: 'Pediatrics & Child Health', detail: 'Dr. Verma (MD) • Mon-Fri 4pm-8pm', tag: 'Child Friendly' },
-          { name: 'Diagnostic & Lab Tests', detail: 'Full blood panel & digital X-ray services', tag: 'Same-Day' },
-        ],
+      'Reassuring, clear interfaces that present physician credentials and make booking consultations effortless for patients.',
+    highlight: 'Patient Trust & Clarity',
+    outcomes: [
+      {
+        title: 'Doctor Credentials & Specialties',
+        detail: 'Clear department profiles, qualifications, and areas of expertise.',
       },
-    },
+      {
+        title: 'OPD Schedules & Booking',
+        detail: 'Live consultation hours and friction-free appointment requests.',
+      },
+      {
+        title: 'Emergency & Patient Guidelines',
+        detail: 'One-tap emergency dialing, location directions, and pre-visit FAQs.',
+      },
+    ],
   },
   {
-    id: 'retail',
-    name: 'Retail & Local Shops',
-    badge: 'Product Catalog',
-    icon: ShoppingBag,
-    tagline: 'Showcase your inventory and drive foot traffic to your store.',
+    id: 'business',
+    name: 'Local Businesses & Services',
+    badge: 'Commercial',
+    icon: Building2,
+    tagline: 'Service catalogs, direct WhatsApp inquiries, and local discovery.',
     description:
-      'Modern product showcase websites for clothing boutiques, hardware stores, stationery shops, and wholesalers with digital catalogs and quick enquiry links.',
-    keyFeatures: [
-      'Digital Product Catalog & Image Galleries',
-      'Direct WhatsApp Price Inquiries',
-      'Store Location, Landmark & Opening Hours',
-      'Customer Offers & Festival Promotions',
-    ],
-    ctaText: 'Build a Store Website',
-    mockup: {
-      heroTitle: 'Quality Products at Unmatched Local Prices',
-      heroSubtitle: 'Explore our latest arrivals, wholesale rates, and fast pickup options in your city.',
-      heroCta: 'Browse New Catalog',
-      secondaryCta: 'Visit Our Store',
-      accentColor: 'bg-[#F97360] text-white',
-      themeBg: 'from-[#F97360]/10 via-[#FAF7F2] to-[#FAF7F2]',
-      components: {
-        title: 'Featured Product Categories',
-        items: [
-          { name: 'Trending New Arrivals', detail: 'Premium quality stock updated weekly', tag: 'In Stock' },
-          { name: 'Bulk Wholesale Orders', detail: 'Special dealer discounts for commercial buyers', tag: 'Discounts' },
-          { name: 'Send & Pick Up in Shop', detail: 'Reserve your items online before visiting', tag: 'Quick Pickup' },
-        ],
+      'High-authority websites designed to convert local search discovery into verified commercial enquiries.',
+    highlight: 'Direct WhatsApp Leads',
+    outcomes: [
+      {
+        title: 'Verified Service & Product Catalog',
+        detail: 'Present your capabilities, specifications, and wholesale pricing clearly.',
       },
-    },
+      {
+        title: '1-Tap WhatsApp Lead Capture',
+        detail: 'Connect prospective clients directly to your team with pre-filled inquiries.',
+      },
+      {
+        title: 'Local Google Maps Presence',
+        detail: 'Optimized for local discovery, directions, and customer review authority.',
+      },
+    ],
   },
   {
     id: 'startups',
     name: 'Startups & Modern Tech',
-    badge: 'High Impact',
+    badge: 'Technology',
     icon: Rocket,
-    tagline: 'Explain your product clearly and convert visitors into early users.',
+    tagline: 'Product storytelling, feature previews, and high-converting onboarding.',
     description:
-      'Sleek landing pages for innovative startups, software products, and mobile apps with interactive feature highlights, pricing tiers, and beta waitlists.',
-    keyFeatures: [
-      'Product Storytelling & Benefit Cards',
-      'Interactive Product Demos & Videos',
-      'Transparent Pricing Tier Comparison',
-      'Instant Onboarding & Sign-Up Flow',
-    ],
-    ctaText: 'Build a Startup Website',
-    mockup: {
-      heroTitle: 'The Modern Operating System for Modern Teams',
-      heroSubtitle: 'Automate repetitive workflows, centralize team communication, and ship faster together.',
-      heroCta: 'Start Free 14-Day Trial',
-      secondaryCta: 'Watch 2-Min Demo',
-      accentColor: 'bg-[#8B5CF6] text-white',
-      themeBg: 'from-purple-500/10 via-[#FAF7F2] to-[#FAF7F2]',
-      components: {
-        title: 'Core Platform Features',
-        items: [
-          { name: 'Automated Workflows', detail: 'Connect apps and trigger actions automatically', tag: 'Fast' },
-          { name: 'Real-time Analytics', detail: 'Track team velocity and operational metrics', tag: 'Live Sync' },
-          { name: 'Enterprise Security', detail: 'End-to-end encryption & role permissions', tag: 'Secure' },
-        ],
+      'Sleek digital products that explain complex value propositions in seconds and turn visitors into active users.',
+    highlight: 'Sub-500ms Conversion Speed',
+    outcomes: [
+      {
+        title: 'Interactive Feature Previews',
+        detail: 'Walkthrough key capabilities and workflows with engaging visuals.',
       },
-    },
+      {
+        title: 'Transparent Pricing Comparisons',
+        detail: 'Clear plan tiers, feature matrices, and upgrade pathways.',
+      },
+      {
+        title: 'Frictionless User Onboarding',
+        detail: 'Streamlined account creation, waitlist signups, and trial activations.',
+      },
+    ],
   },
   {
-    id: 'personal',
-    name: 'Personal Brands & Portfolios',
-    badge: 'Authority',
-    icon: User,
-    tagline: 'Position yourself as an authority in your industry.',
+    id: 'coaching',
+    name: 'Coaching & Academies',
+    badge: 'Institutes',
+    icon: BookOpen,
+    tagline: 'Results showcase, batch timetables, and demo class registrations.',
     description:
-      'Distinguished portfolio websites for consultants, doctors, lawyers, speakers, and executives to showcase achievements, services, media mentions, and client testimonials.',
-    keyFeatures: [
-      'Biography & Authority Positioning',
-      'Services & Consultation Offerings',
-      'Featured Speaking, Press & Publications',
-      'Direct Calendar Booking Integration',
-    ],
-    ctaText: 'Build a Personal Website',
-    mockup: {
-      heroTitle: 'Helping Founders Scale High-Growth Companies',
-      heroSubtitle: 'Executive advisor, angel investor, and keynote speaker on digital transformation and strategy.',
-      heroCta: 'Book an Advisory Call',
-      secondaryCta: 'Read My Articles',
-      accentColor: 'bg-[#131B2E] text-white',
-      themeBg: 'from-[#131B2E]/10 via-[#FAF7F2] to-[#FAF7F2]',
-      components: {
-        title: 'Advisory & Speaking Engagements',
-        items: [
-          { name: '1-on-1 Executive Strategy', detail: 'Monthly advisory for growth-stage leaders', tag: '2 Slots Open' },
-          { name: 'Keynote Presentations', detail: 'Actionable frameworks for industry summits', tag: 'Global' },
-          { name: 'Published Insights', detail: 'Weekly essays on technology and execution', tag: 'Articles' },
-        ],
+      'Academic platforms engineered to prove results, highlight faculty credentials, and fill upcoming cohorts.',
+    highlight: 'Topper Results Authority',
+    outcomes: [
+      {
+        title: 'Results Wall & Testimonials',
+        detail: 'Showcase verified rank holders, student achievements, and reviews.',
       },
-    },
+      {
+        title: 'Upcoming Batch Schedules',
+        detail: 'Clear fee structures, subject timetables, and curriculum roadmaps.',
+      },
+      {
+        title: 'Demo Class & Scholarship Registration',
+        detail: 'Capture student registrations for upcoming diagnostic tests and demo sessions.',
+      },
+    ],
+  },
+  {
+    id: 'dining',
+    name: 'Restaurants & Dining',
+    badge: 'Hospitality',
+    icon: Utensils,
+    tagline: 'Interactive digital menus, reservations, and takeout orders.',
+    description:
+      'Appetizing websites crafted for mobile browsing, menu discovery, table reservations, and direct ordering.',
+    highlight: 'Mobile Dining UX',
+    outcomes: [
+      {
+        title: 'Categorized Digital Menu with Prices',
+        detail: 'High-resolution food photography, chef specials, and allergen tags.',
+      },
+      {
+        title: 'Online Table Reservations',
+        detail: 'Date, time, and party size booking engine without third-party commissions.',
+      },
+      {
+        title: 'Direct WhatsApp Takeaway',
+        detail: 'Quick-order flow sending selected dishes straight to your kitchen staff.',
+      },
+    ],
   },
 ];
 
 export default function IndustryShowcase() {
-  const [selectedIndustry, setSelectedIndustry] = useState<Industry>(industries[0]);
+  const [selectedId, setSelectedId] = useState<string>('education');
+  const activeSector =
+    industrySectors.find((s) => s.id === selectedId) || industrySectors[0];
+  const ActiveIcon = activeSector.icon;
 
   return (
     <section className="py-24 sm:py-32 bg-[#FAF7F2] border-b border-[#E2E8F0] relative overflow-hidden" id="industries">
@@ -311,28 +188,29 @@ export default function IndustryShowcase() {
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 border border-[#4338CA]/20 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest">
             <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-            TAILORED FOR EVERY INDUSTRY
+            WHERE WE BUILD
           </span>
           <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
-            What kind of website do you need?
+            Tailored around the people you serve.
           </h2>
           <p className="text-base sm:text-lg text-[#64748B] leading-relaxed">
-            Click any industry below to see how we design websites specifically around your audience and business conversion goals.
+            Every industry has distinct operational challenges. We build digital experiences designed around your specific audience and workflow.
           </p>
         </div>
 
-        {/* Industry Pill Selector Grid (8 Options) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {industries.map((ind) => {
-            const Icon = ind.icon;
-            const isSelected = selectedIndustry.id === ind.id;
+        {/* Industry Selector Tabs */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {industrySectors.map((sector) => {
+            const Icon = sector.icon;
+            const isSelected = selectedId === sector.id;
             return (
               <button
-                key={ind.id}
-                onClick={() => setSelectedIndustry(ind)}
+                key={sector.id}
+                type="button"
+                onClick={() => setSelectedId(sector.id)}
                 className={`p-4 rounded-2xl text-left transition-all duration-200 flex flex-col justify-between border cursor-pointer ${
                   isSelected
-                    ? 'bg-[#4338CA] text-white border-[#4338CA] shadow-lg shadow-[#4338CA]/30 scale-[1.02]'
+                    ? 'bg-[#4338CA] text-white border-[#4338CA] shadow-lg shadow-[#4338CA]/25 scale-[1.02]'
                     : 'bg-white text-[#131B2E] border-[#E2E8F0] hover:border-[#4338CA]/40 hover:shadow-md'
                 }`}
               >
@@ -346,161 +224,76 @@ export default function IndustryShowcase() {
                   >
                     <Icon className="w-5 h-5" />
                   </div>
-                  <span
-                    className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                      isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-[#FAF7F2] text-[#64748B] border border-[#E2E8F0]'
-                    }`}
-                  >
-                    {ind.badge}
-                  </span>
                 </div>
 
                 <div>
-                  <h3 className="text-sm font-bold tracking-tight">{ind.name}</h3>
+                  <span
+                    className={`text-[9px] font-bold uppercase tracking-wider block mb-0.5 ${
+                      isSelected ? 'text-[#F4C95D]' : 'text-[#64748B]'
+                    }`}
+                  >
+                    {sector.badge}
+                  </span>
+                  <h3 className="text-xs sm:text-sm font-bold tracking-tight leading-snug">
+                    {sector.name}
+                  </h3>
                 </div>
               </button>
             );
           })}
         </div>
 
-        {/* Live Interactive Website Simulator Preview Container */}
-        <div className="bg-white border border-[#E2E8F0] rounded-3xl p-6 sm:p-10 shadow-2xl grid lg:grid-cols-12 gap-8 items-center transition-all duration-300">
-          {/* Left Column: Requirements & Strategy Breakdown */}
+        {/* Detail Showcase Card */}
+        <div className="bg-white border border-[#E2E8F0] rounded-3xl p-8 sm:p-12 shadow-2xl grid lg:grid-cols-12 gap-8 lg:gap-12 items-center transition-all duration-300">
+          {/* Left Column: Context & Positioning */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="space-y-2">
-              <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
-                {selectedIndustry.name} Strategy
-              </span>
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-wider">
+                <ActiveIcon className="w-3.5 h-3.5 text-[#F97360]" />
+                <span>{activeSector.highlight}</span>
+              </div>
               <h3 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
-                {selectedIndustry.tagline}
+                {activeSector.tagline}
               </h3>
               <p className="text-sm text-[#64748B] leading-relaxed">
-                {selectedIndustry.description}
+                {activeSector.description}
               </p>
             </div>
 
-            {/* Feature Checklist */}
-            <div className="space-y-2.5 pt-2 border-t border-[#E2E8F0]">
-              <span className="text-[11px] font-bold text-[#131B2E] uppercase tracking-wider block">
-                Included in This Website Package:
-              </span>
-              {selectedIndustry.keyFeatures.map((feat, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 text-xs text-[#334155] font-medium">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-2.5 h-2.5 stroke-[3]" />
-                  </div>
-                  <span>{feat}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Direct CTA */}
-            <div className="pt-4">
+            <div className="pt-2">
               <Link
                 href="/get-quote"
                 className="inline-flex items-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-[#4338CA]/25 hover:shadow-xl hover:shadow-[#4338CA]/35"
               >
-                <span>{selectedIndustry.ctaText}</span>
+                <span>Discuss Your Project</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
 
-          {/* Right Column: Live Simulated Website Browser Mockup */}
-          <div className="lg:col-span-7">
-            <div className="browser-frame shadow-2xl bg-white">
-              {/* Browser Chrome Bar */}
-              <div className="flex items-center justify-between px-4 py-3 bg-[#FAF7F2] border-b border-[#E2E8F0]">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#F97360]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#F4C95D]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                </div>
-                <div className="text-[11px] font-mono text-[#64748B] bg-white px-4 py-1 rounded-full border border-[#E2E8F0]">
-                  https://your-{selectedIndustry.id}-website.com
-                </div>
-                <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Live Preview
-                </span>
-              </div>
-
-              {/* Simulated Website Content Body */}
-              <div className={`p-6 sm:p-8 bg-gradient-to-b ${selectedIndustry.mockup.themeBg} space-y-6`}>
-                {/* Simulated Header Navbar */}
-                <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-[#4338CA] text-white flex items-center justify-center text-xs font-bold">
-                      Y
-                    </div>
-                    <span className="text-xs font-extrabold text-[#131B2E] tracking-tight">
-                      Your Brand
-                    </span>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-4 text-[11px] font-semibold text-[#64748B]">
-                    <span>About</span>
-                    <span>Services</span>
-                    <span>Gallery</span>
-                    <span className="text-[#4338CA]">Contact</span>
-                  </div>
-                </div>
-
-                {/* Simulated Hero Banner */}
-                <div className="space-y-3 pt-2 text-left">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#F97360] font-mono">
-                    Professional • Fast • Mobile Ready
-                  </span>
-                  <h4 className="text-xl sm:text-2xl font-extrabold text-[#131B2E] leading-tight">
-                    {selectedIndustry.mockup.heroTitle}
-                  </h4>
-                  <p className="text-xs text-[#64748B] leading-relaxed max-w-lg">
-                    {selectedIndustry.mockup.heroSubtitle}
-                  </p>
-
-                  <div className="flex flex-wrap gap-2.5 pt-2">
-                    <span className={`text-xs font-bold px-4 py-2 rounded-xl shadow-sm ${selectedIndustry.mockup.accentColor}`}>
-                      {selectedIndustry.mockup.heroCta}
-                    </span>
-                    <span className="text-xs font-semibold px-4 py-2 rounded-xl bg-white/90 text-[#131B2E] border border-[#E2E8F0]">
-                      {selectedIndustry.mockup.secondaryCta}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Simulated Feature Cards Container */}
-                <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 space-y-3 shadow-md backdrop-blur-sm">
-                  <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
-                    <span className="text-xs font-bold text-[#131B2E]">
-                      {selectedIndustry.mockup.components.title}
-                    </span>
-                    <span className="text-[10px] text-[#4338CA] font-semibold">
-                      Interactive Modules
-                    </span>
-                  </div>
-
-                  <div className="space-y-2">
-                    {selectedIndustry.mockup.components.items.map((item, i) => (
-                      <div
-                        key={i}
-                        className="p-3 bg-[#FAF7F2] rounded-xl border border-[#E2E8F0] flex items-center justify-between gap-3 text-left hover:border-[#4338CA]/30 transition-colors"
-                      >
-                        <div>
-                          <div className="text-xs font-bold text-[#131B2E]">{item.name}</div>
-                          <div className="text-[11px] text-[#64748B]">{item.detail}</div>
-                        </div>
-                        {item.tag && (
-                          <span className="text-[10px] font-bold px-2 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-md shrink-0">
-                            {item.tag}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+          {/* Right Column: 3 Concrete Industry Outcomes */}
+          <div className="lg:col-span-7 grid gap-4 sm:gap-5">
+            <div className="text-xs font-mono font-bold text-[#64748B] uppercase tracking-widest mb-1">
+              Key Industry Outcomes:
             </div>
+            {activeSector.outcomes.map((outcome, idx) => (
+              <div
+                key={idx}
+                className="p-5 sm:p-6 bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl flex items-start gap-4 hover:border-[#4338CA]/30 transition-colors"
+              >
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                  <CheckCircle2 className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm sm:text-base font-bold text-[#131B2E]">
+                    {outcome.title}
+                  </h4>
+                  <p className="text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed">
+                    {outcome.detail}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>

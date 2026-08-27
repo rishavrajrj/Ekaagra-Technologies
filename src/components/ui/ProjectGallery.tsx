@@ -27,31 +27,32 @@ export default function ProjectGallery({ images, title }: ProjectGalleryProps) {
   return (
     <div className="mb-16 space-y-4">
       {/* Browser Mockup Window Container */}
-      <div className="bg-white dark:bg-[#131B2E] border border-[#E2E8F0] dark:border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+      <div className="bg-white border border-[#E2E8F0] rounded-3xl overflow-hidden shadow-2xl">
         {/* Window Topbar */}
-        <div className="bg-[#FAF7F2] dark:bg-[#090D16] px-4 py-3 border-b border-[#E2E8F0] dark:border-white/10 flex items-center justify-between">
+        <div className="bg-[#FAF7F2] px-4 py-3 border-b border-[#E2E8F0] flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-[#F97360]" />
             <span className="w-2.5 h-2.5 rounded-full bg-[#F4C95D]" />
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="ml-3 text-xs font-mono text-[#64748B] dark:text-slate-400">
+            <span className="ml-3 text-xs font-mono text-[#64748B]">
               preview // {title.toLowerCase().replace(/\s+/g, '-')}.com
             </span>
           </div>
 
-          <div className="text-[10px] font-bold text-[#4338CA] dark:text-indigo-300 uppercase tracking-widest bg-[#4338CA]/10 px-3 py-1 rounded-full border border-[#4338CA]/20">
+          <div className="text-[10px] font-bold text-[#4338CA] uppercase tracking-widest bg-[#4338CA]/10 px-3 py-1 rounded-full border border-[#4338CA]/20">
             Slide {currentIndex + 1} of {images.length}
           </div>
         </div>
 
         {/* Main Slide Viewer */}
-        <div className="group relative w-full h-[340px] sm:h-[480px] md:h-[560px] bg-[#F3EFEA] dark:bg-[#070A12] overflow-hidden">
+        <div className="group relative w-full h-[340px] sm:h-[480px] md:h-[560px] bg-[#F3EFEA] overflow-hidden">
           <Image
             src={currentImage}
             alt={`${title} screenshot ${currentIndex + 1}`}
             fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 85vw, 1000px"
             className="object-contain transition-opacity duration-300"
-            priority
+            priority={currentIndex === 0}
           />
 
           {/* Left Arrow */}
@@ -60,7 +61,7 @@ export default function ProjectGallery({ images, title }: ProjectGalleryProps) {
               type="button"
               onClick={goToPrev}
               aria-label="Previous slide"
-              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-[#131B2E]/90 hover:bg-[#4338CA] hover:text-white text-[#131B2E] dark:text-white p-3 rounded-full border border-[#E2E8F0] dark:border-white/20 transition-all opacity-90 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-xl cursor-pointer"
+              className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-[#4338CA] hover:text-white text-[#131B2E] p-3 rounded-full border border-[#E2E8F0] transition-all opacity-90 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-xl cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -72,7 +73,7 @@ export default function ProjectGallery({ images, title }: ProjectGalleryProps) {
               type="button"
               onClick={goToNext}
               aria-label="Next slide"
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 dark:bg-[#131B2E]/90 hover:bg-[#4338CA] hover:text-white text-[#131B2E] dark:text-white p-3 rounded-full border border-[#E2E8F0] dark:border-white/20 transition-all opacity-90 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-xl cursor-pointer"
+              className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-[#4338CA] hover:text-white text-[#131B2E] p-3 rounded-full border border-[#E2E8F0] transition-all opacity-90 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100 shadow-xl cursor-pointer"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -88,16 +89,18 @@ export default function ProjectGallery({ images, title }: ProjectGalleryProps) {
               key={img}
               type="button"
               onClick={() => setCurrentIndex(idx)}
+              aria-label={`View slide ${idx + 1}`}
               className={`relative shrink-0 w-24 h-16 rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${
                 idx === currentIndex
                   ? 'border-[#4338CA] ring-2 ring-[#4338CA]/40 opacity-100 scale-105 shadow-md'
-                  : 'border-[#E2E8F0] dark:border-white/10 opacity-60 hover:opacity-100'
+                  : 'border-[#E2E8F0] opacity-60 hover:opacity-100'
               }`}
             >
               <Image
                 src={img}
                 alt={`Thumbnail ${idx + 1}`}
                 fill
+                sizes="96px"
                 className="object-cover"
               />
             </button>

@@ -1,5 +1,3 @@
-'use client';
-
 import Link from 'next/link';
 import {
   XCircle,
@@ -11,47 +9,39 @@ import {
 export default function BeforeAfterSection() {
   const beforePoints = [
     {
-      title: 'Looks Similar to Competitors',
-      desc: 'Built on off-the-shelf generic templates that fail to communicate your unique brand identity.',
+      title: 'Cookie-Cutter Competitor Look',
+      desc: 'Built on off-the-shelf generic templates that look identical to competitors and fail to build authority.',
     },
     {
-      title: 'Limited Brand Personality & Clutter',
-      desc: 'Rigid pre-made sections where your important messaging gets lost in boilerplate text.',
+      title: 'Bloated & Sluggish Performance',
+      desc: 'Heavy themes and sluggish scripts causing frustrating load delays and high bounce rates on mobile.',
     },
     {
-      title: 'Hidden or Broken Mobile Contact',
-      desc: 'Cumbersome contact forms with no direct WhatsApp connection or fast one-tap calling.',
+      title: 'Friction-Filled Contact Paths',
+      desc: 'Clunky contact forms with no direct WhatsApp connection or fast click-to-call options.',
     },
     {
-      title: 'Unstructured Search Foundation',
-      desc: 'Missing proper schema tags, weak page hierarchy, and sluggish mobile browsing experiences.',
-    },
-    {
-      title: 'Rigid & Hard to Expand',
-      desc: 'Cannot handle dynamic notices, student admissions portals, or custom workflow needs.',
+      title: 'Rigid & Hard to Scale',
+      desc: 'Locked into proprietary site builders that break when you need dynamic portals, notices, or database tools.',
     },
   ];
 
   const afterPoints = [
     {
-      title: 'Custom Visual Identity',
-      desc: 'Distinctive color palette, tailored typography, and layout crafted specifically for your business.',
+      title: 'Distinctive Brand Craftsmanship',
+      desc: 'Custom UI/UX, typography, and visual hierarchy designed specifically around your organization.',
     },
     {
-      title: 'Business-Focused Structure',
-      desc: 'Intentional visual hierarchy that highlights your strengths, services, and trust proof immediately.',
+      title: 'Engineered for Mobile Speed',
+      desc: 'Lightweight modern code delivering instant page rendering across all smartphone screen sizes.',
     },
     {
-      title: 'Mobile-First Experience',
-      desc: 'Engineered from the ground up for seamless smartphone navigation and one-tap lead capture.',
+      title: 'High-Converting Direct Inquiries',
+      desc: 'Prominent 1-click WhatsApp triggers, verified phone actions, and clean lead capture forms.',
     },
     {
-      title: 'Clear Conversion Paths',
-      desc: 'Prominent WhatsApp inquiry triggers, structured quote forms, and direct click-to-call buttons.',
-    },
-    {
-      title: 'Designed Around Your Customers',
-      desc: 'Tailored for real user workflows — from school admissions to corporate service catalogs.',
+      title: 'Scalable Modern Foundation',
+      desc: 'Clean Next.js architecture built to grow into portals, ERP modules, or mobile apps as you expand.',
     },
   ];
 

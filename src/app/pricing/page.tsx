@@ -4,9 +4,9 @@ import { pricingTiers, projectPricingBenchmark, schoolSalesStrategies } from '@/
 import { ArrowRight, Check, ShieldCheck, Smartphone, Clock, Sparkles, CheckCircle2, Building2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Pricing & Packages | Ekaagra Technologies',
+  title: 'Pricing & Packages',
   description:
-    'Transparent pricing tiers for Websites, Web Applications, Android Apps, Custom Software, and School ERP systems tailored for business value and flexible institutional adoption models.',
+    'Transparent pricing packages for custom websites, web applications, Android apps, custom software, and School ERP systems.',
 };
 
 export default function PricingPage() {
@@ -273,14 +273,14 @@ export default function PricingPage() {
               href="/get-quote"
               className="inline-flex items-center gap-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider px-8 py-4 rounded-xl transition-all shadow-xl shadow-[#4338CA]/25"
             >
-              <span>Get Custom Quote</span>
+              <span>Get a Quote</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               href="/contact"
               className="inline-flex items-center gap-2 bg-white hover:bg-slate-50 text-[#131B2E] text-xs font-bold uppercase tracking-wider px-8 py-4 rounded-xl transition-all border border-[#E2E8F0]"
             >
-              <span>Contact Sales Team</span>
+              <span>Contact Team</span>
             </Link>
           </div>
         </div>
