@@ -93,9 +93,9 @@ export default function FeaturedProjectCarousel({
             onClick={handlePrev}
             aria-label="Previous project"
             title="Previous Project"
-            className="absolute -left-3 sm:-left-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white text-[#131B2E] hover:text-[#4338CA] border-2 border-[#E2E8F0] hover:border-[#4338CA] shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
+            className="absolute left-1 sm:-left-5 md:-left-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/95 text-[#131B2E] hover:text-[#4338CA] border-2 border-[#E2E8F0] hover:border-[#4338CA] shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
           >
-            <ChevronLeft className="w-6 h-6 stroke-[2.5]" />
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
           </button>
 
           {/* Right Center Arrow Button */}
@@ -104,9 +104,9 @@ export default function FeaturedProjectCarousel({
             onClick={handleNext}
             aria-label="Next project"
             title="Next Project"
-            className="absolute -right-3 sm:-right-6 top-1/2 -translate-y-1/2 z-30 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-white text-[#131B2E] hover:text-[#4338CA] border-2 border-[#E2E8F0] hover:border-[#4338CA] shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
+            className="absolute right-1 sm:-right-5 md:-right-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/95 text-[#131B2E] hover:text-[#4338CA] border-2 border-[#E2E8F0] hover:border-[#4338CA] shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
           >
-            <ChevronRight className="w-6 h-6 stroke-[2.5]" />
+            <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
           </button>
 
           {/* Main Featured Container Card with Compact Equal Height Columns */}

@@ -31,9 +31,19 @@
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   html {
     scroll-behavior: smooth;
     color-scheme: light;
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
@@ -42,6 +52,23 @@
     -moz-osx-font-smoothing: grayscale;
     background-color: #faf7f2;
     color: #131b2e;
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+    position: relative;
+  }
+
+  /* Responsive image scaling */
+  img,
+  svg,
+  video,
+  canvas,
+  audio,
+  iframe,
+  embed,
+  object {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Accessible focus indicators */
