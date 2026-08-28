@@ -30,11 +30,14 @@ export default function HomePage() {
       <ShowcaseFrameSync />
 
       {/* ─── 1. HERO SECTION (WHY / POSITIONING & MASTER FRAME) ─── */}
-      <section id="hero" className="relative pt-3 sm:pt-5 pb-6 sm:pb-8 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden">
+      <section
+        id="hero"
+        className="relative py-4 sm:py-6 lg:min-h-[var(--showcase-frame-height,calc(100dvh-4.5rem))] flex flex-col justify-between bg-warm-grid border-b border-[#E2E8F0] overflow-hidden"
+      >
         {/* Ambient Top Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex-1 flex flex-col justify-between gap-4 sm:gap-6 my-auto">
           <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             {/* Left Content */}
             <div className="lg:col-span-5 space-y-4 text-left">

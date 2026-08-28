@@ -12,35 +12,23 @@ export default function ShowcaseFrameSync() {
     if (typeof window === 'undefined') return;
 
     const measureAndSync = () => {
-      const heroEl = document.getElementById('hero');
       const vh = window.innerHeight;
-      const heroHeight = heroEl ? heroEl.offsetHeight : 680;
-      // On 2K/4K displays and large viewports, frame height matches full viewport
-      const optimalFrameHeight = Math.max(heroHeight, vh);
+      const headerEl = document.querySelector('header');
+      const navH = headerEl ? headerEl.offsetHeight : 72;
+      const availableHeight = Math.max(660, vh - navH);
 
       document.documentElement.style.setProperty(
         '--showcase-frame-height',
-        `${optimalFrameHeight}px`
+        `${availableHeight}px`
       );
     };
 
     measureAndSync();
 
-    const heroEl = document.getElementById('hero');
-    let observer: ResizeObserver | null = null;
-
-    if (heroEl && typeof ResizeObserver !== 'undefined') {
-      observer = new ResizeObserver(() => {
-        measureAndSync();
-      });
-      observer.observe(heroEl);
-    }
-
     window.addEventListener('resize', measureAndSync, { passive: true });
     window.addEventListener('orientationchange', measureAndSync, { passive: true });
 
     return () => {
-      if (observer) observer.disconnect();
       window.removeEventListener('resize', measureAndSync);
       window.removeEventListener('orientationchange', measureAndSync);
     };
