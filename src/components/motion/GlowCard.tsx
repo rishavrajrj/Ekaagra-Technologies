@@ -5,7 +5,7 @@ import React, { useRef, useState, useCallback, useEffect } from 'react';
 interface GlowCardProps {
   children: React.ReactNode;
   className?: string;
-  glowColor?: string; // default rgba(67, 56, 202, 0.08)
+  glowColor?: string; // default rgba(67, 56, 202, 0.06)
   as?: React.ElementType;
   onClick?: (e: React.MouseEvent) => void;
 }
@@ -13,14 +13,14 @@ interface GlowCardProps {
 export default function GlowCard({
   children,
   className = '',
-  glowColor = 'rgba(67, 56, 202, 0.07)',
+  glowColor = 'rgba(67, 56, 202, 0.06)',
   as: Component = 'div',
   onClick,
 }: GlowCardProps) {
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
   const [isHovered, setIsHovered] = useState(false);
   const [isTouchDevice, setIsTouchDevice] = useState(false);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     const hasCoarse =
@@ -30,15 +30,27 @@ export default function GlowCard({
         'ontouchstart' in window);
 
     setIsTouchDevice(hasCoarse);
+
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
   }, []);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
       if (isTouchDevice || !cardRef.current) return;
-      const rect = cardRef.current.getBoundingClientRect();
-      setMousePos({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
+      const el = cardRef.current;
+      const clientX = e.clientX;
+      const clientY = e.clientY;
+
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = requestAnimationFrame(() => {
+        if (!el) return;
+        const rect = el.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        el.style.setProperty('--glow-x', `${x}px`);
+        el.style.setProperty('--glow-y', `${y}px`);
       });
     },
     [isTouchDevice]
@@ -50,7 +62,6 @@ export default function GlowCard({
 
   const handleMouseLeave = () => {
     setIsHovered(false);
-    setMousePos({ x: -1000, y: -1000 });
   };
 
   return (
@@ -61,15 +72,19 @@ export default function GlowCard({
       onMouseLeave={handleMouseLeave}
       onClick={onClick}
       className={`card-popup relative overflow-hidden ${className}`}
+      style={{
+        '--glow-x': '-1000px',
+        '--glow-y': '-1000px',
+      } as React.CSSProperties}
     >
-      {/* Dynamic Cursor-Following Radial Highlight (Desktop Only) */}
+      {/* Dynamic Cursor-Following Radial Highlight (Desktop Zero-Rerender CSS Variable) */}
       {!isTouchDevice && (
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 transition-opacity duration-300 z-0"
           style={{
             opacity: isHovered ? 1 : 0,
-            background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, ${glowColor}, transparent 45%)`,
+            background: `radial-gradient(360px circle at var(--glow-x) var(--glow-y), ${glowColor}, transparent 50%)`,
           }}
         />
       )}

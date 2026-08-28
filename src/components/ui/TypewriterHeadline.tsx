@@ -39,6 +39,15 @@ export default function TypewriterHeadline({
   useEffect(() => {
     if (!isHydrated) return;
 
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      setCurrentText(phrases[0] || 'people remember.');
+      return;
+    }
+
     const fullPhrase = phrases[currentPhraseIndex];
 
     if (isPaused) {

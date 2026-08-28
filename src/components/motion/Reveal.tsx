@@ -17,11 +17,11 @@ interface RevealProps {
 export default function Reveal({
   children,
   delay = 0,
-  duration = 650,
-  distance = 24,
+  duration = 550,
+  distance = 18,
   direction = 'up',
-  blur = 4,
-  threshold = 0.15,
+  blur = 3,
+  threshold = 0.12,
   className = '',
   as: Component = 'div',
 }: RevealProps) {
@@ -29,23 +29,37 @@ export default function Reveal({
   const domRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    // Check if user prefers reduced motion
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
+    // Check if user prefers reduced motion or window is SSR
+    if (typeof window === 'undefined') return;
+    
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       setIsVisible(true);
       return;
     }
 
     const element = domRef.current;
-    if (!element) return;
+    if (!element) {
+      setIsVisible(true);
+      return;
+    }
+
+    // Safety fallback: ensure content becomes visible within 1.5s no matter what
+    const safetyTimer = setTimeout(() => {
+      setIsVisible(true);
+    }, 1500 + delay);
+
+    if (!('IntersectionObserver' in window)) {
+      setIsVisible(true);
+      clearTimeout(safetyTimer);
+      return;
+    }
 
     // Check if already in viewport on mount
     const rect = element.getBoundingClientRect();
     if (rect.top < window.innerHeight && rect.bottom > 0) {
       setIsVisible(true);
+      clearTimeout(safetyTimer);
       return;
     }
 
@@ -54,22 +68,24 @@ export default function Reveal({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsVisible(true);
+            clearTimeout(safetyTimer);
             observer.unobserve(entry.target);
           }
         });
       },
       {
         threshold,
-        rootMargin: '0px 0px -40px 0px',
+        rootMargin: '0px 0px -30px 0px',
       }
     );
 
     observer.observe(element);
 
     return () => {
+      clearTimeout(safetyTimer);
       observer.disconnect();
     };
-  }, [threshold]);
+  }, [threshold, delay]);
 
   const getTransform = () => {
     if (isVisible) return 'none';

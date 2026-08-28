@@ -12,6 +12,8 @@ import {
 import { Project } from '@/lib/types';
 import LiveWebsitePreview from './LiveWebsitePreview';
 import ProjectCard from './ProjectCard';
+import StaggerReveal from '@/components/motion/StaggerReveal';
+import MagneticButton from '@/components/motion/MagneticButton';
 
 interface FeaturedProjectCarouselProps {
   projects: Project[];
@@ -114,8 +116,11 @@ export default function FeaturedProjectCarousel({
             <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
           </button>
 
-          {/* Main Featured Container Card with Compact Equal Height Columns */}
-          <div className="bg-white border border-[#E2E8F0] rounded-3xl overflow-hidden shadow-2xl grid lg:grid-cols-12 group hover:border-[#4338CA]/40 transition-all duration-300 items-stretch">
+          {/* Main Featured Container Card with Smooth Showroom Transition */}
+          <div
+            key={currentProject.slug}
+            className="bg-white border border-[#E2E8F0] rounded-3xl overflow-hidden shadow-2xl grid lg:grid-cols-12 group hover:border-[#4338CA]/40 transition-all duration-300 animate-fade-in items-stretch"
+          >
             {/* Left Column: Interactive Live Website Preview */}
             <div className="lg:col-span-7 bg-[#F3EFEA] border-b lg:border-b-0 lg:border-r border-[#E2E8F0] p-2.5 sm:p-3.5 flex flex-col h-full justify-stretch">
               <LiveWebsitePreview
@@ -131,7 +136,7 @@ export default function FeaturedProjectCarousel({
               />
             </div>
 
-            {/* Right Column: Project Details (Original Structure Preserved) */}
+            {/* Right Column: Project Details */}
             <div className="lg:col-span-5 p-5 sm:p-6 lg:p-7 flex flex-col justify-between space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -195,15 +200,17 @@ export default function FeaturedProjectCarousel({
               {/* Action CTAs */}
               <div className="pt-4 border-t border-[#E2E8F0] flex items-center justify-between gap-3">
                 {currentProject.liveUrl ? (
-                  <a
-                    href={currentProject.liveUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#4338CA]/25 uppercase tracking-wider"
-                  >
-                    <span>Visit Live Website</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
+                  <MagneticButton maxDistance={5}>
+                    <a
+                      href={currentProject.liveUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="premium-shimmer-btn inline-flex items-center gap-1.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-[#4338CA]/25 uppercase tracking-wider"
+                    >
+                      <span>Visit Live Website</span>
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  </MagneticButton>
                 ) : (
                   <span className="text-xs font-semibold text-[#64748B] bg-[#FAF7F2] px-3 py-1.5 rounded-lg border border-[#E2E8F0]">
                     Case Study Project
@@ -238,7 +245,7 @@ export default function FeaturedProjectCarousel({
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <StaggerReveal staggerInterval={60} maxStaggerDelay={240} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {cardsToRender.map((project) => (
             <ProjectCard
               key={project.slug}
@@ -247,7 +254,7 @@ export default function FeaturedProjectCarousel({
               isActive={currentProject.slug === project.slug}
             />
           ))}
-        </div>
+        </StaggerReveal>
       </div>
     </div>
   );

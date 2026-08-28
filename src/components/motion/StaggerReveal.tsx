@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface StaggerRevealProps {
   children: React.ReactNode;
-  staggerInterval?: number; // in milliseconds (default 70ms)
+  staggerInterval?: number; // in milliseconds (default 65ms)
   baseDelay?: number; // initial delay in ms
+  maxStaggerDelay?: number; // maximum stagger delay cap (default 280ms)
   duration?: number; // duration in ms
   distance?: number; // distance in px
   threshold?: number;
@@ -15,11 +16,12 @@ interface StaggerRevealProps {
 
 export default function StaggerReveal({
   children,
-  staggerInterval = 70,
+  staggerInterval = 65,
   baseDelay = 0,
-  duration = 600,
-  distance = 20,
-  threshold = 0.15,
+  maxStaggerDelay = 280,
+  duration = 500,
+  distance = 16,
+  threshold = 0.12,
   className = '',
   as: Component = 'div',
 }: StaggerRevealProps) {
@@ -27,21 +29,35 @@ export default function StaggerReveal({
   const domRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (typeof window === 'undefined') return;
 
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
       setIsVisible(true);
       return;
     }
 
     const element = domRef.current;
-    if (!element) return;
+    if (!element) {
+      setIsVisible(true);
+      return;
+    }
+
+    // Safety fallback: guaranteed visibility after 1.5s
+    const safetyTimer = setTimeout(() => {
+      setIsVisible(true);
+    }, 1500 + baseDelay);
+
+    if (!('IntersectionObserver' in window)) {
+      setIsVisible(true);
+      clearTimeout(safetyTimer);
+      return;
+    }
 
     const rect = element.getBoundingClientRect();
     if (rect.top < window.innerHeight && rect.bottom > 0) {
       setIsVisible(true);
+      clearTimeout(safetyTimer);
       return;
     }
 
@@ -50,6 +66,7 @@ export default function StaggerReveal({
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             setIsVisible(true);
+            clearTimeout(safetyTimer);
             observer.unobserve(entry.target);
           }
         });
@@ -63,16 +80,17 @@ export default function StaggerReveal({
     observer.observe(element);
 
     return () => {
+      clearTimeout(safetyTimer);
       observer.disconnect();
     };
-  }, [threshold]);
+  }, [threshold, baseDelay]);
 
   const childrenArray = React.Children.toArray(children);
 
   return (
     <Component ref={domRef} className={className}>
       {childrenArray.map((child, index) => {
-        const itemDelay = baseDelay + index * staggerInterval;
+        const itemDelay = Math.min(baseDelay + index * staggerInterval, maxStaggerDelay);
         const itemStyle: React.CSSProperties = {
           opacity: isVisible ? 1 : 0,
           transform: isVisible ? 'none' : `translate3d(0, ${distance}px, 0)`,

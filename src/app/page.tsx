@@ -45,7 +45,7 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             {/* Left Content */}
             <div className="lg:col-span-5 space-y-4 text-left">
-              {/* Eyebrow badge */}
+              {/* Top Category Badge */}
               <Reveal delay={80} distance={14} duration={500}>
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider shadow-sm hover:scale-[1.02] transition-transform">
                   <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
@@ -54,19 +54,19 @@ export default function HomePage() {
               </Reveal>
 
               {/* Main Animated Typewriter Headline */}
-              <Reveal delay={160} distance={18} duration={600}>
+              <Reveal delay={160} distance={16} duration={550}>
                 <TypewriterHeadline />
               </Reveal>
 
               {/* Supporting Copy */}
-              <Reveal delay={260} distance={18} duration={600}>
+              <Reveal delay={240} distance={16} duration={550}>
                 <p className="text-sm sm:text-base text-[#64748B] leading-relaxed max-w-xl font-normal">
                   Beautiful, fast and conversion-focused websites designed around your business — not another generic template. We craft custom digital experiences that turn visitors into loyal customers.
                 </p>
               </Reveal>
 
               {/* 3 Core Value Differentiators */}
-              <Reveal delay={340} distance={16} duration={600}>
+              <Reveal delay={320} distance={14} duration={550}>
                 <div className="space-y-1.5 pt-0.5 text-xs sm:text-[13px] text-[#475569] font-medium">
                   <div className="flex items-center gap-2.5">
                     <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -90,9 +90,9 @@ export default function HomePage() {
               </Reveal>
 
               {/* CTAs */}
-              <Reveal delay={420} distance={16} duration={600}>
+              <Reveal delay={380} distance={14} duration={550}>
                 <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <MagneticButton maxDistance={7}>
+                  <MagneticButton maxDistance={6}>
                     <Link
                       href="/get-quote"
                       className="premium-shimmer-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-300 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/40 hover:-translate-y-0.5 active:translate-y-0"
@@ -113,7 +113,7 @@ export default function HomePage() {
               </Reveal>
 
               {/* Micro Credibility Specs */}
-              <Reveal delay={500} distance={14} duration={600}>
+              <Reveal delay={440} distance={12} duration={500}>
                 <div className="pt-3 border-t border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg">
                   <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/70 hover:shadow-sm">
                     <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Specialty</span>
@@ -137,14 +137,14 @@ export default function HomePage() {
 
             {/* Right Signature Visual Workspace (Preview Only) */}
             <div className="lg:col-span-7 w-full min-w-0">
-              <Reveal delay={200} distance={20} duration={700}>
+              <Reveal delay={180} distance={18} duration={600}>
                 <HeroVisual />
               </Reveal>
             </div>
           </div>
 
           {/* Integrated Trust Strip Inside Hero */}
-          <Reveal delay={550} distance={12} duration={600}>
+          <Reveal delay={500} distance={10} duration={500}>
             <div className="pt-4 sm:pt-5 border-t border-[#E2E8F0]">
               <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-2.5 gap-x-4 sm:gap-x-8 text-[11px] sm:text-xs font-bold tracking-wider text-[#475569] uppercase text-center sm:text-left">
                 <div className="flex items-center gap-2">

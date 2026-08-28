@@ -247,15 +247,19 @@
 @keyframes auroraGlow {
   0% {
     transform: translate(0px, 0px) scale(1);
-    opacity: 0.15;
+    opacity: 0.14;
   }
-  50% {
-    transform: translate(25px, -15px) scale(1.12);
-    opacity: 0.25;
+  33% {
+    transform: translate(12px, -8px) scale(1.04);
+    opacity: 0.20;
+  }
+  66% {
+    transform: translate(-10px, 10px) scale(0.98);
+    opacity: 0.16;
   }
   100% {
-    transform: translate(-15px, 15px) scale(0.95);
-    opacity: 0.18;
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0.14;
   }
 }
 
@@ -282,15 +286,15 @@
 
 @keyframes pulseRing {
   0% {
-    transform: scale(0.95);
-    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    transform: scale(0.96);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
   }
   70% {
     transform: scale(1);
-    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    box-shadow: 0 0 0 5px rgba(16, 185, 129, 0);
   }
   100% {
-    transform: scale(0.95);
+    transform: scale(0.96);
     box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
   }
 }
@@ -308,7 +312,7 @@
   animation: cursorBlink 0.9s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* -- Premium Interactive Utilities ------------------------------- */
+/* ── Premium Interactive Utilities ─────────────────────────────── */
 .premium-shimmer-btn {
   position: relative;
   overflow: hidden;
@@ -319,12 +323,12 @@
   position: absolute;
   top: 0;
   left: 0;
-  width: 60%;
+  width: 50%;
   height: 100%;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.28) 50%,
+    rgba(255, 255, 255, 0.22) 50%,
     transparent 100%
   );
   transform: translateX(-150%) skewX(-20deg);
@@ -332,92 +336,90 @@
 }
 
 .premium-shimmer-btn:hover::after {
-  animation: shimmerSweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: shimmerSweep 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
 .premium-card {
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.3s ease;
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease;
 }
 
 .premium-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 20px 35px -10px rgba(67, 56, 202, 0.12),
-              0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 16px 32px -8px rgba(67, 56, 202, 0.10),
+              0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-/* -- Tactile Card Hover Pop-Up Animation ------------------------- */
+/* ── Tactile Card Hover Pop-Up (Restrained Agency Physics) ─────── */
 .card-popup {
-  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.3s ease,
-              background-color 0.3s ease;
-  will-change: transform, box-shadow;
+  transition: transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1),
+              box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease,
+              background-color 0.25s ease;
 }
 
 .card-popup:hover {
-  transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 24px 44px -12px rgba(67, 56, 202, 0.18),
-              0 8px 18px -4px rgba(19, 27, 46, 0.08) !important;
-  border-color: rgba(67, 56, 202, 0.45) !important;
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: 0 20px 38px -10px rgba(67, 56, 202, 0.14),
+              0 6px 16px -3px rgba(19, 27, 46, 0.06) !important;
+  border-color: rgba(67, 56, 202, 0.35) !important;
   z-index: 10;
 }
 
 .card-popup-sm {
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-              border-color 0.25s ease,
-              background-color 0.25s ease;
-  will-change: transform, box-shadow;
+  transition: transform 0.24s cubic-bezier(0.2, 0.9, 0.3, 1),
+              box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.2s ease,
+              background-color 0.2s ease;
 }
 
 .card-popup-sm:hover {
-  transform: translateY(-5px) scale(1.02);
-  box-shadow: 0 16px 30px -8px rgba(67, 56, 202, 0.14),
-              0 4px 12px -2px rgba(19, 27, 46, 0.05) !important;
-  border-color: rgba(67, 56, 202, 0.4) !important;
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 24px -6px rgba(67, 56, 202, 0.11),
+              0 3px 10px -2px rgba(19, 27, 46, 0.04) !important;
+  border-color: rgba(67, 56, 202, 0.3) !important;
   z-index: 5;
 }
 
 .premium-live-dot {
-  animation: pulseRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation: pulseRing 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* -- Traveling Light Beam for Process Timeline ------------------- */
+/* ── Traveling Light Beam for Process Timeline ─────────────────── */
 @keyframes processTravelingBeam {
   0% {
-    left: 0%;
+    left: -10%;
     opacity: 0;
   }
-  20% {
-    opacity: 1;
+  15% {
+    opacity: 0.85;
   }
-  80% {
-    opacity: 1;
+  85% {
+    opacity: 0.85;
   }
   100% {
-    left: 100%;
+    left: 110%;
     opacity: 0;
   }
 }
 
 .animate-traveling-beam {
-  animation: processTravelingBeam 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: processTravelingBeam 5.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* -- Subtle Approval Checkpoint Pulse ---------------------------- */
+/* ── Subtle Approval Checkpoint Pulse ──────────────────────────── */
 @keyframes softApprovalPulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(249, 115, 96, 0.4);
+    box-shadow: 0 0 0 0 rgba(249, 115, 96, 0.35);
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(249, 115, 96, 0);
+    box-shadow: 0 0 0 5px rgba(249, 115, 96, 0);
   }
 }
 
 .animate-approval-pulse {
-  animation: softApprovalPulse 3s ease-in-out infinite;
+  animation: softApprovalPulse 3.8s ease-in-out infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════
