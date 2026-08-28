@@ -910,3 +910,5 @@ export const contactMethods = [
   'WhatsApp',
   'Email',
 ];
+
+export const contactMethodOptions = contactMethods;

@@ -3,6 +3,13 @@ import {
   ArrowRight,
   Sparkles,
   Check,
+  CheckCircle2,
+  Zap,
+  Smartphone,
+  Search,
+  ShieldCheck,
+  Cloud,
+  Layers,
 } from 'lucide-react';
 import {
   faqs,
@@ -14,12 +21,16 @@ import IndustryShowcase from '@/components/ui/IndustryShowcase';
 import BeforeAfterSection from '@/components/ui/BeforeAfterSection';
 import ServicesList from '@/components/ui/ServicesList';
 import ProcessTimeline from '@/components/ui/ProcessTimeline';
+import ShowcaseFrameSync from '@/components/showcase/ShowcaseFrameSync';
 
 export default function HomePage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] overflow-hidden">
-      {/* ─── 1. HERO SECTION (WHY / POSITIONING) ────────────────── */}
-      <section className="relative pt-3 sm:pt-5 pb-6 sm:pb-8 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden">
+      {/* ── Dynamic Hero Height Synchronizer for Cinematic Showcase ── */}
+      <ShowcaseFrameSync />
+
+      {/* ─── 1. HERO SECTION (WHY / POSITIONING & MASTER FRAME) ─── */}
+      <section id="hero" className="relative pt-3 sm:pt-5 pb-6 sm:pb-8 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden">
         {/* Ambient Top Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none" />
 
@@ -111,31 +122,29 @@ export default function HomePage() {
               <HeroVisual />
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ─── 2. TRUST STRIP (PROOF) ─────────────────────────────── */}
-      <section className="bg-[#FAF7F2] border-b border-[#E2E8F0] py-6 overflow-x-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between gap-8 min-w-[700px] text-xs font-bold tracking-wider text-[#475569] uppercase">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-[#4338CA]"></span>
-              <span>100% CUSTOM DESIGNED</span>
-            </div>
-            <span className="text-[#CBD5E1]">•</span>
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-[#F97360]"></span>
-              <span>MOBILE-FIRST ARCHITECTURE</span>
-            </div>
-            <span className="text-[#CBD5E1]">•</span>
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-[#F4C95D]"></span>
-              <span>DIRECT LEAD CAPTURE</span>
-            </div>
-            <span className="text-[#CBD5E1]">•</span>
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-              <span>POST-LAUNCH SUPPORT</span>
+          {/* Integrated Trust Strip Inside Hero */}
+          <div className="pt-4 sm:pt-5 border-t border-[#E2E8F0] overflow-x-auto">
+            <div className="flex items-center justify-between gap-8 min-w-[700px] text-xs font-bold tracking-wider text-[#475569] uppercase">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#4338CA]"></span>
+                <span>100% CUSTOM DESIGNED</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#F97360]"></span>
+                <span>MOBILE-FIRST ARCHITECTURE</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#F4C95D]"></span>
+                <span>DIRECT LEAD CAPTURE</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span>POST-LAUNCH SUPPORT</span>
+              </div>
             </div>
           </div>
         </div>
@@ -148,40 +157,71 @@ export default function HomePage() {
       <BeforeAfterSection />
 
       {/* ─── 6. SERVICES (WHAT WE BUILD) ────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="services">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-[#E2E8F0] pb-8">
-            <div className="space-y-3">
-              <span className="inline-flex items-center gap-2 px-3.5 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-wider">
-                <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
+      <section
+        id="services"
+        className="relative py-5 sm:py-6 lg:min-h-[var(--showcase-frame-height,660px)] flex flex-col justify-between border-b border-[#E2E8F0] bg-[#FAF7F2] overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex-1 flex flex-col justify-between space-y-4 sm:space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-[#E2E8F0] pb-3">
+            <div className="space-y-1">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-wider">
+                <Sparkles className="w-3 h-3 text-[#F4C95D]" />
                 END-TO-END CAPABILITIES
               </span>
-              <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
                 Services Built Around Your Brand
               </h2>
             </div>
-            <p className="text-sm text-[#64748B] max-w-md">
+            <p className="text-xs sm:text-sm text-[#64748B] max-w-md">
               From high-converting business websites to full-scale school ERP systems and native Android apps.
             </p>
           </div>
 
-          {/* 5 Core Services Card Grid */}
+          {/* 3 Flagship Services Card Grid */}
           <ServicesList />
+
+          {/* Integrated Capability Strip */}
+          <div className="pt-4 border-t border-[#E2E8F0] overflow-x-auto">
+            <div className="flex items-center justify-between gap-8 min-w-[700px] text-xs font-bold tracking-wider text-[#475569] uppercase">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#4338CA]" />
+                <span>CUSTOM CMS &amp; ADMIN PORTALS</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#F97360]" />
+                <span>GOOGLE PLAY STORE APP DEPLOYMENT</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#F4C95D]" />
+                <span>PAYMENT GATEWAY &amp; WHATSAPP APIS</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>CONTINUOUS CLOUD BACKUPS</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ─── 7. WORKFLOW (HOW WE WORK) ──────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="process">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest">
-              <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
+      <section
+        id="process"
+        className="relative py-6 sm:py-8 lg:min-h-[var(--showcase-frame-height,660px)] flex flex-col justify-center border-b border-[#E2E8F0] bg-[#FAF7F2] overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col gap-5 sm:gap-6">
+          <div className="text-center max-w-2xl mx-auto space-y-1">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
+              <Sparkles className="w-3 h-3 text-[#F97360]" />
               TRANSPARENT WORKFLOW
             </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
               From First Idea to Live Launch
             </h2>
-            <p className="text-base sm:text-lg text-[#64748B] leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
               A predictable 6-step roadmap with dedicated client review checkpoints before anything goes live.
             </p>
           </div>
@@ -192,78 +232,81 @@ export default function HomePage() {
       </section>
 
       {/* ─── 8. PRICING (INVESTMENT) ────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#F5F0E8]" id="pricing">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
-          <div className="text-center max-w-3xl mx-auto space-y-4">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest">
-              <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
+      <section
+        id="pricing"
+        className="relative py-5 sm:py-6 lg:min-h-[var(--showcase-frame-height,660px)] flex flex-col justify-between border-b border-[#E2E8F0] bg-[#F5F0E8] overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex-1 flex flex-col justify-between space-y-4 sm:space-y-5">
+          <div className="text-center max-w-2xl mx-auto space-y-1.5">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
+              <Sparkles className="w-3 h-3 text-[#F4C95D]" />
               HONEST &amp; TRANSPARENT PRICING
             </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
               Simple Packages. Real Value.
             </h2>
-            <p className="text-base sm:text-lg text-[#64748B]">
+            <p className="text-xs sm:text-sm text-[#64748B]">
               Clear starting packages tailored for small businesses, educational institutions, and growing enterprises.
             </p>
           </div>
 
           {/* Pricing Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
             {pricingTiers.slice(0, 3).map((tier) => (
               <div
                 key={tier.title}
-                className={`relative flex flex-col justify-between rounded-3xl p-8 border transition-all duration-300 bg-white shadow-xl ${
+                className={`relative flex flex-col justify-between rounded-xl p-3.5 sm:p-4 border transition-all duration-300 bg-white shadow-sm ${
                   tier.highlighted
-                    ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15 scale-[1.02]'
+                    ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15 scale-[1.01]'
                     : 'border-[#E2E8F0] hover:border-[#4338CA]/30'
                 }`}
               >
                 {tier.highlighted && (
-                  <span className="absolute -top-3 right-6 bg-[#4338CA] text-white text-[10px] font-extrabold uppercase tracking-widest px-3 py-1 rounded-full shadow-md">
+                  <span className="absolute -top-2.5 right-3 bg-[#4338CA] text-white text-[9px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full shadow-sm">
                     Most Popular
                   </span>
                 )}
 
-                <div className="space-y-6">
+                <div className="space-y-2">
                   <div>
-                    <span className="text-[10px] font-mono font-bold text-[#F97360] uppercase tracking-wider block">
+                    <span className="text-[9px] font-mono font-bold text-[#F97360] uppercase tracking-wider block">
                       {tier.badge || 'Package'}
                     </span>
-                    <h3 className="text-xl font-extrabold text-[#131B2E] mt-1">
+                    <h3 className="text-sm sm:text-base font-extrabold text-[#131B2E] mt-0.5">
                       {tier.title}
                     </h3>
-                    <div className="mt-3 text-3xl font-extrabold text-[#4338CA] font-mono">
+                    <div className="mt-0.5 text-lg sm:text-xl font-extrabold text-[#4338CA] font-mono">
                       {tier.startingFrom}
                     </div>
-                    <p className="text-xs text-[#64748B] mt-2 leading-relaxed">
+                    <p className="text-[11px] text-[#64748B] mt-0.5 leading-relaxed">
                       {tier.description}
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-[#E2E8F0] space-y-2.5">
-                    <span className="text-[11px] font-bold text-[#131B2E] uppercase tracking-wider block">
+                  <div className="pt-1.5 border-t border-[#E2E8F0] space-y-1">
+                    <span className="text-[9px] font-bold text-[#131B2E] uppercase tracking-wider block">
                       Included Scope:
                     </span>
-                    {tier.features.map((feat, i) => (
-                      <div key={i} className="flex items-start gap-2.5 text-xs text-[#334155] font-medium">
-                        <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>{feat}</span>
+                    {tier.features.slice(0, 3).map((feat, i) => (
+                      <div key={i} className="flex items-start gap-1.5 text-[11px] text-[#334155] font-medium">
+                        <Check className="w-3 h-3 text-emerald-600 shrink-0 mt-0.5" />
+                        <span className="truncate">{feat}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="pt-8">
+                <div className="pt-2.5">
                   <Link
                     href="/get-quote"
-                    className={`w-full inline-flex items-center justify-center gap-2 py-3.5 px-5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md ${
+                    className={`w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shadow-sm ${
                       tier.highlighted
                         ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-[#4338CA]/25'
                         : 'bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0]'
                     }`}
                   >
                     <span>Get a Quote</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-3 h-3" />
                   </Link>
                 </div>
               </div>
@@ -271,54 +314,193 @@ export default function HomePage() {
           </div>
 
           {/* Featured Strategy Callout: The Prestige Combo */}
-          <div className="bg-white border border-[#E2E8F0] rounded-3xl p-8 sm:p-10 shadow-xl grid lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-8 space-y-3">
+          <div className="bg-white border border-[#E2E8F0] rounded-xl p-2.5 sm:p-3 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2.5">
+            <div className="space-y-0.5 text-left">
               <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-[#F97360]/10 text-[#F97360] font-bold text-[10px] uppercase tracking-wider rounded-full border border-[#F97360]/20">
-                  FEATURED INSTITUTIONAL BUNDLE 🚀
+                <span className="px-2 py-0.5 bg-[#F97360]/10 text-[#F97360] font-bold text-[8px] uppercase tracking-wider rounded-full border border-[#F97360]/20">
+                  FEATURED COMBO 🚀
                 </span>
                 <span className="text-xs font-mono font-bold text-emerald-600">
                   ₹38,000 Special Offer
                 </span>
               </div>
-              <h3 className="text-2xl font-extrabold text-[#131B2E]">
-                The &ldquo;Prestige Combo&rdquo; Bundle (Website + Google Play Store App)
+              <h3 className="text-xs font-extrabold text-[#131B2E]">
+                The &ldquo;Prestige Combo&rdquo; Bundle (Custom Web App + Google Play Store Android App)
               </h3>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
-                Combine a full institutional Web Application with an official Play Store Android Application into a single high-impact package giving your school or business maximum authority.
+              <p className="text-[10px] text-[#64748B]">
+                Combine an institutional web platform with an official mobile app for maximum credibility.
               </p>
             </div>
 
-            <div className="lg:col-span-4 flex flex-col sm:flex-row lg:flex-col gap-3 justify-end">
-              <Link
-                href="/pricing"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20"
-              >
-                <span>Explore All Packages</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
+            <Link
+              href="/pricing"
+              className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-[11px] font-bold uppercase tracking-wider rounded-lg transition-all shadow-sm"
+            >
+              <span>Explore All Packages</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+
+          {/* Integrated Pricing Transparency Strip */}
+          <div className="pt-3 border-t border-[#E2E8F0] overflow-x-auto">
+            <div className="flex items-center justify-between gap-8 min-w-[700px] text-xs font-bold tracking-wider text-[#475569] uppercase">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#4338CA]" />
+                <span>FIXED MILESTONE PAYMENTS</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#F97360]" />
+                <span>ZERO HIDDEN OR RENEWAL SURPRISES</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#F4C95D]" />
+                <span>FREE DOMAIN &amp; SSL CONFIGURATION</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>FULL SOURCE CODE HANDOVER</span>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ─── 9. TECHNOLOGY (HOW WE BUILD) ───────────────────────── */}
-      <section className="py-20 border-b border-[#E2E8F0] bg-[#FAF7F2]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 text-center">
-          <div className="space-y-2 max-w-2xl mx-auto">
-            <span className="text-xs font-mono font-bold text-[#64748B] uppercase tracking-widest">
-              TECHNOLOGY STACK
+      <section
+        id="technology"
+        className="relative py-8 sm:py-10 lg:py-11 lg:min-h-[var(--showcase-frame-height,660px)] flex flex-col border-b border-[#E2E8F0] bg-[#FAF7F2] overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex flex-col gap-5 sm:gap-6">
+          {/* Section Header */}
+          <div className="text-center max-w-2xl mx-auto space-y-1">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
+              <Sparkles className="w-3 h-3 text-[#F97360]" />
+              ENGINEERING &amp; STANDARDS
             </span>
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E]">
-              Engineered with Modern Standards
-            </h3>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+              Engineered with Modern Speed &amp; Security
+            </h2>
+            <p className="text-xs sm:text-sm text-[#64748B]">
+              Every project is built on modern frameworks for instant responsiveness, high SEO authority, and zero maintenance headaches.
+            </p>
           </div>
 
-          <div className="flex flex-wrap justify-center items-center gap-3 max-w-4xl mx-auto">
-            {['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Supabase', 'PostgreSQL', 'Kotlin / Android', 'Java', 'Spring Boot', 'Vercel Edge'].map((tech) => (
+          {/* 4 Technical Pillar Cards */}
+          <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 items-stretch">
+            <div className="p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm hover:border-[#4338CA]/40 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-[#4338CA]/10 text-[#4338CA] flex items-center justify-center font-bold text-sm">
+                ⚡
+              </div>
+              <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">Sub-500ms Edge Speed</h3>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Next.js Server-Side Rendering (SSR) and optimized asset pipelines for instant global loading.
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm hover:border-[#4338CA]/40 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
+                🛡️
+              </div>
+              <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">100% Code Ownership</h3>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Full handover of clean Git repositories and databases. Zero proprietary builder lock-in.
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm hover:border-[#4338CA]/40 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-[#F97360]/10 text-[#F97360] flex items-center justify-center font-bold text-sm">
+                🔍
+              </div>
+              <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">Google Search Ready</h3>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Automated sitemaps, JSON-LD schema markup, and OpenGraph preview tags for high search discovery.
+              </p>
+            </div>
+
+            <div className="p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm hover:border-[#4338CA]/40 transition-colors">
+              <div className="w-8 h-8 rounded-lg bg-[#F4C95D]/20 text-[#B45309] flex items-center justify-center font-bold text-sm">
+                🔒
+              </div>
+              <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">Enterprise Security</h3>
+              <p className="text-xs text-[#64748B] leading-relaxed">
+                Automated SSL encryption certificates, DDoS edge mitigation, and automated daily database backups.
+              </p>
+            </div>
+          </div>
+
+          {/* Built for Real-World Performance Proof Strip */}
+          <div className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3.5 sm:p-4 shadow-sm space-y-2.5">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#131B2E]">
+                  Built for Real-World Performance
+                </span>
+              </div>
+              <p className="text-[11px] text-[#64748B]">
+                Fast, responsive, discoverable, secure, and built to scale with your business.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 pt-2 border-t border-[#E2E8F0]">
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70">
+                <Zap className="w-4 h-4 text-[#F97360] shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Fast by Default</span>
+                  <span className="text-[9px] text-[#64748B] block truncate">Optimized assets</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70">
+                <Smartphone className="w-4 h-4 text-[#4338CA] shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Responsive All</span>
+                  <span className="text-[9px] text-[#64748B] block truncate">Mobile &amp; desktop</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70">
+                <Search className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Search Ready</span>
+                  <span className="text-[9px] text-[#64748B] block truncate">Technical SEO</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70">
+                <ShieldCheck className="w-4 h-4 text-[#4338CA] shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Secure by Design</span>
+                  <span className="text-[9px] text-[#64748B] block truncate">SSL &amp; safe data</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70">
+                <Cloud className="w-4 h-4 text-[#F97360] shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Ready to Scale</span>
+                  <span className="text-[9px] text-[#64748B] block truncate">High traffic ready</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70">
+                <Layers className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Easy to Maintain</span>
+                  <span className="text-[9px] text-[#64748B] block truncate">Zero vendor lock</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tech stack badges */}
+          <div className="w-full pt-3 sm:pt-4 border-t border-[#E2E8F0] flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 max-w-4xl mx-auto">
+            {['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS', 'Supabase', 'PostgreSQL', 'Kotlin / Android', 'Java', 'Spring Boot', 'Vercel Edge'].map((tech) => (
               <span
                 key={tech}
-                className="px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-xl text-xs font-bold text-[#334155] shadow-sm hover:border-[#4338CA]/30 transition-colors"
+                className="px-2.5 py-1 bg-white border border-[#E2E8F0] rounded-lg text-xs font-bold text-[#334155] shadow-sm hover:border-[#4338CA]/30 transition-colors"
               >
                 {tech}
               </span>
@@ -328,62 +510,290 @@ export default function HomePage() {
       </section>
 
       {/* ─── 10. FAQ (OBJECTIONS) ────────────────────────────────── */}
-      <section className="py-24 sm:py-32 border-b border-[#E2E8F0] bg-[#F5F0E8]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-3">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-wider">
-              CLEAR ANSWERS
-            </span>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
-              Frequently Asked Questions
-            </h2>
-            <p className="text-sm text-[#64748B]">
-              Key details regarding ownership, timelines, revisions, and post-launch support.
-            </p>
+      <section
+        id="faq"
+        className="relative py-6 sm:py-7 lg:py-8 lg:min-h-[var(--showcase-frame-height,660px)] flex flex-col justify-between border-b border-[#E2E8F0] bg-[#F5F0E8] overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex-1 flex flex-col justify-between gap-3.5 sm:gap-4">
+          {/* Top Header & Contact Row */}
+          <div className="grid lg:grid-cols-12 gap-4 lg:gap-6 items-center">
+            {/* Left: Heading & Description */}
+            <div className="lg:col-span-6 space-y-1.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-wider">
+                CLEAR ANSWERS &amp; TRANSPARENCY
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+                Everything you need to know before we build.
+              </h2>
+              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                Clear policies on source code ownership, project milestones, free revisions, and ongoing post-launch technical support.
+              </p>
+            </div>
+
+            {/* Right: Direct Inquiry Helper Card */}
+            <div className="lg:col-span-6 bg-white border border-[#E2E8F0] rounded-2xl p-3 sm:p-3.5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#4338CA]/10 text-[#4338CA] flex items-center justify-center text-sm font-bold shrink-0">
+                  <Sparkles className="w-4 h-4 text-[#4338CA]" />
+                </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-[#131B2E]">
+                    Have a Custom Requirement?
+                  </h4>
+                  <p className="text-[10.5px] text-[#64748B]">
+                    Send us your project details for a direct estimate.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Link
+                  href="/get-quote"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-[#4338CA]/20 uppercase tracking-wider"
+                >
+                  <span>Get Estimate</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href="/contact"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0] rounded-xl text-xs font-bold transition-all shadow-sm uppercase tracking-wider"
+                >
+                  <span>Contact Us</span>
+                </Link>
+              </div>
+            </div>
           </div>
 
-          <div className="space-y-3 pt-4">
-            {faqs.map((faq, index) => (
-              <FAQItem key={index} question={faq.question} answer={faq.answer} />
-            ))}
+          {/* Bottom: 4 FAQ Accordion Items in a Balanced 2-Column Grid */}
+          <div className="space-y-2">
+            {/* Quick Answers Meta Row */}
+            <div className="flex items-center justify-between px-1 text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-[#4338CA] font-extrabold flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4338CA]" />
+                4 Common Questions
+              </span>
+              <span className="text-[#64748B] hidden sm:inline">
+                Ownership • Hosting • Timeline • Revisions
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 sm:gap-2.5">
+              {faqs.slice(0, 4).map((faq, index) => (
+                <FAQItem key={index} question={faq.question} answer={faq.answer} />
+              ))}
+            </div>
+          </div>
+
+          {/* Full-Width Assurance Panel: Your Project, Without Surprises */}
+          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-3 sm:p-3.5 shadow-sm space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 pb-1.5 border-b border-[#E2E8F0]/80">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-[#4338CA]/10 text-[#4338CA] font-bold text-[9px] uppercase tracking-wider rounded-md">
+                  Project Guarantee
+                </span>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#131B2E]">
+                  Your Project, Without Surprises
+                </h3>
+              </div>
+              <p className="text-[10.5px] text-[#64748B] leading-relaxed">
+                Clear ownership, visible progress, private review, and direct technical support from start to launch.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 pt-1">
+              <div className="bg-[#FAF7F2]/70 rounded-xl p-2 border border-[#E2E8F0]/70 flex items-start gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold text-[#131B2E] block truncate">Clear Scope</span>
+                  <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
+                    Know what is included before development begins.
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF7F2]/70 rounded-xl p-2 border border-[#E2E8F0]/70 flex items-start gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#4338CA] shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold text-[#131B2E] block truncate">Visible Progress</span>
+                  <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
+                    Review the project at defined milestones.
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF7F2]/70 rounded-xl p-2 border border-[#E2E8F0]/70 flex items-start gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#F97360] shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold text-[#131B2E] block truncate">Private Staging</span>
+                  <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
+                    Test the real website before it goes public.
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF7F2]/70 rounded-xl p-2 border border-[#E2E8F0]/70 flex items-start gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold text-[#131B2E] block truncate">Full Ownership</span>
+                  <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
+                    Your code, domain, and assets remain yours.
+                  </span>
+                </div>
+              </div>
+
+              <div className="col-span-2 sm:col-span-1 bg-[#FAF7F2]/70 rounded-xl p-2 border border-[#E2E8F0]/70 flex items-start gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#4338CA] shrink-0 mt-0.5" />
+                <div className="min-w-0">
+                  <span className="text-[11px] font-bold text-[#131B2E] block truncate">Launch Support</span>
+                  <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
+                    Help with deployment, DNS, SSL &amp; care.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Integrated Trust Strip */}
+          <div className="pt-3 border-t border-[#E2E8F0] overflow-x-auto">
+            <div className="flex items-center justify-between gap-8 min-w-[700px] text-xs font-bold tracking-wider text-[#475569] uppercase">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#4338CA]" />
+                <span>NO VENDOR LOCK-IN</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#F97360]" />
+                <span>TRANSPARENT CONTRACTS</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-[#F4C95D]" />
+                <span>30-DAY SUPPORT INCLUDED</span>
+              </div>
+              <span className="text-[#CBD5E1]">•</span>
+              <div className="flex items-center gap-2.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>DEDICATED WHATSAPP ASSISTANCE</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* ─── 11. FINAL CTA (CONVERSION) ─────────────────────────── */}
-      <section className="py-28 sm:py-36 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center relative overflow-hidden">
+      <section
+        id="final-cta"
+        className="relative py-8 sm:py-10 lg:py-10 lg:min-h-[var(--showcase-frame-height,660px)] flex flex-col justify-between bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] border-b border-[#E2E8F0] text-center overflow-hidden"
+      >
         {/* Background glow effects */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 bg-[#4338CA]/10 text-[#4338CA] border border-[#4338CA]/20 rounded-full text-xs font-extrabold uppercase tracking-widest">
-            <Sparkles className="w-4 h-4 text-[#F97360]" />
-            LET&apos;S BUILD YOUR WEBSITE
-          </span>
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex-1 flex flex-col justify-between items-center gap-4 sm:gap-5">
+          <div className="space-y-2.5 max-w-3xl mx-auto">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-[#4338CA]/10 text-[#4338CA] border border-[#4338CA]/20 rounded-full text-[11px] font-extrabold uppercase tracking-widest">
+              <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
+              LET&apos;S BUILD YOUR WEBSITE
+            </span>
 
-          <h2 className="text-3xl sm:text-6xl font-extrabold text-[#131B2E] tracking-tight leading-tight">
-            Imagine what your business <br className="hidden sm:inline" />
-            could look like online.
-          </h2>
+            <h2 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[#131B2E] tracking-tight leading-tight">
+              Imagine what your business <br className="hidden sm:inline" />
+              could look like online.
+            </h2>
 
-          <p className="text-base sm:text-xl text-[#64748B] leading-relaxed max-w-2xl mx-auto font-normal">
-            Let&apos;s turn your idea into a website people remember. Tell us what you need and receive a detailed roadmap and estimate within 24 hours.
-          </p>
+            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-2xl mx-auto font-normal">
+              Let&apos;s turn your idea into a website people remember. Tell us what you need and receive a detailed roadmap and estimate within 24 hours.
+            </p>
+          </div>
 
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/get-quote"
-              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-2xl shadow-[#4338CA]/30 hover:scale-[1.02]"
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-[#4338CA]/25 hover:scale-[1.01]"
             >
               <span>Build My Website</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
             <Link
               href="/projects"
-              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] transition-all duration-200 shadow-sm"
+              className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] transition-all duration-200 shadow-sm"
             >
               <span>Explore Our Work</span>
             </Link>
+          </div>
+
+          {/* What Happens Next - Compact 3-Step Journey Panel */}
+          <div className="w-full max-w-4xl mx-auto bg-white/90 border border-[#E2E8F0] rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-2.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 pb-2 border-b border-[#E2E8F0]/80 text-left">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-[#4338CA]/10 text-[#4338CA] font-bold text-[9px] uppercase tracking-wider rounded-md">
+                  Your First Step
+                </span>
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#131B2E]">
+                  What Happens Next
+                </h3>
+              </div>
+              <p className="text-[10.5px] text-[#64748B]">
+                Clear scope. No pressure. No vendor lock-in.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3 text-left">
+              <div className="bg-[#FAF7F2]/70 rounded-xl p-2.5 border border-[#E2E8F0]/70 flex items-start gap-2">
+                <span className="w-6 h-6 rounded-lg bg-[#4338CA]/10 text-[#4338CA] font-mono text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  01
+                </span>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-[#131B2E] block">Share Your Idea</span>
+                  <span className="text-[10px] text-[#64748B] leading-relaxed block mt-0.5">
+                    Tell us about your business, audience, goals, and required features.
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF7F2]/70 rounded-xl p-2.5 border border-[#E2E8F0]/70 flex items-start gap-2">
+                <span className="w-6 h-6 rounded-lg bg-[#F97360]/10 text-[#F97360] font-mono text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  02
+                </span>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-[#131B2E] block">Get Your Roadmap</span>
+                  <span className="text-[10px] text-[#64748B] leading-relaxed block mt-0.5">
+                    Receive a clear scope, recommended approach, timeline, and estimate.
+                  </span>
+                </div>
+              </div>
+
+              <div className="bg-[#FAF7F2]/70 rounded-xl p-2.5 border border-[#E2E8F0]/70 flex items-start gap-2">
+                <span className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 font-mono text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
+                  03
+                </span>
+                <div className="min-w-0">
+                  <span className="text-xs font-bold text-[#131B2E] block">Start With Confidence</span>
+                  <span className="text-[10px] text-[#64748B] leading-relaxed block mt-0.5">
+                    Review the plan, approve the direction, and move into development.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Micro Assurance Grid */}
+          <div className="w-full pt-3.5 border-t border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto text-center">
+            <div>
+              <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Turnaround</span>
+              <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">24h Roadmap</span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Consultation</span>
+              <span className="text-xs font-extrabold text-emerald-600 block mt-0.5">100% Free &amp; Direct</span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Delivery</span>
+              <span className="text-xs font-extrabold text-[#F97360] block mt-0.5">Staging Sign-off</span>
+            </div>
+            <div>
+              <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Ownership</span>
+              <span className="text-xs font-extrabold text-[#4338CA] block mt-0.5">Full Code Rights</span>
+            </div>
           </div>
         </div>
       </section>

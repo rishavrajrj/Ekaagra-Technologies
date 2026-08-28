@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
+import ShowcaseManualButton from '@/components/showcase/ShowcaseManualButton';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -100,6 +101,7 @@ export default function Navbar() {
 
           {/* Desktop Right CTA */}
           <div className="hidden lg:flex items-center gap-3">
+            <ShowcaseManualButton variant="navbar" />
             <Link
               href="/get-quote"
               className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold tracking-wide uppercase rounded-xl transition-all duration-200 shadow-lg shadow-[#4338CA]/25 hover:shadow-xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
@@ -111,6 +113,7 @@ export default function Navbar() {
 
           {/* Mobile Right Controls */}
           <div className="flex lg:hidden items-center gap-2">
+            <ShowcaseManualButton variant="navbar" className="text-[11px] px-2.5 py-1" />
             <button
               type="button"
               className="p-2.5 text-[#131B2E] border border-[#E2E8F0] rounded-xl bg-white/80 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#4338CA] transition-all flex items-center justify-center cursor-pointer shadow-sm"
@@ -158,6 +161,10 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          <div className="pt-2">
+            <ShowcaseManualButton variant="mobile" />
+          </div>
         </div>
 
         <div className="pt-6 mt-auto border-t border-[#E2E8F0] space-y-4">

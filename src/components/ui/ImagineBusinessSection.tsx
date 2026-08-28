@@ -172,14 +172,14 @@ export default function ImagineBusinessSection() {
   const IconComponent = activeMockup.icon;
 
   return (
-    <section className="py-24 sm:py-32 bg-[#FAF7F2] border-b border-[#E2E8F0] relative overflow-hidden" id="imagine">
+    <section className="py-8 sm:py-10 lg:py-12 bg-[#FAF7F2] border-b border-[#E2E8F0] relative overflow-hidden" id="imagine">
       {/* Subtle background glow */}
       <div 
         aria-hidden="true" 
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-[#4338CA]/5 via-[#F97360]/5 to-[#F4C95D]/5 rounded-full blur-3xl pointer-events-none"
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6 sm:space-y-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">

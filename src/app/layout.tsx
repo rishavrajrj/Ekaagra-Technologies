@@ -3,6 +3,8 @@ import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
+import { ShowcaseProvider } from '@/components/showcase/ShowcaseProvider';
+import ShowcaseMode from '@/components/showcase/ShowcaseMode';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -99,9 +101,12 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#131B2E] antialiased font-sans selection:bg-[#4338CA] selection:text-white">
-        <Navbar />
-        <main className="flex-1 pt-18">{children}</main>
-        <Footer />
+        <ShowcaseProvider>
+          <Navbar />
+          <main className="flex-1 pt-18">{children}</main>
+          <Footer />
+          <ShowcaseMode />
+        </ShowcaseProvider>
       </body>
     </html>
   );

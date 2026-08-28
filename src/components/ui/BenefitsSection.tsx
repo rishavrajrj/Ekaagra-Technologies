@@ -70,8 +70,8 @@ export default function BenefitsSection() {
   ];
 
   return (
-    <section className="py-24 sm:py-32 bg-[#FAF7F2] border-b border-[#E2E8F0] relative overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-16">
+    <section className="py-8 sm:py-10 lg:py-12 bg-[#FAF7F2] border-b border-[#E2E8F0] relative overflow-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-6 sm:space-y-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 border border-[#4338CA]/20 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest">

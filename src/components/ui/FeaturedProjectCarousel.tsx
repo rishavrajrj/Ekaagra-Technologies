@@ -33,11 +33,11 @@ export default function FeaturedProjectCarousel({
 
   const currentProject = projects[currentIndex];
 
-  const handlePrev = () => {
+  const handlePrevProject = () => {
     setCurrentIndex((prev) => (prev === 0 ? projects.length - 1 : prev - 1));
   };
 
-  const handleNext = () => {
+  const handleNextProject = () => {
     setCurrentIndex((prev) => (prev === projects.length - 1 ? 0 : prev + 1));
   };
 
@@ -65,6 +65,11 @@ export default function FeaturedProjectCarousel({
             <span className="text-xs font-extrabold text-[#131B2E] truncate max-w-[180px] sm:max-w-md">
               {currentProject.title}
             </span>
+            {currentProject.badge && (
+              <span className="hidden sm:inline-block text-[10px] font-bold text-[#F97360] bg-[#F97360]/10 border border-[#F97360]/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                {currentProject.badge}
+              </span>
+            )}
           </div>
 
           {/* Quick jump indicator pills */}
@@ -87,10 +92,10 @@ export default function FeaturedProjectCarousel({
 
         {/* Main Showcase Wrapper with Left & Right Center Floating Navigation Arrows */}
         <div className="relative group/carousel">
-          {/* Left Center Arrow Button */}
+          {/* Left Center Arrow Button (Switch Project) */}
           <button
             type="button"
-            onClick={handlePrev}
+            onClick={handlePrevProject}
             aria-label="Previous project"
             title="Previous Project"
             className="absolute left-1 sm:-left-5 md:-left-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/95 text-[#131B2E] hover:text-[#4338CA] border-2 border-[#E2E8F0] hover:border-[#4338CA] shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
@@ -98,10 +103,10 @@ export default function FeaturedProjectCarousel({
             <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
           </button>
 
-          {/* Right Center Arrow Button */}
+          {/* Right Center Arrow Button (Switch Project) */}
           <button
             type="button"
-            onClick={handleNext}
+            onClick={handleNextProject}
             aria-label="Next project"
             title="Next Project"
             className="absolute right-1 sm:-right-5 md:-right-6 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-white/95 text-[#131B2E] hover:text-[#4338CA] border-2 border-[#E2E8F0] hover:border-[#4338CA] shadow-xl hover:shadow-2xl flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
@@ -111,7 +116,7 @@ export default function FeaturedProjectCarousel({
 
           {/* Main Featured Container Card with Compact Equal Height Columns */}
           <div className="bg-white border border-[#E2E8F0] rounded-3xl overflow-hidden shadow-2xl grid lg:grid-cols-12 group hover:border-[#4338CA]/40 transition-all duration-300 items-stretch">
-            {/* Left Interactive Live Preview Simulator */}
+            {/* Left Column: Interactive Live Website Preview */}
             <div className="lg:col-span-7 bg-[#F3EFEA] border-b lg:border-b-0 lg:border-r border-[#E2E8F0] p-2.5 sm:p-3.5 flex flex-col h-full justify-stretch">
               <LiveWebsitePreview
                 key={currentProject.slug}
@@ -119,14 +124,14 @@ export default function FeaturedProjectCarousel({
                 title={currentProject.title}
                 fallbackImage={currentProject.image || '/images/projects/roshani-public-school/roshani-2.png'}
                 showDeviceControls={true}
-                autoLoad={false}
+                autoLoad={true}
                 heightClass="h-[320px] sm:h-[380px] lg:h-[430px]"
                 isFeatured={true}
                 isFrameRestricted={currentProject.isFrameRestricted}
               />
             </div>
 
-            {/* Right Project Details */}
+            {/* Right Column: Project Details (Original Structure Preserved) */}
             <div className="lg:col-span-5 p-5 sm:p-6 lg:p-7 flex flex-col justify-between space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">

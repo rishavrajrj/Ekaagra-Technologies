@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { services } from '@/lib/data';
 import { ArrowRight, Sparkles, Mail, ShieldCheck, Heart } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
+import ShowcaseManualButton from '@/components/showcase/ShowcaseManualButton';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -111,21 +112,25 @@ export default function Footer() {
             <p className="text-xs text-[#64748B] leading-relaxed">
               Get a tailored design estimate for your business or school website within 24 hours.
             </p>
-            <Link
-              href="/get-quote"
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20"
-            >
-              <span>Build My Website</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 items-start">
+              <Link
+                href="/get-quote"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20"
+              >
+                <span>Build My Website</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+              <ShowcaseManualButton variant="footer" />
+            </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748B]">
           <p>© {currentYear} Ekaagra Technologies. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <span>Designed for businesses that want to stand out.</span>
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
+            <span className="hidden md:inline">Designed for businesses that want to stand out.</span>
+            <ShowcaseManualButton variant="footer" className="text-[11px] py-1.5 px-3" />
           </div>
         </div>
       </div>

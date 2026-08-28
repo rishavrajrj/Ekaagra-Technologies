@@ -3,30 +3,56 @@
 import { useState, useEffect } from 'react';
 import { projects } from '@/lib/data';
 import LiveWebsitePreview from './LiveWebsitePreview';
+import { useShowcase } from '@/components/showcase/ShowcaseProvider';
+
+const PROJECT_DURATION = 5000;
 
 export default function HeroVisual() {
   // Use first 4 projects from centralized data
   const previewProjects = projects.slice(0, 4);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Connect to Showcase state if active
+  let isOpen = false;
+  let isShowcasePaused = false;
+  let currentStepIndex = 0;
+
+  try {
+    const showcase = useShowcase();
+    isOpen = showcase.isOpen;
+    isShowcasePaused = showcase.isPaused;
+    currentStepIndex = showcase.currentStepIndex;
+  } catch {
+    // Graceful fallback if rendered outside ShowcaseProvider
+  }
+
+  // Reset to project 0 whenever Showcase mode opens or enters Step 0 (Hero)
+  useEffect(() => {
+    if (isOpen && currentStepIndex === 0) {
+      setCurrentIndex(0);
+    }
+  }, [isOpen, currentStepIndex]);
+
+  const effectivePaused = isHovered || (isOpen && isShowcasePaused);
 
   // Automatically cycle through projects 1 to 4 every 5 seconds
   useEffect(() => {
-    if (isPaused || previewProjects.length === 0) return;
+    if (effectivePaused || previewProjects.length === 0) return;
 
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % previewProjects.length);
-    }, 5000);
+    }, PROJECT_DURATION);
 
     return () => clearInterval(timer);
-  }, [isPaused, previewProjects.length, currentIndex]);
+  }, [effectivePaused, previewProjects.length, currentIndex]);
 
   const activeProject = previewProjects[currentIndex] || previewProjects[0];
 
   return (
     <div
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className="relative w-full max-w-2xl lg:max-w-none mx-auto space-y-3.5"
     >
       {/* Ambient background glows */}
@@ -68,12 +94,12 @@ export default function HeroVisual() {
               <span className="truncate">{proj.shortLabel || proj.title}</span>
 
               {/* Subtle animated timer bar on the active tab when not paused */}
-              {isActive && !isPaused && (
+              {isActive && !effectivePaused && (
                 <span
-                  key={`${currentIndex}-${isPaused}`}
+                  key={`${currentIndex}-${effectivePaused}`}
                   className="absolute bottom-0 left-0 h-[2px] bg-[#F4C95D] rounded-full animate-progress"
                   style={{
-                    animation: 'growWidth 5s linear forwards',
+                    animation: `growWidth ${PROJECT_DURATION}ms linear forwards`,
                   }}
                 />
               )}
