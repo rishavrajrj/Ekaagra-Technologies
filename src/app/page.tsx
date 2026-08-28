@@ -35,14 +35,14 @@ export default function HomePage() {
         className="relative py-4 px-0 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden"
       >
         {/* Ambient Top Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none animate-aurora-glow" />
 
         <div className="site-container relative z-10 w-full flex flex-col gap-4">
           <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             {/* Left Content */}
             <div className="lg:col-span-5 space-y-4 text-left">
               {/* Eyebrow badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider shadow-sm hover:scale-[1.02] transition-transform">
                 <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
                 <span>WEBSITE DESIGN &amp; DEVELOPMENT STUDIO</span>
               </div>
@@ -50,7 +50,7 @@ export default function HomePage() {
               {/* Main Headline */}
               <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
                 Your business deserves a website{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C]">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C] animate-gradient-shift">
                   people remember.
                 </span>
               </h1>
@@ -86,14 +86,14 @@ export default function HomePage() {
               <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <Link
                   href="/get-quote"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
+                  className="premium-shimmer-btn inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-300 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/40 hover:-translate-y-0.5 active:translate-y-0"
                 >
                   <span>Build My Website</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   href="/projects"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-[#FAF7F2] text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/30 transition-all duration-200 shadow-sm"
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-[#FAF7F2] text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/40 hover:text-[#4338CA] transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5"
                 >
                   <span>Explore Our Work</span>
                 </Link>
@@ -101,19 +101,19 @@ export default function HomePage() {
 
               {/* Micro Credibility Specs */}
               <div className="pt-3 border-t border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg">
-                <div>
+                <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/60 hover:shadow-sm">
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Specialty</span>
                   <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">High-Converting</span>
                 </div>
-                <div>
+                <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/60 hover:shadow-sm">
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Performance</span>
                   <span className="text-xs font-extrabold text-emerald-600 block mt-0.5">Fast &amp; Optimized</span>
                 </div>
-                <div>
+                <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/60 hover:shadow-sm">
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Engagement</span>
                   <span className="text-xs font-extrabold text-[#F97360] block mt-0.5">WhatsApp Ready</span>
                 </div>
-                <div>
+                <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/60 hover:shadow-sm">
                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Ownership</span>
                   <span className="text-xs font-extrabold text-[#4338CA] block mt-0.5">100% Code &amp; Domain</span>
                 </div>

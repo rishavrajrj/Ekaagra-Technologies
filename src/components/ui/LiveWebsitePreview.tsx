@@ -298,8 +298,8 @@ export default function LiveWebsitePreview({
         {/* Right: Live Status & External Link */}
         <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {isValidUrl && (
-            <span className="hidden xs:inline-flex items-center gap-1 px-2 sm:px-2.5 py-0.5 rounded-full text-[9.5px] sm:text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="hidden xs:inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-0.5 rounded-full text-[9.5px] sm:text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 premium-live-dot" />
               Live
             </span>
           )}

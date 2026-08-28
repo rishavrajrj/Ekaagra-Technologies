@@ -56,8 +56,8 @@ export default function HeroVisual() {
       className="relative w-full max-w-2xl lg:max-w-none mx-auto space-y-3.5"
     >
       {/* Ambient background glows */}
-      <div className="absolute -top-12 -left-12 w-56 h-56 bg-[#F97360]/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-[#4338CA]/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -top-12 -left-12 w-56 h-56 bg-[#F97360]/20 rounded-full blur-3xl pointer-events-none animate-aurora-glow" />
+      <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-[#4338CA]/20 rounded-full blur-3xl pointer-events-none animate-aurora-glow [animation-delay:2s]" />
 
       {/* ─── Compact Project Preview Selector Bar with Auto-Cycle ── */}
       <div
