@@ -78,14 +78,14 @@ export default function HeroVisual() {
               onClick={() => {
                 setCurrentIndex(index);
               }}
-              className={`flex-1 min-w-[90px] sm:min-w-[100px] py-2 px-3 rounded-xl text-[11px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer relative overflow-hidden ${
+              className={`flex-1 min-w-[72px] xs:min-w-[85px] sm:min-w-[100px] py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-[10px] sm:text-[11px] font-bold transition-all duration-300 flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer relative overflow-hidden ${
                 isActive
                   ? 'bg-[#4338CA] text-white shadow-md shadow-[#4338CA]/20 scale-[1.02]'
                   : 'text-[#64748B] hover:text-[#131B2E] hover:bg-[#FAF7F2]'
               }`}
             >
               <span
-                className={`font-mono text-[9px] ${
+                className={`font-mono text-[8.5px] sm:text-[9px] ${
                   isActive ? 'text-[#F4C95D]' : 'text-[#64748B]'
                 }`}
               >
@@ -109,7 +109,7 @@ export default function HeroVisual() {
       </div>
 
       {/* ─── Main Live Browser Preview Window ─────────────────────── */}
-      <div className="relative z-10" id={`preview-panel-${activeProject.slug}`}>
+      <div className="relative z-10 w-full min-w-0" id={`preview-panel-${activeProject.slug}`}>
         <LiveWebsitePreview
           key={activeProject.slug}
           url={activeProject.liveUrl}
@@ -117,7 +117,7 @@ export default function HeroVisual() {
           fallbackImage={activeProject.image}
           autoLoad={true}
           showDeviceControls={true}
-          heightClass="h-[330px] sm:h-[390px] md:h-[430px]"
+          heightClass="h-[280px] xs:h-[320px] sm:h-[380px] md:h-[420px] lg:h-[440px]"
           isFeatured={true}
           isFrameRestricted={activeProject.isFrameRestricted}
           className="shadow-2xl hover:border-[#4338CA]/40"

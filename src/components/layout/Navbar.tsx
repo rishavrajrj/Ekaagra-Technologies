@@ -64,13 +64,13 @@ export default function Navbar() {
         }`}
       >
         <nav
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between"
+          className="site-container h-18 flex items-center justify-between"
           aria-label="Main navigation"
         >
           {/* Logo Mark */}
           <Link
             href="/"
-            className="flex items-center gap-2 group shrink-0 transition-transform duration-200 hover:scale-[1.02]"
+            className="flex items-center gap-2 group shrink-0 transition-transform duration-200 hover:scale-[1.02] min-w-0"
             aria-label="Ekaagra Technologies Home"
           >
             <Logo size="md" />
@@ -100,7 +100,7 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Right CTA */}
-          <div className="hidden lg:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3 shrink-0">
             <ShowcaseManualButton variant="navbar" />
             <Link
               href="/get-quote"
@@ -112,11 +112,11 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Right Controls */}
-          <div className="flex lg:hidden items-center gap-2">
-            <ShowcaseManualButton variant="navbar" className="text-[11px] px-2.5 py-1" />
+          <div className="flex lg:hidden items-center gap-1.5 sm:gap-2 shrink-0">
+            <ShowcaseManualButton variant="navbar" className="hidden xs:inline-flex text-[11px] px-2.5 py-1" />
             <button
               type="button"
-              className="p-2.5 text-[#131B2E] border border-[#E2E8F0] rounded-xl bg-white/80 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#4338CA] transition-all flex items-center justify-center cursor-pointer shadow-sm"
+              className="p-2 sm:p-2.5 text-[#131B2E] border border-[#E2E8F0] rounded-xl bg-white/80 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#4338CA] transition-all flex items-center justify-center cursor-pointer shadow-sm"
               onClick={() => setIsOpen((prev) => !prev)}
               aria-expanded={isOpen}
               aria-controls="mobile-menu"

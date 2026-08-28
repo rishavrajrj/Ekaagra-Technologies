@@ -19,7 +19,7 @@ export default function Footer() {
         className="absolute bottom-0 left-0 w-96 h-96 bg-[#F97360]/5 rounded-full blur-3xl pointer-events-none"
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 relative z-10">
+      <div className="site-container pt-16 pb-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 pb-12 border-b border-[#E2E8F0]">
           {/* Brand Column */}
           <div className="lg:col-span-2 space-y-4">

@@ -66,7 +66,7 @@ export default function QuoteForm() {
   };
 
   return (
-    <div className="space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-[#E2E8F0] shadow-2xl">
+    <div className="space-y-8 bg-white p-4 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl border border-[#E2E8F0] shadow-2xl">
       {/* ─── Success Screen ────────────────────────────────────────── */}
       {successMsg && submittedData ? (
         <div className="space-y-6 animate-fadeIn py-4">

@@ -40,20 +40,20 @@ export default function BeforeAfterSection() {
   return (
     <section
       id="transformation"
-      className="relative py-5 sm:py-6 lg:min-h-[var(--showcase-frame-height,660px)] flex flex-col justify-between bg-[#F5F0E8] border-b border-[#E2E8F0] overflow-hidden"
+      className="relative py-10 sm:py-12 lg:py-16 bg-[#F5F0E8] border-b border-[#E2E8F0] overflow-hidden"
     >
       {/* Background ambient accents */}
       <div className="absolute top-1/2 left-0 w-80 h-80 bg-[#F97360]/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full flex-1 flex flex-col justify-between space-y-4 sm:space-y-5">
+      <div className="site-container relative z-10 w-full space-y-6 sm:space-y-8">
         {/* Section Heading */}
-        <div className="text-center max-w-2xl mx-auto space-y-1.5">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#F97360]/10 border border-[#F97360]/20 text-[#F97360] rounded-full text-[11px] font-bold uppercase tracking-widest">
             <Sparkles className="w-3 h-3" />
             THE TRANSFORMATION
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Your website should work harder for your business.
           </h2>
           <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
@@ -62,13 +62,13 @@ export default function BeforeAfterSection() {
         </div>
 
         {/* Comparison Grid */}
-        <div className="grid md:grid-cols-2 gap-4 sm:gap-5 items-stretch">
+        <div className="grid md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
           {/* Before Column (Red/Generic Template) */}
-          <div className="bg-white/95 border border-red-200 rounded-2xl p-4 sm:p-5 shadow-md space-y-3 relative overflow-hidden flex flex-col justify-between">
+          <div className="bg-white/95 border border-red-200 rounded-2xl p-4 sm:p-6 shadow-md space-y-3 relative overflow-hidden flex flex-col justify-between">
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-red-100 pb-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0">
                     <XCircle className="w-4 h-4" />
                   </div>
                   <div>
@@ -80,7 +80,7 @@ export default function BeforeAfterSection() {
                     </h3>
                   </div>
                 </div>
-                <span className="text-[9px] font-bold px-2 py-0.5 bg-red-50 text-red-600 rounded-full border border-red-200">
+                <span className="text-[9px] font-bold px-2 py-0.5 bg-red-50 text-red-600 rounded-full border border-red-200 shrink-0">
                   Low Conversion
                 </span>
               </div>
@@ -110,7 +110,7 @@ export default function BeforeAfterSection() {
           </div>
 
           {/* After Column (Ekaagra Standard) */}
-          <div className="bg-white border-2 border-[#4338CA] rounded-2xl p-4 sm:p-5 shadow-lg space-y-3 relative overflow-hidden flex flex-col justify-between">
+          <div className="bg-white border-2 border-[#4338CA] rounded-2xl p-4 sm:p-6 shadow-lg space-y-3 relative overflow-hidden flex flex-col justify-between">
             {/* Top highlight ribbon */}
             <div className="absolute top-0 right-0 bg-[#4338CA] text-white text-[9px] font-extrabold uppercase tracking-widest px-3 py-0.5 rounded-bl-lg shadow-sm">
               Ekaagra Standard
@@ -119,7 +119,7 @@ export default function BeforeAfterSection() {
             <div className="space-y-3">
               <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0">
                     <CheckCircle2 className="w-4 h-4" />
                   </div>
                   <div>
@@ -131,7 +131,7 @@ export default function BeforeAfterSection() {
                     </h3>
                   </div>
                 </div>
-                <span className="text-[9px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200 mr-20 sm:mr-0">
+                <span className="text-[9px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200 mr-20 sm:mr-0 shrink-0">
                   High Converting
                 </span>
               </div>
@@ -157,7 +157,7 @@ export default function BeforeAfterSection() {
 
             <div className="pt-2 border-t border-[#E2E8F0] flex flex-col sm:flex-row items-center justify-between gap-2">
               <div className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5">
-                <Sparkles className="w-3 h-3 text-[#F4C95D]" />
+                <Sparkles className="w-3 h-3 text-[#F4C95D] shrink-0" />
                 <span>Result: Instant credibility &amp; clear conversion paths.</span>
               </div>
 
@@ -173,25 +173,25 @@ export default function BeforeAfterSection() {
         </div>
 
         {/* Integrated Conversion Proof Strip */}
-        <div className="pt-4 border-t border-[#E2E8F0] overflow-x-auto">
-          <div className="flex items-center justify-between gap-8 min-w-[700px] text-xs font-bold tracking-wider text-[#475569] uppercase">
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-[#4338CA]" />
+        <div className="pt-4 border-t border-[#E2E8F0]">
+          <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-2.5 gap-x-4 sm:gap-x-8 text-[11px] sm:text-xs font-bold tracking-wider text-[#475569] uppercase text-center sm:text-left">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#4338CA] shrink-0" />
               <span>3.2X HIGHER ENGAGEMENT</span>
             </div>
-            <span className="text-[#CBD5E1]">•</span>
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-[#F97360]" />
+            <span className="text-[#CBD5E1] hidden sm:inline">•</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#F97360] shrink-0" />
               <span>SUB-500MS LOAD SPEEDS</span>
             </div>
-            <span className="text-[#CBD5E1]">•</span>
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-[#F4C95D]" />
+            <span className="text-[#CBD5E1] hidden sm:inline">•</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#F4C95D] shrink-0" />
               <span>ZERO VENDOR LOCK-IN</span>
             </div>
-            <span className="text-[#CBD5E1]">•</span>
-            <div className="flex items-center gap-2.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-[#CBD5E1] hidden sm:inline">•</span>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               <span>100% PROPRIETARY CODEBASE</span>
             </div>
           </div>

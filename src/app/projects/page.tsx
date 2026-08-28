@@ -14,13 +14,13 @@ export default function ProjectsPage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
       {/* Hero */}
-      <section className="py-20 sm:py-28 border-b border-[#E2E8F0] bg-warm-grid relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+      <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative">
+        <div className="site-container text-center space-y-4">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
             <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
             PROVEN TRACK RECORD
           </span>
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-[#131B2E] tracking-tight">
+          <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             Our Work &amp; Case Studies
           </h1>
           <p className="text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed">
@@ -30,8 +30,8 @@ export default function ProjectsPage() {
       </section>
 
       {/* Featured Showcase & Case Studies Section with Arrow Carousel */}
-      <section className="py-24 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="portfolio">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+      <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="portfolio">
+        <div className="site-container space-y-12 sm:space-y-16">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-[#E2E8F0] pb-8">
             <div className="space-y-3">
               <span className="inline-flex items-center gap-2 px-3.5 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-wider">
