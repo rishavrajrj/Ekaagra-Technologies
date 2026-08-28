@@ -3,10 +3,9 @@
 import React from 'react';
 import { useShowcase } from './ShowcaseProvider';
 import ShowcaseProgress from './ShowcaseProgress';
-import { X } from 'lucide-react';
 
 export default function ShowcaseMode() {
-  const { isOpen, closeShowcase } = useShowcase();
+  const { isOpen } = useShowcase();
   const [showHint, setShowHint] = React.useState(true);
 
   React.useEffect(() => {
@@ -36,20 +35,6 @@ export default function ShowcaseMode() {
       >
         <span>Press <kbd className="px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-mono">Space</kbd> to Pause • <kbd className="px-1.5 py-0.5 bg-white/20 rounded text-[10px] font-mono">Esc</kbd> to Exit</span>
       </div>
-
-      {/* ── Discreet Floating Exit Button (Top Right) ─────────────── */}
-      <button
-        type="button"
-        onClick={closeShowcase}
-        data-showcase-control="true"
-        aria-label="Exit Showcase Mode"
-        title="Exit Showcase Mode (Esc)"
-        className="pointer-events-auto absolute top-4 right-4 sm:top-6 sm:right-6 z-[100000] inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-black/60 hover:bg-black/85 active:bg-black backdrop-blur-md text-white border border-white/20 rounded-full text-xs font-semibold tracking-wider transition-all duration-200 shadow-xl cursor-pointer hover:scale-105"
-      >
-        <X className="w-3.5 h-3.5" />
-        <span>Exit</span>
-        <span className="text-[10px] text-white/60 font-mono hidden sm:inline">(Esc)</span>
-      </button>
 
       {/* ── Sleek Edge-to-Edge Full Width Bottom Progress Bar ───────── */}
       <ShowcaseProgress />
