@@ -1,4 +1,5 @@
 import { Sparkles, CheckCircle2, Eye, Rocket, Compass, Layout, Code2 } from 'lucide-react';
+import StaggerReveal from '@/components/motion/StaggerReveal';
 
 export default function ProcessTimeline() {
   const steps = [
@@ -49,21 +50,23 @@ export default function ProcessTimeline() {
 
   return (
     <div className="relative flex flex-col gap-4 sm:gap-5">
-      {/* Desktop Horizontal Line */}
+      {/* Desktop Horizontal Line with Traveling Light Beam */}
       <div 
         aria-hidden="true" 
-        className="hidden lg:block absolute top-8 left-[6%] right-[6%] h-[2px] bg-gradient-to-r from-[#4338CA]/20 via-[#4338CA]/50 to-[#4338CA]/20 z-0"
-      />
+        className="hidden lg:block absolute top-8 left-[6%] right-[6%] h-[2px] bg-[#E2E8F0] overflow-hidden z-0"
+      >
+        <div className="absolute top-0 bottom-0 w-28 bg-gradient-to-r from-transparent via-[#4338CA] to-transparent animate-traveling-beam" />
+      </div>
 
-      {/* Steps Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5 relative z-10 items-stretch">
+      {/* Steps Grid with Staggered Entrance */}
+      <StaggerReveal staggerInterval={65} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5 relative z-10 items-stretch">
         {steps.map((step) => {
           return (
             <div
               key={step.number}
-              className={`card-popup-sm group rounded-xl p-3.5 sm:p-4 flex flex-col justify-between border min-w-0 ${
+              className={`card-popup-sm group rounded-xl p-3.5 sm:p-4 flex flex-col justify-between border min-w-0 h-full ${
                 step.highlighted
-                  ? 'bg-white border-2 border-[#F97360] shadow-md shadow-[#F97360]/10'
+                  ? 'bg-white border-2 border-[#F97360] shadow-md shadow-[#F97360]/15 animate-approval-pulse'
                   : 'bg-white border-[#E2E8F0] shadow-sm'
               }`}
             >
@@ -109,7 +112,7 @@ export default function ProcessTimeline() {
             </div>
           );
         })}
-      </div>
+      </StaggerReveal>
 
       {/* Built Around Your Approval Supporting Assurance Panel */}
       <div className="bg-white/80 border border-[#E2E8F0] rounded-xl p-3 sm:p-3.5 shadow-sm relative z-10">

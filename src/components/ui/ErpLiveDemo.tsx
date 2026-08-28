@@ -108,7 +108,7 @@ export default function ErpLiveDemo() {
 
   return (
     <div className="w-full h-full bg-[#031B3A] text-white flex flex-col font-sans overflow-y-auto select-none relative text-left">
-      {/* ─── Top Live ERP Status Bar ──────────────────────────────── */}
+      {/* --- Top Live ERP Status Bar -------------------------------- */}
       <div className="bg-[#021329]/95 backdrop-blur-md border-b border-white/10 px-3 sm:px-4 py-2 flex items-center justify-between gap-3 shrink-0 relative z-30">
         <div className="flex items-center gap-2.5">
           <div className="relative w-6 h-6 rounded-full overflow-hidden shrink-0 border border-white/20">
@@ -153,7 +153,7 @@ export default function ErpLiveDemo() {
         </div>
       </div>
 
-      {/* ─── State 1: Exact 1:1 Login Page ────────────────────────── */}
+      {/* --- State 1: Exact 1:1 Login Page -------------------------- */}
       {!isLoggedIn ? (
         <div className="relative flex-1 min-h-full flex flex-col justify-between overflow-hidden bg-[#031B3A]">
           {/* Authentic High-Res Background with 2-Layer Gradient Overlay */}
@@ -384,7 +384,7 @@ export default function ErpLiveDemo() {
           </div>
         </div>
       ) : (
-        /* ─── State 2: Live Authenticated ERP Portal View ───────────── */
+        /* --- State 2: Live Authenticated ERP Portal View ------------- */
         <div className="flex-1 p-4 sm:p-5 space-y-3.5 bg-[#021329]/80 relative z-10">
           {/* Dashboard Header Bar */}
           <div className="bg-[#031B3A] border border-white/10 rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3">

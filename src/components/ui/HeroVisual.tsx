@@ -59,7 +59,7 @@ export default function HeroVisual() {
       <div className="absolute -top-12 -left-12 w-56 h-56 bg-[#F97360]/20 rounded-full blur-3xl pointer-events-none animate-aurora-glow" />
       <div className="absolute -bottom-12 -right-12 w-56 h-56 bg-[#4338CA]/20 rounded-full blur-3xl pointer-events-none animate-aurora-glow [animation-delay:2s]" />
 
-      {/* ─── Compact Project Preview Selector Bar with Auto-Cycle ── */}
+      {/* --- Compact Project Preview Selector Bar with Auto-Cycle -- */}
       <div
         role="tablist"
         aria-label="Interactive Website Previews"
@@ -108,7 +108,7 @@ export default function HeroVisual() {
         })}
       </div>
 
-      {/* ─── Main Live Browser Preview Window ─────────────────────── */}
+      {/* --- Main Live Browser Preview Window ----------------------- */}
       <div className="relative z-10 w-full min-w-0" id={`preview-panel-${activeProject.slug}`}>
         <LiveWebsitePreview
           key={activeProject.slug}

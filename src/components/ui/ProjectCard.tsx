@@ -45,7 +45,7 @@ export function ProjectCard({
           : 'border-[#E2E8F0] shadow-md'
       } ${onSelect ? 'cursor-pointer' : ''} ${className}`}
     >
-      {/* ─── Browser Chrome Header ───────────────────────────────── */}
+      {/* --- Browser Chrome Header --------------------------------- */}
       <div className="bg-[#FAF7F2] px-4 py-3 border-b border-[#E2E8F0] flex items-center justify-between gap-2">
         <div className="flex items-center gap-1.5" aria-hidden="true">
           <span className="w-2.5 h-2.5 rounded-full bg-[#F97360]" />
@@ -71,7 +71,7 @@ export function ProjectCard({
         </div>
       </div>
 
-      {/* ─── Screenshot Preview Canvas ───────────────────────────── */}
+      {/* --- Screenshot Preview Canvas ----------------------------- */}
       <div className="relative flex h-64 sm:h-72 w-full items-center justify-center bg-[#F3EFEA] overflow-hidden border-b border-[#E2E8F0]">
         <div className="relative w-full h-full group/preview">
           {project.image ? (
@@ -118,7 +118,7 @@ export function ProjectCard({
         </div>
       </div>
 
-      {/* ─── Project Information Content ─────────────────────────── */}
+      {/* --- Project Information Content --------------------------- */}
       <div className="flex flex-1 flex-col p-6 sm:p-7 justify-between space-y-4">
         <div className="space-y-2">
           <div className="flex items-center justify-between">

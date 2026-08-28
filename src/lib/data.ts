@@ -12,7 +12,7 @@ import type {
   NavItem,
 } from './types';
 
-// ─── Navigation ──────────────────────────────────────────────────
+// --- Navigation --------------------------------------------------
 export const navItems: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Our Work', href: '/projects' },
@@ -23,7 +23,7 @@ export const navItems: NavItem[] = [
   { label: 'Contact', href: '/contact' },
 ];
 
-// ─── Services ────────────────────────────────────────────────────
+// --- Services ----------------------------------------------------
 export const services: Service[] = [
   {
     slug: 'website-development',
@@ -223,7 +223,7 @@ export const services: Service[] = [
   },
 ];
 
-// ─── Solutions (Industry-Specific) ────────────────────────────────
+// --- Solutions (Industry-Specific) --------------------------------
 export const solutions: Solution[] = [
   {
     id: 'education',
@@ -377,7 +377,7 @@ export const solutions: Solution[] = [
   },
 ];
 
-// ─── Projects (Real Work Showcase) ───────────────────────────────
+// --- Projects (Real Work Showcase) -------------------------------
 export const projects: Project[] = [
   {
     slug: 'roshani-public-school',
@@ -556,7 +556,7 @@ export const projects: Project[] = [
   },
 ];
 
-// ─── Technologies ────────────────────────────────────────────────
+// --- Technologies ------------------------------------------------
 export const technologyCategories: TechnologyCategory[] = [
   {
     name: 'Frontend',
@@ -610,7 +610,7 @@ export const technologyCategories: TechnologyCategory[] = [
   },
 ];
 
-// ─── Pricing Tiers ───────────────────────────────────────────────
+// --- Pricing Tiers -----------------------------------------------
 export const pricingTiers: PricingTier[] = [
   {
     title: 'Website Design & Development',
@@ -767,7 +767,7 @@ export const schoolSalesStrategies: SchoolSalesStrategy[] = [
   },
 ];
 
-// ─── FAQs ────────────────────────────────────────────────────────
+// --- FAQs --------------------------------------------------------
 export const faqs: FAQ[] = [
   {
     question: 'Who owns the website and source code after launch?',
@@ -801,7 +801,7 @@ export const faqs: FAQ[] = [
   },
 ];
 
-// ─── Process Steps ───────────────────────────────────────────────
+// --- Process Steps -----------------------------------------------
 export const processSteps: ProcessStep[] = [
   {
     number: '01',
@@ -841,7 +841,7 @@ export const processSteps: ProcessStep[] = [
   },
 ];
 
-// ─── Differentiators ─────────────────────────────────────────────
+// --- Differentiators ---------------------------------------------
 export const differentiators: Differentiator[] = [
   {
     title: 'Requirement First',
@@ -875,7 +875,7 @@ export const differentiators: Differentiator[] = [
   },
 ];
 
-// ─── Form Options ────────────────────────────────────────────────
+// --- Form Options ------------------------------------------------
 export const serviceOptions = [
   'Website Design & Development',
   'Web Applications',

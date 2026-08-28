@@ -67,7 +67,7 @@ export default function QuoteForm() {
 
   return (
     <div className="space-y-8 bg-white p-4 sm:p-8 lg:p-10 rounded-2xl sm:rounded-3xl border border-[#E2E8F0] shadow-2xl">
-      {/* ─── Success Screen ────────────────────────────────────────── */}
+      {/* --- Success Screen ------------------------------------------ */}
       {successMsg && submittedData ? (
         <div className="space-y-6 animate-fadeIn py-4">
           <div className="p-6 sm:p-8 bg-emerald-50 border border-emerald-200 rounded-2xl space-y-4 text-center">
@@ -97,7 +97,7 @@ export default function QuoteForm() {
           </div>
         </div>
       ) : (
-        /* ─── Main Multi-Section Form ─────────────────────────────────── */
+        /* --- Main Multi-Section Form ----------------------------------- */
         <form onSubmit={handleSubmit} className="space-y-8">
           {errorMsg && (
             <div className="p-4 bg-red-500/10 text-red-800 border border-red-500/30 rounded-2xl text-sm font-medium flex items-center gap-3">

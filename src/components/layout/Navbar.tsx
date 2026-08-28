@@ -7,6 +7,7 @@ import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import ShowcaseManualButton from '@/components/showcase/ShowcaseManualButton';
 import { useShowcase } from '@/components/showcase/ShowcaseProvider';
+import MagneticButton from '@/components/motion/MagneticButton';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -108,13 +109,15 @@ export default function Navbar() {
           {/* Desktop Right CTA */}
           <div className="hidden lg:flex items-center gap-3 shrink-0">
             <ShowcaseManualButton variant="navbar" />
-            <Link
-              href="/get-quote"
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold tracking-wide uppercase rounded-xl transition-all duration-200 shadow-lg shadow-[#4338CA]/25 hover:shadow-xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
-            >
-              <span>Build My Website</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            <MagneticButton maxDistance={6}>
+              <Link
+                href="/get-quote"
+                className="premium-shimmer-btn inline-flex items-center gap-2 px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold tracking-wide uppercase rounded-xl transition-all duration-200 shadow-lg shadow-[#4338CA]/25 hover:shadow-xl hover:shadow-[#4338CA]/35 hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <span>Build My Website</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </MagneticButton>
           </div>
 
           {/* Mobile Right Controls */}

@@ -14,6 +14,9 @@ import {
 import { services } from '@/lib/data';
 import type { LucideIcon } from 'lucide-react';
 
+import Reveal from '@/components/motion/Reveal';
+import StaggerReveal from '@/components/motion/StaggerReveal';
+
 const iconMap: Record<string, LucideIcon> = {
   Globe,
   LayoutDashboard,
@@ -30,7 +33,7 @@ export default function ServicesList() {
 
   return (
     <div className="space-y-6">
-      <div className="grid md:grid-cols-3 gap-6">
+      <StaggerReveal staggerInterval={80} className="grid md:grid-cols-3 gap-6">
         {coreServices.map((service, index) => {
           const Icon = iconMap[service.icon] || Code2;
           const num = String(index + 1).padStart(2, '0');
@@ -39,12 +42,12 @@ export default function ServicesList() {
             <Link
               key={service.slug}
               href={`/services/${service.slug}`}
-              className="card-popup group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl border border-[#E2E8F0] bg-white transition-all duration-300"
+              className="card-popup group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl border border-[#E2E8F0] bg-white transition-all duration-300 h-full"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-2xl bg-[#4338CA]/10 text-[#4338CA] flex items-center justify-center border border-[#4338CA]/20 group-hover:scale-105 group-hover:bg-[#4338CA] group-hover:text-white transition-all duration-300">
-                    <Icon className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-2xl bg-[#4338CA]/10 text-[#4338CA] flex items-center justify-center border border-[#4338CA]/20 group-hover:scale-110 group-hover:rotate-[5deg] group-hover:bg-[#4338CA] group-hover:text-white transition-all duration-300">
+                    <Icon className="w-5 h-5 transition-transform" />
                   </div>
                   <span className="text-xs font-mono font-bold text-[#64748B]">
                     {num}
@@ -74,13 +77,13 @@ export default function ServicesList() {
               <div className="pt-4 mt-3 border-t border-[#E2E8F0] flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#4338CA] group-hover:text-[#3730A3] transition-colors">
                 <span>Explore Capability</span>
                 <div className="w-7 h-7 rounded-full bg-[#4338CA]/10 flex items-center justify-center group-hover:bg-[#4338CA] group-hover:text-white transition-all">
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
             </Link>
           );
         })}
-      </div>
+      </StaggerReveal>
 
       <div className="text-center pt-1">
         <Link

@@ -56,7 +56,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
 
   const wasInFullscreenRef = useRef<boolean>(false);
 
-  // ── Smooth Camera Scroll Helper to Real Website Section ─────────
+  // -- Smooth Camera Scroll Helper to Real Website Section ---------
   const scrollToSection = useCallback((sectionId: string) => {
     if (typeof window === 'undefined') return;
 
@@ -71,7 +71,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ── Show HUD temporarily on user motion ─────────────────────────
+  // -- Show HUD temporarily on user motion -------------------------
   const showHudTemporarily = useCallback(() => {
     setIsHudVisible(true);
     if (hudTimerRef.current) {
@@ -82,7 +82,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     }, 4000);
   }, []);
 
-  // ── Open Showcase ───────────────────────────────────────────────
+  // -- Open Showcase -----------------------------------------------
   const openShowcase = useCallback(() => {
     setIsOpen(true);
     setCurrentStepIndex(0);
@@ -113,7 +113,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ── Close Showcase ──────────────────────────────────────────────
+  // -- Close Showcase ----------------------------------------------
   const closeShowcase = useCallback(() => {
     setIsOpen(false);
     setIsPaused(false);
@@ -130,7 +130,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // ── Sync with Browser Fullscreen Change (e.g. user pressed Esc) ──
+  // -- Sync with Browser Fullscreen Change (e.g. user pressed Esc) --
   useEffect(() => {
     const handleFullscreenChange = () => {
       if (typeof document !== 'undefined') {
@@ -148,7 +148,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isOpen, closeShowcase]);
 
-  // ── Scrollbar Hiding during Showcase (Allows window.scrollTo) ────
+  // -- Scrollbar Hiding during Showcase (Allows window.scrollTo) ----
   useEffect(() => {
     if (!isOpen || typeof document === 'undefined') return;
 
@@ -159,7 +159,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isOpen]);
 
-  // ── Toggle Showcase ─────────────────────────────────────────────
+  // -- Toggle Showcase ---------------------------------------------
   const toggleShowcase = useCallback(() => {
     if (isOpen) {
       closeShowcase();
@@ -168,7 +168,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isOpen, closeShowcase, openShowcase]);
 
-  // ── Navigation across real website sections ─────────────────────
+  // -- Navigation across real website sections ---------------------
   const goToStep = useCallback(
     (index: number) => {
       const safeIndex = (index + steps.length) % steps.length;
@@ -216,7 +216,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // ── URL Query Param Initialization (?showcase=true / ?showcase=false) ─
+  // -- URL Query Param Initialization (?showcase=true / ?showcase=false) -
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -234,7 +234,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, [openShowcase]);
 
-  // ── Inactivity Detection (When Showcase is CLOSED) ───────────────
+  // -- Inactivity Detection (When Showcase is CLOSED) ---------------
   useEffect(() => {
     if (!SHOWCASE_CONFIG.autoTriggerOnIdle || isOpen || !SHOWCASE_CONFIG.enabled || isAutoDisabled) return;
 
@@ -293,7 +293,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isOpen, isAutoDisabled, openShowcase]);
 
-  // ── Event & Hotkey Handling (When Showcase is OPEN) ──────────────
+  // -- Event & Hotkey Handling (When Showcase is OPEN) --------------
   useEffect(() => {
     if (!isOpen) return;
 
@@ -340,7 +340,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isOpen, closeShowcase, togglePause, nextStep, prevStep, showHudTemporarily]);
 
-  // ── Automated Camera Progression & Section Step Scrolling ────────
+  // -- Automated Camera Progression & Section Step Scrolling --------
   useEffect(() => {
     if (!isOpen || isPaused) {
       if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
@@ -376,7 +376,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     };
   }, [isOpen, isPaused, currentStepIndex, currentStep, steps, scrollToSection]);
 
-  // ── Document Visibility Handling ─────────────────────────────────
+  // -- Document Visibility Handling ---------------------------------
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {

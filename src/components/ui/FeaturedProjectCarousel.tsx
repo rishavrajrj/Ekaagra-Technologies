@@ -54,7 +54,7 @@ export default function FeaturedProjectCarousel({
 
   return (
     <div ref={containerRef} className="space-y-12 scroll-mt-24">
-      {/* ─── 1. Top Featured Showcase Container ──────────────────── */}
+      {/* --- 1. Top Featured Showcase Container -------------------- */}
       <div className="space-y-6 relative">
         {/* Top Project Status & Jump Pills */}
         <div className="flex items-center justify-between gap-4 bg-white/80 backdrop-blur-sm border border-[#E2E8F0] px-4 py-2.5 rounded-2xl shadow-sm">
@@ -223,7 +223,7 @@ export default function FeaturedProjectCarousel({
         </div>
       </div>
 
-      {/* ─── 2. Interactive Projects Grid (Click to view above) ───── */}
+      {/* --- 2. Interactive Projects Grid (Click to view above) ----- */}
       <div className="space-y-6 pt-4">
         {(gridTitle || gridSubtitle) && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">

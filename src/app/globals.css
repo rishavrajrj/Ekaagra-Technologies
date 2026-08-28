@@ -308,7 +308,7 @@
   animation: cursorBlink 0.9s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-/* ── Premium Interactive Utilities ─────────────────────────────── */
+/* -- Premium Interactive Utilities ------------------------------- */
 .premium-shimmer-btn {
   position: relative;
   overflow: hidden;
@@ -347,7 +347,7 @@
               0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* ── Tactile Card Hover Pop-Up Animation ───────────────────────── */
+/* -- Tactile Card Hover Pop-Up Animation ------------------------- */
 .card-popup {
   transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
               box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
@@ -382,6 +382,42 @@
 
 .premium-live-dot {
   animation: pulseRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* -- Traveling Light Beam for Process Timeline ------------------- */
+@keyframes processTravelingBeam {
+  0% {
+    left: 0%;
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    opacity: 0;
+  }
+}
+
+.animate-traveling-beam {
+  animation: processTravelingBeam 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* -- Subtle Approval Checkpoint Pulse ---------------------------- */
+@keyframes softApprovalPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(249, 115, 96, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(249, 115, 96, 0);
+  }
+}
+
+.animate-approval-pulse {
+  animation: softApprovalPulse 3s ease-in-out infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════

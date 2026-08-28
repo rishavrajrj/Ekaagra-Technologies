@@ -162,7 +162,7 @@ export default function LeadsDashboard({
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] text-[#131B2E] flex flex-col">
-      {/* ─── Top Navbar ────────────────────────────────────────────── */}
+      {/* --- Top Navbar ---------------------------------------------- */}
       <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -203,7 +203,7 @@ export default function LeadsDashboard({
         </div>
       </header>
 
-      {/* ─── Main Content ───────────────────────────────────────────── */}
+      {/* --- Main Content --------------------------------------------- */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {!isDbConfigured && (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-xs sm:text-sm text-amber-900">
@@ -216,7 +216,7 @@ export default function LeadsDashboard({
           </div>
         )}
 
-        {/* ─── Metric Ribbon ────────────────────────────────────────── */}
+        {/* --- Metric Ribbon ------------------------------------------ */}
         <section className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           <button
             onClick={() => setStatusFilter('ALL')}
@@ -303,7 +303,7 @@ export default function LeadsDashboard({
           </button>
         </section>
 
-        {/* ─── Search & Filter Toolbar ──────────────────────────────── */}
+        {/* --- Search & Filter Toolbar -------------------------------- */}
         <section className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
           <div className="relative w-full md:w-80">
             <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -348,7 +348,7 @@ export default function LeadsDashboard({
           </div>
         </section>
 
-        {/* ─── Leads Table ──────────────────────────────────────────── */}
+        {/* --- Leads Table -------------------------------------------- */}
         <section className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
@@ -493,7 +493,7 @@ export default function LeadsDashboard({
         </section>
       </main>
 
-      {/* ─── Slide-Over / Modal Detail Drawer ───────────────────────── */}
+      {/* --- Slide-Over / Modal Detail Drawer ------------------------- */}
       {selectedLead && (
         <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
           {/* Backdrop */}

@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { pricingTiers, projectPricingBenchmark, schoolSalesStrategies } from '@/lib/data';
 import { ArrowRight, Check, ShieldCheck, Smartphone, Clock, Sparkles, CheckCircle2, Building2 } from 'lucide-react';
+import Reveal from '@/components/motion/Reveal';
+import StaggerReveal from '@/components/motion/StaggerReveal';
+import MagneticButton from '@/components/motion/MagneticButton';
 
 export const metadata: Metadata = {
   title: 'Pricing & Packages',
@@ -16,36 +19,44 @@ export default function PricingPage() {
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="site-container text-center space-y-3 relative z-10">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
-            <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
-            HONEST &amp; TRANSPARENT PRICING
-          </span>
-          <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
-            Investment &amp; Service Packages
-          </h1>
-          <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto leading-relaxed">
-            Market-aligned starting estimates optimized for business utility, reliable execution, and long-term value.
-          </p>
+          <Reveal>
+            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
+              <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
+              HONEST &amp; TRANSPARENT PRICING
+            </span>
+          </Reveal>
+          <Reveal delay={100}>
+            <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
+              Investment &amp; Service Packages
+            </h1>
+          </Reveal>
+          <Reveal delay={180}>
+            <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto leading-relaxed">
+              Market-aligned starting estimates optimized for business utility, reliable execution, and long-term value.
+            </p>
+          </Reveal>
         </div>
       </section>
 
       {/* Pricing Cards Grid */}
       <section className="py-8 sm:py-10 lg:py-12 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="site-container space-y-8">
-          <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
-              Service Packages &amp; Solutions
-            </h2>
-            <p className="text-xs sm:text-sm text-[#64748B]">
-              Clear scope alignment and strategic entry points designed to deliver maximum return on investment.
-            </p>
-          </div>
+          <Reveal>
+            <div className="text-center max-w-2xl mx-auto space-y-2">
+              <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+                Service Packages &amp; Solutions
+              </h2>
+              <p className="text-xs sm:text-sm text-[#64748B]">
+                Clear scope alignment and strategic entry points designed to deliver maximum return on investment.
+              </p>
+            </div>
+          </Reveal>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+          <StaggerReveal staggerInterval={80} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {pricingTiers.map((tier) => (
               <div
                 key={tier.title}
-                className={`card-popup relative flex flex-col justify-between rounded-3xl p-6 sm:p-7 border bg-white shadow-xl ${
+                className={`card-popup relative flex flex-col justify-between rounded-3xl p-6 sm:p-7 border bg-white shadow-xl h-full ${
                   tier.highlighted
                     ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15'
                     : 'border-[#E2E8F0]'
@@ -108,21 +119,23 @@ export default function PricingPage() {
                 </div>
 
                 <div className="pt-6">
-                  <Link
-                    href="/get-quote"
-                    className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md ${
-                      tier.highlighted
-                        ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-[#4338CA]/25'
-                        : 'bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0]'
-                    }`}
-                  >
-                    <span>{tier.cta || 'Request Quote'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  <MagneticButton maxDistance={6} className="w-full">
+                    <Link
+                      href="/get-quote"
+                      className={`w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md ${
+                        tier.highlighted
+                          ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-[#4338CA]/25'
+                          : 'bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0]'
+                      }`}
+                    >
+                      <span>Get Started</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </Link>
+                  </MagneticButton>
                 </div>
               </div>
             ))}
-          </div>
+          </StaggerReveal>
         </div>
       </section>
 

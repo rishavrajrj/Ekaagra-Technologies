@@ -1,4 +1,4 @@
-// ─── Service Types ───────────────────────────────────────────────
+// --- Service Types -----------------------------------------------
 export interface Service {
   slug: string;
   title: string;
@@ -11,7 +11,7 @@ export interface Service {
   useCases: string[];
 }
 
-// ─── Project Types ───────────────────────────────────────────────
+// --- Project Types -----------------------------------------------
 export interface Project {
   slug: string;
   title: string;
@@ -31,7 +31,7 @@ export interface Project {
   isFrameRestricted?: boolean;
 }
 
-// ─── Technology Types ────────────────────────────────────────────
+// --- Technology Types --------------------------------------------
 export interface Technology {
   name: string;
   category: 'frontend' | 'backend' | 'database' | 'mobile' | 'tools';
@@ -43,7 +43,7 @@ export interface TechnologyCategory {
   technologies: Technology[];
 }
 
-// ─── Pricing Types ───────────────────────────────────────────────
+// --- Pricing Types -----------------------------------------------
 export interface PricingTier {
   title: string;
   startingFrom: string;
@@ -78,20 +78,20 @@ export interface ProjectBenchmark {
   highlights: string[];
 }
 
-// ─── FAQ Types ───────────────────────────────────────────────────
+// --- FAQ Types ---------------------------------------------------
 export interface FAQ {
   question: string;
   answer: string;
 }
 
-// ─── Process Step Types ──────────────────────────────────────────
+// --- Process Step Types ------------------------------------------
 export interface ProcessStep {
   number: string;
   title: string;
   description: string;
 }
 
-// ─── Solution Types ──────────────────────────────────────────────
+// --- Solution Types ----------------------------------------------
 export interface Solution {
   id?: string;
   title: string;
@@ -106,14 +106,14 @@ export interface Solution {
   exampleProjectSlug?: string;
 }
 
-// ─── Why Ekaagra Types ───────────────────────────────────────────
+// --- Why Ekaagra Types -------------------------------------------
 export interface Differentiator {
   title: string;
   description: string;
   icon: string;
 }
 
-// ─── Form Types ──────────────────────────────────────────────────
+// --- Form Types --------------------------------------------------
 export interface ContactFormData {
   name: string;
   organization?: string;
@@ -138,7 +138,7 @@ export interface QuoteFormData {
   timeline?: string;
 }
 
-// ─── Lead Management Types (Supabase) ────────────────────────────
+// --- Lead Management Types (Supabase) ----------------------------
 export type LeadStatus =
   | 'NEW'
   | 'CONTACTED'
@@ -199,7 +199,7 @@ export interface LeadStats {
   lost: number;
 }
 
-// ─── Navigation Types ────────────────────────────────────────────
+// --- Navigation Types --------------------------------------------
 export interface NavItem {
   label: string;
   href: string;

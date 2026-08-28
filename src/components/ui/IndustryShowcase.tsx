@@ -5,14 +5,19 @@ import Link from 'next/link';
 import {
   GraduationCap,
   Building2,
-  Stethoscope,
+  HeartPulse,
+  Store,
   Rocket,
   BookOpen,
-  Utensils,
   ArrowRight,
-  Sparkles,
   CheckCircle2,
+  Sparkles,
+  Stethoscope,
+  Utensils,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import Reveal from '@/components/motion/Reveal';
+import MagneticButton from '@/components/motion/MagneticButton';
 
 interface IndustrySector {
   id: string;
@@ -188,66 +193,73 @@ export default function IndustryShowcase() {
 
       <div className="site-container relative z-10 w-full space-y-6 sm:space-y-8">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto space-y-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 border border-[#4338CA]/20 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
-            <Sparkles className="w-3 h-3 text-[#F97360]" />
-            WHERE WE BUILD
-          </span>
-          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
-            Tailored around the people you serve.
-          </h2>
-          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-2xl mx-auto">
-            Every industry has distinct operational challenges. We build digital experiences designed around your specific audience and workflow.
-          </p>
-        </div>
+        <Reveal>
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 border border-[#4338CA]/20 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
+              <Sparkles className="w-3 h-3 text-[#F97360]" />
+              WHERE WE BUILD
+            </span>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
+              Tailored around the people you serve.
+            </h2>
+            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-2xl mx-auto">
+              Every industry has distinct operational challenges. We build digital experiences designed around your specific audience and workflow.
+            </p>
+          </div>
+        </Reveal>
 
         {/* Industry Selector Tabs (6-Card Grid) */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
-          {industrySectors.map((sector) => {
-            const Icon = sector.icon;
-            const isSelected = selectedId === sector.id;
-            return (
-              <button
-                key={sector.id}
-                type="button"
-                onClick={() => setSelectedId(sector.id)}
-                className={`p-2.5 sm:p-3.5 rounded-xl text-left transition-all duration-200 flex flex-col justify-between border cursor-pointer min-w-0 ${
-                  isSelected
-                    ? 'bg-[#4338CA] text-white border-[#4338CA] shadow-md shadow-[#4338CA]/25 scale-[1.01]'
-                    : 'bg-white text-[#131B2E] border-[#E2E8F0] hover:border-[#4338CA]/40 hover:shadow-sm'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div
-                    className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center ${
-                      isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-[#4338CA]/10 text-[#4338CA]'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+        <Reveal delay={100}>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+            {industrySectors.map((sector) => {
+              const Icon = sector.icon;
+              const isSelected = selectedId === sector.id;
+              return (
+                <button
+                  key={sector.id}
+                  type="button"
+                  onClick={() => setSelectedId(sector.id)}
+                  className={`p-2.5 sm:p-3.5 rounded-xl text-left transition-all duration-300 flex flex-col justify-between border cursor-pointer min-w-0 ${
+                    isSelected
+                      ? 'bg-[#4338CA] text-white border-[#4338CA] shadow-md shadow-[#4338CA]/25 scale-[1.02]'
+                      : 'bg-white text-[#131B2E] border-[#E2E8F0] hover:border-[#4338CA]/40 hover:shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div
+                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-transform ${
+                        isSelected
+                          ? 'bg-white/20 text-white scale-105'
+                          : 'bg-[#4338CA]/10 text-[#4338CA]'
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    </div>
                   </div>
-                </div>
 
-                <div className="min-w-0">
-                  <span
-                    className={`text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider block mb-0.5 truncate ${
-                      isSelected ? 'text-[#F4C95D]' : 'text-[#64748B]'
-                    }`}
-                  >
-                    {sector.badge}
-                  </span>
-                  <h3 className="text-[11px] sm:text-xs font-bold tracking-tight leading-snug line-clamp-2">
-                    {sector.name}
-                  </h3>
-                </div>
-              </button>
-            );
-          })}
-        </div>
+                  <div className="min-w-0">
+                    <span
+                      className={`text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider block mb-0.5 truncate ${
+                        isSelected ? 'text-[#F4C95D]' : 'text-[#64748B]'
+                      }`}
+                    >
+                      {sector.badge}
+                    </span>
+                    <h3 className="text-[11px] sm:text-xs font-bold tracking-tight leading-snug line-clamp-2">
+                      {sector.name}
+                    </h3>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </Reveal>
 
-        {/* Detail Showcase Card */}
-        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 lg:p-7 shadow-lg grid lg:grid-cols-12 gap-5 lg:gap-6 items-center transition-all duration-300">
+        {/* Detail Showcase Card with Smooth Crossfade */}
+        <div
+          key={activeSector.id}
+          className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 lg:p-7 shadow-lg grid lg:grid-cols-12 gap-5 lg:gap-6 items-center transition-all duration-300 animate-fade-in"
+        >
           {/* Left Column: Context & Positioning */}
           <div className="lg:col-span-5 space-y-4">
             <div className="space-y-2">
@@ -264,13 +276,15 @@ export default function IndustryShowcase() {
             </div>
 
             <div className="pt-1">
-              <Link
-                href="/get-quote"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/25 hover:shadow-lg"
-              >
-                <span>Discuss Your Project</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
+              <MagneticButton maxDistance={6}>
+                <Link
+                  href="/get-quote"
+                  className="premium-shimmer-btn inline-flex items-center gap-2 px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/25 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <span>Discuss Your Project</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </MagneticButton>
             </div>
           </div>
 

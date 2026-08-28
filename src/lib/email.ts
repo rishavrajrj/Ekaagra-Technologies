@@ -49,9 +49,9 @@ function maskEmail(email: string): string {
 }
 
 /**
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * 1. ADMIN NOTIFICATION TEMPLATES (Sent to Ekaagra Admin)
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 function generateContactEmailText(data: ContactFormData): string {
@@ -298,9 +298,9 @@ function generateQuoteEmailHtml(data: QuoteFormData): string {
 }
 
 /**
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * 2. CLIENT CONFIRMATION TEMPLATES (Sent to Client's submitted email)
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 function generateClientContactConfirmationHtml(data: ContactFormData): string {
@@ -465,9 +465,9 @@ function generateClientQuoteConfirmationHtml(data: QuoteFormData): string {
 }
 
 /**
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  * 3. UNIVERSAL EMAIL DISPATCHER (Resend -> Nodemailer -> Unconfigured Guard)
- * ─────────────────────────────────────────────────────────────────────────────
+ * -----------------------------------------------------------------------------
  */
 
 export interface SendEmailOptions {

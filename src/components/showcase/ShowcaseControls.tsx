@@ -25,7 +25,7 @@ export default function ShowcaseControls() {
 
   return (
     <>
-      {/* ── Top Bar Controls ────────────────────────────────────── */}
+      {/* -- Top Bar Controls -------------------------------------- */}
       <div
         data-showcase-control="true"
         className={`fixed top-0 inset-x-0 z-[100000] p-4 sm:p-6 flex items-center justify-between pointer-events-none select-none transition-opacity duration-500 ${
@@ -98,7 +98,7 @@ export default function ShowcaseControls() {
         </div>
       </div>
 
-      {/* ── Left / Right Floating Navigation Chevrons (Only if multiple steps) ── */}
+      {/* -- Left / Right Floating Navigation Chevrons (Only if multiple steps) -- */}
       {steps.length > 1 && (
         <>
           <div

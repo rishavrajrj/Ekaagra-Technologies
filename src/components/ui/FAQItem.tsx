@@ -15,12 +15,19 @@ export function FAQItem({ question, answer, className = '' }: FAQItemProps) {
 
   return (
     <div 
-      className={`transition-all duration-300 rounded-2xl border ${
+      className={`card-popup-sm transition-all duration-300 rounded-2xl border relative overflow-hidden ${
         isOpen 
-          ? 'bg-white border-[#4338CA]/30 shadow-md px-5 sm:px-6 py-1.5' 
-          : 'bg-white/80 border-[#E2E8F0] hover:border-[#4338CA]/25 hover:bg-white px-5 sm:px-6 py-1.5 shadow-sm'
+          ? 'bg-white border-[#4338CA]/40 shadow-md px-5 sm:px-6 py-1.5' 
+          : 'bg-white/90 border-[#E2E8F0] hover:border-[#4338CA]/30 hover:bg-white px-5 sm:px-6 py-1.5 shadow-sm'
       } ${className}`}
     >
+      {/* Active Left Glow Accent Bar */}
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#4338CA] to-[#F97360] transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
       <button
         type="button"
         className="group flex w-full items-center justify-between py-3 sm:py-3.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4338CA] rounded-xl transition-colors cursor-pointer"
@@ -46,14 +53,18 @@ export function FAQItem({ question, answer, className = '' }: FAQItemProps) {
           )}
         </span>
       </button>
+
+      {/* Zero Layout Shift Grid Accordion */}
       <div 
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          isOpen ? 'max-h-96 pb-4 opacity-100' : 'max-h-0 opacity-0'
+        className={`grid transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          isOpen ? 'grid-rows-[1fr] opacity-100 pb-4' : 'grid-rows-[0fr] opacity-0 pb-0'
         }`}
       >
-        <p className="text-[#64748B] text-xs sm:text-sm leading-relaxed border-t border-[#E2E8F0] pt-2.5">
-          {answer}
-        </p>
+        <div className="overflow-hidden">
+          <p className="text-[#64748B] text-xs sm:text-sm leading-relaxed border-t border-[#E2E8F0] pt-2.5">
+            {answer}
+          </p>
+        </div>
       </div>
     </div>
   );

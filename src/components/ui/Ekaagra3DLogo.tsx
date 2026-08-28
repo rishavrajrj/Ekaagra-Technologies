@@ -26,7 +26,7 @@ export default function Ekaagra3DLogo({ className = '' }: { className?: string }
   const [videoError, setVideoError] = useState(false);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
 
-  // ── Reduced motion listener ──────────────────────────────────
+  // -- Reduced motion listener ----------------------------------
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
     setPrefersReducedMotion(mq.matches);
@@ -35,7 +35,7 @@ export default function Ekaagra3DLogo({ className = '' }: { className?: string }
     return () => mq.removeEventListener('change', handler);
   }, []);
 
-  // ── Interactive 3D tilt physics (mouse hover) ────────────────
+  // -- Interactive 3D tilt physics (mouse hover) ----------------
   useEffect(() => {
     if (prefersReducedMotion) return;
     const card = cardRef.current;
@@ -93,10 +93,10 @@ export default function Ekaagra3DLogo({ className = '' }: { className?: string }
       role="img"
       aria-label="Ekaagra Technologies — 3D Animated Logo"
     >
-      {/* ── Soft Ambient Back Glow ─────────────────────────────── */}
+      {/* -- Soft Ambient Back Glow ------------------------------- */}
       <div className="absolute -inset-4 bg-radial from-[#F97360]/15 via-[#4338CA]/10 to-transparent rounded-3xl blur-2xl pointer-events-none opacity-80" />
 
-      {/* ── 3D Card Container ──────────────────────────────────── */}
+      {/* -- 3D Card Container ------------------------------------ */}
       <div
         ref={cardRef}
         className="relative rounded-2xl overflow-hidden shadow-xl shadow-[#4338CA]/10 border border-[#E2E8F0]/80 bg-[#FAF7F2] transition-shadow duration-300 hover:shadow-2xl hover:shadow-[#4338CA]/20"

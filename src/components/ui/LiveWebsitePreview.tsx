@@ -241,7 +241,7 @@ export default function LiveWebsitePreview({
       ref={containerRef}
       className={`group relative flex flex-col rounded-3xl border border-[#E2E8F0] bg-white shadow-xl overflow-hidden transition-all duration-300 ${className}`}
     >
-      {/* ─── Browser Chrome Top Bar (Identical for ALL projects) ── */}
+      {/* --- Browser Chrome Top Bar (Identical for ALL projects) -- */}
       <div className="bg-[#FAF7F2] px-2.5 sm:px-4 py-1.5 sm:py-2.5 border-b border-[#E2E8F0] flex items-center justify-between gap-1.5 sm:gap-3 shrink-0">
         {/* Left: Window Controls & URL */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
@@ -335,7 +335,7 @@ export default function LiveWebsitePreview({
         </div>
       </div>
 
-      {/* ─── Main Viewport Canvas (Identical structure for ALL projects) ─ */}
+      {/* --- Main Viewport Canvas (Identical structure for ALL projects) - */}
       <div
         ref={canvasRef}
         className={`relative w-full ${heightClass} bg-[#F3EFEA] overflow-hidden flex items-center justify-center`}
