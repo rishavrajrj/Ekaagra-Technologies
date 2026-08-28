@@ -123,7 +123,7 @@ export default function Footer() {
           <p>© {currentYear} Ekaagra Technologies. All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <span className="hidden md:inline">Designed for businesses that want to stand out.</span>
-            <ShowcaseManualButton variant="footer" className="text-[11px] py-1.5 px-3" />
+            <ShowcaseManualButton variant="footer" className="hidden lg:inline-flex text-[11px] py-1.5 px-3" />
           </div>
         </div>
       </div>

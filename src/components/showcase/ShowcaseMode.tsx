@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useShowcase } from './ShowcaseProvider';
+import { SHOWCASE_MIN_DESKTOP_WIDTH } from './showcaseConfig';
 import ShowcaseProgress from './ShowcaseProgress';
 
 export default function ShowcaseMode() {
@@ -25,7 +26,7 @@ export default function ShowcaseMode() {
       role="dialog"
       aria-modal="true"
       aria-label="Ekaagra Technologies Cinematic Website Showcase"
-      className="fixed inset-0 z-[99999] pointer-events-none select-none"
+      className="hidden lg:block fixed inset-0 z-[99999] pointer-events-none select-none"
     >
       {/* ── Initial HUD Keyboard Hint (Auto Fades) ────────────────── */}
       <div

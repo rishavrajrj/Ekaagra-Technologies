@@ -12,6 +12,7 @@ import React, {
 import {
   SHOWCASE_CONFIG,
   SHOWCASE_TOUR_STEPS,
+  SHOWCASE_MIN_DESKTOP_WIDTH,
   type ShowcaseTourStep,
 } from './showcaseConfig';
 
@@ -82,8 +83,13 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     }, 4000);
   }, []);
 
-  // -- Open Showcase -----------------------------------------------
+  // -- Open Showcase (Desktop Displays Only) -----------------------
   const openShowcase = useCallback(() => {
+    // Exclude small devices (phones and tablets < 1024px)
+    if (typeof window === 'undefined' || window.innerWidth < SHOWCASE_MIN_DESKTOP_WIDTH) {
+      return;
+    }
+
     setIsOpen(true);
     setCurrentStepIndex(0);
     setIsPaused(false);
@@ -129,6 +135,20 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
       }
     }
   }, []);
+
+  // -- Close Showcase automatically on screen shrink (e.g. tablet/phone resize) --
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleResize = () => {
+      if (typeof window !== 'undefined' && window.innerWidth < SHOWCASE_MIN_DESKTOP_WIDTH) {
+        closeShowcase();
+      }
+    };
+
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isOpen, closeShowcase]);
 
   // -- Sync with Browser Fullscreen Change (e.g. user pressed Esc) --
   useEffect(() => {
@@ -234,17 +254,20 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     }
   }, [openShowcase]);
 
-  // -- Inactivity Detection (When Showcase is CLOSED) ---------------
+  // -- Inactivity Detection (When Showcase is CLOSED, Desktop Only) -
   useEffect(() => {
-    if (!SHOWCASE_CONFIG.autoTriggerOnIdle || isOpen || !SHOWCASE_CONFIG.enabled || isAutoDisabled) return;
+    if (
+      !SHOWCASE_CONFIG.autoTriggerOnIdle ||
+      isOpen ||
+      !SHOWCASE_CONFIG.enabled ||
+      isAutoDisabled ||
+      typeof window === 'undefined' ||
+      window.innerWidth < SHOWCASE_MIN_DESKTOP_WIDTH
+    ) {
+      return;
+    }
 
-    const isMobile =
-      typeof window !== 'undefined' &&
-      (window.innerWidth < 768 || 'ontouchstart' in window || (navigator && navigator.maxTouchPoints > 0));
-
-    const idleTimeout = isMobile
-      ? SHOWCASE_CONFIG.mobileIdleTimeout // 45s
-      : SHOWCASE_CONFIG.idleTimeout; // 30s
+    const idleTimeout = SHOWCASE_CONFIG.idleTimeout; // 30s
 
     const resetIdleTimer = () => {
       if (idleTimerRef.current) {

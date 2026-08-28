@@ -122,7 +122,6 @@ export default function Navbar() {
 
           {/* Mobile Right Controls */}
           <div className="flex lg:hidden items-center gap-1.5 sm:gap-2 shrink-0">
-            <ShowcaseManualButton variant="navbar" className="hidden xs:inline-flex text-[11px] px-2.5 py-1" />
             <button
               type="button"
               className="p-2 sm:p-2.5 text-[#131B2E] border border-[#E2E8F0] rounded-xl bg-white/80 hover:bg-white focus:outline-none focus:ring-2 focus:ring-[#4338CA] transition-all flex items-center justify-center cursor-pointer shadow-sm"
@@ -170,10 +169,6 @@ export default function Navbar() {
               </Link>
             );
           })}
-
-          <div className="pt-2">
-            <ShowcaseManualButton variant="mobile" />
-          </div>
         </div>
 
         <div className="pt-6 mt-auto border-t border-[#E2E8F0] space-y-4">

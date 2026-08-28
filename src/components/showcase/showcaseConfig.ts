@@ -21,6 +21,7 @@ export interface ShowcaseConfig {
 /**
  * Global Showcase / Screensaver Configuration
  */
+export const SHOWCASE_MIN_DESKTOP_WIDTH = 1024; // Desktop & laptop displays only (excluded on phone/tablet)
 export const SHOWCASE_IDLE_TIMEOUT = 30000; // 30 seconds default
 export const SHOWCASE_MOBILE_IDLE_TIMEOUT = 45000; // 45 seconds on mobile
 
