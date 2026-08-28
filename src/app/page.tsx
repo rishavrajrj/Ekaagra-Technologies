@@ -32,7 +32,7 @@ export default function HomePage() {
       {/* ─── 1. HERO SECTION (WHY / POSITIONING & MASTER FRAME) ─── */}
       <section
         id="hero"
-        className="relative py-8 sm:py-12 lg:py-16 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden"
+        className="relative py-4 px-0 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden"
       >
         {/* Ambient Top Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none" />
