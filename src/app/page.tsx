@@ -22,6 +22,7 @@ import BeforeAfterSection from '@/components/ui/BeforeAfterSection';
 import ServicesList from '@/components/ui/ServicesList';
 import ProcessTimeline from '@/components/ui/ProcessTimeline';
 import ShowcaseFrameSync from '@/components/showcase/ShowcaseFrameSync';
+import TypewriterHeadline from '@/components/ui/TypewriterHeadline';
 
 export default function HomePage() {
   return (
@@ -47,13 +48,8 @@ export default function HomePage() {
                 <span>WEBSITE DESIGN &amp; DEVELOPMENT STUDIO</span>
               </div>
 
-              {/* Main Headline */}
-              <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
-                Your business deserves a website{' '}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C] animate-gradient-shift">
-                  people remember.
-                </span>
-              </h1>
+              {/* Main Animated Typewriter Headline */}
+              <TypewriterHeadline />
 
               {/* Supporting Copy */}
               <p className="text-sm sm:text-base text-[#64748B] leading-relaxed max-w-xl font-normal">
