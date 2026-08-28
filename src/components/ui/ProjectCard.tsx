@@ -39,10 +39,10 @@ export function ProjectCard({
   return (
     <div
       onClick={handleCardClick}
-      className={`group flex flex-col overflow-hidden rounded-3xl border transition-all duration-300 bg-white ${
+      className={`card-popup group flex flex-col overflow-hidden rounded-3xl border bg-white ${
         isActive
-          ? 'border-2 border-[#4338CA] shadow-2xl shadow-[#4338CA]/15 ring-2 ring-[#4338CA]/20 scale-[1.01]'
-          : 'border-[#E2E8F0] hover:border-[#4338CA]/40 hover:shadow-2xl hover:shadow-[#4338CA]/10 hover:-translate-y-1'
+          ? 'border-2 border-[#4338CA] shadow-2xl shadow-[#4338CA]/20 ring-2 ring-[#4338CA]/20'
+          : 'border-[#E2E8F0] shadow-md'
       } ${onSelect ? 'cursor-pointer' : ''} ${className}`}
     >
       {/* ─── Browser Chrome Header ───────────────────────────────── */}

@@ -39,7 +39,7 @@ export default function ServicesList() {
             <Link
               key={service.slug}
               href={`/services/${service.slug}`}
-              className="group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl border border-[#E2E8F0] bg-white transition-all duration-300 hover:border-[#4338CA]/40 hover:shadow-xl hover:shadow-[#4338CA]/10 hover:-translate-y-0.5"
+              className="card-popup group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl border border-[#E2E8F0] bg-white transition-all duration-300"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">

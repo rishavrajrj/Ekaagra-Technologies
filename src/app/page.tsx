@@ -317,7 +317,7 @@ export default function HomePage() {
           </div>
 
           {/* Featured Strategy Callout: The Prestige Combo */}
-          <div className="bg-white border border-[#E2E8F0] rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="card-popup bg-white border border-[#E2E8F0] rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="space-y-1 text-left min-w-0">
               <div className="flex items-center gap-2">
                 <span className="px-2 py-0.5 bg-[#F97360]/10 text-[#F97360] font-bold text-[8.5px] uppercase tracking-wider rounded-full border border-[#F97360]/20 shrink-0">
@@ -393,7 +393,7 @@ export default function HomePage() {
 
           {/* 4 Technical Pillar Cards */}
           <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4 items-stretch">
-            <div className="p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm hover:border-[#4338CA]/40 transition-colors min-w-0">
+            <div className="card-popup-sm p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm min-w-0">
               <div className="w-8 h-8 rounded-lg bg-[#4338CA]/10 text-[#4338CA] flex items-center justify-center font-bold text-sm">
                 ⚡
               </div>
@@ -403,7 +403,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm hover:border-[#4338CA]/40 transition-colors min-w-0">
+            <div className="card-popup-sm p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm min-w-0">
               <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
                 🛡️
               </div>
@@ -413,7 +413,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm hover:border-[#4338CA]/40 transition-colors min-w-0">
+            <div className="card-popup-sm p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm min-w-0">
               <div className="w-8 h-8 rounded-lg bg-[#F97360]/10 text-[#F97360] flex items-center justify-center font-bold text-sm">
                 🔍
               </div>
@@ -423,7 +423,7 @@ export default function HomePage() {
               </p>
             </div>
 
-            <div className="p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm hover:border-[#4338CA]/40 transition-colors min-w-0">
+            <div className="card-popup-sm p-4 sm:p-5 bg-white border border-[#E2E8F0] rounded-xl space-y-2 shadow-sm min-w-0">
               <div className="w-8 h-8 rounded-lg bg-[#F4C95D]/20 text-[#B45309] flex items-center justify-center font-bold text-sm">
                 🔒
               </div>

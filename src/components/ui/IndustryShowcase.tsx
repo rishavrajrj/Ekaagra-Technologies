@@ -282,7 +282,7 @@ export default function IndustryShowcase() {
             {activeSector.outcomes.map((outcome, idx) => (
               <div
                 key={idx}
-                className="p-3.5 sm:p-4 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl flex items-start gap-3 hover:border-[#4338CA]/30 transition-colors"
+                className="card-popup-sm p-3.5 sm:p-4 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl flex items-start gap-3"
               >
                 <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
                   <CheckCircle2 className="w-3.5 h-3.5" />

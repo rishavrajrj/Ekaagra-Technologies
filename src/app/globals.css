@@ -334,6 +334,39 @@
               0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+/* ── Tactile Card Hover Pop-Up Animation ───────────────────────── */
+.card-popup {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease,
+              background-color 0.3s ease;
+  will-change: transform, box-shadow;
+}
+
+.card-popup:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 24px 44px -12px rgba(67, 56, 202, 0.18),
+              0 8px 18px -4px rgba(19, 27, 46, 0.08) !important;
+  border-color: rgba(67, 56, 202, 0.45) !important;
+  z-index: 10;
+}
+
+.card-popup-sm {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.25s ease,
+              background-color 0.25s ease;
+  will-change: transform, box-shadow;
+}
+
+.card-popup-sm:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 16px 30px -8px rgba(67, 56, 202, 0.14),
+              0 4px 12px -2px rgba(19, 27, 46, 0.05) !important;
+  border-color: rgba(67, 56, 202, 0.4) !important;
+  z-index: 5;
+}
+
 .premium-live-dot {
   animation: pulseRing 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

@@ -45,10 +45,10 @@ export default function PricingPage() {
             {pricingTiers.map((tier) => (
               <div
                 key={tier.title}
-                className={`relative flex flex-col justify-between rounded-3xl p-6 sm:p-7 border transition-all duration-300 bg-white shadow-xl ${
+                className={`card-popup relative flex flex-col justify-between rounded-3xl p-6 sm:p-7 border bg-white shadow-xl ${
                   tier.highlighted
-                    ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15 scale-[1.02]'
-                    : 'border-[#E2E8F0] hover:border-[#4338CA]/30'
+                    ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15'
+                    : 'border-[#E2E8F0]'
                 }`}
               >
                 {tier.highlighted && (

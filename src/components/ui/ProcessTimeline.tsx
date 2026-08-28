@@ -61,10 +61,10 @@ export default function ProcessTimeline() {
           return (
             <div
               key={step.number}
-              className={`group rounded-xl p-3.5 sm:p-4 transition-all duration-300 flex flex-col justify-between border min-w-0 ${
+              className={`card-popup-sm group rounded-xl p-3.5 sm:p-4 flex flex-col justify-between border min-w-0 ${
                 step.highlighted
-                  ? 'bg-white border-2 border-[#F97360] shadow-md shadow-[#F97360]/10 scale-[1.01]'
-                  : 'bg-white border-[#E2E8F0] hover:border-[#4338CA]/40 shadow-sm hover:shadow-md'
+                  ? 'bg-white border-2 border-[#F97360] shadow-md shadow-[#F97360]/10'
+                  : 'bg-white border-[#E2E8F0] shadow-sm'
               }`}
             >
               <div className="space-y-2.5 min-w-0">
