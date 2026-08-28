@@ -54,6 +54,8 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
   const steps = SHOWCASE_TOUR_STEPS;
   const currentStep = steps[currentStepIndex] || steps[0];
 
+  const wasInFullscreenRef = useRef<boolean>(false);
+
   // ── Smooth Camera Scroll Helper to Real Website Section ─────────
   const scrollToSection = useCallback((sectionId: string) => {
     if (typeof window === 'undefined') return;
@@ -65,18 +67,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
 
     const el = document.getElementById(sectionId);
     if (el) {
-      const headerEl = document.querySelector('header');
-      const isFullscreen = Boolean(
-        (typeof document !== 'undefined' && document.fullscreenElement) ||
-        (typeof document !== 'undefined' && document.documentElement.classList.contains('showcase-fullscreen-mode'))
-      );
-      const navOffset = isFullscreen ? 0 : (headerEl ? headerEl.offsetHeight : 72);
-      const elementPosition = el.getBoundingClientRect().top + window.scrollY;
-      const offsetPosition = Math.max(0, elementPosition - navOffset);
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth',
-      });
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
 
@@ -101,12 +92,18 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     stepStartTimeRef.current = Date.now();
     openTimeRef.current = Date.now();
 
-    // Request browser fullscreen mode
+    // Request browser fullscreen mode if supported
     if (typeof document !== 'undefined' && !document.fullscreenElement) {
       if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {
-          // Graceful fallback if blocked by browser policy
-        });
+        document.documentElement
+          .requestFullscreen()
+          .then(() => {
+            wasInFullscreenRef.current = true;
+          })
+          .catch(() => {
+            // Graceful fallback if blocked by browser policy
+            wasInFullscreenRef.current = false;
+          });
       }
     }
 
@@ -120,6 +117,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
   const closeShowcase = useCallback(() => {
     setIsOpen(false);
     setIsPaused(false);
+    wasInFullscreenRef.current = false;
     elapsedBeforePauseRef.current = 0;
     if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
     if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
@@ -135,8 +133,12 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
   // ── Sync with Browser Fullscreen Change (e.g. user pressed Esc) ──
   useEffect(() => {
     const handleFullscreenChange = () => {
-      if (typeof document !== 'undefined' && !document.fullscreenElement && isOpen) {
-        closeShowcase();
+      if (typeof document !== 'undefined') {
+        if (document.fullscreenElement) {
+          wasInFullscreenRef.current = true;
+        } else if (wasInFullscreenRef.current && isOpen) {
+          closeShowcase();
+        }
       }
     };
 
@@ -295,25 +297,9 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isOpen) return;
 
-    const GRACE_PERIOD_MS = 600;
-
     // Mouse or touch motion reveals HUD
     const handleMotion = () => {
       showHudTemporarily();
-    };
-
-    // User clicking backdrop outside interactive controls exits
-    const handleClick = (e: MouseEvent | TouchEvent) => {
-      const now = Date.now();
-      if (now - openTimeRef.current < GRACE_PERIOD_MS) return;
-
-      const target = e.target as HTMLElement | null;
-      if (target && target.closest('[data-showcase-control="true"]')) {
-        return;
-      }
-
-      // Exit showcase on direct click
-      closeShowcase();
     };
 
     // Keyboard hotkeys
@@ -341,20 +327,15 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
         showHudTemporarily();
         return;
       }
-
-      // Any other key exits
-      closeShowcase();
     };
 
     window.addEventListener('mousemove', handleMotion, { passive: true });
     window.addEventListener('touchstart', handleMotion, { passive: true });
-    window.addEventListener('click', handleClick);
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
       window.removeEventListener('mousemove', handleMotion);
       window.removeEventListener('touchstart', handleMotion);
-      window.removeEventListener('click', handleClick);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, closeShowcase, togglePause, nextStep, prevStep, showHudTemporarily]);

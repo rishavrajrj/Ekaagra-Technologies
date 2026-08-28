@@ -45,7 +45,7 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '01',
     label: 'Hero & Signature Work',
     subtitle: 'High-Converting Digital Experiences',
-    duration: 20000,
+    duration: 7500,
   },
   {
     id: 'industries',
@@ -53,7 +53,7 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '02',
     label: 'Industries We Serve',
     subtitle: 'Education, Healthcare, Corporate & Local Brands',
-    duration: 9000,
+    duration: 7000,
   },
   {
     id: 'transformation',
@@ -61,7 +61,7 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '03',
     label: 'The Transformation',
     subtitle: 'Generic Templates vs. Ekaagra Custom Craftsmanship',
-    duration: 8500,
+    duration: 7000,
   },
   {
     id: 'services',
@@ -69,7 +69,7 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '04',
     label: 'End-to-End Services',
     subtitle: 'Websites, Web Apps, Android & Enterprise ERP',
-    duration: 9000,
+    duration: 7000,
   },
   {
     id: 'process',
@@ -77,7 +77,7 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '05',
     label: 'Transparent Workflow',
     subtitle: '6-Step Predictable Roadmap to Live Launch',
-    duration: 8500,
+    duration: 7000,
   },
   {
     id: 'pricing',
@@ -85,7 +85,7 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '06',
     label: 'Transparent Investment',
     subtitle: 'Honest Packages & Featured Prestige Bundle',
-    duration: 9000,
+    duration: 7000,
   },
   {
     id: 'technology',
@@ -93,7 +93,7 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '07',
     label: 'Modern Tech & Trust',
     subtitle: 'Sub-500ms Speed, Next.js & Full Code Ownership',
-    duration: 8000,
+    duration: 7000,
   },
   {
     id: 'faq',
@@ -101,7 +101,7 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '08',
     label: 'Clear Answers & Objections',
     subtitle: 'Code Ownership, Timelines, Revisions & Support',
-    duration: 8500,
+    duration: 7000,
   },
   {
     id: 'final-cta',
@@ -109,6 +109,6 @@ export const SHOWCASE_TOUR_STEPS: ShowcaseTourStep[] = [
     number: '09',
     label: 'Let\'s Build Together',
     subtitle: 'Custom Estimate & Roadmap within 24 Hours',
-    duration: 8500,
+    duration: 7500,
   },
 ];
