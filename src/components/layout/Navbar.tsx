@@ -6,11 +6,13 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import ShowcaseManualButton from '@/components/showcase/ShowcaseManualButton';
+import { useShowcase } from '@/components/showcase/ShowcaseProvider';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const { isOpen: isShowcaseOpen } = useShowcase();
 
   // Links for desktop nav bar
   const navLinks = [
@@ -53,6 +55,10 @@ export default function Navbar() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  if (isShowcaseOpen) {
+    return null;
+  }
 
   return (
     <>

@@ -638,6 +638,10 @@
   display: none !important;
 }
 
+.showcase-fullscreen-mode main {
+  padding-top: 0 !important;
+}
+
 /* 4K, 2K & Ultra-Wide Fullscreen 1-Frame Showcase Synchronization */
 .showcase-fullscreen-mode section[id] {
   min-height: 100vh !important;
