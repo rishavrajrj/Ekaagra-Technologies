@@ -603,4 +603,20 @@
   height: 0px !important;
 }
 
+/* 4K, 2K & Ultra-Wide Fullscreen 1-Frame Showcase Synchronization */
+.showcase-fullscreen-mode section[id] {
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+.showcase-fullscreen-mode section[id] > div {
+  margin-top: auto !important;
+  margin-bottom: auto !important;
+}
+
+
 

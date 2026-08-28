@@ -66,7 +66,11 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
     const el = document.getElementById(sectionId);
     if (el) {
       const headerEl = document.querySelector('header');
-      const navOffset = headerEl ? headerEl.offsetHeight : 72;
+      const isFullscreen = Boolean(
+        (typeof document !== 'undefined' && document.fullscreenElement) ||
+        (typeof document !== 'undefined' && document.documentElement.classList.contains('showcase-fullscreen-mode'))
+      );
+      const navOffset = isFullscreen ? 0 : (headerEl ? headerEl.offsetHeight : 72);
       const elementPosition = el.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = Math.max(0, elementPosition - navOffset);
       window.scrollTo({
