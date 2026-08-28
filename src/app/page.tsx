@@ -37,7 +37,7 @@ export default function HomePage() {
         {/* Ambient Top Glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none" />
 
-        <div className="site-container relative z-10 w-full flex flex-col gap-0">
+        <div className="site-container relative z-10 w-full flex flex-col gap-4">
           <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
             {/* Left Content */}
             <div className="lg:col-span-5 space-y-4 text-left">
