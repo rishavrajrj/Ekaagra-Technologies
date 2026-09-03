@@ -7,6 +7,8 @@ import { ShowcaseProvider } from '@/components/showcase/ShowcaseProvider';
 import ShowcaseMode from '@/components/showcase/ShowcaseMode';
 import ScrollProgress from '@/components/motion/ScrollProgress';
 import BackToTop from '@/components/motion/BackToTop';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -104,6 +106,8 @@ export default function RootLayout({
           <BackToTop />
           <ShowcaseMode />
         </ShowcaseProvider>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
