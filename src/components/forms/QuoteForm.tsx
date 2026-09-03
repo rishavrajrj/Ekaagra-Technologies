@@ -5,6 +5,7 @@ import { submitQuoteForm } from '@/app/actions';
 import { serviceOptions, budgetOptions, timelineOptions } from '@/lib/data';
 import type { QuoteFormData } from '@/lib/types';
 import { Send, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { trackFormSubmission } from '@/lib/analytics';
 
 export default function QuoteForm() {
   const [loading, setLoading] = useState(false);
@@ -36,6 +37,7 @@ export default function QuoteForm() {
     setErrorMsg('');
 
     const res = await submitQuoteForm(formData);
+    trackFormSubmission('quote', res.success ? 'success' : 'error');
     
     if (res.success) {
       setSuccessMsg(res.message);

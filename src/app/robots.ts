@@ -1,11 +1,15 @@
 import type { MetadataRoute } from 'next';
+import { SITE_URL } from '@/lib/seo.config';
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: '*',
-      allow: '/',
-    },
-    sitemap: 'https://ekaagratechnologies.in/sitemap.xml',
+    rules: [
+      {
+        userAgent: '*',
+        allow: '/',
+        disallow: ['/admin/', '/api/'],
+      },
+    ],
+    sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

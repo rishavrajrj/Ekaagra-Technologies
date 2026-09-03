@@ -1,22 +1,46 @@
 import type { Metadata } from 'next';
 import ContactForm from '@/components/forms/ContactForm';
-import { Mail, Phone, Clock, MapPin, Sparkles, MessageCircle } from 'lucide-react';
+import { Mail, Clock, MapPin, Sparkles, MessageSquare } from 'lucide-react';
+import { createPageMetadata, webPageSchema, SITE_URL, BRAND_EMAIL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
 
-export const metadata: Metadata = {
-  title: 'Contact Us',
-  description: 'Have a project, website design, or software requirement in mind? Tell us what you need and receive a detailed proposal and estimate.',
-};
+export const metadata: Metadata = createPageMetadata({
+  title: 'Contact Ekaagra Technologies — Website Developer in Motihari, Bihar',
+  description:
+    'Contact Ekaagra Technologies for custom website design, web applications, school ERP systems, and business software in Motihari, Bihar. Reach us via inquiry form, email, or direct WhatsApp.',
+  path: '/contact',
+});
 
 export default function ContactPage() {
+  const whatsappUrl = buildGeneralInquiryWhatsAppUrl();
+
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: 'Contact Ekaagra Technologies',
+              description:
+                'Get in touch with Ekaagra Technologies for website design and software development in Motihari, Bihar.',
+              url: `${SITE_URL}/contact`,
+            })
+          ),
+        }}
+      />
+      <div className="site-container pt-6 pb-2">
+        <Breadcrumbs items={[{ label: 'Contact Us' }]} />
+      </div>
+
       {/* Hero */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="site-container text-center space-y-4 relative z-10">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
             <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-            START A CONVERSATION
+            START A CONVERSATION • MOTIHARI, BIHAR
           </span>
           <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             Let&apos;s build something people remember.
@@ -41,12 +65,11 @@ export default function ContactPage() {
                   Direct Consultation &amp; Inquiry
                 </h2>
                 <p className="text-sm text-[#64748B] leading-relaxed">
-                  We review every project proposal promptly within 24 hours. If you are planning a new business website, an institutional school portal, or custom software, we are ready to help.
+                  We review every project proposal promptly within 24 hours. If you are planning a new business website, an institutional school portal, or custom software in Motihari or anywhere in Bihar, we are ready to help.
                 </p>
               </div>
 
               <div className="space-y-4 pt-4 border-t border-[#E2E8F0]">
-
                 <div className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
                   <div className="p-3 bg-[#4338CA]/10 text-[#4338CA] rounded-xl shrink-0">
                     <Clock className="w-5 h-5" />
@@ -63,7 +86,36 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Studio Location</span>
-                    <span className="text-xs text-[#64748B] block mt-1">Motihari, Bihar, India</span>
+                    <span className="text-xs text-[#64748B] block mt-1">Motihari, East Champaran, Bihar, India</span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
+                  <div className="p-3 bg-emerald-500/10 text-emerald-700 rounded-xl shrink-0">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Email Inquiries</span>
+                    <a href={`mailto:${BRAND_EMAIL}`} className="text-xs text-[#4338CA] hover:underline block mt-1 truncate">
+                      {BRAND_EMAIL}
+                    </a>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 bg-white p-5 rounded-2xl border border-[#E2E8F0] shadow-sm">
+                  <div className="p-3 bg-[#25D366]/10 text-[#25D366] rounded-xl shrink-0">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Instant WhatsApp</span>
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#4338CA] font-semibold hover:underline block mt-1"
+                    >
+                      Chat with us on WhatsApp &rarr;
+                    </a>
                   </div>
                 </div>
               </div>

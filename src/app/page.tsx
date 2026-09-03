@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ArrowRight,
@@ -10,11 +11,19 @@ import {
   ShieldCheck,
   Cloud,
   Layers,
+  MapPin,
 } from 'lucide-react';
 import {
   faqs,
   pricingTiers,
 } from '@/lib/data';
+import {
+  createPageMetadata,
+  localBusinessSchema,
+  faqPageSchema,
+  DEFAULT_TITLE,
+  DEFAULT_DESCRIPTION,
+} from '@/lib/seo.config';
 import FAQItem from '@/components/ui/FAQItem';
 import HeroVisual from '@/components/ui/HeroVisual';
 import IndustryShowcase from '@/components/ui/IndustryShowcase';
@@ -27,9 +36,29 @@ import Reveal from '@/components/motion/Reveal';
 import MagneticButton from '@/components/motion/MagneticButton';
 import GlowCard from '@/components/motion/GlowCard';
 
+export const metadata: Metadata = createPageMetadata({
+  title: DEFAULT_TITLE,
+  description: DEFAULT_DESCRIPTION,
+  path: '/',
+});
+
 export default function HomePage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] overflow-hidden">
+      {/* Structured Data: LocalBusiness & FAQPage */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(localBusinessSchema()),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(faqPageSchema(faqs.slice(0, 4))),
+        }}
+      />
+
       {/* -- Dynamic Hero Height Synchronizer for Cinematic Showcase -- */}
       <ShowcaseFrameSync />
 
@@ -47,10 +76,13 @@ export default function HomePage() {
             <div className="lg:col-span-5 space-y-4 text-left">
               {/* Top Category Badge */}
               <Reveal delay={80} distance={14} duration={500}>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider shadow-sm hover:scale-[1.02] transition-transform">
+                <Link
+                  href="/website-development-motihari"
+                  className="inline-flex items-center gap-2 px-3 py-1 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider shadow-sm hover:scale-[1.02] transition-transform"
+                >
                   <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-                  <span>WEBSITE DESIGN &amp; DEVELOPMENT STUDIO</span>
-                </div>
+                  <span>WEBSITE DESIGN &amp; DEVELOPMENT • MOTIHARI, BIHAR</span>
+                </Link>
               </Reveal>
 
               {/* Main Animated Typewriter Headline */}
@@ -61,7 +93,7 @@ export default function HomePage() {
               {/* Supporting Copy */}
               <Reveal delay={240} distance={16} duration={550}>
                 <p className="text-sm sm:text-base text-[#64748B] leading-relaxed max-w-xl font-normal">
-                  Beautiful, fast and conversion-focused websites designed around your business — not another generic template. We craft custom digital experiences that turn visitors into loyal customers.
+                  Beautiful, fast and conversion-focused websites designed around your business — not another generic template. We craft custom websites, school portals, and web applications in Motihari, Bihar that turn visitors into loyal customers.
                 </p>
               </Reveal>
 

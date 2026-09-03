@@ -22,6 +22,8 @@ export interface Project {
   overview: string;
   problem: string;
   solution: string;
+  approach?: string;
+  outcome?: string;
   features: string[];
   technologies: string[];
   image: string;

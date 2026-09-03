@@ -16,12 +16,15 @@ import {
 import React from 'react';
 import { solutions } from '@/lib/data';
 import type { LucideIcon } from 'lucide-react';
+import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export const metadata: Metadata = {
-  title: 'Industry Solutions',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Digital Solutions for Schools & Businesses in Bihar | Ekaagra Technologies',
   description:
-    'Tailored website and software solutions engineered for specific industries including schools, businesses, healthcare, restaurants, retail, coaching, and startups.',
-};
+    'Custom websites, school ERP platforms, and software solutions tailored for schools, coaching academies, local retail stores, clinics, and businesses in Motihari and Bihar.',
+  path: '/solutions',
+});
 
 const iconMap: Record<string, LucideIcon> = {
   GraduationCap,
@@ -37,6 +40,23 @@ const iconMap: Record<string, LucideIcon> = {
 export default function SolutionsPage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: 'Industry Solutions — Ekaagra Technologies',
+              description:
+                'Tailored digital solutions for educational institutions, businesses, clinics, and retail in Bihar.',
+              url: `${SITE_URL}/solutions`,
+            })
+          ),
+        }}
+      />
+      <div className="site-container pt-6 pb-2">
+        <Breadcrumbs items={[{ label: 'Solutions' }]} />
+      </div>
+
       {/* Hero */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />

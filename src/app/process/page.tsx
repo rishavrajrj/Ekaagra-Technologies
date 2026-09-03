@@ -2,16 +2,36 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import ProcessTimeline from '@/components/ui/ProcessTimeline';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export const metadata: Metadata = {
-  title: 'How We Work',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Website Development Process & Workflow | Ekaagra Technologies Motihari',
   description:
-    'A structured, predictable 6-step development roadmap from initial discovery to design, client review, and final launch.',
-};
+    'Our transparent 6-step web development workflow in Motihari, Bihar — from initial discovery and design prototypes to milestone testing and launch with 100% code ownership.',
+  path: '/process',
+});
 
 export default function ProcessPage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: 'Website Development Process — Ekaagra Technologies',
+              description:
+                'Predictable 6-step website design and development roadmap with transparent client review milestones.',
+              url: `${SITE_URL}/process`,
+            })
+          ),
+        }}
+      />
+      <div className="site-container pt-6 pb-2">
+        <Breadcrumbs items={[{ label: 'How We Work' }]} />
+      </div>
+
       {/* Hero */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />

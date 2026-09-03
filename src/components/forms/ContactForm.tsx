@@ -5,6 +5,7 @@ import { submitContactForm } from '@/app/actions';
 import { serviceOptions, budgetOptions, contactMethods } from '@/lib/data';
 import type { ContactFormData } from '@/lib/types';
 import { Send, CheckCircle2, AlertCircle, RefreshCw } from 'lucide-react';
+import { trackFormSubmission } from '@/lib/analytics';
 
 export default function ContactForm() {
   const [loading, setLoading] = useState(false);
@@ -34,6 +35,7 @@ export default function ContactForm() {
     setErrorMsg('');
 
     const res = await submitContactForm(formData);
+    trackFormSubmission('contact', res.success ? 'success' : 'error');
     
     if (res.success) {
       setSuccessMsg(res.message);

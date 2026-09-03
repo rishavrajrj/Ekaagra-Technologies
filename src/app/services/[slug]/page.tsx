@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { Check, Globe, LayoutDashboard, Smartphone, Code2, GraduationCap, Building2, Server, Wrench, ArrowRight, Sparkles } from 'lucide-react';
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
+import { createPageMetadata, serviceSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
 const iconMap: Record<string, LucideIcon> = {
   Globe,
@@ -30,10 +32,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const service = services.find((s) => s.slug === slug);
   if (!service) return { title: 'Service Not Found | Ekaagra Technologies' };
 
-  return {
-    title: service.title,
-    description: service.description,
-  };
+  return createPageMetadata({
+    title: `${service.title} in Motihari, Bihar | Ekaagra Technologies`,
+    description: `${service.longDescription || service.description} Engineered with modern speed, mobile responsiveness, and clean code in Motihari, Bihar.`,
+    path: `/services/${slug}`,
+  });
 }
 
 export default async function ServiceDetailPage({ params }: Props) {
@@ -47,7 +50,28 @@ export default async function ServiceDetailPage({ params }: Props) {
   const Icon = iconMap[service.icon] || Code2;
 
   return (
-    <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+    <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            serviceSchema({
+              name: service.title,
+              description: service.description,
+              url: `${SITE_URL}/services/${slug}`,
+            })
+          ),
+        }}
+      />
+      <div className="pb-8">
+        <Breadcrumbs
+          items={[
+            { label: 'Services', href: '/services' },
+            { label: service.title },
+          ]}
+        />
+      </div>
+
       <article className="space-y-16">
         {/* Header Hero */}
         <header className="border-b border-[#E2E8F0] pb-12 space-y-6">

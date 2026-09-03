@@ -393,6 +393,10 @@ export const projects: Project[] = [
       'The school needed an official digital presence to communicate admissions criteria, academic programs, circulars, and mandatory regulatory disclosures to parents — eliminating reliance on physical circulars.',
     solution:
       'We built a professional, mobile-friendly school website with dedicated sections for admissions, academics, campus facilities, photo gallery, and a live notice board. School staff can update notices and announcements independently.',
+    approach:
+      'We selected a modern Next.js static site architecture paired with Tailwind CSS and cloud edge hosting rather than a generic WordPress theme. This was engineered for sub-second loading speeds on local 4G mobile networks, zero plugin security vulnerabilities, and an intuitive hierarchy for CBSE mandatory compliance documentation.',
+    outcome:
+      'Successfully launched a 12-section institutional web portal providing verified CBSE public disclosure archives, an active digital notice board, and online admission enquiry workflows connecting parents directly with school administration.',
     features: [
       'Admissions guidelines & online enquiry workflow',
       'Academic curriculum & faculty overviews',
@@ -429,6 +433,10 @@ export const projects: Project[] = [
       'Students and learners required a clean, distraction-free platform to explore courses, view detailed curriculum modules, and understand learning pathways.',
     solution:
       'We developed a responsive web application that organizes technical education content into structured courses, allowing prospective students to explore curriculum details, mentors, and program outcomes with ease.',
+    approach:
+      'Engineered a modern React and Next.js frontend with clean typography, fast asset loading, and distraction-free module previews tailored for technical course exploration.',
+    outcome:
+      'Successfully launched a student curriculum preview platform that presents educational course roadmaps and captures prospective learner counseling requests.',
     features: [
       'Course catalog & curriculum roadmap organization',
       'Student learning interface & program details',
@@ -461,6 +469,10 @@ export const projects: Project[] = [
       'Local customers experienced long counter wait times for routine document printing, urgent photos, and online services. Manual file sharing via USB drives created operational bottlenecks during peak hours.',
     solution:
       'We designed and developed an intuitive "Send • Choose • Collect" web platform. Users can securely upload documents from mobile or desktop, select precise print settings (B&W/color, copies, paper size), pay via Razorpay or at pickup, and monitor order processing live.',
+    approach:
+      'Designed a mobile-first "Send • Choose • Collect" workflow using TypeScript, React, and Supabase cloud storage. Integrated Razorpay payment gateway to allow customers to pre-pay and bypass counter queues.',
+    outcome:
+      'Modernized print shop workflows in Chakia by replacing manual USB drive handovers with direct document uploads, instant online payments, and live order tracking.',
     features: [
       'Direct Document & PDF Upload Engine',
       'Streamlined "Send • Choose • Collect" Ordering Flow',
@@ -492,6 +504,10 @@ export const projects: Project[] = [
       'Managing academic records, fee reconciliations, daily attendance tracking, report cards compilation, and parent notices via physical registers and disconnected spreadsheets caused operational bottlenecks and administrative delays.',
     solution:
       'We engineered a comprehensive, responsive School Management ERP platform built on Next.js, React, and Supabase / PostgreSQL. With fine-grained Role-Based Access Control (RBAC), the platform provides tailored dashboards for administrators, faculty, accountants, parents, and students, automating routine processes and enabling instant data synchronization.',
+    approach:
+      'Architected a robust 6-role Role-Based Access Control (RBAC) structure separating Admin, Principal, Teacher, Accountant, Parent, and Student modules on a PostgreSQL / Supabase backend.',
+    outcome:
+      'Successfully digitized administrative and academic operations, eliminating manual paperwork across student records, daily attendance tracking, fee receipts, and examination grading.',
     features: [
       'Multi-Role Portals (Admin, Principal, Teacher, Accountant, Parent, Student)',
       'Student & Staff Records Management with Dynamic Filters',

@@ -39,9 +39,15 @@ export default function Footer() {
                 <span>Available for new website &amp; software projects</span>
               </div>
 
-              <p className="text-xs font-medium text-[#64748B] pt-1">
-                📍 Motihari, Bihar, India
-              </p>
+              <div className="space-y-1 text-xs font-medium text-[#64748B] pt-1">
+                <p>📍 Motihari, East Champaran, Bihar, India</p>
+                <p>
+                  ✉️{' '}
+                  <a href="mailto:ekaagratechnologies@gmail.com" className="hover:text-[#4338CA] transition-colors">
+                    ekaagratechnologies@gmail.com
+                  </a>
+                </p>
+              </div>
             </div>
 
             {/* Services Column */}
@@ -50,7 +56,17 @@ export default function Footer() {
                 What We Build
               </h3>
               <ul className="space-y-2.5">
-                {services.slice(0, 6).map((service) => (
+                <li>
+                  <Link
+                    href="/website-development-motihari"
+                    className="group inline-flex items-center gap-1 text-xs font-semibold text-[#4338CA] hover:text-[#3730A3] transition-colors duration-200"
+                  >
+                    <span className="group-hover:translate-x-1 transition-transform duration-200">
+                      Web Development in Motihari &rarr;
+                    </span>
+                  </Link>
+                </li>
+                {services.slice(0, 5).map((service) => (
                   <li key={service.slug}>
                     <Link
                       href={`/services/${service.slug}`}
@@ -77,6 +93,7 @@ export default function Footer() {
                   { label: 'Industry Solutions', href: '/solutions' },
                   { label: 'How We Work', href: '/process' },
                   { label: 'Pricing & Packages', href: '/pricing' },
+                  { label: 'Blog & Guides', href: '/blog' },
                   { label: 'About Us', href: '/about' },
                   { label: 'Contact Us', href: '/contact' },
                 ].map((item) => (

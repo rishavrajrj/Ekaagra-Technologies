@@ -1,15 +1,36 @@
 import type { Metadata } from 'next';
 import QuoteForm from '@/components/forms/QuoteForm';
 import { Sparkles } from 'lucide-react';
+import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export const metadata: Metadata = {
-  title: 'Build My Website & Get a Quote | Ekaagra Technologies',
-  description: 'Tell us about your project requirements and we will provide a detailed proposal and estimate within 24 hours.',
-};
+export const metadata: Metadata = createPageMetadata({
+  title: 'Get a Website Quote — Ekaagra Technologies, Motihari',
+  description:
+    'Request a tailored proposal and cost estimate for your website, web application, or school ERP project from Ekaagra Technologies in Motihari, Bihar. Detailed scope delivered within 24 hours.',
+  path: '/get-quote',
+});
 
 export default function GetQuotePage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: 'Get a Website Quote — Ekaagra Technologies',
+              description:
+                'Request a tailored proposal and estimate for website and software projects in Motihari, Bihar.',
+              url: `${SITE_URL}/get-quote`,
+            })
+          ),
+        }}
+      />
+      <div className="site-container pt-6 pb-2">
+        <Breadcrumbs items={[{ label: 'Get a Quote' }]} />
+      </div>
+
       {/* Hero */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />

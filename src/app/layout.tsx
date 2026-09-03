@@ -22,32 +22,44 @@ const inter = Inter({
   weight: ['400', '500', '600', '700'],
 });
 
+import {
+  SITE_URL,
+  BRAND_NAME,
+  DEFAULT_TITLE,
+  DEFAULT_DESCRIPTION,
+  DEFAULT_KEYWORDS,
+  organizationSchema,
+  websiteSchema,
+} from '@/lib/seo.config';
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://ekaagratechnologies.in'),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'Ekaagra Technologies | Premium Website & Digital Product Studio',
-    template: '%s | Ekaagra Technologies',
+    default: DEFAULT_TITLE,
+    template: `%s | ${BRAND_NAME}`,
   },
-  description:
-    'Ekaagra Technologies designs and develops beautiful, fast, and conversion-focused websites, web applications, mobile apps, and custom software systems.',
-  keywords: [
-    'website design agency',
-    'custom web development',
-    'business websites',
-    'school website design',
-    'school ERP systems',
-    'web applications',
-    'android app development',
-    'Ekaagra Technologies',
-  ],
-  authors: [{ name: 'Ekaagra Technologies' }],
+  description: DEFAULT_DESCRIPTION,
+  keywords: DEFAULT_KEYWORDS,
+  authors: [{ name: BRAND_NAME }],
+  alternates: {
+    canonical: SITE_URL,
+  },
+  icons: {
+    icon: [
+      { url: '/images/logo/logo.webp', type: 'image/webp' },
+    ],
+    shortcut: ['/images/logo/logo.webp'],
+    apple: [
+      { url: '/images/logo/logo.webp', type: 'image/webp' },
+    ],
+  },
   openGraph: {
     type: 'website',
     locale: 'en_IN',
-    siteName: 'Ekaagra Technologies',
-    title: 'Ekaagra Technologies | Premium Website & Digital Product Studio',
-    description:
-      'Beautiful, fast and conversion-focused websites designed around your business — not another generic template.',
+    siteName: BRAND_NAME,
+    title: DEFAULT_TITLE,
+    description: DEFAULT_DESCRIPTION,
+    url: SITE_URL,
   },
   robots: {
     index: true,
@@ -62,43 +74,24 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="en"
+      lang="en-IN"
       className={`light ${plusJakartaSans.variable} ${inter.variable}`}
       style={{ colorScheme: 'light' }}
     >
       <head>
+        <link rel="icon" href="/images/logo/logo.webp" type="image/webp" />
+        <link rel="apple-touch-icon" href="/images/logo/logo.webp" />
+        <link rel="shortcut icon" href="/images/logo/logo.webp" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'ProfessionalService',
-              name: 'Ekaagra Technologies',
-              description:
-                'Premium website design and digital product development studio creating high-converting websites, web applications, Android apps, and School ERP systems.',
-              url: 'https://ekaagratechnologies.in',
-              serviceType: [
-                'Website Design & Development',
-                'Web Application Development',
-                'Mobile App Development',
-                'School ERP Systems',
-                'Custom Business Software',
-              ],
-              areaServed: {
-                '@type': 'Country',
-                name: 'India',
-              },
-              knowsAbout: [
-                'Website Design',
-                'Next.js',
-                'React',
-                'TypeScript',
-                'Tailwind CSS',
-                'Android Development',
-                'PostgreSQL',
-                'Supabase',
-              ],
-            }),
+            __html: JSON.stringify(organizationSchema()),
+          }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(websiteSchema()),
           }}
         />
       </head>

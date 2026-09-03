@@ -5,16 +5,36 @@ import { ArrowRight, Check, ShieldCheck, Smartphone, Clock, Sparkles, CheckCircl
 import Reveal from '@/components/motion/Reveal';
 import StaggerReveal from '@/components/motion/StaggerReveal';
 import MagneticButton from '@/components/motion/MagneticButton';
+import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export const metadata: Metadata = {
-  title: 'Pricing & Packages',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Website Development Cost & Pricing in Motihari, Bihar | Ekaagra Technologies',
   description:
-    'Transparent pricing packages for custom websites, web applications, Android apps, custom software, and School ERP systems.',
-};
+    'Transparent website design, web application, and school ERP pricing in Motihari, Bihar. Clear starting packages from ₹15,000 with zero hidden costs and full code ownership.',
+  path: '/pricing',
+});
 
 export default function PricingPage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: 'Website Development Pricing in Motihari',
+              description:
+                'Transparent pricing packages for website design, web applications, and School ERP systems in Motihari, Bihar.',
+              url: `${SITE_URL}/pricing`,
+            })
+          ),
+        }}
+      />
+      <div className="site-container pt-6 pb-2">
+        <Breadcrumbs items={[{ label: 'Pricing & Packages' }]} />
+      </div>
+
       {/* Hero */}
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />

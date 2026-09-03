@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Check, ExternalLink, ArrowRight, Sparkles, Globe, Play } from 'lucide-react';
 import ProjectGallery from '@/components/ui/ProjectGallery';
 import LiveWebsitePreview from '@/components/ui/LiveWebsitePreview';
+import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -21,11 +23,43 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   if (!project) return { title: 'Project Not Found | Ekaagra Technologies' };
 
-  return {
-    title: `${project.title} — Case Study`,
-    description: project.description,
-  };
+  return createPageMetadata({
+    title: `${project.title} — Case Study | Ekaagra Technologies`,
+    description: `${project.description} Delivered by Ekaagra Technologies for clients in Bihar and across India.`,
+    path: `/projects/${slug}`,
+    ogImage: project.image ? `${SITE_URL}${project.image}` : undefined,
+  });
 }
+
+const projectServiceLinks: Record<string, Array<{ label: string; href: string }>> = {
+  'roshani-public-school': [
+    { label: 'School Website Development in Motihari', href: '/school-website-development-motihari' },
+    { label: 'Website Development Services', href: '/services/website-development' },
+    { label: 'School ERP Upgrade Options', href: '/school-erp-motihari' },
+  ],
+  'roshani-public-school-erp': [
+    { label: 'School ERP Systems in Motihari', href: '/school-erp-motihari' },
+    { label: 'School Website Development', href: '/school-website-development-motihari' },
+    { label: 'School ERP vs Website Comparison', href: '/blog/school-erp-vs-school-website' },
+  ],
+  'palak-enterprises': [
+    { label: 'Web Application Development in Motihari', href: '/web-application-development-motihari' },
+    { label: 'Web Application Services', href: '/services/web-application-development' },
+    { label: 'Custom Software Development', href: '/software-development-motihari' },
+  ],
+  'sparknest-academy': [
+    { label: 'Web Application Development in Motihari', href: '/web-application-development-motihari' },
+    { label: 'Web Application Services', href: '/services/web-application-development' },
+  ],
+  'bankgeu': [
+    { label: 'Custom Software Development in Motihari', href: '/software-development-motihari' },
+    { label: 'Custom Software Services', href: '/services/custom-software' },
+  ],
+  'gameverse': [
+    { label: 'Custom Software Development in Motihari', href: '/software-development-motihari' },
+    { label: 'Custom Software Services', href: '/services/custom-software' },
+  ],
+};
 
 export default async function ProjectDetailPage({ params }: Props) {
   const { slug } = await params;
@@ -41,7 +75,28 @@ export default async function ProjectDetailPage({ params }: Props) {
   );
 
   return (
-    <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen py-16 sm:py-24 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+    <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen py-8 sm:py-12 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: `${project.title} — Case Study`,
+              description: project.description,
+              url: `${SITE_URL}/projects/${slug}`,
+            })
+          ),
+        }}
+      />
+      <div className="pb-8">
+        <Breadcrumbs
+          items={[
+            { label: 'Our Work', href: '/projects' },
+            { label: project.title },
+          ]}
+        />
+      </div>
+
       <article className="space-y-16">
         {/* Header Hero */}
         <header className="text-center space-y-6 border-b border-[#E2E8F0] pb-12">
@@ -166,6 +221,32 @@ export default async function ProjectDetailPage({ params }: Props) {
           </div>
         </section>
 
+        {/* Architectural Approach & Outcome */}
+        {(project.approach || project.outcome) && (
+          <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {project.approach && (
+              <div className="bg-white p-8 rounded-3xl border border-[#E2E8F0] shadow-sm space-y-3">
+                <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+                  Why This Technical Approach
+                </span>
+                <p className="text-sm text-[#475569] leading-relaxed">
+                  {project.approach}
+                </p>
+              </div>
+            )}
+            {project.outcome && (
+              <div className="bg-white p-8 rounded-3xl border border-emerald-200 shadow-sm space-y-3">
+                <span className="text-xs font-mono font-bold text-emerald-700 uppercase tracking-widest block">
+                  Verified Project Outcome
+                </span>
+                <p className="text-sm text-[#334155] leading-relaxed font-medium">
+                  {project.outcome}
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
         {/* Features List */}
         <section className="space-y-6 bg-white p-8 sm:p-10 rounded-3xl border border-[#E2E8F0] shadow-sm">
           <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
@@ -200,6 +281,30 @@ export default async function ProjectDetailPage({ params }: Props) {
             ))}
           </div>
         </section>
+
+        {/* Related Service Capabilities (Internal Linking) */}
+        {projectServiceLinks[project.slug] && (
+          <section className="bg-white p-8 rounded-3xl border border-[#E2E8F0] space-y-4 shadow-sm">
+            <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+              DEMONSTRATED CAPABILITIES &amp; SERVICES
+            </span>
+            <h3 className="text-lg font-bold text-[#131B2E]">
+              Explore the Technology &amp; Services Behind This Project
+            </h3>
+            <div className="flex flex-wrap gap-2.5 pt-1">
+              {projectServiceLinks[project.slug].map((link, idx) => (
+                <Link
+                  key={idx}
+                  href={link.href}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#FAF7F2] hover:bg-[#F1ECE4] text-[#131B2E] text-xs font-bold rounded-xl border border-[#E2E8F0] transition-colors"
+                >
+                  <span>{link.label}</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#4338CA]" />
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Bottom Callout */}
         <section className="bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] p-10 sm:p-14 rounded-3xl text-center border border-[#E2E8F0] space-y-6">

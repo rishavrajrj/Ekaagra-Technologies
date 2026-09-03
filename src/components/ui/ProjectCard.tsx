@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ExternalLink, ArrowRight, Sparkles, CheckCircle2, Eye } from 'lucide-react';
 import type { Project } from '@/lib/types';
+import { trackProjectClick } from '@/lib/analytics';
 
 interface ProjectCardProps {
   project: Project;
@@ -31,6 +32,7 @@ export function ProjectCard({
     // Only trigger select if not clicking on an anchor tag
     const target = e.target as HTMLElement;
     if (target.closest('a')) return;
+    trackProjectClick(project.slug);
     if (onSelect) {
       onSelect(project.slug);
     }
@@ -77,7 +79,7 @@ export function ProjectCard({
           {project.image ? (
             <Image
               src={project.image}
-              alt={project.title}
+              alt={`${project.title} - ${project.category} engineered by Ekaagra Technologies`}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 400px"
               className="object-cover object-top transition-transform duration-700 group-hover:scale-105"

@@ -5,16 +5,36 @@ import { projects } from '@/lib/data';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import Reveal from '@/components/motion/Reveal';
 import MagneticButton from '@/components/motion/MagneticButton';
+import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export const metadata: Metadata = {
-  title: 'Our Work',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Website & Software Portfolio | Case Studies | Ekaagra Technologies Motihari',
   description:
-    'Explore our portfolio of real websites, web applications, and custom software systems designed for businesses, schools, and organizations.',
-};
+    'Explore verified live websites, web applications, and School ERP platforms engineered by Ekaagra Technologies in Motihari, Bihar. See real client outcomes and design benchmarks.',
+  path: '/projects',
+});
 
 export default function ProjectsPage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: 'Portfolio & Case Studies — Ekaagra Technologies',
+              description:
+                'Explore live websites, web applications, and School ERP platforms engineered by Ekaagra Technologies.',
+              url: `${SITE_URL}/projects`,
+            })
+          ),
+        }}
+      />
+      <div className="site-container pt-6 pb-2">
+        <Breadcrumbs items={[{ label: 'Our Work' }]} />
+      </div>
+
       {/* Hero */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative">
         <div className="site-container text-center space-y-4">

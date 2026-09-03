@@ -2,16 +2,36 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import ServicesList from '@/components/ui/ServicesList';
 import { ArrowRight, Sparkles } from 'lucide-react';
+import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export const metadata: Metadata = {
-  title: 'Services',
+export const metadata: Metadata = createPageMetadata({
+  title: 'Website Design & Software Services in Motihari, Bihar | Ekaagra Technologies',
   description:
-    'Explore our comprehensive design and digital development services: custom websites, web applications, Android applications, School ERP, and business software.',
-};
+    'Custom website design, full-stack web applications, School ERP platforms, native Android apps, and custom software systems developed by Ekaagra Technologies in Motihari, Bihar.',
+  path: '/services',
+});
 
 export default function ServicesPage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: 'Services — Ekaagra Technologies',
+              description:
+                'Explore our digital services: custom websites, web applications, Android apps, and School ERP systems in Motihari, Bihar.',
+              url: `${SITE_URL}/services`,
+            })
+          ),
+        }}
+      />
+      <div className="site-container pt-6 pb-2">
+        <Breadcrumbs items={[{ label: 'Services' }]} />
+      </div>
+
       {/* Hero */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />

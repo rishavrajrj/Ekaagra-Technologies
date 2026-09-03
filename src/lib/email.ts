@@ -375,7 +375,7 @@ function generateClientContactConfirmationHtml(data: ContactFormData): string {
     </div>
     <div class="footer">
       <strong>Ekaagra Technologies</strong><br/>
-      Website: <a href="https://ekaagratechnologies.in" style="color: #4338CA; text-decoration: none;">ekaagratechnologies.in</a>
+      Website: <a href="https://www.ekaagratechnologies.site" style="color: #4338CA; text-decoration: none;">ekaagratechnologies.site</a>
     </div>
   </div>
 </body>
@@ -456,7 +456,7 @@ function generateClientQuoteConfirmationHtml(data: QuoteFormData): string {
     </div>
     <div class="footer">
       <strong>Ekaagra Technologies</strong><br/>
-      Website: <a href="https://ekaagratechnologies.in" style="color: #4338CA; text-decoration: none;">ekaagratechnologies.in</a>
+      Website: <a href="https://www.ekaagratechnologies.site" style="color: #4338CA; text-decoration: none;">ekaagratechnologies.site</a>
     </div>
   </div>
 </body>

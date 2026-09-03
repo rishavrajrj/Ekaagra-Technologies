@@ -1,29 +1,49 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ShieldCheck, Sparkles, Zap, HeartHandshake, ArrowRight } from 'lucide-react';
+import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
+import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
-export const metadata: Metadata = {
-  title: 'About Us',
+export const metadata: Metadata = createPageMetadata({
+  title: 'About Ekaagra Technologies — Website & Software Studio in Motihari, Bihar',
   description:
-    'Ekaagra Technologies is an independent website design and digital development studio creating high-converting websites, web platforms, and custom software systems.',
-};
+    'Learn about Ekaagra Technologies, an independent website design and software development studio in Motihari, Bihar. Discover our principles, engineering standards, and mission to empower local businesses and schools.',
+  path: '/about',
+});
 
 export default function AboutPage() {
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            webPageSchema({
+              name: 'About Ekaagra Technologies',
+              description:
+                'Independent website design and digital development studio based in Motihari, Bihar.',
+              url: `${SITE_URL}/about`,
+            })
+          ),
+        }}
+      />
+      <div className="site-container pt-6 pb-2">
+        <Breadcrumbs items={[{ label: 'About Us' }]} />
+      </div>
+
       {/* Hero */}
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="site-container text-center space-y-3 relative z-10">
           <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
             <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-            STUDIO CREED
+            STUDIO CREED • MOTIHARI, BIHAR
           </span>
           <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             Built with purpose. Designed for people.
           </h1>
           <p className="text-sm sm:text-base text-[#64748B] max-w-3xl mx-auto leading-relaxed">
-            Ekaagra Technologies is an independent creative website and software studio. We design high-converting websites, educational platforms, and custom software systems built around how businesses actually run.
+            Ekaagra Technologies is an independent creative website and software studio based in Motihari, East Champaran, Bihar. We design high-converting websites, educational platforms, and custom software systems built around how modern businesses and institutions actually run.
           </p>
         </div>
       </section>
@@ -105,8 +125,10 @@ export default function AboutPage() {
               { label: 'Custom design', desc: 'Distinct brand experiences crafted specifically for your business goals.' },
               { label: 'Clear communication', desc: 'Keeping you informed every step of the way without confusing technical jargon.' },
               { label: 'Practical solutions', desc: 'Focusing on what works and delivers real measurable leads and enquiries.' },
+              { label: '100% Code & Domain Ownership', desc: 'You own your codebase, database, and domain with zero vendor lock-in or proprietary builder fees.' },
               { label: 'Maintainable code', desc: 'Building foundations that can easily grow into custom portals or mobile apps.' },
               { label: 'Honest timelines', desc: 'Setting realistic expectations with clear client review checkpoints before launch.' },
+              { label: 'Motihari & Bihar roots', desc: 'Dedicated to empowering local educational institutions and businesses with tier-1 technology.' },
             ].map((item, idx) => (
               <div key={idx} className="py-4 flex items-start gap-4">
                 <span className="text-xs font-mono font-bold text-[#4338CA] mt-0.5">0{idx + 1}</span>
