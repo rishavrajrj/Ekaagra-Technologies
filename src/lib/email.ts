@@ -1,10 +1,12 @@
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
-import type { ContactFormData, QuoteFormData } from './types';
+import type { ContactFormData, QuoteFormData, SchoolQuoteRequest } from './types';
+import type { SchoolPriceCalculation } from './schoolPricing';
 import {
   getWhatsAppChatUrl,
   buildContactSubmissionWhatsAppUrl,
   buildQuoteSubmissionWhatsAppUrl,
+  buildSchoolSubmissionWhatsAppUrl,
 } from './whatsapp';
 
 export function getAdminEmail(): string {
@@ -671,5 +673,262 @@ export async function sendClientQuoteConfirmation(data: QuoteFormData): Promise<
     type: 'client_quote_confirmation',
   });
 }
+
+/**
+ * -----------------------------------------------------------------------------
+ * SCHOOL SOLUTIONS EMAIL NOTIFICATIONS
+ * -----------------------------------------------------------------------------
+ */
+
+function generateSchoolQuoteEmailText(
+  request: SchoolQuoteRequest,
+  pricing: SchoolPriceCalculation
+): string {
+  const waLink = getClientWhatsAppLink(request.contact.phone, request.contact.fullName);
+  return `[NEW SCHOOL LEAD] SCHOOL SOLUTION ENQUIRY
+
+SCHOOL DETAILS
+----------------------------------------
+School Name: ${request.school.schoolName}
+School Type: ${request.school.schoolType}
+Board: ${request.school.board}
+Location: ${request.school.city}, ${request.school.state}
+Approx. Students: ${request.school.approximateStudents}
+${request.school.currentWebsite ? `Current Website: ${request.school.currentWebsite}\n` : ''}${request.school.existingErp ? `Existing ERP: ${request.school.existingErp}\n` : ''}${request.school.requirements ? `Requirements/Goals: ${request.school.requirements}\n` : ''}
+CONTACT PERSON
+----------------------------------------
+Name: ${request.contact.fullName}
+Role / Designation: ${request.contact.designation}
+Phone: ${request.contact.phone}
+Email: ${request.contact.email}
+${request.contact.whatsapp ? `WhatsApp: ${request.contact.whatsapp}\n` : ''}${request.contact.preferredContactMethod ? `Preferred Contact: ${request.contact.preferredContactMethod}\n` : ''}
+SELECTED SOLUTION & PRICING
+----------------------------------------
+Product: ${pricing.productName}
+${pricing.studentTierLabel ? `Capacity Tier: ${pricing.studentTierLabel}\n` : ''}Domain: ${request.domain ? `${request.domain.domain} (${request.domain.isIncluded ? 'Included' : `Upgrade: ₹${request.domain.upgradeAmount}`})` : 'To be confirmed'}
+${pricing.selectedAddonNames.length > 0 ? `Selected Add-ons:\n- ${pricing.selectedAddonNames.join('\n- ')}\n` : ''}
+FINANCIAL BREAKDOWN (VERIFIED)
+----------------------------------------
+Year 1 Estimated Total: ${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Quote'}
+Renewal From: ${pricing.totalRenewalFrom !== null ? `₹${pricing.totalRenewalFrom.toLocaleString('en-IN')}/year` : 'Custom Quote'}
+
+QUICK ACTIONS
+----------------------------------------
+Reply on WhatsApp: ${waLink}
+Reply via Email: mailto:${request.contact.email}
+`;
+}
+
+function generateSchoolQuoteEmailHtml(
+  request: SchoolQuoteRequest,
+  pricing: SchoolPriceCalculation
+): string {
+  const waLink = getClientWhatsAppLink(request.contact.phone, request.contact.fullName);
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>New School Enquiry</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #0f172a; line-height: 1.5; }
+    .card { max-width: 620px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .header { background: #4338CA; padding: 24px 30px; color: #ffffff; text-align: left; }
+    .header h1 { margin: 0 0 4px 0; font-size: 19px; font-weight: 800; color: #ffffff; }
+    .header p { margin: 0; font-size: 13px; color: #e0e7ff; }
+    .body { padding: 30px; }
+    .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.8px; color: #4338CA; margin: 22px 0 10px 0; border-bottom: 2px solid #e0e7ff; padding-bottom: 6px; }
+    .section-title:first-child { margin-top: 0; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    .table td { padding: 8px 0; border-bottom: 1px solid #f8fafc; font-size: 13px; vertical-align: top; }
+    .label { color: #64748b; font-weight: 600; width: 36%; }
+    .value { color: #0f172a; font-weight: 600; }
+    .price-box { background: #FAF7F2; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; margin-top: 14px; }
+    .btn { display: inline-block; padding: 10px 18px; border-radius: 8px; font-size: 12px; font-weight: 700; text-decoration: none; text-align: center; margin-right: 8px; margin-bottom: 8px; }
+    .btn-wa { background: #16a34a; color: #ffffff !important; }
+    .btn-mail { background: #4338ca; color: #ffffff !important; }
+    .footer { background: #f8fafc; padding: 14px 30px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>New School Solution Enquiry</h1>
+      <p>School Technology Platform &bull; Ekaagra Technologies</p>
+    </div>
+    <div class="body">
+      <div class="section-title">School Profile</div>
+      <table class="table">
+        <tr><td class="label">School Name:</td><td class="value">${request.school.schoolName}</td></tr>
+        <tr><td class="label">Type / Board:</td><td class="value">${request.school.schoolType} &bull; ${request.school.board}</td></tr>
+        <tr><td class="label">Location:</td><td class="value">${request.school.city}, ${request.school.state}</td></tr>
+        <tr><td class="label">Approx. Strength:</td><td class="value">${request.school.approximateStudents} students</td></tr>
+        ${request.school.currentWebsite ? `<tr><td class="label">Website:</td><td class="value">${request.school.currentWebsite}</td></tr>` : ''}
+        ${request.school.existingErp ? `<tr><td class="label">Existing Software:</td><td class="value">${request.school.existingErp}</td></tr>` : ''}
+      </table>
+
+      <div class="section-title">Contact Information</div>
+      <table class="table">
+        <tr><td class="label">Contact Name:</td><td class="value">${request.contact.fullName} (${request.contact.designation})</td></tr>
+        <tr><td class="label">Phone:</td><td class="value"><a href="tel:${request.contact.phone}">${request.contact.phone}</a></td></tr>
+        <tr><td class="label">Email:</td><td class="value"><a href="mailto:${request.contact.email}">${request.contact.email}</a></td></tr>
+        ${request.contact.whatsapp ? `<tr><td class="label">WhatsApp:</td><td class="value">${request.contact.whatsapp}</td></tr>` : ''}
+      </table>
+
+      <div class="section-title">Selected Solution &amp; Scope</div>
+      <table class="table">
+        <tr><td class="label">Product:</td><td class="value"><strong>${pricing.productName}</strong></td></tr>
+        ${pricing.studentTierLabel ? `<tr><td class="label">Student Bracket:</td><td class="value">${pricing.studentTierLabel}</td></tr>` : ''}
+        <tr><td class="label">Domain Choice:</td><td class="value">${request.domain ? `${request.domain.domain} (${request.domain.isIncluded ? 'Included' : `Upgrade: +₹${request.domain.upgradeAmount}`})` : 'To be confirmed'}</td></tr>
+        ${pricing.selectedAddonNames.length > 0 ? `<tr><td class="label">Optional Add-ons:</td><td class="value">${pricing.selectedAddonNames.join(', ')}</td></tr>` : ''}
+      </table>
+
+      <div class="price-box">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+          <span style="font-size: 13px; color: #64748b;">Year 1 Estimated Total:</span>
+          <strong style="font-size: 16px; color: #4338ca;">${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Quote'}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between;">
+          <span style="font-size: 12px; color: #64748b;">Annual Renewal From:</span>
+          <strong style="font-size: 14px; color: #0f172a;">${pricing.totalRenewalFrom !== null ? `₹${pricing.totalRenewalFrom.toLocaleString('en-IN')}/year` : 'Custom Quote'}</strong>
+        </div>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <a href="${waLink}" class="btn btn-wa">Reply on WhatsApp</a>
+        <a href="mailto:${request.contact.email}" class="btn btn-mail">Reply via Email</a>
+      </div>
+    </div>
+    <div class="footer">
+      Ekaagra Technologies &bull; Motihari, Bihar &bull; Dedicated School Platforms
+    </div>
+  </div>
+</body>
+</html>
+`;
+}
+
+function generateClientSchoolQuoteConfirmationHtml(
+  request: SchoolQuoteRequest,
+  pricing: SchoolPriceCalculation
+): string {
+  const ekaagraWhatsAppUrl = buildSchoolSubmissionWhatsAppUrl({
+    schoolName: request.school.schoolName,
+    contactName: request.contact.fullName,
+    productName: pricing.productName,
+    studentRange: pricing.studentTierLabel || undefined,
+    yearOnePrice: pricing.totalEstimatedYearOne,
+    renewalPrice: pricing.totalRenewalFrom,
+    domainName: request.domain?.domain,
+    city: request.school.city,
+  });
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #FAF7F2; margin: 0; padding: 20px; color: #131B2E; }
+    .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .header { background: #4338CA; padding: 28px 32px; color: #ffffff; text-align: left; }
+    .header h1 { margin: 0 0 6px 0; font-size: 22px; font-weight: 800; color: #ffffff; }
+    .header p { margin: 0; font-size: 13px; color: #E0E7FF; }
+    .body { padding: 32px; }
+    .greeting { font-size: 16px; font-weight: 700; color: #131B2E; margin-bottom: 12px; }
+    .text { font-size: 14px; line-height: 1.6; color: #475569; margin-bottom: 20px; }
+    .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #4338CA; margin-bottom: 12px; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    .table td { padding: 9px 12px; border-bottom: 1px solid #F1F5F9; font-size: 13px; }
+    .label { color: #64748B; font-weight: 600; width: 40%; }
+    .value { color: #0F172A; font-weight: 700; }
+    .highlight-box { background: #FAF7F2; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center; }
+    .btn-wa { display: inline-block; background: #25D366; color: #ffffff !important; padding: 12px 24px; border-radius: 10px; font-size: 13px; font-weight: 800; text-decoration: none; text-transform: uppercase; letter-spacing: 0.5px; }
+    .footer { background: #FAF7F2; padding: 20px 32px; text-align: center; font-size: 12px; color: #64748B; border-top: 1px solid #E2E8F0; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>Ekaagra Technologies for Schools</h1>
+      <p>School Technology &amp; ERP Solutions Team</p>
+    </div>
+    <div class="body">
+      <div class="greeting">Dear ${request.contact.fullName},</div>
+      <p class="text">
+        Thank you for your interest in Ekaagra Technologies&apos; school platforms for <strong>${request.school.schoolName}</strong>. We have successfully received your configuration request.
+      </p>
+
+      <div class="section-title">Your Configured Solution</div>
+      <table class="table">
+        <tr><td class="label">Product Plan:</td><td class="value">${pricing.productName}</td></tr>
+        ${pricing.studentTierLabel ? `<tr><td class="label">Capacity Bracket:</td><td class="value">${pricing.studentTierLabel}</td></tr>` : ''}
+        ${request.domain ? `<tr><td class="label">Selected Domain:</td><td class="value">${request.domain.domain}</td></tr>` : ''}
+        <tr>
+          <td class="label">Estimated Year 1:</td>
+          <td class="value" style="color: #4338CA;">${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Enterprise Quote'}</td>
+        </tr>
+        <tr>
+          <td class="label">Renewal From:</td>
+          <td class="value">${pricing.totalRenewalFrom !== null ? `₹${pricing.totalRenewalFrom.toLocaleString('en-IN')}/year` : 'Custom Enterprise Quote'}</td>
+        </tr>
+      </table>
+
+      <div class="highlight-box">
+        <div style="font-size: 13px; font-weight: 700; color: #131B2E; margin-bottom: 6px;">Need an instant school walkthrough or live ERP demo?</div>
+        <div style="font-size: 12px; color: #64748B; margin-bottom: 14px;">Connect with our educational technology specialist directly on WhatsApp:</div>
+        <a href="${ekaagraWhatsAppUrl}" target="_blank" class="btn-wa">&bull; Discuss on WhatsApp</a>
+      </div>
+    </div>
+    <div class="footer">
+      <strong>Ekaagra Technologies</strong><br/>
+      Website: <a href="https://www.ekaagratechnologies.site/schools" style="color: #4338CA; text-decoration: none;">ekaagratechnologies.site/schools</a><br/>
+      Motihari, East Champaran, Bihar, India
+    </div>
+  </div>
+</body>
+</html>
+`;
+}
+
+export async function sendSchoolQuoteNotification(
+  request: SchoolQuoteRequest,
+  pricing: SchoolPriceCalculation
+): Promise<EmailDispatchResult> {
+  const adminEmail = getAdminEmail();
+  const subject = `[School Lead] ${request.school.schoolName} — ${pricing.productName}`;
+  const html = generateSchoolQuoteEmailHtml(request, pricing);
+  const text = generateSchoolQuoteEmailText(request, pricing);
+  return sendEmail({
+    to: adminEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: request.contact.email,
+    headers: {
+      'Auto-Submitted': 'auto-generated',
+      'X-Auto-Response-Suppress': 'All',
+    },
+    type: 'quote',
+  });
+}
+
+export async function sendClientSchoolQuoteConfirmation(
+  request: SchoolQuoteRequest,
+  pricing: SchoolPriceCalculation
+): Promise<EmailDispatchResult> {
+  const adminEmail = getAdminEmail();
+  const subject = `We received your school solution enquiry — ${request.school.schoolName}`;
+  const html = generateClientSchoolQuoteConfirmationHtml(request, pricing);
+  return sendEmail({
+    to: request.contact.email,
+    subject,
+    htmlContent: html,
+    replyTo: adminEmail,
+    type: 'client_quote_confirmation',
+  });
+}
+
 
 

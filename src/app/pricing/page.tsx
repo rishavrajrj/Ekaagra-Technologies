@@ -7,11 +7,14 @@ import StaggerReveal from '@/components/motion/StaggerReveal';
 import MagneticButton from '@/components/motion/MagneticButton';
 import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import WebsitePricingSection from '@/components/ui/WebsitePricingSection';
+import AdditionalPagesSection from '@/components/ui/AdditionalPagesSection';
+import DomainStrategySection from '@/components/ui/DomainStrategySection';
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Website Development Cost & Pricing in Motihari, Bihar | Ekaagra Technologies',
   description:
-    'Transparent website design, web application, and school ERP pricing in Motihari, Bihar. Clear starting packages from ₹15,000 with zero hidden costs and full code ownership.',
+    'Transparent website design, Free Launch offer, Launch Plus, Starter website, web application, and school ERP pricing in Motihari, Bihar. Clear packages from ₹0 with zero hidden costs and full code ownership.',
   path: '/pricing',
 });
 
@@ -58,16 +61,29 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* Pricing Cards Grid */}
-      <section className="py-8 sm:py-10 lg:py-12 border-b border-[#E2E8F0] bg-[#FAF7F2]">
+      {/* 1. Website Development Launch & Growth Plans */}
+      <WebsitePricingSection />
+
+      {/* 2. Additional Page Complexity-Based Pricing */}
+      <AdditionalPagesSection />
+
+      {/* 3. Domain Strategy, Allowance & Upgrades */}
+      <DomainStrategySection />
+
+      {/* 4. Custom Corporate, App & Enterprise Software Packages */}
+      <section id="enterprise-packages" className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="site-container space-y-8">
           <Reveal>
             <div className="text-center max-w-2xl mx-auto space-y-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest border border-[#4338CA]/20">
+                <Building2 className="w-3.5 h-3.5 text-[#4338CA]" />
+                CUSTOM &amp; INSTITUTIONAL SYSTEMS
+              </span>
               <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
-                Service Packages &amp; Solutions
+                Corporate Websites, Apps &amp; Enterprise Software
               </h2>
               <p className="text-xs sm:text-sm text-[#64748B]">
-                Clear scope alignment and strategic entry points designed to deliver maximum return on investment.
+                High-scale web applications, native Android apps, and comprehensive School ERP platforms engineered for demanding operational workflows.
               </p>
             </div>
           </Reveal>

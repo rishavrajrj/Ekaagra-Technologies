@@ -22,7 +22,16 @@ export type ConversionEventName =
   | 'contact_form_submit'
   | 'quote_form_submit'
   | 'consultation_request'
-  | 'project_view';
+  | 'project_view'
+  | 'school_page_view'
+  | 'school_plan_selected'
+  | 'school_erp_student_tier_selected'
+  | 'school_addon_selected'
+  | 'school_domain_search'
+  | 'school_domain_selected'
+  | 'school_configuration_completed'
+  | 'school_request_started'
+  | 'school_request_submitted';
 
 export interface AnalyticsEventPayload {
   event: ConversionEventName;
@@ -132,3 +141,21 @@ export function trackProjectClick(projectSlug: string, sourcePage?: string): voi
     event_label: `View Project: ${projectSlug}`,
   });
 }
+
+/**
+ * Track school solution funnel interactions
+ */
+export function trackSchoolEvent(
+  event: ConversionEventName,
+  eventLabel?: string,
+  extraData?: Record<string, unknown>
+): void {
+  dispatchAnalyticsEvent({
+    event,
+    event_category: 'Conversion',
+    source_page: '/schools',
+    event_label: eventLabel,
+    ...extraData,
+  });
+}
+

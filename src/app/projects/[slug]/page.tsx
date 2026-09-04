@@ -47,6 +47,11 @@ const projectServiceLinks: Record<string, Array<{ label: string; href: string }>
     { label: 'Web Application Services', href: '/services/web-application-development' },
     { label: 'Custom Software Development', href: '/software-development-motihari' },
   ],
+  'palak-id-studio': [
+    { label: 'Web Application Development in Motihari', href: '/web-application-development-motihari' },
+    { label: 'Web Application Services', href: '/services/web-application-development' },
+    { label: 'Custom Software Development', href: '/software-development-motihari' },
+  ],
   'sparknest-academy': [
     { label: 'Web Application Development in Motihari', href: '/web-application-development-motihari' },
     { label: 'Web Application Services', href: '/services/web-application-development' },

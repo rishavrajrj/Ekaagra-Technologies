@@ -7,6 +7,7 @@ import { ShowcaseProvider } from '@/components/showcase/ShowcaseProvider';
 import ShowcaseMode from '@/components/showcase/ShowcaseMode';
 import ScrollProgress from '@/components/motion/ScrollProgress';
 import BackToTop from '@/components/motion/BackToTop';
+import PricingOfferPopup from '@/components/ui/PricingOfferPopup';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -105,6 +106,7 @@ export default function RootLayout({
           <Footer />
           <BackToTop />
           <ShowcaseMode />
+          <PricingOfferPopup />
         </ShowcaseProvider>
         <Analytics />
         <SpeedInsights />

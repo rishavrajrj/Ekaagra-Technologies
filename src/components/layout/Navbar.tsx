@@ -20,6 +20,7 @@ export default function Navbar() {
     { label: 'Home', href: '/' },
     { label: 'Our Work', href: '/projects' },
     { label: 'Services', href: '/services' },
+    { label: 'Schools', href: '/schools' },
     { label: 'Solutions', href: '/solutions' },
     { label: 'Pricing', href: '/pricing' },
     { label: 'About', href: '/about' },

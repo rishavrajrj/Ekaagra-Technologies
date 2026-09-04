@@ -2,6 +2,10 @@ import type {
   Service,
   Project,
   TechnologyCategory,
+  WebsitePlan,
+  AdditionalPageTier,
+  MaintenanceCoverageInfo,
+  DomainExtensionOption,
   PricingTier,
   SchoolSalesStrategy,
   ProjectBenchmark,
@@ -17,6 +21,7 @@ export const navItems: NavItem[] = [
   { label: 'Home', href: '/' },
   { label: 'Our Work', href: '/projects' },
   { label: 'Services', href: '/services' },
+  { label: 'Schools', href: '/schools' },
   { label: 'Solutions', href: '/solutions' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'About', href: '/about' },
@@ -488,7 +493,42 @@ export const projects: Project[] = [
     images: [
       '/images/projects/palak-enterprises/palak-1.png',
     ],
-    liveUrl: 'https://palak-enterprises-ghit.vercel.app/',
+    liveUrl: 'https://www.palakenterprises.shop/',
+  },
+  {
+    slug: 'palak-id-studio',
+    title: 'Palak ID Studio',
+    shortLabel: 'ID Studio',
+    category: 'Web Application',
+    badge: 'ID Card Design SaaS',
+    description:
+      'Cloud-based ID card design and batch production platform featuring drag-and-drop template editing, dynamic student data fields, Excel roster import, and automated print sheet generation.',
+    overview:
+      'Palak ID Studio is an advanced cloud-based identity card design and batch production platform engineered for institutional printing and corporate ID management. The studio empowers schools, colleges, and print enterprises to create pixel-perfect ID card templates, import student rosters via Excel, bind live dynamic photos and barcodes, and export industrial-grade 600 DPI print sheets ready for dual-sided PVC printing.',
+    problem:
+      'Designing and printing hundreds of institutional identity cards individually was manual, error-prone, and caused major production bottlenecks. Formatting student records, cropping photos, aligning barcodes, and ensuring precise print bleed margins across custom cards delayed delivery schedules.',
+    solution:
+      'We engineered Palak ID Studio — an intuitive, browser-based vector design suite with 0.5mm precision snapping, Excel roster data binding, dual-sided rendering (front and back), dynamic QR/barcode generation, and one-click bulk print sheet compilation ready for industrial press.',
+    approach:
+      'Built a responsive HTML5 vector canvas studio with real-time state persistence, IndexedDB offline support, instant Excel file parsing, and 600 DPI print output generation with automated bleed and alignment guides.',
+    outcome:
+      'Streamlined institutional card production by reducing turnaround time from days to minutes, eliminating manual layout errors across thousands of student ID cards.',
+    features: [
+      'Interactive Vector Template Studio with 0.5mm Precision Snapping',
+      'Excel Roster Import & Dynamic Custom Field Mapping',
+      'Dual-Sided Card Design (Portrait & Landscape Support)',
+      'Automated Student Photo, Logo & Signature Placement',
+      'Dynamic QR Code & Barcode Verification Engine',
+      'High-Resolution 600 DPI Print Sheet & PDF Export',
+      'Offline-Ready Editing with Local IndexedDB State Persistence',
+      'Instant Print-Readiness Scoring & Automated Safety Bleed Guides',
+    ],
+    technologies: ['React', 'TypeScript', 'Tailwind CSS', 'IndexedDB', 'HTML5 Canvas', 'SheetJS', 'Vercel'],
+    image: '/images/projects/palak-id-studio/palak-id-studio-1.png',
+    images: [
+      '/images/projects/palak-id-studio/palak-id-studio-1.png',
+    ],
+    liveUrl: 'https://idcard.palakenterprises.shop/',
   },
   {
     slug: 'roshani-public-school-erp',
@@ -626,20 +666,271 @@ export const technologyCategories: TechnologyCategory[] = [
   },
 ];
 
-// --- Pricing Tiers -----------------------------------------------
+// --- Maintenance Coverage Definition -----------------------------
+export const maintenanceCoverage: MaintenanceCoverageInfo = {
+  tagline: 'Keeping your website properly deployed, live, and operational.',
+  definition:
+    'Maintenance means keeping the existing website properly deployed, live, and operational during the active plan period.',
+  included: [
+    'Deployment issue resolution and continuous uptime monitoring',
+    'Website availability and server connectivity troubleshooting',
+    'Basic hosting, cloud platform, and SSL certificate support',
+    'Existing functionality bug fixes and code stability checks',
+    'Basic production technical fixes and browser compatibility checks',
+    'Keeping the existing project live, operational, and accessible',
+    'Basic technical and security dependency updates where appropriate',
+  ],
+  notIncluded: [
+    'New pages, layout additions, or content creation',
+    'New custom features or advanced application logic',
+    'Major visual redesigns or brand makeovers',
+    'E-commerce systems, inventory engines, or payment gateways',
+    'Custom backend software or external API buildouts',
+    'Advanced monthly SEO campaigns or link-building outreach',
+  ],
+  disclaimer:
+    'Maintenance keeps your current project stable and operational. New features, extra pages, or structural redesigns are priced transparently as separate add-ons.',
+};
+
+// --- Additional Page Tiers ----------------------------------------
+export const additionalPageTiers: AdditionalPageTier[] = [
+  {
+    id: 'simple-info',
+    type: 'Simple Information Page',
+    price: 199,
+    priceDisplay: '₹199',
+    badge: 'Basic',
+    description: 'Clean, structured informational pages for fundamental business context or compliance disclosures.',
+    examples: ['About Us', 'Contact Page', 'Privacy Policy', 'Terms of Service', 'Basic FAQ Page'],
+  },
+  {
+    id: 'standard-designed',
+    type: 'Standard Designed Page',
+    price: 299,
+    priceDisplay: '₹299',
+    badge: 'Popular',
+    description: 'Custom-designed presentation pages showcasing core offerings, customer proof, or visual highlights.',
+    examples: ['Services Overview', 'Products Showcase', 'Photo Gallery', 'Our Team', 'Client Testimonials'],
+  },
+  {
+    id: 'advanced-custom',
+    type: 'Advanced / Custom Page',
+    price: 499,
+    priceDisplay: '₹499',
+    badge: 'Custom',
+    description: 'Specialized page structures featuring multi-section content, interactive elements, or structured tables.',
+    examples: ['Detailed Pricing Tables', 'Interactive Filter Grid', 'Multi-Step Inquiry Form', 'Resource Center'],
+  },
+  {
+    id: 'professional-animated',
+    type: 'Professional / Animated Page',
+    price: 999,
+    priceDisplay: '₹999',
+    badge: 'Premium UI',
+    description: 'High-impact visual pages engineered with bespoke styling, fluid micro-interactions, and premium motion.',
+    examples: ['Interactive Product Showcase', 'Storytelling Brand Presentation', 'Dynamic Portfolio Experience', 'Interactive Roadmap'],
+  },
+];
+
+export const additionalPagesDisclaimer =
+  'Highly complex functionality, custom applications, or advanced interactive systems may require a separate quotation.';
+
+// --- Configurable Domain Allowances ------------------------------
+export const planDomainAllowances: Record<string, number> = {
+  'free-launch': 0,
+  'launch-plus': 300,
+  'starter': 500,
+  'website-development': 500,
+  'school-website': 300,
+  'school-website-cms': 500,
+  'school-erp': 500,
+  'school-complete': 750,
+};
+
+// --- Domain Extensions Context & Suitability ---------------------
+export const domainExtensionOptions: DomainExtensionOption[] = [
+  {
+    extension: '.in',
+    category: 'india',
+    suitability: 'India-focused businesses, schools, and local enterprises.',
+    description: 'The premier national standard domain for Indian organizations.',
+  },
+  {
+    extension: '.co.in',
+    category: 'india',
+    suitability: 'Indian commercial brands and registered companies.',
+    description: 'Established commercial domain extension in India.',
+  },
+  {
+    extension: '.com',
+    category: 'global',
+    suitability: 'Global branding, multi-market ventures, and universal recognition.',
+    description: 'The world’s most recognized and trusted top-level domain.',
+  },
+  {
+    extension: '.org',
+    category: 'institutional',
+    suitability: 'Institutions, schools, academies, trusts, and non-profits.',
+    description: 'Trusted extension for institutions and community organizations.',
+  },
+  {
+    extension: '.co',
+    category: 'tech',
+    suitability: 'Modern startups, tech companies, and innovative brands.',
+    description: 'Sleek, global brand extension popular among tech ventures.',
+  },
+];
+
+export const domainPricingStrategy = {
+  startingFromText: 'Domains starting from ₹150/year*',
+  paidPlanAllowanceNote: 'Choose any available domain within your plan\'s included price allowance.',
+  upgradeHeadline: 'Want a higher-tier domain? Upgrade and pay only the difference.',
+  disclaimer:
+    'Domain pricing depends on extension, availability, registrar pricing, promotions, premium status, and renewal rates.',
+};
+
+// --- Website Launch & Growth Plans -------------------------------
+export const websitePlans: WebsitePlan[] = [
+  {
+    id: 'free-launch',
+    name: 'Free Launch',
+    price: 0,
+    priceDisplay: '₹0',
+    duration: '3 months',
+    pages: '1',
+    badge: 'Special Launch Offer',
+    tagline: 'Get your professional business landing page live for 3 months with ₹0 upfront cost.',
+    description:
+      'Perfect for new businesses, local shops, and independent professionals establishing their first verified online presence.',
+    domainIncluded: false,
+    domainAllowance: planDomainAllowances['free-launch'],
+    domainDetails: 'Basic production hosting on an Ekaagra-provided URL (e.g. business.ekaagratechnologies.site). Custom domain not included.',
+    seoIncluded: false,
+    maintenanceIncluded: true,
+    maintenanceNote: 'Basic maintenance required to keep the existing project live and operational.',
+    features: [
+      '1 Professional Responsive Landing Page',
+      'Mobile and Desktop Fluid Optimization',
+      'Verified Business Information & Intro',
+      'Services & Products Highlight Section',
+      'Contact Section & Direct Inquiries',
+      'Direct WhatsApp CTA & Click-to-Call Buttons',
+      'Fast Production Hosting on Ekaagra Subdomain',
+      '✓ Maintenance Included (Uptime & Deployment Stability)',
+    ],
+    notIncluded: [
+      'Custom Domain (Ekaagra URL provided)',
+      'Basic SEO (Titles, Meta, Sitemap, Schema)',
+      'Advanced SEO Campaigns',
+      'Additional Pages',
+      'Major Redesigns & Custom Software',
+    ],
+    ctaText: 'Claim Free Landing Page',
+    ctaHref: '/get-quote?plan=free-launch',
+    upgradeNote: 'Enjoyed your free landing page? Keep it online for a full year with a standard domain allowance for just ₹499.',
+  },
+  {
+    id: 'launch-plus',
+    name: 'Launch Plus',
+    price: 499,
+    priceDisplay: '₹499/year',
+    duration: '1 year',
+    pages: '1',
+    badge: 'Best Annual Value',
+    tagline: 'Keep your landing page live for a full year with an official custom domain.',
+    description:
+      'The direct upgrade from Free Launch. Designed for businesses ready for an annual digital home on their own domain.',
+    domainIncluded: true,
+    domainAllowance: planDomainAllowances['launch-plus'],
+    domainDetails: '1 Standard Domain Included — Choose any available domain within your plan\'s ₹300/year allowance. Upgrade and pay only difference.',
+    seoIncluded: false,
+    maintenanceIncluded: true,
+    maintenanceNote: 'Basic maintenance ensuring existing website remains live and operational all year.',
+    features: [
+      '1 Professional Responsive Landing Page',
+      '1-Year Fast Production Cloud Hosting',
+      '1 Standard Domain Included (Within Plan Allowance)',
+      'Mobile and Desktop Device Optimization',
+      'Complete Business Profile & Offerings',
+      'Contact Section with Direct Lead Capture',
+      'WhatsApp CTA & Direct Phone Triggers',
+      '✓ Maintenance Included (Deployments & Availability Fixes)',
+    ],
+    notIncluded: [
+      'Basic SEO (On-page search optimization)',
+      'Advanced SEO Campaigns',
+      'Additional Pages',
+      'Major Redesign & Bespoke Functionality',
+    ],
+    ctaText: 'Keep My Website for ₹499',
+    ctaHref: '/get-quote?plan=launch-plus',
+    upgradeNote: 'Need 3–5 pages with search engine setup? Upgrade to the Starter Website for ₹999/yr.',
+  },
+  {
+    id: 'starter',
+    name: 'Starter Website',
+    price: 999,
+    priceDisplay: '₹999/year',
+    duration: '1 year',
+    pages: '3–5',
+    badge: 'Recommended',
+    highlighted: true,
+    tagline: 'Comprehensive 3–5 page business website with basic search engine setup and domain included.',
+    description:
+      'The gold standard starting package for local companies, schools, clinics, and professional firms building credibility.',
+    domainIncluded: true,
+    domainAllowance: planDomainAllowances['starter'],
+    domainDetails: '1 Standard Domain Included — Choose any available domain within your plan\'s ₹500/year allowance. Upgrade and pay only difference.',
+    seoIncluded: true,
+    seoDetails: [
+      'SEO-friendly semantic HTML structure',
+      'Optimized page titles and meta descriptions',
+      'Proper heading hierarchy (H1, H2, H3)',
+      'Descriptive image alt text & clean URL slugs',
+      'Canonical URLs, dynamic sitemap, and robots.txt',
+      'Basic Schema.org structured data markup',
+      'Mobile-friendly responsive implementation',
+      'Basic Search Console setup/verification where technically appropriate',
+    ],
+    maintenanceIncluded: true,
+    maintenanceNote: 'Basic maintenance keeping the existing website properly deployed, live, and operational.',
+    features: [
+      '3–5 Professional Custom Pages',
+      '1-Year Production Cloud Hosting & SSL',
+      '1 Standard Domain Included (Within Plan Allowance)',
+      'Responsive Mobile & Desktop Architecture',
+      'Professional Business Website Structure',
+      '✓ Basic SEO Included (On-page, Sitemap, Meta, Schema)',
+      '✓ Maintenance Included (Operational Stability & Bug Fixes)',
+      'Interactive WhatsApp & Lead Capture Integration',
+    ],
+    notIncluded: [
+      'Guaranteed Google Rankings (No artificial ranking guarantees)',
+      'Advanced Monthly SEO Link-Building Campaigns',
+      'Custom Database Portals or E-Commerce Engines',
+      'Unlimited New Feature Engineering',
+    ],
+    ctaText: 'Get Started for ₹999',
+    ctaHref: '/get-quote?plan=starter',
+    upgradeNote: 'Looking for dynamic databases or portals? Explore our Web Applications package.',
+  },
+];
+
+// --- Pricing Tiers (Higher-Tier & Bespoke Packages) -------------
 export const pricingTiers: PricingTier[] = [
   {
     title: 'Website Design & Development',
     startingFrom: '₹15,000',
     description: 'Professional responsive websites for schools, institutions, local brands, and businesses.',
-    badge: 'Entry Package',
-    scopeAlignment: 'Ideal for 5–10 page custom websites with responsive design, fast load speeds, and clean structure.',
+    badge: 'Custom Corporate Package',
+    scopeAlignment: 'Ideal for 5–10 page custom websites with bespoke branding, fast load speeds, and clean structure.',
     features: [
       '5–10 Page Custom Responsive Layout',
+      '1 Standard Domain & Production Hosting Support',
+      '✓ Maintenance Included (Deployments & Operational Fixes)',
+      '✓ Basic SEO & Security Header Configuration',
       'Contact & WhatsApp Enquiry Systems',
       'CBSE Compliance / Disclosure Ready (for schools)',
-      'Mobile Optimization & Fast Load Speed',
-      'SEO Metadata & Security Setup',
       'Upgrade Path to Dynamic Web App Available',
     ],
     cta: 'Get a Quote',
@@ -893,6 +1184,9 @@ export const differentiators: Differentiator[] = [
 
 // --- Form Options ------------------------------------------------
 export const serviceOptions = [
+  'Free Launch Landing Page (₹0 / 3 Mo)',
+  'Launch Plus Website (₹499/yr)',
+  'Starter Website (₹999/yr)',
   'Website Design & Development',
   'Web Applications',
   'Android Applications',
@@ -905,7 +1199,10 @@ export const serviceOptions = [
 ];
 
 export const budgetOptions = [
-  'Under ₹25,000',
+  'Free Launch (₹0 for 3 Months)',
+  '₹499 – ₹999 (Launch Plus / Starter Website)',
+  '₹1,000 – ₹5,000 (Starter with Add-ons)',
+  '₹15,000 – ₹25,000',
   '₹25,000 – ₹50,000',
   '₹50,000 – ₹1,00,000',
   '₹1,00,000 – ₹2,00,000',

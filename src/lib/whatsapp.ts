@@ -124,3 +124,37 @@ export function buildQuoteSubmissionWhatsAppUrl(data: QuoteFormData): string {
 
   return getWhatsAppChatUrl(lines.join('\n'));
 }
+
+/**
+ * Pre-filled message for School Solution Enquiry submission.
+ */
+export function buildSchoolSubmissionWhatsAppUrl(params: {
+  schoolName: string;
+  contactName: string;
+  productName: string;
+  studentRange?: string;
+  yearOnePrice?: number | null;
+  renewalPrice?: number | null;
+  domainName?: string;
+  city?: string;
+}): string {
+  const lines: string[] = [
+    'Hello Ekaagra Technologies,',
+    '',
+    'I just submitted an enquiry for School Solutions through your website.',
+    '',
+    `School: ${params.schoolName || 'N/A'}`,
+    `Contact Person: ${params.contactName || 'N/A'}`,
+    params.city ? `Location: ${params.city}` : '',
+    `Selected Solution: ${params.productName}`,
+    params.studentRange ? `Student Strength: ${params.studentRange}` : '',
+    params.domainName ? `Preferred Domain: ${params.domainName}` : '',
+    params.yearOnePrice ? `Estimated Year 1: ₹${params.yearOnePrice.toLocaleString('en-IN')}` : '',
+    params.renewalPrice ? `Renewal From: ₹${params.renewalPrice.toLocaleString('en-IN')}/year` : '',
+    '',
+    'I would like to discuss next steps and platform setup.',
+  ].filter(Boolean);
+
+  return getWhatsAppChatUrl(lines.join('\n'));
+}
+

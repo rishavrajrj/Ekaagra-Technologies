@@ -49,8 +49,8 @@ export default function GetQuotePage() {
       </section>
 
       {/* Main Form Section */}
-      <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-[#FAF7F2]">
-        <div className="site-container max-w-4xl">
+      <section className="py-10 sm:py-14 border-b border-[#E2E8F0] bg-[#FAF7F2]">
+        <div className="site-container max-w-6xl xl:max-w-7xl">
           <QuoteForm />
         </div>
       </section>

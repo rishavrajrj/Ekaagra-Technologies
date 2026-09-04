@@ -1,6 +1,8 @@
 'use server';
 
-import type { ContactFormData, QuoteFormData, LeadFilter, LeadStatus } from '@/lib/types';
+import type { ContactFormData, QuoteFormData, LeadFilter, LeadStatus, StructuredQuoteRequest, SchoolQuoteRequest } from '@/lib/types';
+import { websitePlans, additionalPageTiers, planDomainAllowances } from '@/lib/data';
+import { calculateSchoolPrice, schoolPlans } from '@/lib/schoolPricing';
 import {
   ADMIN_EMAIL,
   FROM_EMAIL,
@@ -8,7 +10,10 @@ import {
   sendQuoteNotification,
   sendClientContactConfirmation,
   sendClientQuoteConfirmation,
+  sendSchoolQuoteNotification,
+  sendClientSchoolQuoteConfirmation,
 } from '@/lib/email';
+import { buildSchoolSubmissionWhatsAppUrl } from '@/lib/whatsapp';
 import {
   createLead,
   getLeads,
@@ -122,8 +127,7 @@ export async function submitContactForm(data: ContactFormData) {
       : "Thank you! Your enquiry has been received. Our team will review your requirements shortly.",
   };
 }
-
-export async function submitQuoteForm(data: QuoteFormData) {
+export async function submitQuoteForm(data: QuoteFormData, structuredQuote?: StructuredQuoteRequest) {
   if (!data.name || !data.phone || !data.email || !data.projectType || !data.description) {
     return { success: false, message: 'Please fill in all required fields.' };
   }
@@ -135,6 +139,31 @@ export async function submitQuoteForm(data: QuoteFormData) {
 
   if (data.phone.length < 10) {
     return { success: false, message: 'Please enter a valid phone number.' };
+  }
+
+  // --- SERVER-SIDE PRICE VALIDATION & RECALCULATION ---
+  if (structuredQuote && structuredQuote.plan) {
+    const matchedPlan = websitePlans.find((p) => p.id === structuredQuote.plan.id);
+    const verifiedPlanPrice = matchedPlan ? matchedPlan.price : structuredQuote.plan.price;
+
+    let verifiedPagesTotal = 0;
+    if (Array.isArray(structuredQuote.additionalPages)) {
+      for (const page of structuredQuote.additionalPages) {
+        const matchedTier = additionalPageTiers.find((t) => t.id === page.tierId);
+        verifiedPagesTotal += matchedTier ? matchedTier.price : page.price;
+      }
+    }
+
+    const verifiedAnnualAllowance =
+      matchedPlan ? planDomainAllowances[matchedPlan.id] ?? 0 : (structuredQuote.domain?.annualAllowance ?? 0);
+    const period = structuredQuote.domain?.period || 1;
+    const verifiedTermAllowance = verifiedAnnualAllowance * period;
+    const comparableCost = structuredQuote.domain?.estimatedINR || 0;
+    const verifiedUpgrade = structuredQuote.domain ? Math.max(0, comparableCost - verifiedTermAllowance) : 0;
+
+    const verifiedTotal = verifiedPlanPrice + verifiedPagesTotal + verifiedUpgrade;
+
+    data.budget = `Estimated Total: ₹${verifiedTotal.toLocaleString('en-IN')} (Plan: ₹${verifiedPlanPrice.toLocaleString('en-IN')}, Pages: +₹${verifiedPagesTotal.toLocaleString('en-IN')}, Domain: +₹${verifiedUpgrade.toLocaleString('en-IN')})`;
   }
 
   const resendApiKey = process.env.RESEND_API_KEY?.trim();
@@ -212,6 +241,169 @@ export async function submitQuoteForm(data: QuoteFormData) {
       : "Thank you! Your project enquiry and scope details have been received. We'll analyze your requirements shortly.",
   };
 }
+
+/**
+ * -----------------------------------------------------------------------------
+ * SCHOOL ACTION: Dedicated School Solutions Enquiry Submission
+ * -----------------------------------------------------------------------------
+ */
+
+export async function submitSchoolQuoteForm(request: SchoolQuoteRequest) {
+  // 1. Validate required school & contact fields
+  const school = request?.school;
+  const contact = request?.contact;
+
+  if (
+    !school?.schoolName ||
+    !school?.schoolType ||
+    !school?.board ||
+    !school?.city ||
+    !school?.state ||
+    !school?.approximateStudents ||
+    !contact?.fullName ||
+    !contact?.email ||
+    !contact?.phone ||
+    !contact?.designation
+  ) {
+    return { success: false, message: 'Please complete all required school and contact fields.' };
+  }
+
+  // Email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(contact.email)) {
+    return { success: false, message: 'Please enter a valid email address.' };
+  }
+
+  // Phone minimum length
+  if (contact.phone.replace(/[^0-9]/g, '').length < 10) {
+    return { success: false, message: 'Please enter a valid 10-digit phone number.' };
+  }
+
+  // Validate product
+  const matchedPlan = schoolPlans.find((p) => p.id === request.productId);
+  if (!matchedPlan) {
+    return { success: false, message: 'Invalid school product selected.' };
+  }
+
+  // 2. SERVER-SIDE PRICE RECALCULATION (Never trust client pricing calculations)
+  const verifiedPricing = calculateSchoolPrice({
+    productId: request.productId,
+    studentTierId: request.studentTierId,
+    selectedAddonIds: request.selectedAddonIds,
+    domainQuote: request.domain
+      ? {
+          estimatedINR: request.domain.estimatedINR,
+          period: request.domain.period,
+          annualAllowance: request.domain.annualAllowance,
+        }
+      : null,
+  });
+
+  const budgetDisplay =
+    verifiedPricing.totalEstimatedYearOne !== null
+      ? `Year 1: ₹${verifiedPricing.totalEstimatedYearOne.toLocaleString('en-IN')}${
+          verifiedPricing.totalRenewalFrom !== null
+            ? ` | Renewal: ₹${verifiedPricing.totalRenewalFrom.toLocaleString('en-IN')}/year`
+            : ''
+        }`
+      : 'Custom Enterprise Quotation';
+
+  const structuredDescription = [
+    `School Name: ${school.schoolName}`,
+    `Type: ${school.schoolType} | Board: ${school.board}`,
+    `Location: ${school.city}, ${school.state}`,
+    `Approximate Students: ${school.approximateStudents}`,
+    school.currentWebsite ? `Current Website: ${school.currentWebsite}` : '',
+    school.existingErp ? `Existing Software: ${school.existingErp}` : '',
+    school.currentSoftware ? `Current Tools: ${school.currentSoftware}` : '',
+    school.preferredLanguage ? `Language Preference: ${school.preferredLanguage}` : '',
+    school.requirements ? `Goals & Scope: ${school.requirements}` : '',
+    '',
+    '--- CONFIGURATION SUMMARY ---',
+    `Product: ${verifiedPricing.productName}`,
+    verifiedPricing.studentTierLabel ? `Capacity Bracket: ${verifiedPricing.studentTierLabel}` : '',
+    request.domain ? `Domain: ${request.domain.domain} (Period: ${request.domain.registrationPeriod}, Included: ${request.domain.isIncluded ? 'Yes' : 'No'}, Upgrade: ₹${verifiedPricing.domainUpgradeAmount})` : 'Domain: Unspecified',
+    verifiedPricing.selectedAddonNames.length > 0 ? `Selected Add-ons: ${verifiedPricing.selectedAddonNames.join(', ')}` : 'Add-ons: None',
+    `Calculated Year 1 Total: ${verifiedPricing.totalEstimatedYearOne !== null ? `₹${verifiedPricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom'}`,
+    `Calculated Renewal: ${verifiedPricing.totalRenewalFrom !== null ? `₹${verifiedPricing.totalRenewalFrom.toLocaleString('en-IN')}/year` : 'Custom'}`,
+    `Contact: ${contact.fullName} (${contact.designation}) | Preferred: ${contact.preferredContactMethod || 'Phone'}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  // 3. Persist lead to Supabase Database
+  let leadRecordId: string | undefined;
+  try {
+    const leadInsertRes = await createLead({
+      source: 'QUOTE_FORM',
+      type: 'QUOTE',
+      status: 'NEW',
+      name: contact.fullName,
+      organization: `${school.schoolName} (${school.board} - ${school.city})`,
+      phone: contact.phone,
+      email: contact.email,
+      service: 'School Solutions',
+      project_type: verifiedPricing.productName,
+      expected_users: `${school.approximateStudents} students${
+        verifiedPricing.studentTierLabel ? ` (${verifiedPricing.studentTierLabel})` : ''
+      }`,
+      budget: budgetDisplay,
+      features:
+        verifiedPricing.selectedAddonNames.length > 0
+          ? verifiedPricing.selectedAddonNames.join(', ')
+          : 'Standard School Package',
+      description: structuredDescription,
+      preferred_contact: contact.preferredContactMethod || 'Phone',
+      notes: `Submitted from /schools funnel. Domain: ${request.domain?.domain || 'None'}. Designation: ${contact.designation}. WhatsApp: ${contact.whatsapp || contact.phone}.`,
+    });
+
+    if (leadInsertRes.success && leadInsertRes.data) {
+      leadRecordId = leadInsertRes.data.id;
+    }
+  } catch (dbError) {
+    console.error('[SCHOOL QUOTE SUBMISSION] Database insertion exception:', dbError);
+  }
+
+  // 4. Send email notifications
+  let adminResult;
+  try {
+    adminResult = await sendSchoolQuoteNotification(request, verifiedPricing);
+  } catch (error) {
+    console.error('[SCHOOL SUBMISSION] Admin notification exception:', error);
+    adminResult = { success: false, method: 'error' as const, error: String(error) };
+  }
+
+  let clientResult;
+  try {
+    clientResult = await sendClientSchoolQuoteConfirmation(request, verifiedPricing);
+  } catch (error) {
+    console.error('[SCHOOL SUBMISSION] Client confirmation exception:', error);
+    clientResult = { success: false, method: 'error' as const, error: String(error) };
+  }
+
+  // 5. Generate direct WhatsApp follow-up link
+  const whatsAppUrl = buildSchoolSubmissionWhatsAppUrl({
+    schoolName: school.schoolName,
+    contactName: contact.fullName,
+    productName: verifiedPricing.productName,
+    studentRange: verifiedPricing.studentTierLabel || undefined,
+    yearOnePrice: verifiedPricing.totalEstimatedYearOne,
+    renewalPrice: verifiedPricing.totalRenewalFrom,
+    domainName: request.domain?.domain,
+    city: school.city,
+  });
+
+  return {
+    success: true,
+    leadId: leadRecordId,
+    verifiedPricing,
+    whatsAppUrl,
+    emailDelivered: adminResult.success,
+    message:
+      'Thank you! Your school solution enquiry has been successfully received. Our school technology team will review your requirements and reach out within 24 hours.',
+  };
+}
+
 
 /**
  * -----------------------------------------------------------------------------

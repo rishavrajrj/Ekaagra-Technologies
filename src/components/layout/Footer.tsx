@@ -90,6 +90,7 @@ export default function Footer() {
                 {[
                   { label: 'Our Work', href: '/projects' },
                   { label: 'Services', href: '/services' },
+                  { label: 'School Solutions', href: '/schools' },
                   { label: 'Industry Solutions', href: '/solutions' },
                   { label: 'How We Work', href: '/process' },
                   { label: 'Pricing & Packages', href: '/pricing' },

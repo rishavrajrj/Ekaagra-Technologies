@@ -7,6 +7,9 @@ import React from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { createPageMetadata, serviceSchema, SITE_URL } from '@/lib/seo.config';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
+import WebsitePricingSection from '@/components/ui/WebsitePricingSection';
+import AdditionalPagesSection from '@/components/ui/AdditionalPagesSection';
+import DomainStrategySection from '@/components/ui/DomainStrategySection';
 
 const iconMap: Record<string, LucideIcon> = {
   Globe,
@@ -157,6 +160,15 @@ export default async function ServiceDetailPage({ params }: Props) {
             ))}
           </ul>
         </section>
+
+        {/* Website Plans, Domain & Additional Pages (For Website Development) */}
+        {service.slug === 'website-development' && (
+          <div className="space-y-12 border-t border-[#E2E8F0] pt-12">
+            <WebsitePricingSection showSectionHeading={true} />
+            <AdditionalPagesSection />
+            <DomainStrategySection />
+          </div>
+        )}
 
         {/* Footer CTA */}
         <section className="bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] p-10 sm:p-14 rounded-3xl text-center border border-[#E2E8F0] space-y-6">

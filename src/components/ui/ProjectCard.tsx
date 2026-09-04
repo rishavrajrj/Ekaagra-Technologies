@@ -116,6 +116,18 @@ export function ProjectCard({
               <span>Case Study</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
+            {isValidUrl && (
+              <a
+                href={project.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3.5 py-2.5 rounded-xl shadow-xl transition-all hover:scale-105 flex items-center gap-1.5 uppercase tracking-wider"
+              >
+                <span>Visit Website</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
           </div>
         </div>
       </div>
@@ -184,13 +196,26 @@ export function ProjectCard({
               </Link>
             )}
 
-            <Link
-              href={`/projects/${project.slug}`}
-              className="text-[#64748B] hover:text-[#131B2E] flex items-center gap-1 transition-colors"
-            >
-              <span>Case Study</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            {isValidUrl ? (
+              <a
+                href={project.liveUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-emerald-700 hover:text-emerald-800 flex items-center gap-1 transition-colors group/live"
+              >
+                <span>Visit Website</span>
+                <ExternalLink className="w-3.5 h-3.5 transition-transform group-hover/live:translate-x-0.5" />
+              </a>
+            ) : (
+              <Link
+                href={`/projects/${project.slug}`}
+                className="text-[#64748B] hover:text-[#131B2E] flex items-center gap-1 transition-colors"
+              >
+                <span>Case Study</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
           </div>
         </div>
       </div>

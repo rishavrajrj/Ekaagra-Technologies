@@ -312,6 +312,48 @@ export default function HomePage() {
             </div>
           </Reveal>
 
+          {/* Special Launch Offer Spotlight Banner */}
+          <Reveal delay={80}>
+            <div className="bg-white border-2 border-[#4338CA] rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+              <div className="space-y-1.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-3 py-0.5 bg-[#4338CA] text-white font-extrabold text-[10px] uppercase tracking-wider rounded-full">
+                    🎉 NEW LAUNCH OFFER
+                  </span>
+                  <span className="text-xs font-mono font-bold text-emerald-600">
+                    Free Landing Page (₹0 / 3 Months)
+                  </span>
+                  <span className="text-xs text-[#64748B] hidden sm:inline">•</span>
+                  <span className="text-xs font-mono font-bold text-[#4338CA]">
+                    Starter Website (₹999/yr with Domain &amp; SEO)
+                  </span>
+                </div>
+                <h3 className="text-base sm:text-lg font-extrabold text-[#131B2E]">
+                  Test Your Business Online for ₹0, or Launch a Full 3–5 Page Website for ₹999/year
+                </h3>
+                <p className="text-xs text-[#64748B] leading-relaxed">
+                  ✓ Maintenance included on all plans • Standard domain included on paid plans • Additional pages from ₹199
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0">
+                <Link
+                  href="/get-quote?plan=free-launch"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#131B2E] hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md"
+                >
+                  <span>Claim Free (₹0)</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <Link
+                  href="/pricing#website-plans"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20"
+                >
+                  <span>Explore Website Plans</span>
+                </Link>
+              </div>
+            </div>
+          </Reveal>
+
           {/* Pricing Grid */}
           <Reveal delay={100}>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">

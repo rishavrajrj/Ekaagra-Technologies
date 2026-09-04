@@ -11,7 +11,8 @@ Local search algorithms favor **relevance, community context, and genuine busine
 | Opportunity / Partner | Domain / Platform | Relevance | Contacted Date | Response Status | Verified Link URL |
 |---|---|---|---|---|---|
 | **Roshani Public School** | `roshani-public-school.vercel.app` | Educational Client Portal | Client Project | Approved | Footer credit: *"Website by Ekaagra Technologies"* |
-| **Palak Enterprises** | `palak-enterprises-ghit.vercel.app` | Local Commercial Client (Chakia) | Client Project | Approved | Footer credit: *"Engineered by Ekaagra Technologies"* |
+| **Palak Enterprises** | `www.palakenterprises.shop` | Local Commercial Client (Chakia) | Client Project | Approved | Footer credit: *"Engineered by Ekaagra Technologies"* |
+| **Palak ID Studio** | `idcard.palakenterprises.shop` | Commercial ID SaaS Studio | Client Project | Approved | Live SaaS Web Application |
 | **SparkNest Academy** | `sparknestacademy.in` | EdTech Client Portal | Client Project | Approved | Footer attribution link |
 | **GitHub Organization** | `github.com/Ekaagra-Technologies` | Developer / Technical Authority | Setup Complete | Active | `https://github.com/Ekaagra-Technologies` profile link |
 | **LinkedIn Company Page** | `linkedin.com/company/ekaagra-technologies` | Professional Commercial Authority | Setup Complete | Active | Company website link to canonical domain |

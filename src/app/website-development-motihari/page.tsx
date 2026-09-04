@@ -35,6 +35,7 @@ import MagneticButton from '@/components/motion/MagneticButton';
 import GlowCard from '@/components/motion/GlowCard';
 import FAQItem from '@/components/ui/FAQItem';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
+import WebsitePricingSection from '@/components/ui/WebsitePricingSection';
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Website Design & Development Company in Motihari, Bihar | Ekaagra Technologies',
@@ -57,7 +58,7 @@ const localFaqs = [
   {
     question: 'How much does website development cost in Motihari?',
     answer:
-      'At Ekaagra Technologies, custom responsive business websites start from ₹15,000. Dynamic web applications with admin panels start from ₹30,000, and institutional School ERP platforms start from ₹80,000. Every project includes fixed milestone pricing with zero hidden renewal fees.',
+      'At Ekaagra Technologies, website packages begin with our Free Launch Offer at ₹0 for 3 months, Launch Plus at ₹499/year, and Starter Websites at ₹999/year with standard domain and basic SEO included. Custom corporate websites start from ₹15,000, dynamic web applications start from ₹30,000, and institutional School ERP platforms start from ₹80,000. Every project includes maintenance to keep your website properly deployed, live, and operational.',
   },
   {
     question: 'How long does it take to design and launch a website?',
@@ -437,18 +438,21 @@ export default function WebsiteDevelopmentMotihariPage() {
         </div>
       </section>
 
+      {/* ─── 5.5 LAUNCH & GROWTH PACKAGES ───────────────────────── */}
+      <WebsitePricingSection showSectionHeading={true} />
+
       {/* ─── 6. TRANSPARENT PRICING GUIDANCE ──────────────────────── */}
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-white">
         <div className="site-container max-w-5xl space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
             <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
-              HONEST INVESTMENT
+              CUSTOM CORPORATE PACKAGES
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
-              Website Pricing Starting Points in Motihari
+              Bespoke &amp; Institutional Website Solutions in Motihari
             </h2>
             <p className="text-xs sm:text-sm text-[#64748B]">
-              Clear starting packages with fixed milestone scopes and 100% source code ownership.
+              Advanced custom corporate builds, CBSE school portals, and interactive cloud systems with 100% code ownership.
             </p>
           </div>
 
