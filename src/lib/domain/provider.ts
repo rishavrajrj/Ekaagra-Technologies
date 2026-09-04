@@ -103,6 +103,18 @@ const TLD_METADATA: TldMetadata[] = [
     defaultReason: 'Trusted extension tailored for educational institutions, academies, and organizations.',
   },
   {
+    extension: '.school',
+    categoryAffinity: { general: 4, school: 10, business: 2, tech: 3 },
+    defaultBadge: 'Best Overall',
+    defaultReason: 'Modern dedicated extension clearly identifying your school campus.',
+  },
+  {
+    extension: '.ac.in',
+    categoryAffinity: { general: 3, school: 10, business: 2, tech: 2 },
+    defaultBadge: 'Good for India',
+    defaultReason: 'Official academic domain reserved for recognized educational institutions in India.',
+  },
+  {
     extension: '.co',
     categoryAffinity: { general: 6, school: 4, business: 7, tech: 9 },
     defaultBadge: 'Premium Option',
@@ -249,8 +261,49 @@ export class GoDaddyDomainProvider implements IDomainProvider {
 
     const auth = this.getAuthHeaders();
 
-    // Safe state: If no registrar credentials configured, return PRECHECK_REQUIRED
+    // Safe state: If no registrar credentials configured, return PRECHECK_REQUIRED with candidate options
     if (!auth) {
+      const candidates: string[] = [];
+      if (requestedDomain) {
+        candidates.push(requestedDomain.toLowerCase());
+      }
+      const schoolExtensions = ['.in', '.com', '.org', '.school', '.ac.in'];
+      const defaultExtensions = category === 'school'
+        ? schoolExtensions
+        : TLD_METADATA.map((m) => m.extension);
+
+      for (const ext of defaultExtensions) {
+        const candidate = `${cleanLabel}${ext}`.toLowerCase();
+        if (!candidates.includes(candidate)) {
+          candidates.push(candidate);
+        }
+      }
+
+      const candidateResults: DomainExtensionQuote[] = candidates.map((candidateDomain) => {
+        const ext = candidateDomain.slice(candidateDomain.indexOf('.'));
+        const meta = TLD_METADATA.find((m) => m.extension === ext);
+        const isReq = requestedDomain && candidateDomain.toLowerCase() === requestedDomain.toLowerCase();
+
+        return {
+          domain: candidateDomain,
+          extension: ext,
+          availability: 'PRECHECK_REQUIRED',
+          sourceCurrency: 'INR',
+          period: 1,
+          registrationPeriod: '1 year',
+          hasFxConversion: false,
+          currency: 'INR',
+          premium: false,
+          isRequestedDomain: Boolean(isReq),
+          planAllowance: annualAllowance,
+          termAllowance: annualAllowance,
+          included: true,
+          upgradeAmount: 0,
+          recommendationBadge: isReq ? 'Requested Domain' : meta?.defaultBadge || 'Good for India',
+          recommendationReason: 'Availability will be verified during domain registration.',
+        };
+      });
+
       return {
         query: rawInput,
         sanitizedName: cleanLabel,
@@ -261,15 +314,14 @@ export class GoDaddyDomainProvider implements IDomainProvider {
         isLiveChecked: false,
         status: 'PRECHECK_REQUIRED',
         providerName: this.name,
-        errorMessage:
-          'Live registrar pricing requires configured provider credentials. Live domain pricing is currently unavailable. Domain availability and final pricing will be confirmed before registration.',
-        topRecommendation: null,
-        results: [],
+        errorMessage: undefined,
+        topRecommendation: candidateResults[0] || null,
+        results: candidateResults,
         suggestionsUsed: false,
         disclaimer:
-          'Domain pricing depends on extension, availability, registrar pricing, promotions, premium status, and renewal rates. Domain inclusion is based strictly on your selected plan’s domain price allowance.',
+          'Your preferred domain will be verified during our registration process. You can select a preferred domain now, or continue without choosing one.',
         instructions:
-          'Live domain pricing is currently unavailable. Enter your preferred domain in your quote request and our team will verify live registrar availability and confirm exact final registration rates.',
+          'Availability will be verified during domain registration. You can select a preferred domain now, or choose to decide later.',
       };
     }
 

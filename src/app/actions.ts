@@ -2,7 +2,9 @@
 
 import type { ContactFormData, QuoteFormData, LeadFilter, LeadStatus, StructuredQuoteRequest, SchoolQuoteRequest } from '@/lib/types';
 import { websitePlans, additionalPageTiers, planDomainAllowances } from '@/lib/data';
-import { calculateSchoolPrice, schoolPlans } from '@/lib/schoolPricing';
+import { calculateSchoolPrice, schoolPlans, schoolDomainAllowances } from '@/lib/schoolPricing';
+import { normalizeDomainInput, validateDomainInput } from '@/lib/domain/schoolDomain';
+import { domainProvider } from '@/lib/domain/provider';
 import {
   ADMIN_EMAIL,
   FROM_EMAIL,
@@ -285,19 +287,138 @@ export async function submitSchoolQuoteForm(request: SchoolQuoteRequest) {
     return { success: false, message: 'Invalid school product selected.' };
   }
 
-  // 2. SERVER-SIDE PRICE RECALCULATION (Never trust client pricing calculations)
+  // 2. SERVER-SIDE PRICE RECALCULATION & DOMAIN NORMALIZATION (Never trust client pricing calculations)
+  const canonicalAllowance = schoolDomainAllowances[matchedPlan.id] ?? 300;
+  
+  // Extract and normalize domain selection details
+  const rawDomainStr = request.domainSelection?.preferredDomain || request.domain?.domain || '';
+  const rawChoice =
+    request.domainSelection?.domainChoice ||
+    request.domain?.domainChoice ||
+    (request.domain ? 'NEW_DOMAIN' : 'DECIDE_LATER');
+
+  // Standardize domain choice to canonical representation
+  let canonicalChoice: 'NEW_DOMAIN' | 'EXISTING_DOMAIN' | 'DECIDE_LATER';
+  if (rawChoice === 'EXISTING_DOMAIN' || rawChoice === 'existing') {
+    canonicalChoice = 'EXISTING_DOMAIN';
+  } else if (rawChoice === 'DECIDE_LATER' || rawChoice === 'later' || !rawDomainStr.trim()) {
+    canonicalChoice = 'DECIDE_LATER';
+  } else {
+    canonicalChoice = 'NEW_DOMAIN';
+  }
+
+  let canonicalDomain: string | null = null;
+  let canonicalStatus: 'AVAILABLE' | 'PRECHECK_REQUIRED' | 'EXISTING' | 'DECIDE_LATER';
+  let canonicalPrice: number | null = null;
+  let canonicalDifference = 0;
+  let isPriceVerified = false;
+
+  if (canonicalChoice === 'DECIDE_LATER') {
+    canonicalDomain = null;
+    canonicalStatus = 'DECIDE_LATER';
+    canonicalPrice = null;
+    canonicalDifference = 0;
+    isPriceVerified = false;
+  } else if (canonicalChoice === 'EXISTING_DOMAIN') {
+    if (!rawDomainStr.trim()) {
+      return { success: false, message: 'Please enter your school’s existing domain name.' };
+    }
+    const norm = normalizeDomainInput(rawDomainStr);
+    const validation = validateDomainInput(norm.normalized, { requireFullDomain: true });
+    if (!validation.isValid) {
+      return { success: false, message: validation.error || 'Please enter a valid existing school domain.' };
+    }
+    canonicalDomain = norm.normalized;
+    canonicalStatus = 'EXISTING';
+    canonicalPrice = 0;
+    canonicalDifference = 0;
+    isPriceVerified = true;
+  } else {
+    // NEW_DOMAIN
+    const norm = normalizeDomainInput(rawDomainStr);
+    const validation = validateDomainInput(norm.normalized);
+    if (!validation.isValid) {
+      return { success: false, message: validation.error || 'Please enter a valid preferred domain.' };
+    }
+    canonicalDomain = norm.normalized;
+
+    // ANTI-TAMPERING: Check if a live registrar provider is actually configured in the environment
+    const hasRegistrarApi = Boolean(
+      process.env.GODADDY_PAT ||
+      (process.env.GODADDY_API_KEY && process.env.GODADDY_API_SECRET) ||
+      process.env.REGISTRAR_API_KEY
+    );
+
+    if (!hasRegistrarApi) {
+      // Registrar credentials unconfigured: ALL preferred domains MUST remain PRECHECK_REQUIRED
+      // The server strictly ignores any client claims of isPriceVerified or custom domainPrice
+      isPriceVerified = false;
+      canonicalStatus = 'PRECHECK_REQUIRED';
+      canonicalPrice = null;
+      canonicalDifference = 0;
+    } else {
+      // If live registrar is configured, verify authoritatively
+      const clientClaimsVerified = Boolean(request.domainSelection?.isPriceVerified || request.domain?.isPriceVerified);
+      if (!clientClaimsVerified || request.domainSelection?.domainStatus === 'verification_required') {
+        isPriceVerified = false;
+        canonicalStatus = 'PRECHECK_REQUIRED';
+        canonicalPrice = null;
+        canonicalDifference = 0;
+      } else {
+        try {
+          const liveCheck = await domainProvider.checkDomain({
+            domain: norm.normalized,
+            selectedPlanId: matchedPlan.id,
+            businessCategory: 'school',
+          });
+          const matchedCandidate = liveCheck.results.find(
+            (r) => r.domain.toLowerCase() === norm.normalized.toLowerCase() && r.availability === 'AVAILABLE'
+          );
+          if (matchedCandidate && typeof matchedCandidate.registrationPrice === 'number' && matchedCandidate.registrationPrice > 0) {
+            isPriceVerified = true;
+            canonicalStatus = 'AVAILABLE';
+            canonicalPrice = matchedCandidate.registrationPrice;
+            canonicalDifference = Math.max(0, matchedCandidate.registrationPrice - canonicalAllowance);
+          } else {
+            isPriceVerified = false;
+            canonicalStatus = 'PRECHECK_REQUIRED';
+            canonicalPrice = null;
+            canonicalDifference = 0;
+          }
+        } catch {
+          isPriceVerified = false;
+          canonicalStatus = 'PRECHECK_REQUIRED';
+          canonicalPrice = null;
+          canonicalDifference = 0;
+        }
+      }
+    }
+  }
+
+  // Recalculate full quote strictly server-side
   const verifiedPricing = calculateSchoolPrice({
     productId: request.productId,
     studentTierId: request.studentTierId,
     selectedAddonIds: request.selectedAddonIds,
-    domainQuote: request.domain
+    domainQuote: canonicalDomain && canonicalChoice === 'NEW_DOMAIN'
       ? {
-          estimatedINR: request.domain.estimatedINR,
-          period: request.domain.period,
-          annualAllowance: request.domain.annualAllowance,
+          estimatedINR: canonicalPrice || 0,
+          period: 1,
+          annualAllowance: canonicalAllowance,
+          isPriceVerified,
+          domainStatus: canonicalStatus === 'AVAILABLE' ? 'available' : 'verification_required',
         }
       : null,
   });
+
+  const domainStatusText =
+    canonicalChoice === 'DECIDE_LATER'
+      ? 'Domain to be decided before launch'
+      : canonicalChoice === 'EXISTING_DOMAIN'
+      ? `Existing domain (${canonicalDomain}) — DNS onboarding`
+      : isPriceVerified && canonicalPrice !== null
+      ? `${canonicalDomain} (Verified Live: ₹${canonicalPrice}/year, Difference: ₹${canonicalDifference})`
+      : `${canonicalDomain} (Availability verification required)`;
 
   const budgetDisplay =
     verifiedPricing.totalEstimatedYearOne !== null
@@ -305,7 +426,7 @@ export async function submitSchoolQuoteForm(request: SchoolQuoteRequest) {
           verifiedPricing.totalRenewalFrom !== null
             ? ` | Renewal: ₹${verifiedPricing.totalRenewalFrom.toLocaleString('en-IN')}/year`
             : ''
-        }`
+        }${verifiedPricing.isDomainPricePendingVerification ? ' + Domain difference if applicable after verification' : ''}`
       : 'Custom Enterprise Quotation';
 
   const structuredDescription = [
@@ -322,11 +443,31 @@ export async function submitSchoolQuoteForm(request: SchoolQuoteRequest) {
     '--- CONFIGURATION SUMMARY ---',
     `Product: ${verifiedPricing.productName}`,
     verifiedPricing.studentTierLabel ? `Capacity Bracket: ${verifiedPricing.studentTierLabel}` : '',
-    request.domain ? `Domain: ${request.domain.domain} (Period: ${request.domain.registrationPeriod}, Included: ${request.domain.isIncluded ? 'Yes' : 'No'}, Upgrade: ₹${verifiedPricing.domainUpgradeAmount})` : 'Domain: Unspecified',
-    verifiedPricing.selectedAddonNames.length > 0 ? `Selected Add-ons: ${verifiedPricing.selectedAddonNames.join(', ')}` : 'Add-ons: None',
-    `Calculated Year 1 Total: ${verifiedPricing.totalEstimatedYearOne !== null ? `₹${verifiedPricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom'}`,
-    `Calculated Renewal: ${verifiedPricing.totalRenewalFrom !== null ? `₹${verifiedPricing.totalRenewalFrom.toLocaleString('en-IN')}/year` : 'Custom'}`,
+    `Domain Selection: ${domainStatusText}`,
+    `Domain Plan Allowance: ₹${canonicalAllowance}/year included`,
+    isPriceVerified && canonicalDifference > 0 ? `Domain Additional Cost: ₹${canonicalDifference}` : '',
+    verifiedPricing.selectedAddonNames.length > 0
+      ? `Selected Add-ons: ${verifiedPricing.selectedAddonNames.join(', ')}`
+      : 'Add-ons: None',
+    `Calculated Year 1 Total: ${
+      verifiedPricing.totalEstimatedYearOne !== null
+        ? `₹${verifiedPricing.totalEstimatedYearOne.toLocaleString('en-IN')}`
+        : 'Custom'
+    }`,
+    `Calculated Renewal: ${
+      verifiedPricing.totalRenewalFrom !== null
+        ? `₹${verifiedPricing.totalRenewalFrom.toLocaleString('en-IN')}/year`
+        : 'Custom'
+    }`,
     `Contact: ${contact.fullName} (${contact.designation}) | Preferred: ${contact.preferredContactMethod || 'Phone'}`,
+    '',
+    '--- STORED DOMAIN ATTRIBUTES ---',
+    `domain_choice: ${canonicalChoice}`,
+    `preferred_domain: ${canonicalDomain || 'null'}`,
+    `domain_status: ${canonicalStatus}`,
+    `domain_price: ${canonicalPrice !== null ? canonicalPrice : 'null'}`,
+    `domain_allowance: ${canonicalAllowance}`,
+    `domain_difference: ${canonicalDifference}`,
   ]
     .filter(Boolean)
     .join('\n');
@@ -354,7 +495,7 @@ export async function submitSchoolQuoteForm(request: SchoolQuoteRequest) {
           : 'Standard School Package',
       description: structuredDescription,
       preferred_contact: contact.preferredContactMethod || 'Phone',
-      notes: `Submitted from /schools funnel. Domain: ${request.domain?.domain || 'None'}. Designation: ${contact.designation}. WhatsApp: ${contact.whatsapp || contact.phone}.`,
+      notes: `domain_choice: ${canonicalChoice} | preferred_domain: ${canonicalDomain || 'null'} | domain_status: ${canonicalStatus} | domain_price: ${canonicalPrice !== null ? `₹${canonicalPrice}` : 'null'} | domain_allowance: ₹${canonicalAllowance} | domain_difference: ₹${canonicalDifference} | Designation: ${contact.designation} | WhatsApp: ${contact.whatsapp || contact.phone}`,
     });
 
     if (leadInsertRes.success && leadInsertRes.data) {
@@ -364,10 +505,45 @@ export async function submitSchoolQuoteForm(request: SchoolQuoteRequest) {
     console.error('[SCHOOL QUOTE SUBMISSION] Database insertion exception:', dbError);
   }
 
+  // Sanitized request for notifications
+  const sanitizedRequest: SchoolQuoteRequest = {
+    ...request,
+    domainSelection: {
+      domainChoice: canonicalChoice,
+      preferredDomain: canonicalDomain,
+      domainStatus: canonicalStatus,
+      domainPrice: canonicalPrice,
+      domainAllowance: canonicalAllowance,
+      domainDifference: canonicalDifference,
+      isPriceVerified,
+    },
+    domain: canonicalChoice === 'DECIDE_LATER' || !canonicalDomain ? null : {
+      domain: canonicalDomain,
+      provider:
+        canonicalChoice === 'EXISTING_DOMAIN'
+          ? 'Existing Domain (School Owned)'
+          : isPriceVerified
+          ? 'GoDaddy Domains API v3'
+          : 'Registrar Verification Required',
+      sourceCurrency: 'INR',
+      period: 1,
+      registrationPeriod: '1 year',
+      annualAllowance: canonicalAllowance,
+      termAllowance: canonicalAllowance,
+      upgradeAmount: canonicalDifference,
+      premium: false,
+      isIncluded: canonicalDifference === 0,
+      domainChoice: canonicalChoice === 'EXISTING_DOMAIN' ? 'existing' : 'new',
+      domainStatus: canonicalStatus === 'AVAILABLE' ? 'available' : 'verification_required',
+      isPriceVerified,
+      estimatedINR: canonicalPrice ?? undefined,
+    },
+  };
+
   // 4. Send email notifications
   let adminResult;
   try {
-    adminResult = await sendSchoolQuoteNotification(request, verifiedPricing);
+    adminResult = await sendSchoolQuoteNotification(sanitizedRequest, verifiedPricing);
   } catch (error) {
     console.error('[SCHOOL SUBMISSION] Admin notification exception:', error);
     adminResult = { success: false, method: 'error' as const, error: String(error) };
@@ -375,7 +551,7 @@ export async function submitSchoolQuoteForm(request: SchoolQuoteRequest) {
 
   let clientResult;
   try {
-    clientResult = await sendClientSchoolQuoteConfirmation(request, verifiedPricing);
+    clientResult = await sendClientSchoolQuoteConfirmation(sanitizedRequest, verifiedPricing);
   } catch (error) {
     console.error('[SCHOOL SUBMISSION] Client confirmation exception:', error);
     clientResult = { success: false, method: 'error' as const, error: String(error) };
@@ -389,7 +565,11 @@ export async function submitSchoolQuoteForm(request: SchoolQuoteRequest) {
     studentRange: verifiedPricing.studentTierLabel || undefined,
     yearOnePrice: verifiedPricing.totalEstimatedYearOne,
     renewalPrice: verifiedPricing.totalRenewalFrom,
-    domainName: request.domain?.domain,
+    domainChoice: canonicalChoice,
+    domainName: canonicalDomain || undefined,
+    domainStatus: canonicalStatus,
+    isDomainPriceVerified: isPriceVerified,
+    domainDifference: canonicalDifference,
     city: school.city,
   });
 

@@ -28,6 +28,7 @@ import {
   Send,
   HelpCircle,
   XCircle,
+  CreditCard,
 } from 'lucide-react';
 import {
   websitePlans,
@@ -82,6 +83,20 @@ const STEPS = [
   { id: 6, label: 'Review' },
 ];
 
+function loadRazorpayScript(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve(false);
+    if ((window as unknown as { Razorpay: unknown }).Razorpay) return resolve(true);
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+}
+
 export default function WebsiteQuoteBuilder() {
   const searchParams = useSearchParams();
   const domainInputId = useId();
@@ -131,6 +146,8 @@ export default function WebsiteQuoteBuilder() {
   // Form Submission & Validation States
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submittedQuote, setSubmittedQuote] = useState<StructuredQuoteRequest | null>(null);
@@ -456,6 +473,131 @@ export default function WebsiteQuoteBuilder() {
       setSubmitError(err?.message || 'A network error occurred while submitting your request.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Online Payment & Project Launch (Razorpay Standard Checkout)
+  const handlePayAndLaunch = async () => {
+    if (!validateStep(4) || !validateStep(5)) {
+      setCurrentStep(4);
+      return;
+    }
+
+    setPaying(true);
+    setPayError('');
+    setSubmitError('');
+
+    try {
+      // 1. Create order on server (Authoritative server-side price calculation)
+      const createOrderPayload = {
+        customerName: contact.fullName,
+        customerEmail: contact.email,
+        customerPhone: contact.phone,
+        customerWhatsApp: contact.whatsapp || contact.phone,
+        organizationName: organization.name,
+        serviceType: 'Website Development',
+        planId: activePlan.id,
+        additionalPages: additionalPages.map((p) => ({
+          name: p.name,
+          tierId: p.tierId,
+          price: p.price,
+        })),
+        domainChoice: skipCustomDomain ? 'DECIDE_LATER' : selectedDomain ? 'NEW_DOMAIN' : 'DECIDE_LATER',
+        preferredDomain: selectedDomain && !skipCustomDomain ? selectedDomain.domain : undefined,
+        isPriceVerified: selectedDomain?.isPriceVerified || false,
+        notes: `Organization: ${organization.name} (${organization.type}) | Plan: ${activePlan.name}`,
+      };
+
+      const res = await fetch('/api/payments/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(createOrderPayload),
+      });
+
+      const orderData = await res.json();
+
+      if (!res.ok || !orderData.success) {
+        setPayError(orderData.error || 'Failed to initialize payment order. Please try again.');
+        setPaying(false);
+        return;
+      }
+
+      // 2. Load Razorpay Checkout Script
+      const isLoaded = await loadRazorpayScript();
+      if (!isLoaded) {
+        setPayError('Unable to load payment gateway checkout. Please verify your internet connection or try again.');
+        setPaying(false);
+        return;
+      }
+
+      // 3. Open Razorpay Standard Checkout Modal
+      const razorpayWindow = window as unknown as {
+        Razorpay: new (options: Record<string, unknown>) => {
+          open: () => void;
+          on: (event: string, callback: (resp: Record<string, unknown>) => void) => void;
+        };
+      };
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amountInPaise,
+        currency: orderData.currency || 'INR',
+        name: 'Ekaagra Technologies',
+        description: `${orderData.planName} (${orderData.orderNumber})`,
+        order_id: orderData.gatewayOrderId,
+        prefill: {
+          name: orderData.customerName,
+          email: orderData.customerEmail,
+          contact: orderData.customerPhone,
+        },
+        theme: {
+          color: '#4338CA',
+        },
+        modal: {
+          ondismiss: () => {
+            setPaying(false);
+          },
+        },
+        handler: async (response: {
+          razorpay_order_id: string;
+          razorpay_payment_id: string;
+          razorpay_signature: string;
+        }) => {
+          try {
+            // 4. Server-Side HMAC Signature Verification
+            const verifyRes = await fetch('/api/payments/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderNumber: orderData.orderNumber,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+              }),
+            });
+
+            const verifyData = await verifyRes.json();
+
+            if (verifyRes.ok && verifyData.success) {
+              window.location.href = `/checkout/success?order_number=${orderData.orderNumber}`;
+            } else {
+              window.location.href = `/checkout/failed?order_number=${orderData.orderNumber}`;
+            }
+          } catch {
+            window.location.href = `/checkout/failed?order_number=${orderData.orderNumber}`;
+          }
+        },
+      };
+
+      const rzp = new razorpayWindow.Razorpay(options);
+      rzp.on('payment.failed', () => {
+        window.location.href = `/checkout/failed?order_number=${orderData.orderNumber}`;
+      });
+      rzp.open();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setPayError(message || 'An unexpected error occurred while launching payment.');
+      setPaying(false);
     }
   };
 
@@ -1599,34 +1741,69 @@ export default function WebsiteQuoteBuilder() {
               *Note: Domain pricing is indicative and subject to real-time registrar availability upon project confirmation. Submitting this request sends your full configuration to our development team for official scoping and proposal delivery.
             </p>
 
-            <div className="flex items-center justify-between pt-4 border-t border-[#E2E8F0]">
+            {payError && (
+              <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 flex items-start gap-2.5 text-xs text-rose-800">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                <span>{payError}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#E2E8F0]">
               <button
                 type="button"
                 onClick={handlePrevStep}
-                disabled={submitting}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-[#E2E8F0] text-xs font-bold text-[#64748B] hover:text-[#131B2E] cursor-pointer"
+                disabled={submitting || paying}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl border border-[#E2E8F0] text-xs font-bold text-[#64748B] hover:text-[#131B2E] cursor-pointer disabled:opacity-50"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span>Back to Contact</span>
               </button>
-              <button
-                type="button"
-                onClick={handleSubmitQuote}
-                disabled={submitting}
-                className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#4338CA]/25 cursor-pointer disabled:opacity-50"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Submitting Request...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Request My Website Quote</span>
-                    <Send className="w-4 h-4" />
-                  </>
+
+              <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2.5">
+                {activePlan.id !== 'free-launch' && estimatedTotal > 0 && (
+                  <button
+                    type="button"
+                    onClick={handlePayAndLaunch}
+                    disabled={submitting || paying}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-600/25 cursor-pointer disabled:opacity-50"
+                  >
+                    {paying ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Opening Checkout...</span>
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4" />
+                        <span>Pay ₹{estimatedTotal.toLocaleString('en-IN')} &amp; Launch</span>
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
+
+                <button
+                  type="button"
+                  onClick={handleSubmitQuote}
+                  disabled={submitting || paying}
+                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
+                    activePlan.id === 'free-launch' || estimatedTotal === 0
+                      ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-lg shadow-[#4338CA]/25 font-extrabold'
+                      : 'bg-white hover:bg-slate-50 border border-[#E2E8F0] text-[#131B2E]'
+                  }`}
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Submitting...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>{activePlan.id === 'free-launch' ? 'Claim Free Landing Page' : 'Submit as Enquiry'}</span>
+                      <Send className="w-3.5 h-3.5" />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}

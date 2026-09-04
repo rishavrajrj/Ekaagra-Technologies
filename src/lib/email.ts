@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
-import type { ContactFormData, QuoteFormData, SchoolQuoteRequest } from './types';
+import type { ContactFormData, QuoteFormData, SchoolQuoteRequest, Order } from './types';
 import type { SchoolPriceCalculation } from './schoolPricing';
 import {
   getWhatsAppChatUrl,
@@ -679,23 +679,101 @@ export async function sendClientQuoteConfirmation(data: QuoteFormData): Promise<
  * SCHOOL SOLUTIONS EMAIL NOTIFICATIONS
  * -----------------------------------------------------------------------------
  */
+interface EmailDomainDetails {
+  choiceLabel: string;
+  domainName: string;
+  statusLabel: string;
+  priceLabel: string;
+  allowanceLabel: string;
+  differenceLabel: string;
+}
+
+function getEmailDomainDetails(
+  request: SchoolQuoteRequest,
+  pricing: SchoolPriceCalculation
+): EmailDomainDetails {
+  const selection = request.domainSelection;
+  const rawChoice =
+    selection?.domainChoice ||
+    request.domain?.domainChoice ||
+    (request.domain ? 'NEW_DOMAIN' : 'DECIDE_LATER');
+  const isExisting = rawChoice === 'EXISTING_DOMAIN' || rawChoice === 'existing';
+  const isDecideLater =
+    rawChoice === 'DECIDE_LATER' ||
+    rawChoice === 'later' ||
+    (!selection?.preferredDomain && !request.domain?.domain);
+  const domain = selection?.preferredDomain || request.domain?.domain || '';
+
+  if (isExisting) {
+    return {
+      choiceLabel: 'Existing Domain',
+      domainName: domain || 'Existing Domain',
+      statusLabel: 'Existing domain / DNS onboarding',
+      priceLabel: '₹0 (School owned)',
+      allowanceLabel: `₹${pricing.annualDomainAllowance}/year (Not utilized for existing domain)`,
+      differenceLabel: '₹0',
+    };
+  }
+
+  if (isDecideLater) {
+    return {
+      choiceLabel: 'Decide Later',
+      domainName: 'Not selected',
+      statusLabel: 'Domain to be decided before launch',
+      priceLabel: 'Pending selection',
+      allowanceLabel: `₹${pricing.annualDomainAllowance}/year included in plan`,
+      differenceLabel: '₹0',
+    };
+  }
+
+  // New Domain
+  const isVerified = Boolean(pricing.isDomainPriceVerified);
+  const price = pricing.domainCostINR;
+
+  if (isVerified && price > 0) {
+    const diff = pricing.domainUpgradeAmount;
+    return {
+      choiceLabel: 'New Domain',
+      domainName: domain,
+      statusLabel: 'Verified available',
+      priceLabel: `₹${price.toLocaleString('en-IN')}/year`,
+      allowanceLabel: `₹${pricing.annualDomainAllowance}/year included in plan`,
+      differenceLabel: diff > 0 ? `+₹${diff.toLocaleString('en-IN')}` : '₹0 (Fully covered by plan allowance)',
+    };
+  }
+
+  return {
+    choiceLabel: 'New Domain',
+    domainName: domain,
+    statusLabel: 'Availability verification required',
+    priceLabel: 'Not verified',
+    allowanceLabel: `₹${pricing.annualDomainAllowance}/year`,
+    differenceLabel: 'Pending verification',
+  };
+}
 
 function generateSchoolQuoteEmailText(
   request: SchoolQuoteRequest,
   pricing: SchoolPriceCalculation
 ): string {
   const waLink = getClientWhatsAppLink(request.contact.phone, request.contact.fullName);
-  return `[NEW SCHOOL LEAD] SCHOOL SOLUTION ENQUIRY
+  const domainInfo = getEmailDomainDetails(request, pricing);
 
-SCHOOL DETAILS
+  return `
+========================================
+NEW SCHOOL SOLUTION ENQUIRY
+========================================
+Date: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} (IST)
+
+SCHOOL PROFILE
 ----------------------------------------
 School Name: ${request.school.schoolName}
-School Type: ${request.school.schoolType}
-Board: ${request.school.board}
+Institution Type: ${request.school.schoolType}
+Affiliation Board: ${request.school.board}
 Location: ${request.school.city}, ${request.school.state}
-Approx. Students: ${request.school.approximateStudents}
-${request.school.currentWebsite ? `Current Website: ${request.school.currentWebsite}\n` : ''}${request.school.existingErp ? `Existing ERP: ${request.school.existingErp}\n` : ''}${request.school.requirements ? `Requirements/Goals: ${request.school.requirements}\n` : ''}
-CONTACT PERSON
+Approx. Strength: ${request.school.approximateStudents} students
+${request.school.currentWebsite ? `Current Website: ${request.school.currentWebsite}\n` : ''}${request.school.existingErp ? `Existing Software: ${request.school.existingErp}\n` : ''}${request.school.currentSoftware ? `Current Tools: ${request.school.currentSoftware}\n` : ''}${request.school.preferredLanguage ? `Preferred Language: ${request.school.preferredLanguage}\n` : ''}${request.school.requirements ? `Scope / Requirements: ${request.school.requirements}\n` : ''}
+PRIMARY CONTACT
 ----------------------------------------
 Name: ${request.contact.fullName}
 Role / Designation: ${request.contact.designation}
@@ -705,11 +783,19 @@ ${request.contact.whatsapp ? `WhatsApp: ${request.contact.whatsapp}\n` : ''}${re
 SELECTED SOLUTION & PRICING
 ----------------------------------------
 Product: ${pricing.productName}
-${pricing.studentTierLabel ? `Capacity Tier: ${pricing.studentTierLabel}\n` : ''}Domain: ${request.domain ? `${request.domain.domain} (${request.domain.isIncluded ? 'Included' : `Upgrade: ₹${request.domain.upgradeAmount}`})` : 'To be confirmed'}
-${pricing.selectedAddonNames.length > 0 ? `Selected Add-ons:\n- ${pricing.selectedAddonNames.join('\n- ')}\n` : ''}
+${pricing.studentTierLabel ? `Capacity Tier: ${pricing.studentTierLabel}\n` : ''}${pricing.selectedAddonNames.length > 0 ? `Selected Add-ons:\n- ${pricing.selectedAddonNames.join('\n- ')}\n` : ''}
+DOMAIN CONFIGURATION
+----------------------------------------
+Domain Choice: ${domainInfo.choiceLabel}
+${domainInfo.choiceLabel === 'Existing Domain' ? `Domain: ${domainInfo.domainName}` : `Preferred Domain: ${domainInfo.domainName}`}
+Status: ${domainInfo.statusLabel}
+Domain Price: ${domainInfo.priceLabel}
+Allowance: ${domainInfo.allowanceLabel}
+${domainInfo.choiceLabel === 'Existing Domain' ? 'Domain Purchase Cost: ₹0' : `Domain Difference: ${domainInfo.differenceLabel}`}
+
 FINANCIAL BREAKDOWN (VERIFIED)
 ----------------------------------------
-Year 1 Estimated Total: ${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Quote'}
+Year 1 Estimated Total: ${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Quote'}${pricing.isDomainPricePendingVerification ? ' (+ Domain difference if applicable after verification)' : ''}
 Renewal From: ${pricing.totalRenewalFrom !== null ? `₹${pricing.totalRenewalFrom.toLocaleString('en-IN')}/year` : 'Custom Quote'}
 
 QUICK ACTIONS
@@ -724,6 +810,7 @@ function generateSchoolQuoteEmailHtml(
   pricing: SchoolPriceCalculation
 ): string {
   const waLink = getClientWhatsAppLink(request.contact.phone, request.contact.fullName);
+  const domainInfo = getEmailDomainDetails(request, pricing);
 
   return `
 <!DOCTYPE html>
@@ -780,14 +867,23 @@ function generateSchoolQuoteEmailHtml(
       <table class="table">
         <tr><td class="label">Product:</td><td class="value"><strong>${pricing.productName}</strong></td></tr>
         ${pricing.studentTierLabel ? `<tr><td class="label">Student Bracket:</td><td class="value">${pricing.studentTierLabel}</td></tr>` : ''}
-        <tr><td class="label">Domain Choice:</td><td class="value">${request.domain ? `${request.domain.domain} (${request.domain.isIncluded ? 'Included' : `Upgrade: +₹${request.domain.upgradeAmount}`})` : 'To be confirmed'}</td></tr>
         ${pricing.selectedAddonNames.length > 0 ? `<tr><td class="label">Optional Add-ons:</td><td class="value">${pricing.selectedAddonNames.join(', ')}</td></tr>` : ''}
+      </table>
+
+      <div class="section-title">Domain Configuration</div>
+      <table class="table">
+        <tr><td class="label">Domain Choice:</td><td class="value"><strong>${domainInfo.choiceLabel}</strong></td></tr>
+        <tr><td class="label">${domainInfo.choiceLabel === 'Existing Domain' ? 'Domain:' : 'Preferred Domain:'}</td><td class="value font-mono"><strong>${domainInfo.domainName}</strong></td></tr>
+        <tr><td class="label">Status:</td><td class="value">${domainInfo.statusLabel}</td></tr>
+        <tr><td class="label">Domain Price:</td><td class="value">${domainInfo.priceLabel}</td></tr>
+        <tr><td class="label">Plan Allowance:</td><td class="value">${domainInfo.allowanceLabel}</td></tr>
+        <tr><td class="label">${domainInfo.choiceLabel === 'Existing Domain' ? 'Domain Purchase Cost:' : 'Domain Difference:'}</td><td class="value"><strong>${domainInfo.differenceLabel}</strong></td></tr>
       </table>
 
       <div class="price-box">
         <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
           <span style="font-size: 13px; color: #64748b;">Year 1 Estimated Total:</span>
-          <strong style="font-size: 16px; color: #4338ca;">${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Quote'}</strong>
+          <strong style="font-size: 16px; color: #4338ca;">${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Quote'}${pricing.isDomainPricePendingVerification ? ' (+ Domain difference if applicable)' : ''}</strong>
         </div>
         <div style="display: flex; justify-content: space-between;">
           <span style="font-size: 12px; color: #64748b;">Annual Renewal From:</span>
@@ -813,6 +909,7 @@ function generateClientSchoolQuoteConfirmationHtml(
   request: SchoolQuoteRequest,
   pricing: SchoolPriceCalculation
 ): string {
+  const domainInfo = getEmailDomainDetails(request, pricing);
   const ekaagraWhatsAppUrl = buildSchoolSubmissionWhatsAppUrl({
     schoolName: request.school.schoolName,
     contactName: request.contact.fullName,
@@ -820,7 +917,11 @@ function generateClientSchoolQuoteConfirmationHtml(
     studentRange: pricing.studentTierLabel || undefined,
     yearOnePrice: pricing.totalEstimatedYearOne,
     renewalPrice: pricing.totalRenewalFrom,
-    domainName: request.domain?.domain,
+    domainChoice: request.domainSelection?.domainChoice || request.domain?.domainChoice,
+    domainName: request.domainSelection?.preferredDomain || request.domain?.domain,
+    domainStatus: request.domainSelection?.domainStatus || request.domain?.domainStatus,
+    isDomainPriceVerified: pricing.isDomainPriceVerified,
+    domainDifference: pricing.domainUpgradeAmount,
     city: request.school.city,
   });
 
@@ -864,10 +965,12 @@ function generateClientSchoolQuoteConfirmationHtml(
       <table class="table">
         <tr><td class="label">Product Plan:</td><td class="value">${pricing.productName}</td></tr>
         ${pricing.studentTierLabel ? `<tr><td class="label">Capacity Bracket:</td><td class="value">${pricing.studentTierLabel}</td></tr>` : ''}
-        ${request.domain ? `<tr><td class="label">Selected Domain:</td><td class="value">${request.domain.domain}</td></tr>` : ''}
+        <tr><td class="label">Domain Choice:</td><td class="value">${domainInfo.choiceLabel}</td></tr>
+        ${domainInfo.domainName && domainInfo.domainName !== 'Not selected' ? `<tr><td class="label">${domainInfo.choiceLabel === 'Existing Domain' ? 'Domain:' : 'Preferred Domain:'}</td><td class="value font-mono">${domainInfo.domainName}</td></tr>` : ''}
+        <tr><td class="label">Domain Status:</td><td class="value">${domainInfo.statusLabel}</td></tr>
         <tr>
           <td class="label">Estimated Year 1:</td>
-          <td class="value" style="color: #4338CA;">${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Enterprise Quote'}</td>
+          <td class="value" style="color: #4338CA;">${pricing.totalEstimatedYearOne !== null ? `₹${pricing.totalEstimatedYearOne.toLocaleString('en-IN')}` : 'Custom Enterprise Quote'}${pricing.isDomainPricePendingVerification ? ' (+ Domain difference if applicable after verification)' : ''}</td>
         </tr>
         <tr>
           <td class="label">Renewal From:</td>
@@ -927,6 +1030,157 @@ export async function sendClientSchoolQuoteConfirmation(
     htmlContent: html,
     replyTo: adminEmail,
     type: 'client_quote_confirmation',
+  });
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * 3. PAYMENT RECEIPT & CONFIRMATION EMAILS
+ * -----------------------------------------------------------------------------
+ */
+
+function generatePaymentReceiptEmailHtml(order: Order): string {
+  const paidDate = order.paid_at ? new Date(order.paid_at).toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }) : new Date().toLocaleDateString('en-IN');
+
+  const formattedAmount = Number(order.amount_inr).toLocaleString('en-IN');
+  const planName = order.metadata?.planName || order.service_type || 'Website Development';
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payment Receipt: ${order.order_number}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 20px; color: #0f172a; line-height: 1.5; }
+    .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+    .header { background: #131B2E; padding: 28px; color: #ffffff; text-align: left; }
+    .header h1 { margin: 0 0 6px 0; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff; }
+    .header p { margin: 0; font-size: 13px; color: #94a3b8; }
+    .status-badge { display: inline-block; background: #10b981; color: #ffffff; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 9999px; text-transform: uppercase; margin-top: 10px; letter-spacing: 0.5px; }
+    .body { padding: 28px; }
+    .receipt-box { background: #FAF7F2; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px; margin-bottom: 24px; text-align: center; }
+    .amount-display { font-size: 32px; font-weight: 800; font-family: monospace; color: #4338CA; margin: 8px 0; }
+    .table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    .table td { padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .label { color: #64748b; font-weight: 600; width: 40%; }
+    .value { color: #0f172a; font-weight: 700; text-align: right; }
+    .steps-box { background: #f8fafc; border-left: 4px solid #4338CA; padding: 14px 18px; margin-bottom: 24px; font-size: 13px; line-height: 1.6; color: #334155; }
+    .footer { background: #f8fafc; padding: 16px 28px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1>Payment Confirmation &amp; Receipt</h1>
+      <p>Thank you for choosing Ekaagra Technologies</p>
+      <span class="status-badge">Payment Verified &amp; Confirmed</span>
+    </div>
+    <div class="body">
+      <div class="receipt-box">
+        <div style="font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Amount Paid (INR)</div>
+        <div class="amount-display">&#8377;${formattedAmount}</div>
+        <div style="font-size: 12px; color: #10b981; font-weight: 600;">&#10003; All Taxes &amp; Fees Included</div>
+      </div>
+
+      <table class="table">
+        <tr>
+          <td class="label">Order Number:</td>
+          <td class="value">${order.order_number}</td>
+        </tr>
+        <tr>
+          <td class="label">Customer Name:</td>
+          <td class="value">${order.customer_name}</td>
+        </tr>
+        <tr>
+          <td class="label">Service / Package:</td>
+          <td class="value">${planName}</td>
+        </tr>
+        <tr>
+          <td class="label">Payment Gateway:</td>
+          <td class="value">${order.gateway_name}</td>
+        </tr>
+        ${order.gateway_payment_id ? `
+        <tr>
+          <td class="label">Transaction Reference:</td>
+          <td class="value"><code style="font-size: 11px;">${order.gateway_payment_id}</code></td>
+        </tr>` : ''}
+        <tr>
+          <td class="label">Date &amp; Time:</td>
+          <td class="value">${paidDate}</td>
+        </tr>
+      </table>
+
+      <div class="steps-box">
+        <strong>What Happens Next?</strong><br/>
+        Our engineering team has received your confirmed order and is initiating your project intake. You will receive private staging links to inspect responsiveness on mobile and desktop before official launch.
+      </div>
+    </div>
+    <div class="footer">
+      <strong>Ekaagra Technologies</strong> &bull; Motihari, East Champaran, Bihar - 845401, India<br/>
+      Inquiries: <a href="mailto:${getAdminEmail()}" style="color: #4338CA; text-decoration: none;">${getAdminEmail()}</a> &bull; <a href="https://www.ekaagratechnologies.site" style="color: #4338CA; text-decoration: none;">ekaagratechnologies.site</a>
+    </div>
+  </div>
+</body>
+</html>
+`;
+}
+
+function generatePaymentReceiptEmailText(order: Order): string {
+  const formattedAmount = Number(order.amount_inr).toLocaleString('en-IN');
+  return `=== EKAAGRA TECHNOLOGIES PAYMENT RECEIPT ===
+
+Order Number: ${order.order_number}
+Status: PAID
+Amount Paid: INR ${formattedAmount}
+Service: ${order.metadata?.planName || order.service_type}
+Customer: ${order.customer_name}
+Transaction ID: ${order.gateway_payment_id || 'N/A'}
+Date: ${order.paid_at || new Date().toISOString()}
+
+Thank you for choosing Ekaagra Technologies. Our team has received your confirmed order and is initiating project kickoff.
+
+Ekaagra Technologies
+Motihari, East Champaran, Bihar - 845401, India
+`;
+}
+
+export async function sendClientPaymentReceiptEmail(order: Order): Promise<EmailDispatchResult> {
+  const subject = `Payment Confirmed: Order ${order.order_number} — Ekaagra Technologies`;
+  const html = generatePaymentReceiptEmailHtml(order);
+  const text = generatePaymentReceiptEmailText(order);
+
+  return sendEmail({
+    to: order.customer_email,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}
+
+export async function sendAdminPaymentNotificationEmail(order: Order): Promise<EmailDispatchResult> {
+  const adminEmail = getAdminEmail();
+  const formattedAmount = Number(order.amount_inr).toLocaleString('en-IN');
+  const subject = `[PAYMENT SUCCESSFUL] ${order.order_number} — ₹${formattedAmount} (${order.customer_name})`;
+  const html = generatePaymentReceiptEmailHtml(order);
+  const text = generatePaymentReceiptEmailText(order);
+
+  return sendEmail({
+    to: adminEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: order.customer_email,
+    type: 'quote',
   });
 }
 

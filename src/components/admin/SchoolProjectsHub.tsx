@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles,
   Download,
+  CreditCard,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import {
@@ -220,6 +221,14 @@ export default function SchoolProjectsHub() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/admin/orders"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200 transition-colors"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>Orders &amp; Payments</span>
+            </Link>
+
             <Link
               href="/admin/leads"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF7F2] hover:bg-[#E2E8F0] text-xs font-bold rounded-lg border border-[#E2E8F0] transition-colors"

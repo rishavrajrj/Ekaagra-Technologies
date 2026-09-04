@@ -39,6 +39,7 @@ import {
   Copy,
   Check,
   Eye,
+  CreditCard,
 } from 'lucide-react';
 
 interface LeadsDashboardProps {
@@ -246,6 +247,14 @@ export default function LeadsDashboard({
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/admin/orders"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200 transition-colors"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>Orders &amp; Payments</span>
+            </Link>
+
             <Link
               href="/admin/school-projects"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-[#4338CA] text-xs font-bold rounded-lg border border-indigo-200 transition-colors"

@@ -377,6 +377,8 @@ export interface SchoolPriceCalculation {
   termDomainAllowance: number;
   domainCostINR: number;
   domainUpgradeAmount: number;
+  isDomainPriceVerified: boolean;
+  isDomainPricePendingVerification: boolean;
   selectedAddonsCount: number;
   selectedAddonNames: string[];
   totalEstimatedYearOne: number | null;
@@ -391,6 +393,8 @@ export function calculateSchoolPrice(params: {
     estimatedINR?: number;
     period?: number;
     annualAllowance?: number;
+    isPriceVerified?: boolean;
+    domainStatus?: string;
   } | null;
 }): SchoolPriceCalculation {
   const plan = schoolPlans.find((p) => p.id === params.productId) || schoolPlans[0];
@@ -423,10 +427,16 @@ export function calculateSchoolPrice(params: {
   }
 
   // Domain Calculation
+  const hasDomain = Boolean(params.domainQuote);
+  const isVerified = Boolean(params.domainQuote?.isPriceVerified);
   const period = params.domainQuote?.period || 1;
   const termAllowance = annualAllowance * period;
-  const domainCostINR = params.domainQuote?.estimatedINR || 0;
-  const domainUpgrade = Math.max(0, domainCostINR - termAllowance);
+  const rawDomainCost = params.domainQuote?.estimatedINR;
+  const domainCostINR = isVerified && typeof rawDomainCost === 'number' && rawDomainCost > 0 ? rawDomainCost : 0;
+  
+  // Only add domain excess charges when the domain price is actually verified
+  const domainUpgrade = isVerified ? Math.max(0, domainCostINR - termAllowance) : 0;
+  const isPendingVerification = hasDomain && !isVerified && params.domainQuote?.domainStatus !== 'not_selected';
 
   // Add-ons resolution
   const selectedAddonIds = params.selectedAddonIds || [];
@@ -457,6 +467,8 @@ export function calculateSchoolPrice(params: {
     termDomainAllowance: termAllowance,
     domainCostINR,
     domainUpgradeAmount: domainUpgrade,
+    isDomainPriceVerified: isVerified,
+    isDomainPricePendingVerification: isPendingVerification,
     selectedAddonsCount: selectedAddonNames.length,
     selectedAddonNames,
     totalEstimatedYearOne: totalYearOne,

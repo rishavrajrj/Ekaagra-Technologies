@@ -89,12 +89,10 @@ export default function Footer() {
               <ul className="space-y-2.5">
                 {[
                   { label: 'Our Work', href: '/projects' },
-                  { label: 'Services', href: '/services' },
                   { label: 'School Solutions', href: '/schools' },
                   { label: 'Industry Solutions', href: '/solutions' },
                   { label: 'How We Work', href: '/process' },
                   { label: 'Pricing & Packages', href: '/pricing' },
-                  { label: 'Blog & Guides', href: '/blog' },
                   { label: 'About Us', href: '/about' },
                   { label: 'Contact Us', href: '/contact' },
                 ].map((item) => (
@@ -112,25 +110,41 @@ export default function Footer() {
               </ul>
             </div>
 
-            {/* Direct Action Column */}
-            <div className="space-y-4">
-              <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest">
-                Ready to Upgrade?
+            {/* Legal & Compliance Column */}
+            <div>
+              <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
+                Legal &amp; Policy
               </h3>
-              <p className="text-xs text-[#64748B] leading-relaxed">
-                Get a tailored design estimate for your business or school website within 24 hours.
-              </p>
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-2.5 items-start">
+              <ul className="space-y-2.5">
+                {[
+                  { label: 'Terms of Service', href: '/terms' },
+                  { label: 'Privacy Policy', href: '/privacy' },
+                  { label: 'Cancellation & Refund', href: '/refund-policy' },
+                  { label: 'Delivery & Fulfillment', href: '/delivery-policy' },
+                ].map((item) => (
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className="group inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
+                    >
+                      <span className="group-hover:translate-x-1 transition-transform duration-200">
+                        {item.label}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="pt-6">
                 <MagneticButton maxDistance={5}>
                   <Link
                     href="/get-quote"
-                    className="premium-shimmer-btn inline-flex items-center gap-2 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20 hover:-translate-y-0.5"
+                    className="premium-shimmer-btn inline-flex items-center gap-2 px-3.5 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20 hover:-translate-y-0.5"
                   >
                     <span>Build My Website</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-3 h-3" />
                   </Link>
                 </MagneticButton>
-                <ShowcaseManualButton variant="footer" />
               </div>
             </div>
           </div>
@@ -139,8 +153,23 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748B]">
           <p>© {currentYear} Ekaagra Technologies. All rights reserved.</p>
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-            <span className="hidden md:inline">Designed for businesses that want to stand out.</span>
+          <div className="flex flex-wrap items-center gap-3 sm:gap-5 text-[11px]">
+            <Link href="/terms" className="hover:text-[#4338CA] transition-colors">
+              Terms
+            </Link>
+            <span className="text-[#CBD5E1]">•</span>
+            <Link href="/privacy" className="hover:text-[#4338CA] transition-colors">
+              Privacy
+            </Link>
+            <span className="text-[#CBD5E1]">•</span>
+            <Link href="/refund-policy" className="hover:text-[#4338CA] transition-colors">
+              Refund Policy
+            </Link>
+            <span className="text-[#CBD5E1]">•</span>
+            <Link href="/delivery-policy" className="hover:text-[#4338CA] transition-colors">
+              Fulfillment Policy
+            </Link>
+            <span className="hidden md:inline text-[#CBD5E1]">•</span>
             <ShowcaseManualButton variant="footer" className="hidden lg:inline-flex text-[11px] py-1.5 px-3" />
           </div>
         </div>

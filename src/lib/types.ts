@@ -294,6 +294,25 @@ export interface QuoteSelectedPage {
   priceDisplay: string;
 }
 
+export type DomainChoice =
+  | 'NEW_DOMAIN'
+  | 'EXISTING_DOMAIN'
+  | 'DECIDE_LATER'
+  | 'new'
+  | 'existing'
+  | 'later';
+
+export type DomainStatus =
+  | 'AVAILABLE'
+  | 'UNAVAILABLE'
+  | 'PRECHECK_REQUIRED'
+  | 'EXISTING'
+  | 'DECIDE_LATER'
+  | 'available'
+  | 'unavailable'
+  | 'verification_required'
+  | 'not_selected';
+
 export interface QuoteSelectedDomain {
   domain: string;
   provider: string;
@@ -310,6 +329,9 @@ export interface QuoteSelectedDomain {
   isIncluded: boolean;
   recommendationBadge?: string;
   recommendationReason?: string;
+  domainChoice?: DomainChoice;
+  domainStatus?: DomainStatus;
+  isPriceVerified?: boolean;
 }
 
 export interface QuoteOrganizationDetails {
@@ -373,11 +395,25 @@ export interface SchoolQuoteContactDetails {
   preferredContactMethod?: string;
 }
 
+
+export interface SchoolDomainSelection {
+  domainChoice: DomainChoice;
+  preferredDomain: string | null;
+  domainStatus: DomainStatus;
+  domainPrice: number | null;
+  domainAllowance: number;
+  domainDifference: number;
+  isPriceVerified: boolean;
+  registrationPeriod?: string;
+  notes?: string;
+}
+
 export interface SchoolQuoteRequest {
   productId: 'school-website' | 'school-website-cms' | 'school-erp' | 'school-complete';
   studentTierId?: 'up-to-300' | '301-700' | '701-1500' | '1501-3000' | '3000-plus';
   selectedAddonIds: string[];
   domain: QuoteSelectedDomain | null;
+  domainSelection?: SchoolDomainSelection;
   school: SchoolQuoteSchoolDetails;
   contact: SchoolQuoteContactDetails;
 }
@@ -691,6 +727,100 @@ export interface SchoolProjectFilter {
   mediaStatus?: 'ALL' | SchoolMediaStatus;
   page?: number;
   pageSize?: number;
+}
+
+// --- Payment & Order Management Types ----------------------------
+
+export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED' | 'CANCELLED';
+
+export interface OrderMetadata {
+  planName?: string;
+  planPrice?: number;
+  additionalPages?: Array<{ name: string; tierId: string; price: number }>;
+  domainChoice?: string;
+  preferredDomain?: string | null;
+  domainPrice?: number | null;
+  domainAllowance?: number;
+  domainDifference?: number;
+  organizationName?: string;
+  notes?: string;
+  customerWhatsApp?: string;
+  isCustomLink?: boolean;
+  milestoneDescription?: string;
+}
+
+export interface Order {
+  id: string;
+  lead_id?: string | null;
+  order_number: string;
+  customer_name: string;
+  customer_email: string;
+  customer_phone: string;
+  service_type: string;
+  plan_id?: string | null;
+  amount_inr: number;
+  payment_status: PaymentStatus;
+  gateway_name: string;
+  gateway_order_id?: string | null;
+  gateway_payment_id?: string | null;
+  gateway_signature?: string | null;
+  metadata?: OrderMetadata | null;
+  paid_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentEvent {
+  id: string;
+  order_id: string;
+  event_type: string;
+  gateway_event_id?: string | null;
+  gateway_payment_id?: string | null;
+  payload?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface OrderFilter {
+  query?: string;
+  status?: PaymentStatus | 'ALL';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface OrderStats {
+  total: number;
+  pending: number;
+  paid: number;
+  failed: number;
+  refunded: number;
+  totalRevenueINR: number;
+}
+
+export interface CreateOrderRequest {
+  leadId?: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  customerWhatsApp?: string;
+  organizationName?: string;
+  serviceType: string;
+  planId?: string;
+  additionalPages?: Array<{ name: string; tierId: string; price?: number }>;
+  domainChoice?: string;
+  preferredDomain?: string;
+  isPriceVerified?: boolean;
+  notes?: string;
+  // For custom admin payment links:
+  isCustomPaymentLink?: boolean;
+  customAmountINR?: number;
+  customDescription?: string;
+}
+
+export interface VerifyPaymentRequest {
+  orderNumber: string;
+  razorpayOrderId: string;
+  razorpayPaymentId: string;
+  razorpaySignature: string;
 }
 
 

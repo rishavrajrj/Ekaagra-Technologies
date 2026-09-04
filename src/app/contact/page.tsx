@@ -86,7 +86,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Studio Location</span>
-                    <span className="text-xs text-[#64748B] block mt-1">Motihari, East Champaran, Bihar, India</span>
+                    <span className="text-xs text-[#64748B] block mt-1">Motihari, East Champaran, Bihar - 845401, India</span>
                   </div>
                 </div>
 

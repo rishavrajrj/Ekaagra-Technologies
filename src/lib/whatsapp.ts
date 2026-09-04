@@ -125,19 +125,49 @@ export function buildQuoteSubmissionWhatsAppUrl(data: QuoteFormData): string {
   return getWhatsAppChatUrl(lines.join('\n'));
 }
 
-/**
- * Pre-filled message for School Solution Enquiry submission.
- */
-export function buildSchoolSubmissionWhatsAppUrl(params: {
+export interface SchoolSubmissionWhatsAppParams {
   schoolName: string;
   contactName: string;
   productName: string;
   studentRange?: string;
   yearOnePrice?: number | null;
   renewalPrice?: number | null;
+  domainChoice?: string;
   domainName?: string;
+  domainStatus?: string;
+  isDomainPriceVerified?: boolean;
+  domainDifference?: number;
   city?: string;
-}): string {
+}
+
+/**
+ * Pre-filled message for School Solution Enquiry submission.
+ */
+export function buildSchoolSubmissionWhatsAppUrl(params: SchoolSubmissionWhatsAppParams): string {
+  let domainLine = '';
+  if (params.domainChoice === 'EXISTING_DOMAIN' || params.domainChoice === 'existing') {
+    domainLine = `Domain: ${params.domainName || 'Existing Domain'} (Existing school domain — DNS onboarding)`;
+  } else if (params.domainChoice === 'DECIDE_LATER' || params.domainChoice === 'later' || !params.domainName) {
+    domainLine = 'Domain: To be decided before website launch';
+  } else {
+    // NEW_DOMAIN
+    if (params.isDomainPriceVerified) {
+      domainLine = `Preferred Domain: ${params.domainName} (Verified Available)`;
+    } else {
+      domainLine = `Preferred Domain: ${params.domainName} (Availability verification required)`;
+    }
+  }
+
+  const isUnverifiedNewDomain =
+    (params.domainChoice === 'NEW_DOMAIN' || params.domainChoice === 'new' || (!params.domainChoice && params.domainName)) &&
+    !params.isDomainPriceVerified;
+
+  const yearOnePriceText = params.yearOnePrice
+    ? `Estimated Year 1: ₹${params.yearOnePrice.toLocaleString('en-IN')}${
+        isUnverifiedNewDomain ? ' (+ Domain difference if applicable after verification)' : ''
+      }`
+    : '';
+
   const lines: string[] = [
     'Hello Ekaagra Technologies,',
     '',
@@ -148,8 +178,8 @@ export function buildSchoolSubmissionWhatsAppUrl(params: {
     params.city ? `Location: ${params.city}` : '',
     `Selected Solution: ${params.productName}`,
     params.studentRange ? `Student Strength: ${params.studentRange}` : '',
-    params.domainName ? `Preferred Domain: ${params.domainName}` : '',
-    params.yearOnePrice ? `Estimated Year 1: ₹${params.yearOnePrice.toLocaleString('en-IN')}` : '',
+    domainLine,
+    yearOnePriceText,
     params.renewalPrice ? `Renewal From: ₹${params.renewalPrice.toLocaleString('en-IN')}/year` : '',
     '',
     'I would like to discuss next steps and platform setup.',
