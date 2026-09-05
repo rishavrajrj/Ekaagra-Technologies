@@ -195,6 +195,25 @@ export default function FeaturedProjectCarousel({
                     </span>
                   ))}
                 </div>
+
+                {/* Highlighted Project Metrics (if present) */}
+                {currentProject.metrics && currentProject.metrics.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-2 border-t border-[#E2E8F0]">
+                    {currentProject.metrics.map((m, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-[#FAF7F2] p-1.5 rounded-lg border border-[#E2E8F0] text-center"
+                      >
+                        <span className="block text-xs font-black text-[#4338CA] leading-tight">
+                          {m.value}
+                        </span>
+                        <span className="block text-[9px] text-[#64748B] font-medium truncate">
+                          {m.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Action CTAs */}

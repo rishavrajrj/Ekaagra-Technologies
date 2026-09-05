@@ -31,6 +31,18 @@ export interface Project {
   liveUrl?: string;
   githubUrl?: string;
   isFrameRestricted?: boolean;
+  metrics?: Array<{
+    label: string;
+    value: string;
+    subtext?: string;
+  }>;
+  achievements?: Array<{
+    title: string;
+    description: string;
+    stat?: string;
+    subtext?: string;
+    icon?: string;
+  }>;
 }
 
 // --- Technology Types --------------------------------------------

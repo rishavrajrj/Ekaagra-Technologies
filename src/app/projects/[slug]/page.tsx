@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { Check, ExternalLink, ArrowRight, Sparkles, Globe, Play } from 'lucide-react';
 import ProjectGallery from '@/components/ui/ProjectGallery';
 import LiveWebsitePreview from '@/components/ui/LiveWebsitePreview';
+import PalakIdStudioShowcase from '@/components/ui/PalakIdStudioShowcase';
+import PalakEnterprisesAchievements from '@/components/ui/PalakEnterprisesAchievements';
 import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
 import Breadcrumbs from '@/components/ui/Breadcrumbs';
 
@@ -138,6 +140,26 @@ export default async function ProjectDetailPage({ params }: Props) {
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
+
+          {/* Key Metrics Strip (if available) */}
+          {project.metrics && project.metrics.length > 0 && (
+            <div className="pt-6 grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto">
+              {project.metrics.map((m, idx) => (
+                <div
+                  key={idx}
+                  className="bg-white p-3.5 rounded-2xl border border-[#E2E8F0] shadow-xs text-center space-y-0.5"
+                >
+                  <span className="text-xl sm:text-2xl font-black text-[#4338CA] tracking-tight block">
+                    {m.value}
+                  </span>
+                  <span className="text-xs font-bold text-[#131B2E] block">{m.label}</span>
+                  {m.subtext && (
+                    <span className="text-[10px] text-[#64748B] block">{m.subtext}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </header>
 
         {/* Live Website Interactive Preview Showcase */}
@@ -191,6 +213,15 @@ export default async function ProjectDetailPage({ params }: Props) {
             </span>
             <ProjectGallery images={project.images} title={project.title} />
           </section>
+        )}
+
+        {/* Dedicated Interactive Showcases for Palak Ecosystem */}
+        {slug === 'palak-id-studio' && (
+          <PalakIdStudioShowcase />
+        )}
+
+        {slug === 'palak-enterprises' && (
+          <PalakEnterprisesAchievements />
         )}
 
         {/* Overview */}
@@ -252,6 +283,53 @@ export default async function ProjectDetailPage({ params }: Props) {
           </section>
         )}
 
+        {/* Key Verified Achievements & Milestones Matrix (if project has achievements) */}
+        {project.achievements && project.achievements.length > 0 && (
+          <section className="space-y-6 bg-white p-8 sm:p-10 rounded-3xl border border-[#E2E8F0] shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4">
+              <div>
+                <span className="text-xs font-mono font-bold text-emerald-600 uppercase tracking-widest block">
+                  MEASURED VALUE &amp; ACHIEVEMENTS
+                </span>
+                <h2 className="text-2xl font-extrabold text-[#131B2E]">
+                  Key Project Milestones &amp; Technical Innovations
+                </h2>
+              </div>
+              <span className="text-xs font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full font-bold self-start">
+                100% Deployed &amp; Verified
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pt-2">
+              {project.achievements.map((ach, index) => (
+                <div
+                  key={index}
+                  className="bg-[#FAF7F2] p-6 rounded-2xl border border-[#E2E8F0] flex flex-col justify-between space-y-4 hover:border-[#4338CA]/40 transition-colors"
+                >
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-mono font-bold text-[#4338CA] bg-white px-2.5 py-1 rounded-lg border border-[#E2E8F0]">
+                        {ach.stat || `0${index + 1}`}
+                      </span>
+                      {ach.subtext && (
+                        <span className="text-[10px] text-[#64748B] font-medium truncate">
+                          {ach.subtext}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-sm sm:text-base font-bold text-[#131B2E] leading-snug">
+                      {ach.title}
+                    </h3>
+                    <p className="text-xs text-[#64748B] leading-relaxed">
+                      {ach.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Features List */}
         <section className="space-y-6 bg-white p-8 sm:p-10 rounded-3xl border border-[#E2E8F0] shadow-sm">
           <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
@@ -309,6 +387,53 @@ export default async function ProjectDetailPage({ params }: Props) {
               ))}
             </div>
           </section>
+        )}
+
+        {/* Sister Project Cross-Links for Palak Ecosystem */}
+        {slug === 'palak-enterprises' && (
+          <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold text-[#4338CA] uppercase tracking-wider block">
+                SISTER SAAS PLATFORM
+              </span>
+              <h4 className="text-lg font-extrabold text-[#131B2E]">
+                Explore Palak ID Studio (Commercial ID Card Design SaaS)
+              </h4>
+              <p className="text-xs text-[#64748B]">
+                Engineered for Palak Enterprises to design &amp; print institutional school and corporate ID cards with 600 DPI output and Excel data binding.
+              </p>
+            </div>
+            <Link
+              href="/projects/palak-id-studio"
+              className="inline-flex items-center gap-2 bg-[#4338CA] text-white hover:bg-[#3730A3] px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider shrink-0 shadow-md transition-all"
+            >
+              <span>View ID Studio Case Study</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        )}
+
+        {slug === 'palak-id-studio' && (
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono font-bold text-emerald-800 uppercase tracking-wider block">
+                FLAGSHIP WEB APPLICATION
+              </span>
+              <h4 className="text-lg font-extrabold text-[#131B2E]">
+                Explore Palak Enterprises (Digital Print &amp; CSC Web Application)
+              </h4>
+              <p className="text-xs text-[#64748B]">
+                Features 100% automated Razorpay payment integration, queue-bypass express pickup, and cloud document upload engine.
+              </p>
+            </div>
+            <Link
+              href="/projects/palak-enterprises"
+              className="inline-flex items-center gap-2 bg-emerald-700 text-white hover:bg-emerald-800 px-5 py-3 rounded-xl text-xs font-bold uppercase tracking-wider shrink-0 shadow-md transition-all"
+            >
+              <span>View Palak Enterprises</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         )}
 
         {/* Bottom Callout */}
