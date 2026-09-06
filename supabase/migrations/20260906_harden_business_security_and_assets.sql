@@ -92,3 +92,18 @@ BEGIN
             allowed_mime_types = EXCLUDED.allowed_mime_types;
     END IF;
 END $$;
+
+-- 6. Link orders to projects for post-design milestone tracking
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'orders' 
+        AND column_name = 'project_id'
+    ) THEN
+        ALTER TABLE public.orders ADD COLUMN project_id UUID REFERENCES public.projects(id) ON DELETE SET NULL;
+        CREATE INDEX IF NOT EXISTS idx_orders_project_id ON public.orders(project_id);
+    END IF;
+END $$;
+

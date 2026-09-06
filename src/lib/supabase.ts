@@ -487,7 +487,8 @@ export async function markOrderPaid(params: {
     }
 
     // Also update associated business project if present
-    if (currentRes.data.project_id) {
+    const linkedProjectId = currentRes.data.project_id || (currentRes.data.metadata as { projectId?: string } | undefined)?.projectId;
+    if (linkedProjectId) {
       try {
         await supabase
           .from('projects')
@@ -495,11 +496,11 @@ export async function markOrderPaid(params: {
             project_status: 'PAID',
             updated_at: nowIso,
           })
-          .eq('id', currentRes.data.project_id);
+          .eq('id', linkedProjectId);
 
         await supabase.from('project_activity').insert([
           {
-            project_id: currentRes.data.project_id,
+            project_id: linkedProjectId,
             activity_type: 'PAYMENT_RECEIVED',
             actor_type: 'SYSTEM',
             description: `Milestone payment received for order ${params.orderNumber} (₹${currentRes.data.amount_inr}). Project status updated to PAID. Ready for development.`,
