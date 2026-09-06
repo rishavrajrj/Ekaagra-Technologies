@@ -146,6 +146,12 @@ export default function OrdersDashboard({
               Leads
             </Link>
             <Link
+              href="/admin/business-projects"
+              className="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            >
+              Business Projects
+            </Link>
+            <Link
               href="/admin/school-projects"
               className="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >

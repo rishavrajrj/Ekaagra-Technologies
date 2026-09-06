@@ -1850,7 +1850,7 @@ export default function SchoolQuoteConfigurator({
                       <option value="Phone Call">Phone Call</option>
                       <option value="WhatsApp Chat">WhatsApp Chat</option>
                       <option value="Email">Email</option>
-                      <option value="Campus Visit / In-Person">Campus Visit / In-Person (Champaran)</option>
+                      <option value="Campus Visit / In-Person">Campus Visit / In-Person</option>
                     </select>
                   </div>
                 </div>

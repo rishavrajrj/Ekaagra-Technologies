@@ -215,6 +215,8 @@ export type LeadStatus =
   | 'PROJECT_CONFIRMED'
   | 'PROJECT_ON_HOLD'
   | 'CONVERTED'
+  | 'NOT_INTERESTED'
+  | 'CLOSED'
   | 'LOST'
   | 'PROJECT_LOST'
   | 'CANCELLED';
@@ -590,68 +592,439 @@ export interface SchoolApprovedSnapshot {
   created_at: string;
 }
 
-// --- Universal Intake Form Data Model (Sections A - K) --------------------
+// --- Universal Intake Form Data Model (Phases 2 - 36) --------------------
+
+export interface SchoolIdentityData {
+  schoolName: string;
+  legalInstitutionName?: string;
+  displayName?: string;
+  shortName?: string;
+  schoolCode?: string;
+  board: string;
+  affiliationNumber?: string;
+  registrationNumber?: string;
+  establishmentYear?: string;
+  schoolType: string;
+  schoolCategory: string;
+  mediumOfInstruction: string[];
+  coEdStatus: 'co_ed' | 'boys' | 'girls';
+  schoolLevel: string[];
+  websiteName?: string;
+  preferredWebsiteDomain?: string;
+  existingDomain?: string;
+  existingWebsiteUrl?: string;
+  officialEmail: string;
+  secondaryEmail?: string;
+  officialPhone: string;
+  secondaryPhone?: string;
+  whatsappNumber?: string;
+  emergencyContact?: string;
+  address: string;
+  city: string;
+  district?: string;
+  state: string;
+  pin: string;
+  country: string;
+  principalName?: string;
+  principalEmail?: string;
+  principalPhone?: string;
+  managementContactName?: string;
+  managementContactPhone?: string;
+}
+
+export interface CampusBranchData {
+  id: string;
+  name: string;
+  code?: string;
+  address: string;
+  city: string;
+  district?: string;
+  state: string;
+  pin: string;
+  contactPhone: string;
+  contactEmail?: string;
+  principalOrHead?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  googleMapsLink?: string;
+  operatingHours?: string;
+  facilities?: string[];
+  isMainCampus: boolean;
+}
+
+export interface SchoolLeadershipData {
+  principalName: string;
+  principalDesignation?: string;
+  principalPhotoUrl?: string;
+  principalMessage?: string;
+  principalEmail?: string;
+  principalPhone?: string;
+  vicePrincipalName?: string;
+  vicePrincipalDesignation?: string;
+  vicePrincipalMessage?: string;
+  managementContactName?: string;
+  managementDesignation?: string;
+  managementMessage?: string;
+  administrativeContacts?: Array<{ name: string; designation: string; phone: string; email?: string }>;
+}
+
+export interface SchoolBrandingData {
+  hasHighResLogo: boolean;
+  logoUrl?: string;
+  secondaryLogoUrl?: string;
+  emblemUrl?: string;
+  faviconUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  accentColor?: string;
+  fontFamilyPreference?: string;
+  brandGuidelinesUrl?: string;
+  taglineOrMotto?: string;
+  motto?: string;
+  visionStatement?: string;
+  missionStatement?: string;
+  coreValues?: string[];
+  designReferenceWebsites?: string;
+  preferredVisualTone?: 'traditional_prestigious' | 'modern_vibrant' | 'minimal_clean';
+}
+
+export interface WebsiteRequirementsData {
+  primaryPurpose: string;
+  requiredPages: string[];
+  customPages?: Array<{ title: string; slug?: string; description?: string; notes?: string }>;
+  pageDetails?: Record<string, { description?: string; contentDraft?: string; documentNotes?: string }>;
+  principalMessageDraft?: string;
+  managementMessageDraft?: string;
+  admissionsOpenAnnouncement?: boolean;
+  existingWebsiteUrl?: string;
+  migrationNeededFromExisting: boolean;
+  seoFocusKeywords?: string;
+  languagesRequired: string[];
+}
+
+export interface SchoolContentData {
+  aboutSchool: string;
+  history?: string;
+  philosophy?: string;
+  teachingMethodology?: string;
+  specialPrograms?: string;
+  uniqueSellingPoints?: string[];
+  achievementsAndAwards?: string;
+  studentLife?: string;
+}
+
+export interface AcademicStructureData {
+  isMultiCampus?: boolean;
+  currentAcademicSession: string;
+  sessionStartDate?: string;
+  sessionEndDate?: string;
+  classesOfferedFrom?: string;
+  classesOfferedTo?: string;
+  totalSectionsEstimated?: number;
+  studentCapacityTotal?: number;
+  teachingStaffCount?: number;
+  nonTeachingStaffCount?: number;
+  academicStreams?: string[];
+  classes?: Array<{ name: string; code?: string; sortOrder: number; sections: string[] }>;
+  subjects?: Array<{ name: string; code?: string; subjectType: 'theory' | 'practical' | 'combined' | 'activity'; isElective: boolean; classesTaught?: string[] }>;
+  departments?: Array<{ name: string; headStaffName?: string; description?: string }>;
+}
+
+export interface StaffFacultyData {
+  bulkImportMode?: boolean;
+  estimatedTotalStaff?: number;
+  teachingStaffCount?: number;
+  nonTeachingStaffCount?: number;
+  staffMembers?: Array<{
+    name: string;
+    employeeCode?: string;
+    designation: string;
+    department?: string;
+    qualification?: string;
+    specialization?: string;
+    experienceYears?: number;
+    joiningDate?: string;
+    email?: string;
+    phone?: string;
+    bio?: string;
+    subjectsTaught?: string;
+    classesTaught?: string;
+    displayOnWebsite: boolean;
+    displayOrder?: number;
+  }>;
+}
+
+export interface StudentConfigData {
+  studentIdFormat?: string;
+  admissionNumberFormat?: string;
+  rollNumberSystem?: 'class_wise' | 'section_wise' | 'alphabetical';
+  houseSystemEnabled?: boolean;
+  houseNames?: string[];
+  studentCategories?: string[];
+  requiredStudentFields?: string[];
+  requiredDocumentTypes?: string[];
+  migrationRequired?: boolean;
+  estimatedStudentCount?: number;
+}
+
+export interface AdmissionsData {
+  admissionsOpen?: boolean;
+  targetSessions?: string;
+  classesOpenForAdmission?: string[];
+  eligibilityCriteria?: string;
+  ageCriteria?: string;
+  requiredDocuments?: string[];
+  admissionStages?: string[];
+  applicationFee?: number;
+  admissionFee?: number;
+  contactPerson?: string;
+  admissionPhone?: string;
+  admissionEmail?: string;
+  officeHours?: string;
+  onlineEnquiryEnabled?: boolean;
+  onlineApplicationEnabled?: boolean;
+  documentUploadEnabled?: boolean;
+  applicationTrackingEnabled?: boolean;
+  interviewSchedulingEnabled?: boolean;
+}
+
+export interface FeesConfigurationData {
+  feeCategories?: string[];
+  classFeeStructures?: Array<{
+    className: string;
+    feeType: string;
+    amount: number;
+    frequency: 'monthly' | 'quarterly' | 'annually' | 'one_time';
+    dueDateDay?: number;
+    lateFeePerDay?: number;
+  }>;
+  onlineFeePaymentRequired?: boolean;
+  feeReceiptsAutomated?: boolean;
+  parentLedgerHistoryEnabled?: boolean;
+  dueRemindersEnabled?: boolean;
+}
+
+export interface AttendanceData {
+  studentAttendanceMode?: 'daily' | 'period_wise' | 'biometric_sync';
+  staffAttendanceMode?: 'biometric' | 'app_manual' | 'register';
+  lateArrivalTracking?: boolean;
+  leaveManagementEnabled?: boolean;
+  parentAbsenceNotification?: 'sms' | 'whatsapp' | 'email' | 'none';
+  workingDays?: number[];
+}
+
+export interface ExaminationData {
+  examTypes?: string[];
+  terms?: string[];
+  gradingSystem?: 'cbse_9point' | 'cbse_8point' | 'percentage' | 'custom_marks';
+  hasInternalAssessment?: boolean;
+  hasPracticalMarks?: boolean;
+  reportCardLayout?: 'cbse_standard' | 'state_board' | 'narrative_primary';
+  resultPublishVisibility?: 'internal_only' | 'parent_portal' | 'public_website';
+}
+
+export interface TimetableData {
+  workingDaysPerWeek?: number;
+  schoolStartTime?: string;
+  schoolEndTime?: string;
+  periodCount?: number;
+  periodDurationMinutes?: number;
+  breakDurationMinutes?: number;
+  lunchDurationMinutes?: number;
+  assemblyDurationMinutes?: number;
+  timetableAutomationNeeded?: boolean;
+}
+
+export interface CommunicationData {
+  channelsRequired?: string[];
+  parentCommunicationEnabled?: boolean;
+  staffCommunicationEnabled?: boolean;
+  emergencyAnnouncementsEnabled?: boolean;
+}
+
+export interface CmsWorkflowData {
+  managingRoles: string[];
+  estimatedCmsUsers: number;
+  requiresApprovalBeforePublish: boolean;
+  contentCategories: string[];
+  mediaUploadWorkflowNotes?: string;
+}
+
+export interface FacilitiesData {
+  availableFacilities?: Array<{
+    name: string;
+    description?: string;
+    features?: string[];
+    isWebsiteVisible: boolean;
+  }>;
+}
+
+export interface TransportData {
+  enabled: boolean;
+  routesCount?: number;
+  vehiclesCount?: number;
+  routes?: Array<{ routeName: string; startingPoint: string; destination: string; stops: string[]; monthlyFee?: number }>;
+  gpsTrackingRequired?: boolean;
+  parentGpsVisibility?: boolean;
+}
+
+export interface HostelData {
+  enabled: boolean;
+  hostelNames?: string[];
+  capacityBoys?: number;
+  capacityGirls?: number;
+  rulesNotes?: string;
+  monthlyFee?: number;
+}
+
+export interface LibraryData {
+  enabled: boolean;
+  bookCountEstimate?: number;
+  categories?: string[];
+  issueReturnTrackingNeeded?: boolean;
+  barcodeScannerIntegration?: boolean;
+}
 
 export interface UniversalIntakeData {
-  // A. School Profile
-  schoolProfile: {
-    schoolName: string;
-    legalInstitutionName?: string;
-    schoolType: string; // Private, CBSE Affiliated, ICSE, State Board, etc.
-    board: string;
-    establishmentYear?: string;
-    address: string;
-    city: string;
-    state: string;
-    country: string;
-    pin: string;
-    officialEmail: string;
-    officialPhone: string;
-    principalName: string;
-    principalEmail?: string;
-    principalPhone?: string;
-    managementContactName?: string;
-    managementContactPhone?: string;
+  // 1. Core Profile & Identity (Backwards compatible key + extended fields)
+  schoolProfile: SchoolIdentityData;
+
+  // 2. Multiple Campuses / Branches
+  campuses?: CampusBranchData[];
+
+  // 3. School Leadership & Administration
+  leadership?: SchoolLeadershipData;
+
+  // 4. Branding & Visual Identity
+  brandingDesign: SchoolBrandingData;
+
+  // 5. Public Website Requirements
+  websiteRequirements?: WebsiteRequirementsData;
+
+  // 6. School About & Detailed Content
+  schoolContent?: SchoolContentData;
+
+  // 7. Academic Structure & Capacity
+  institutionStructure?: AcademicStructureData;
+
+  // 8. Staff & Faculty Roster
+  staffFaculty?: StaffFacultyData;
+
+  // 9. Student Configuration & Numbering
+  studentConfig?: StudentConfigData;
+
+  // 10. Admissions Experience
+  admissions?: AdmissionsData;
+
+  // 11. Fee Structures & Finance
+  feesConfiguration?: FeesConfigurationData;
+
+  // 12. Attendance Workflow
+  attendanceConfig?: AttendanceData;
+
+  // 13. Examination & Assessment
+  examinationConfig?: ExaminationData;
+
+  // 14. Timetable & Schedule
+  timetableConfig?: TimetableData;
+
+  // 15. Institutional Communication
+  communicationConfig?: CommunicationData;
+
+  // 16. Website CMS Workflow
+  cmsRequirements?: CmsWorkflowData;
+
+  // 17. Facilities
+  facilitiesConfig?: FacilitiesData;
+
+  // 18. Transport Management
+  transportConfig?: TransportData;
+
+  // 19. Hostel & Residential
+  hostelConfig?: HostelData;
+
+  // 20. Library Management
+  libraryConfig?: LibraryData;
+
+  // 21. Documents & Circulars
+  documentsDownloads?: { documentsChecklist: string[] };
+
+  // 22. Gallery & Multimedia
+  mediaGallery?: { albums: string[]; hasCampusPhotos: boolean; hasEventPhotos: boolean; youtubeChannelUrl?: string };
+
+  // 23. Social Media Presence
+  socialMedia?: { facebook?: string; instagram?: string; youtube?: string; linkedin?: string; twitter?: string };
+
+  // 24. Domain & Online Infrastructure
+  domainPresence: {
+    alreadyOwnsDomain: boolean;
+    existingDomainName?: string;
+    preferredNewDomainName?: string;
+    currentRegistrar?: string;
+    dnsManagementAccessAvailable: boolean;
+    officialEmailDomainNeeded: boolean;
+    schoolEmailProvider?: 'google_workspace' | 'microsoft_365' | 'cpanel_webmail' | 'none';
+    socialMediaLinks?: {
+      facebook?: string;
+      instagram?: string;
+      youtube?: string;
+      twitter?: string;
+    };
   };
 
-  // B. Institution Structure (ERP)
-  institutionStructure?: {
-    isMultiCampus: boolean;
-    campusCount?: number;
-    campusesDetails?: string;
-    currentAcademicSession: string; // e.g. "2026-2027"
-    classesOfferedFrom: string; // e.g. "Nursery"
-    classesOfferedTo: string;   // e.g. "Class 12"
-    totalSectionsEstimated: number;
-    studentCapacityTotal: number;
-    teachingStaffCount: number;
-    nonTeachingStaffCount: number;
-    academicStreams?: string[]; // Science, Commerce, Arts
+  // 25. SEO & Search Setup
+  seoConfig?: {
+    seoSchoolTitle?: string;
+    seoMetaDescription?: string;
+    targetKeywords?: string;
+    cityAndDistrictKeywords?: string;
+    googleBusinessProfileUrl?: string;
+    analyticsRequired?: boolean;
   };
 
-  // C. Website Requirements (Website / CMS)
-  websiteRequirements?: {
-    primaryPurpose: string;
-    requiredPages: string[]; // About, Principal, Facilities, etc.
-    principalMessageDraft?: string;
-    managementMessageDraft?: string;
-    admissionsOpenAnnouncement?: boolean;
-    existingWebsiteUrl?: string;
-    migrationNeededFromExisting: boolean;
-    seoFocusKeywords?: string;
-    languagesRequired: string[]; // English, Hindi, etc.
+  // 26. Third-Party Integrations
+  integrationsConfig?: {
+    paymentGateway?: 'razorpay' | 'phonepe' | 'payu' | 'none';
+    smsGateway?: 'msg91' | 'fast2sms' | 'textlocal' | 'none';
+    whatsappProvider?: 'meta_cloud_api' | 'gupshup' | 'none';
+    biometricAttendanceSync?: boolean;
+    accountingSoftware?: 'tally' | 'busy' | 'none';
   };
 
-  // D. CMS Requirements (CMS)
-  cmsRequirements?: {
-    managingRoles: string[]; // Principal, Vice-Principal, Computer Teacher, Clerk
-    estimatedCmsUsers: number;
-    requiresApprovalBeforePublish: boolean;
-    contentCategories: string[]; // Notices, Events, Gallery, Circulars, News, Staff Directory
-    mediaUploadWorkflowNotes?: string;
+  // 27. ERP Legacy Data Migration
+  existingSystemsMigration?: {
+    currentSystemType: 'excel_spreadsheets' | 'older_desktop_software' | 'cloud_software' | 'paper_registers';
+    currentSoftwareName?: string;
+    migrateStudentRecords: boolean;
+    migrateStaffRecords: boolean;
+    migrateHistoricalFeeLedgers: boolean;
+    estimatedStudentRecordsToImport?: number;
+    migrationReadinessStatus?: 'ready_files' | 'needs_formatting_help' | 'data_cleanup_in_progress';
   };
 
-  // E. ERP Requirements (ERP Questionnaire)
+  // 28. User Roles & Security
+  userRolesConfig?: {
+    requiredRoles?: string[];
+    customRoles?: string[];
+  };
+
+  // 29. Security & Privacy
+  securityPrivacy?: {
+    require2FAForAdmin?: boolean;
+    parentStudentRoleSeparation?: boolean;
+    auditLogsRetentionMonths?: number;
+    automatedDailyBackup?: boolean;
+  };
+
+  // 30. Design References
+  designReferences?: {
+    preferredVisualTone?: string;
+    referenceWebsites?: string;
+    dislikedWebsites?: string;
+    specialDesignNotes?: string;
+  };
+
+  // 31. Portals & ERP Questionnaire (backwards compatible fields)
   erpRequirements?: {
     studentManagementPriority: string;
     attendanceTrackingMode: 'daily' | 'subject_wise' | 'biometric_sync';
@@ -666,56 +1039,17 @@ export interface UniversalIntakeData {
     additionalModuleNotes?: string;
   };
 
-  // F. Portal Requirements (ERP / Complete)
   portalRequirements?: {
     parentPortalEnabled: boolean;
     studentPortalEnabled: boolean;
     staffPortalEnabled: boolean;
-    parentNotificationChannels: string[]; // SMS, WhatsApp, Email, Push
+    parentNotificationChannels: string[];
     resultPublishingOnPortal: boolean;
     feeReceiptsDownloadable: boolean;
     attendanceVisibilityImmediate: boolean;
   };
 
-  // G. Branding / Design
-  brandingDesign: {
-    hasHighResLogo: boolean;
-    logoNotes?: string;
-    primaryColor?: string;
-    secondaryColor?: string;
-    taglineOrMotto?: string;
-    designReferenceWebsites?: string;
-    preferredVisualTone?: 'traditional_prestigious' | 'modern_vibrant' | 'minimal_clean';
-  };
-
-  // H. Domain / Online Presence
-  domainPresence: {
-    alreadyOwnsDomain: boolean;
-    existingDomainName?: string;
-    preferredNewDomainName?: string;
-    currentRegistrar?: string;
-    dnsManagementAccessAvailable: boolean;
-    officialEmailDomainNeeded: boolean;
-    socialMediaLinks?: {
-      facebook?: string;
-      instagram?: string;
-      youtube?: string;
-      twitter?: string;
-    };
-  };
-
-  // I. Existing Systems & Data Migration (ERP)
-  existingSystemsMigration?: {
-    currentSystemType: 'excel_spreadsheets' | 'older_desktop_software' | 'cloud_software' | 'paper_registers';
-    currentSoftwareName?: string;
-    migrateStudentRecords: boolean;
-    migrateStaffRecords: boolean;
-    migrateHistoricalFeeLedgers: boolean;
-    estimatedStudentRecordsToImport?: number;
-    migrationReadinessStatus?: 'ready_files' | 'needs_formatting_help' | 'data_cleanup_in_progress';
-  };
-
-  // J. Users & System Access
+  // 32. Administrative Provisioning
   usersAccess: {
     superAdminFullName: string;
     superAdminEmail: string;
@@ -723,12 +1057,23 @@ export interface UniversalIntakeData {
     initialStaffLoginsCountEstimate?: number;
   };
 
-  // K. Additional Requirements
+  // 33. Custom Requirements
   additionalRequirements?: {
     specialCustomWorkflows?: string;
     customReportsRequired?: string;
     thirdPartyIntegrations?: string;
     generalCommentsOrQuestions?: string;
+  };
+
+  // 34. Client Legal Confirmation (Phase 36)
+  clientConfirmation?: {
+    confirmedByName: string;
+    confirmedByDesignation: string;
+    confirmedByEmail: string;
+    confirmedByPhone: string;
+    isConfirmed: boolean;
+    confirmedAt: string;
+    declarationStatement?: string;
   };
 }
 
@@ -834,5 +1179,279 @@ export interface VerifyPaymentRequest {
   razorpayPaymentId: string;
   razorpaySignature: string;
 }
+
+// --- BUSINESS CLIENT PROJECT INTAKE & LIFECYCLE TYPES ----------------------
+
+export type BusinessProjectStatus =
+  | 'NEW_PROJECT'
+  | 'REQUIREMENTS_PENDING'
+  | 'REQUIREMENTS_SUBMITTED'
+  | 'REQUIREMENTS_UNDER_REVIEW'
+  | 'CLARIFICATION_REQUESTED'
+  | 'DESIGN_IN_PROGRESS'
+  | 'DESIGN_READY'
+  | 'REVISION_REQUESTED'
+  | 'DESIGN_APPROVED'
+  | 'PAYMENT_PENDING'
+  | 'PAID'
+  | 'DEVELOPMENT'
+  | 'STAGING_REVIEW'
+  | 'FINAL_APPROVAL'
+  | 'LAUNCHED'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
+export interface Client {
+  id: string;
+  name: string;
+  organization?: string | null;
+  email: string;
+  phone: string;
+  whatsapp?: string | null;
+  city?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BusinessProject {
+  id: string;
+  project_number: string; // e.g. BUS-2026-0001
+  lead_id?: string | null;
+  client_id?: string | null;
+  project_type: 'BUSINESS' | 'SCHOOL';
+  project_name: string;
+  service_type: string;
+  project_status: BusinessProjectStatus;
+  assigned_team?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+
+  // Joined client or lead details for convenience
+  client?: Client | null;
+  lead?: Lead | null;
+}
+
+export interface BusinessProjectFilter {
+  query?: string;
+  status?: BusinessProjectStatus | 'ALL';
+  serviceType?: string | 'ALL';
+  page?: number;
+  pageSize?: number;
+}
+
+export interface BusinessOnboardingToken {
+  id: string;
+  project_id: string;
+  token_hash: string;
+  token_code: string;
+  expires_at: string;
+  is_revoked: boolean;
+  revoked_reason?: string | null;
+  access_count: number;
+  last_accessed_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Sections A - J Data Structures
+export interface SectionAProfile {
+  legalName?: string;
+  displayName: string;
+  category: string;
+  description: string;
+  yearEstablished?: string;
+  locations?: string;
+  primaryContactName: string;
+  email: string;
+  phone: string;
+  whatsapp?: string;
+  website?: string;
+  socialLinks?: {
+    facebook?: string;
+    instagram?: string;
+    linkedin?: string;
+    twitter?: string;
+    youtube?: string;
+  };
+}
+
+export interface SectionBProjectType {
+  primaryType:
+    | 'Business Website'
+    | 'E-commerce Website'
+    | 'Web Application'
+    | 'Custom Software'
+    | 'CRM'
+    | 'ERP'
+    | 'Booking System'
+    | 'Portal'
+    | 'Other';
+  secondaryTypes?: string[];
+  customTypeDetails?: string;
+}
+
+export interface SectionCObjectives {
+  problemToSolve: string;
+  primaryGoal: string;
+  targetUserRoles: string;
+  keyVisitorAction: string;
+  successDefinition: string;
+}
+
+export interface SectionDTargetAudience {
+  targetCustomerType: 'B2B' | 'B2C' | 'B2B_AND_B2C' | 'INTERNAL_TEAM';
+  demographics?: string;
+  geographicReach: string;
+  existingCustomerBase?: string;
+  coreCustomerNeeds: string;
+}
+
+export interface SectionEWebsiteRequirements {
+  requiredPages: string[];
+  customPages?: string[];
+  homepageFocus?: string;
+  multilingual: boolean;
+  languages?: string[];
+  blogOrNews: boolean;
+  galleryNeeded: boolean;
+  careersSection: boolean;
+  testimonialsNeeded: boolean;
+}
+
+export interface SectionFFeatures {
+  selectedFeatures: string[];
+  customFeatures?: string;
+  contactForm: boolean;
+  whatsAppChat: boolean;
+  googleMaps: boolean;
+  searchFilter: boolean;
+  userAuth: boolean;
+  adminPanel: boolean;
+  cms: boolean;
+  onlineBooking: boolean;
+  paymentGateway: boolean;
+  analyticsSeo: boolean;
+}
+
+export interface SectionGSystemRequirements {
+  userRoles?: string[];
+  adminCapabilities?: string;
+  staffCapabilities?: string;
+  customerCapabilities?: string;
+  authPermissions?: string;
+  reportingNeeds?: string;
+  workflowApprovalNotes?: string;
+  thirdPartyIntegrations?: string;
+  importExportNeeds?: string;
+}
+
+export interface SectionHContentAssets {
+  hasLogo: 'YES' | 'NO' | 'NEEDS_REDESIGN';
+  hasBrandGuidelines: boolean;
+  hasProductOrServicePhotos: 'READY' | 'PARTIAL' | 'NEED_HELP';
+  hasWrittenContent: 'READY' | 'DRAFT' | 'NEED_COPYWRITING';
+  uploadedAssetUrls?: string[];
+  contentNotes?: string;
+}
+
+export interface SectionIDesignPreferences {
+  styleVibe: 'Modern & Clean' | 'Corporate & Prestigious' | 'Minimalist' | 'Bold & Vibrant' | 'Luxury & Premium' | 'Friendly & Warm';
+  preferredColors?: string;
+  likedWebsites?: string;
+  dislikedWebsites?: string;
+  competitorWebsites?: string;
+  designConstraintsOrRules?: string;
+}
+
+export interface SectionJDomainHosting {
+  hasDomain: 'YES' | 'NO' | 'DECIDE_LATER';
+  existingDomain?: string;
+  preferredNewDomain?: string;
+  hasHosting: boolean;
+  existingHostingProvider?: string;
+  hasBusinessEmail: boolean;
+  hasDnsAccess: boolean;
+  migrationNeeded: boolean;
+}
+
+export interface BusinessRequirementsData {
+  section_a_profile: SectionAProfile;
+  section_b_project_type: SectionBProjectType;
+  section_c_objectives: SectionCObjectives;
+  section_d_target_audience: SectionDTargetAudience;
+  section_e_website_reqs?: SectionEWebsiteRequirements;
+  section_f_features: SectionFFeatures;
+  section_g_system_reqs?: SectionGSystemRequirements;
+  section_h_content_assets: SectionHContentAssets;
+  section_i_design_preferences: SectionIDesignPreferences;
+  section_j_domain_hosting: SectionJDomainHosting;
+}
+
+export interface BusinessRequirementSubmission {
+  id: string;
+  project_id: string;
+  version_number: number;
+  form_version: number;
+  submitted_by_name: string;
+  submitted_by_email: string;
+  client_confirmation: boolean;
+  full_payload: BusinessRequirementsData;
+  review_status: 'PENDING' | 'UNDER_REVIEW' | 'REVIEWED' | 'CLARIFICATION_REQUESTED';
+  admin_review_notes?: string | null;
+  clarification_notes?: string | null;
+  submitted_at: string;
+  reviewed_at?: string | null;
+  reviewed_by?: string | null;
+}
+
+export interface BusinessRequirementAsset {
+  id: string;
+  project_id: string;
+  submission_id?: string | null;
+  asset_category: 'LOGO' | 'BRAND_GUIDELINE' | 'DOCUMENT' | 'IMAGE' | 'OTHER';
+  file_name: string;
+  file_url: string;
+  file_size_bytes?: number | null;
+  mime_type?: string | null;
+  uploaded_at: string;
+}
+
+export interface DesignReview {
+  id: string;
+  project_id: string;
+  design_version: number;
+  design_title: string;
+  design_url: string;
+  design_notes?: string | null;
+  status: 'PENDING_REVIEW' | 'REVISION_REQUESTED' | 'APPROVED';
+  client_feedback?: string | null;
+  revision_count: number;
+  submitted_at: string;
+  reviewed_at?: string | null;
+  reviewed_by_client?: string | null;
+}
+
+export interface ProjectActivity {
+  id: string;
+  project_id: string;
+  activity_type: string;
+  actor_type: 'ADMIN' | 'CLIENT' | 'SYSTEM';
+  actor_name?: string | null;
+  description: string;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface ProjectNote {
+  id: string;
+  project_id: string;
+  author_name: string;
+  content: string;
+  is_internal: boolean;
+  created_at: string;
+}
+
 
 

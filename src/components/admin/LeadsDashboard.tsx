@@ -10,6 +10,7 @@ import {
   updateLeadNotesAction,
   adminLogoutAction,
 } from '@/app/actions';
+import { createBusinessProjectAction } from '@/app/businessProjectActions';
 import { startSchoolOnboardingAction } from '@/app/schoolProjectActions';
 import { getWhatsAppChatUrl, sanitizePhoneNumber } from '@/lib/whatsapp';
 import Logo from '@/components/ui/Logo';
@@ -40,6 +41,7 @@ import {
   Check,
   Eye,
   CreditCard,
+  Briefcase,
 } from 'lucide-react';
 
 interface LeadsDashboardProps {
@@ -62,6 +64,8 @@ const STATUS_COLORS: Record<LeadStatus, { bg: string; text: string; border: stri
   CONVERTED: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
   LOST: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-300' },
   PROJECT_LOST: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
+  NOT_INTERESTED: { bg: 'bg-stone-100', text: 'text-stone-600', border: 'border-stone-300' },
+  CLOSED: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' },
   CANCELLED: { bg: 'bg-slate-200', text: 'text-slate-700', border: 'border-slate-400' },
 };
 
@@ -76,6 +80,8 @@ const STATUS_OPTIONS: LeadStatus[] = [
   'PROJECT_CONFIRMED',
   'PROJECT_ON_HOLD',
   'CONVERTED',
+  'NOT_INTERESTED',
+  'CLOSED',
   'LOST',
   'PROJECT_LOST',
   'CANCELLED',
@@ -225,6 +231,43 @@ export default function LeadsDashboard({
     }
   };
 
+  const [isBusinessLoading, setIsBusinessLoading] = useState(false);
+  const [businessResult, setBusinessResult] = useState<{
+    projectNumber?: string;
+    onboardingUrl?: string;
+    status?: string;
+  } | null>(null);
+  const [businessError, setBusinessError] = useState<string | null>(null);
+  const [copiedBusinessLink, setCopiedBusinessLink] = useState(false);
+
+  const handleStartBusinessProject = async () => {
+    if (!selectedLead) return;
+    setIsBusinessLoading(true);
+    setBusinessError(null);
+    setBusinessResult(null);
+
+    try {
+      const res = await createBusinessProjectAction(selectedLead.id);
+      if (res.success && res.project) {
+        setBusinessResult({
+          projectNumber: res.project.project_number,
+          onboardingUrl: res.onboardingUrl,
+          status: res.isExisting ? 'ALREADY_EXISTS' : 'CREATED',
+        });
+        setSelectedLead((prev) => (prev ? { ...prev, status: 'PROJECT_CONFIRMED' } : null));
+        setLeads((prev) =>
+          prev.map((l) => (l.id === selectedLead.id ? { ...l, status: 'PROJECT_CONFIRMED' } : l))
+        );
+      } else {
+        setBusinessError(res.error || 'Failed to create business project.');
+      }
+    } catch (err: unknown) {
+      setBusinessError(err instanceof Error ? err.message : 'Error creating business project');
+    } finally {
+      setIsBusinessLoading(false);
+    }
+  };
+
   const totalPages = Math.ceil(total / pageSize) || 1;
 
   return (
@@ -248,11 +291,11 @@ export default function LeadsDashboard({
 
           <div className="flex items-center gap-3">
             <Link
-              href="/admin/orders"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200 transition-colors"
+              href="/admin/business-projects"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4338CA]/10 hover:bg-[#4338CA]/20 text-[#4338CA] text-xs font-bold rounded-lg border border-[#4338CA]/20 transition-colors"
             >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Orders &amp; Payments</span>
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Business Projects</span>
             </Link>
 
             <Link
@@ -260,7 +303,15 @@ export default function LeadsDashboard({
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-[#4338CA] text-xs font-bold rounded-lg border border-indigo-200 transition-colors"
             >
               <School className="w-3.5 h-3.5" />
-              <span>School Projects Hub</span>
+              <span>School Projects</span>
+            </Link>
+
+            <Link
+              href="/admin/orders"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200 transition-colors"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>Orders &amp; Payments</span>
             </Link>
 
             <button
@@ -686,6 +737,95 @@ export default function LeadsDashboard({
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Business Client Project Creation Card */}
+              <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
+                    <Briefcase className="w-4 h-4 text-emerald-700" />
+                    Business Project Workflow
+                  </span>
+                  {selectedLead.status === 'PROJECT_CONFIRMED' || businessResult ? (
+                    <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 border border-emerald-300">
+                      CONFIRMED
+                    </span>
+                  ) : (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                      Ready to Create
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs text-emerald-900">
+                    Confirm this client project and generate their secure <strong>/business-requirements/[token]</strong> onboarding link.
+                  </p>
+
+                  {businessError && (
+                    <div className="p-2.5 rounded-xl bg-rose-50 text-rose-800 text-xs font-bold border border-rose-200">
+                      {businessError}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleStartBusinessProject}
+                      disabled={isBusinessLoading}
+                      className="flex-1 py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+                    >
+                      <Sparkles className="w-4 h-4 text-amber-300" />
+                      <span>{isBusinessLoading ? 'Creating Business Project...' : 'Confirm & Create Business Project'}</span>
+                    </button>
+
+                    <Link
+                      href="/admin/business-projects"
+                      className="px-3 py-2.5 bg-white hover:bg-slate-50 text-[#131B2E] border border-emerald-200 font-bold rounded-xl text-xs flex items-center gap-1 transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-emerald-700" />
+                      <span>Projects</span>
+                    </Link>
+                  </div>
+                </div>
+
+                {businessResult && (
+                  <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-2 text-xs">
+                    <div className="flex items-center justify-between text-emerald-800 font-bold">
+                      <span>✓ {businessResult.status === 'ALREADY_EXISTS' ? 'Active Project Retrieved' : 'Business Project Created!'}</span>
+                      <span className="font-mono text-[#4338CA]">{businessResult.projectNumber}</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Secure Client Onboarding Link:</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          readOnly
+                          value={
+                            typeof window !== 'undefined'
+                              ? `${window.location.origin}${businessResult.onboardingUrl}`
+                              : businessResult.onboardingUrl
+                          }
+                          className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono select-all"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const url = `${window.location.origin}${businessResult.onboardingUrl}`;
+                            navigator.clipboard.writeText(url);
+                            setCopiedBusinessLink(true);
+                            setTimeout(() => setCopiedBusinessLink(false), 2000);
+                          }}
+                          className="px-2.5 py-1.5 bg-emerald-700 text-white font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
+                        >
+                          {copiedBusinessLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedBusinessLink ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* School Platform Onboarding Bridge Card */}

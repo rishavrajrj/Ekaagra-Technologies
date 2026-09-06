@@ -5,6 +5,7 @@ import { getSchoolsServerClient } from '@/lib/schoolsDb';
 import { startSchoolOnboarding, verifyOnboardingToken } from '@/lib/schoolHandoff';
 import { calculateIntakeCompleteness } from '@/lib/schoolIntake';
 import { executePlatformHandoff, mapCommercialProductToStep41Plan } from '@/lib/schoolHandoffToPlatform';
+import { populateSchoolDatabaseEntities } from '@/lib/schoolDatabaseProvisioning';
 import type {
   SchoolProject,
   SchoolProjectFilter,
@@ -511,9 +512,48 @@ export async function approveSchoolProjectAction(projectId: string) {
       },
     ]);
 
-    return { success: true, snapshotNumber };
+    // Automatically provision normalized school database entities (Zero manual re-entry!)
+    let provisioningResult = null;
+    try {
+      provisioningResult = await populateSchoolDatabaseEntities(projectId, submission.intake_payload);
+    } catch (provErr: any) {
+      console.warn('[PROVISIONING ON APPROVAL WARNING]:', provErr.message);
+    }
+
+    return { success: true, snapshotNumber, provisioningResult };
   } catch (err: any) {
     console.error('[ACTION ERROR] approveSchoolProjectAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function provisionApprovedSchoolAction(projectId: string) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized' };
+  }
+
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) {
+    return { success: false, error: 'Schools DB not configured' };
+  }
+
+  try {
+    const { data: submission } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('*')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .single();
+
+    if (!submission) {
+      return { success: false, error: 'No current intake submission found for provisioning.' };
+    }
+
+    const result = await populateSchoolDatabaseEntities(projectId, submission.intake_payload);
+    return result;
+  } catch (err: any) {
+    console.error('[ACTION ERROR] provisionApprovedSchoolAction:', err);
     return { success: false, error: err.message };
   }
 }

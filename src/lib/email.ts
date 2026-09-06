@@ -1184,5 +1184,220 @@ export async function sendAdminPaymentNotificationEmail(order: Order): Promise<E
   });
 }
 
+/**
+ * -----------------------------------------------------------------------------
+ * 4. BUSINESS CLIENT PROJECT INTAKE EMAILS
+ * -----------------------------------------------------------------------------
+ */
+
+export async function sendBusinessRequirementsInviteEmail(params: {
+  clientName: string;
+  clientEmail: string;
+  projectName: string;
+  onboardingUrl: string;
+}): Promise<EmailDispatchResult> {
+  const fullUrl = params.onboardingUrl.startsWith('http')
+    ? params.onboardingUrl
+    : `https://www.ekaagratechnologies.site${params.onboardingUrl}`;
+
+  const subject = `Your Project Onboarding Workspace: ${params.projectName} — Ekaagra Technologies`;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #FAF7F2; margin: 0; padding: 20px; color: #131B2E; }
+  .card { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #E2E8F0; overflow: hidden; }
+  .header { background: #4338CA; padding: 24px 32px; color: #ffffff; }
+  .body { padding: 32px; }
+  .btn { display: inline-block; background: #4338CA; color: #ffffff !important; padding: 14px 28px; border-radius: 12px; font-weight: 800; text-decoration: none; font-size: 14px; margin: 16px 0; }
+  .footer { background: #FAF7F2; padding: 16px 32px; text-align: center; font-size: 11px; color: #64748B; border-top: 1px solid #E2E8F0; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <h1 style="margin:0; font-size: 20px;">Project Confirmed &bull; Requirements Intake</h1>
+      <p style="margin: 4px 0 0 0; font-size: 13px; color: #E0E7FF;">Ekaagra Technologies Client Onboarding</p>
+    </div>
+    <div class="body">
+      <p>Dear <strong>${params.clientName}</strong>,</p>
+      <p>We are excited to kick off <strong>${params.projectName}</strong> with you. To begin engineering your custom solution, please access your private Business Requirements Portal below:</p>
+      <div style="text-align: center;">
+        <a href="${fullUrl}" class="btn">Open Business Requirements Portal &rarr;</a>
+      </div>
+      <p style="font-size: 13px; color: #64748B; line-height: 1.6;">
+        &bull; You can save your progress and resume at any time.<br/>
+        &bull; <strong>Zero upfront payment:</strong> Your payment only becomes due after you review and approve your first design concept.<br/>
+        &bull; Once submitted, our design team will begin preparing your concept mockup.
+      </p>
+    </div>
+    <div class="footer">
+      Ekaagra Technologies &bull; Motihari, East Champaran, Bihar &bull; questions? <a href="mailto:${getAdminEmail()}">${getAdminEmail()}</a>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  const text = `Dear ${params.clientName},\n\nWe are excited to kick off ${params.projectName}. Please complete your project requirements here:\n${fullUrl}\n\nZero upfront payment: You will only be asked to pay after you review and approve your initial custom design concept.\n\nEkaagra Technologies`;
+
+  return sendEmail({
+    to: params.clientEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}
+
+export async function sendAdminRequirementsSubmittedEmail(params: {
+  projectName: string;
+  clientName: string;
+  clientEmail: string;
+  submissionId: string;
+  projectNumber: string;
+}): Promise<EmailDispatchResult> {
+  const subject = `[REQUIREMENTS SUBMITTED] ${params.projectNumber} — ${params.projectName}`;
+  const adminUrl = `https://www.ekaagratechnologies.site/admin/business-projects`;
+
+  const html = `
+<!DOCTYPE html><html><body style="font-family: sans-serif; padding: 20px; background: #FAF7F2;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; border: 1px solid #E2E8F0;">
+    <h2 style="color: #4338CA; margin-top: 0;">Requirements Submitted for Review</h2>
+    <p>Client <strong>${params.clientName}</strong> (${params.clientEmail}) has completed and submitted the detailed Business Requirements form for project <strong>${params.projectNumber} (${params.projectName})</strong>.</p>
+    <p>Please inspect the submitted sections, verify domain/feature details, and proceed to the Design phase.</p>
+    <a href="${adminUrl}" style="display:inline-block; background:#131B2E; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:13px;">Open Admin Projects Hub</a>
+  </div>
+</body></html>`;
+
+  const text = `[REQUIREMENTS SUBMITTED] Project: ${params.projectNumber} (${params.projectName})\nClient: ${params.clientName} (${params.clientEmail})\n\nOpen admin: ${adminUrl}`;
+
+  return sendEmail({
+    to: getAdminEmail(),
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: params.clientEmail,
+    type: 'quote',
+  });
+}
+
+export async function sendClientRequirementsConfirmationEmail(params: {
+  clientName: string;
+  clientEmail: string;
+  projectName: string;
+}): Promise<EmailDispatchResult> {
+  const subject = `Requirements Received: ${params.projectName} — Ekaagra Technologies`;
+
+  const html = `
+<!DOCTYPE html><html><body style="font-family: sans-serif; padding: 20px; background: #FAF7F2;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 28px; border-radius: 12px; border: 1px solid #E2E8F0;">
+    <h2 style="color: #10B981; margin-top: 0;">Requirements Submitted Successfully</h2>
+    <p>Dear <strong>${params.clientName}</strong>,</p>
+    <p>We have successfully received your detailed project requirements for <strong>${params.projectName}</strong>. Our engineering and design team is reviewing your specifications.</p>
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 8px; margin: 16px 0;">
+      <strong>What Happens Next?</strong><br/>
+      1. We review your requirements and clarify any open questions.<br/>
+      2. Our designers prepare your first custom concept/prototype.<br/>
+      3. You review the design and approve or request revisions.<br/>
+      4. <strong>No payment is due</strong> until you inspect and approve your design concept.
+    </div>
+    <p style="font-size: 12px; color: #64748B;">Thank you for partnering with Ekaagra Technologies.</p>
+  </div>
+</body></html>`;
+
+  const text = `Dear ${params.clientName},\n\nWe have received your detailed requirements for ${params.projectName}. Our team will review them and proceed with your custom design concept.\n\nReminder: No payment is due until you review and approve the design.\n\nEkaagra Technologies`;
+
+  return sendEmail({
+    to: params.clientEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}
+
+export async function sendClarificationRequestEmail(params: {
+  clientName: string;
+  clientEmail: string;
+  projectName: string;
+  clarificationNotes: string;
+  formUrl: string;
+}): Promise<EmailDispatchResult> {
+  const subject = `Clarification Needed for ${params.projectName} — Ekaagra Technologies`;
+
+  const html = `
+<!DOCTYPE html><html><body style="font-family: sans-serif; padding: 20px; background: #FAF7F2;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 28px; border-radius: 12px; border: 1px solid #E2E8F0;">
+    <h2 style="color: #4338CA; margin-top: 0;">Clarification Needed</h2>
+    <p>Dear <strong>${params.clientName}</strong>,</p>
+    <p>Our team is reviewing the specifications for <strong>${params.projectName}</strong> and has a quick clarification request:</p>
+    <div style="background: #FEF3C7; border: 1px solid #FDE68A; padding: 16px; border-radius: 8px; margin: 16px 0; color: #92400E; font-size: 14px;">
+      "${params.clarificationNotes}"
+    </div>
+    <p>You can reply directly to this email or update your project details in your portal link:</p>
+    <a href="${params.formUrl}" style="display:inline-block; background:#4338CA; color:white; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:bold;">Open Project Portal</a>
+  </div>
+</body></html>`;
+
+  const text = `Dear ${params.clientName},\n\nOur team has a clarification request for ${params.projectName}:\n"${params.clarificationNotes}"\n\nYou can reply directly to this email or open your project portal: ${params.formUrl}\n\nEkaagra Technologies`;
+
+  return sendEmail({
+    to: params.clientEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}
+
+export async function sendDesignReadyClientEmail(params: {
+  clientName: string;
+  clientEmail: string;
+  projectName: string;
+  designUrl: string;
+  reviewPortalUrl: string;
+}): Promise<EmailDispatchResult> {
+  const fullPortalUrl = params.reviewPortalUrl.startsWith('http')
+    ? params.reviewPortalUrl
+    : `https://www.ekaagratechnologies.site${params.reviewPortalUrl}`;
+
+  const subject = `Your Custom Design Concept is Ready! — ${params.projectName}`;
+
+  const html = `
+<!DOCTYPE html><html><body style="font-family: sans-serif; padding: 20px; background: #FAF7F2;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 28px; border-radius: 12px; border: 1px solid #E2E8F0;">
+    <h2 style="color: #4338CA; margin-top: 0;">Your Design Concept is Ready for Review!</h2>
+    <p>Dear <strong>${params.clientName}</strong>,</p>
+    <p>We are delighted to share the initial design concept for <strong>${params.projectName}</strong>.</p>
+    <p>Please inspect the layout, typography, aesthetics, and responsiveness using the review portal:</p>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${fullPortalUrl}" style="display:inline-block; background:#4338CA; color:white; padding:14px 28px; border-radius:10px; text-decoration:none; font-weight:bold; font-size: 14px;">Review &amp; Approve Design &rarr;</a>
+    </div>
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 14px; border-radius: 8px; font-size: 12px; color: #475569;">
+      &bull; <strong>Request Revisions:</strong> If you'd like changes, you can submit feedback directly in the portal.<br/>
+      &bull; <strong>Approve:</strong> Once you are 100% happy with the design, approving it triggers the development milestone.
+    </div>
+  </div>
+</body></html>`;
+
+  const text = `Dear ${params.clientName},\n\nYour custom design concept for ${params.projectName} is ready for review:\n${fullPortalUrl}\n\nYou can review, request revisions, or approve the design directly in the portal.\n\nEkaagra Technologies`;
+
+  return sendEmail({
+    to: params.clientEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}
+
+
 
 

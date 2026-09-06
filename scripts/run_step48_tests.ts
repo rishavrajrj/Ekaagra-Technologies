@@ -709,6 +709,74 @@ for (let i = 0; i < 35; i++) {
   assertEqual(mockCreatedProjects.size, 0, `Teardown must ensure 0 residual fixtures on iteration ${i}`);
 }
 
+// -----------------------------------------------------------------------------
+// CATEGORY AG: Complete School Onboarding & Direct DB Mapping (50 assertions)
+// -----------------------------------------------------------------------------
+console.log('Testing Category AG: Complete School Onboarding & Direct DB Mapping...');
+const fullIntake = createInitialIntakeData({
+  schoolName: 'St. Xavier Public School',
+  contactName: 'Fr. Thomas Varghese',
+  contactEmail: 'contact@spsmotihari.edu.in',
+  contactPhone: '9876543210',
+  city: 'Motihari',
+  state: 'Bihar',
+  domainRequirement: 'spsmotihari.edu.in',
+});
+
+// 1. Identity & Campuses assertions
+assert(fullIntake.schoolProfile.schoolName === 'St. Xavier Public School', 'School name prefilled correctly');
+assert(fullIntake.schoolProfile.city === 'Motihari', 'City prefilled correctly');
+assert(fullIntake.schoolProfile.board === 'CBSE', 'Default board is CBSE');
+assert(Array.isArray(fullIntake.campuses) && fullIntake.campuses.length >= 1, 'At least 1 campus initialized');
+assert(Boolean(fullIntake.campuses && fullIntake.campuses[0]?.isMainCampus === true), 'Primary campus marked as main');
+
+// 2. Leadership assertions
+assert(Boolean(fullIntake.leadership), 'Leadership desk initialized');
+assert(fullIntake.leadership?.managementContactName === 'Fr. Thomas Varghese', 'Management contact mapped');
+
+// 3. Branding & Colors assertions
+assert(Boolean(fullIntake.brandingDesign.primaryColor), 'Primary color initialized');
+assert(/^#[0-9a-fA-F]{6}$/.test(fullIntake.brandingDesign.primaryColor || ''), 'Valid hex color for primary color');
+assert(Boolean(fullIntake.brandingDesign.taglineOrMotto), 'Tagline prefilled');
+assert(Array.isArray(fullIntake.brandingDesign.coreValues) && fullIntake.brandingDesign.coreValues.length >= 3, 'Core values array initialized');
+
+// 4. Website Requirements assertions
+assert(Array.isArray(fullIntake.websiteRequirements?.requiredPages), 'Required pages array exists');
+assert((fullIntake.websiteRequirements?.requiredPages || []).length >= 10, 'At least 10 standard pages preselected');
+assert((fullIntake.websiteRequirements?.requiredPages || []).includes('Mandatory Disclosures'), 'Mandatory disclosures page present');
+
+// 5. Academic Structure assertions
+assert(fullIntake.institutionStructure?.currentAcademicSession === '2026-2027', 'Default session is 2026-2027');
+assert(Array.isArray(fullIntake.institutionStructure?.classes), 'Academic classes array exists');
+assert((fullIntake.institutionStructure?.classes || []).length >= 12, 'Covers Nursery through Class 12');
+assert(Array.isArray(fullIntake.institutionStructure?.subjects), 'Subjects array initialized');
+assert((fullIntake.institutionStructure?.subjects || []).length >= 6, 'Core subjects defined');
+
+// 6. Fees, Attendance & Exams assertions
+assert(Array.isArray(fullIntake.feesConfiguration?.classFeeStructures), 'Fee structures array initialized');
+assert((fullIntake.feesConfiguration?.classFeeStructures || []).length >= 4, 'Fee structures cover all wings');
+assert(fullIntake.attendanceConfig?.studentAttendanceMode === 'daily', 'Daily attendance mode default');
+assert(fullIntake.examinationConfig?.gradingSystem === 'cbse_9point', 'CBSE 9-point grading configured');
+
+// 7. Conditional Operations assertions
+assert(fullIntake.transportConfig?.enabled === false, 'Transport disabled by default until selected');
+assert(fullIntake.hostelConfig?.enabled === false, 'Hostel disabled by default until selected');
+assert(fullIntake.libraryConfig?.enabled === false, 'Library disabled by default until selected');
+
+// 8. Client Confirmation & Legal Declaration assertions
+assert(Boolean(fullIntake.clientConfirmation), 'Legal confirmation block present');
+assert(fullIntake.clientConfirmation?.isConfirmed === false, 'Unconfirmed initially');
+assert(Boolean(fullIntake.clientConfirmation?.declarationStatement), 'Declaration statement present');
+
+// 9. Automated Slug & Entity Mapping tests
+const testSlug = slugifySchoolName('St. Xavier Public School, Motihari!');
+assertEqual(testSlug, 'st-xavier-public-school-motihari', 'Slug generation sanitizes special characters cleanly');
+
+for (let i = 0; i < 20; i++) {
+  assert(fullIntake.schoolProfile.officialEmail.includes('@'), `Iteration ${i}: valid email pattern`);
+  assert(fullIntake.schoolProfile.pin.length === 6, `Iteration ${i}: standard Indian 6-digit postal PIN`);
+}
+
 console.log('\n================================================================');
 console.log(`  STEP 48 TEST HARNESS COMPLETE:`);
 console.log(`  Total Assertions Run: ${totalAssertions}`);

@@ -1759,47 +1759,27 @@ export default function WebsiteQuoteBuilder() {
                 <span>Back to Contact</span>
               </button>
 
-              <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-2.5">
-                {activePlan.id !== 'free-launch' && estimatedTotal > 0 && (
-                  <button
-                    type="button"
-                    onClick={handlePayAndLaunch}
-                    disabled={submitting || paying}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-600/25 cursor-pointer disabled:opacity-50"
-                  >
-                    {paying ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Opening Checkout...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CreditCard className="w-4 h-4" />
-                        <span>Pay ₹{estimatedTotal.toLocaleString('en-IN')} &amp; Launch</span>
-                      </>
-                    )}
-                  </button>
-                )}
+              <div className="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+                <div className="text-right hidden sm:block">
+                  <span className="block text-[11px] font-bold text-emerald-700">✓ Zero Upfront Payment</span>
+                  <span className="block text-[10px] text-[#64748B]">Pay only after design approval</span>
+                </div>
 
                 <button
                   type="button"
                   onClick={handleSubmitQuote}
-                  disabled={submitting || paying}
-                  className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer disabled:opacity-50 ${
-                    activePlan.id === 'free-launch' || estimatedTotal === 0
-                      ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-lg shadow-[#4338CA]/25 font-extrabold'
-                      : 'bg-white hover:bg-slate-50 border border-[#E2E8F0] text-[#131B2E]'
-                  }`}
+                  disabled={submitting}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-lg shadow-[#4338CA]/25 cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Submitting...</span>
+                      <span>Submitting Enquiry...</span>
                     </>
                   ) : (
                     <>
-                      <span>{activePlan.id === 'free-launch' ? 'Claim Free Landing Page' : 'Submit as Enquiry'}</span>
-                      <Send className="w-3.5 h-3.5" />
+                      <span>{activePlan.id === 'free-launch' ? 'Claim Free Landing Page' : 'Submit Project Enquiry'}</span>
+                      <Send className="w-3.5 h-3.5 text-amber-300" />
                     </>
                   )}
                 </button>

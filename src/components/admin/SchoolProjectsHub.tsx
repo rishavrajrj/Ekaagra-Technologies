@@ -18,6 +18,7 @@ import {
   Sparkles,
   Download,
   CreditCard,
+  Briefcase,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
 import {
@@ -221,6 +222,14 @@ export default function SchoolProjectsHub() {
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/admin/business-projects"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4338CA]/10 hover:bg-[#4338CA]/20 text-[#4338CA] text-xs font-bold rounded-lg border border-[#4338CA]/20 transition-colors"
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>Business Projects</span>
+            </Link>
+
             <Link
               href="/admin/orders"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200 transition-colors"
@@ -502,15 +511,15 @@ export default function SchoolProjectsHub() {
                       readOnly
                       value={
                         typeof window !== 'undefined'
-                          ? `${window.location.origin}/schools/onboarding/portal?project=${projectDetails.project.project_number}`
-                          : `/schools/onboarding/portal?project=${projectDetails.project.project_number}`
+                          ? `${window.location.origin}/school-onboarding/${projectDetails.invitation?.invitation_code || projectDetails.project.project_number}`
+                          : `/school-onboarding/${projectDetails.invitation?.invitation_code || projectDetails.project.project_number}`
                       }
                       className="flex-1 px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs font-mono text-indigo-950 select-all"
                     />
                     <button
                       onClick={() =>
                         copyToClipboard(
-                          `${window.location.origin}/schools/onboarding/portal?project=${projectDetails.project.project_number}`
+                          `${window.location.origin}/school-onboarding/${projectDetails.invitation?.invitation_code || projectDetails.project.project_number}`
                         )
                       }
                       className="px-3 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer"
