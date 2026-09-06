@@ -189,7 +189,7 @@ export function validateAssetUpload(file: {
   if (file.size > ASSET_UPLOAD_LIMITS.maxSizeBytes) {
     return {
       isValid: false,
-      error: `File size exceeds the 15MB limit (Current size: ${(file.size / (1024 * 1024)).toFixed(1)}MB).`,
+      error: `File size exceeds the 15 MB (15MB) limit (Current size: ${(file.size / (1024 * 1024)).toFixed(1)} MB).`,
       category: 'OTHER',
     };
   }

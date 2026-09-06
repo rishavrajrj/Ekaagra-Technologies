@@ -193,6 +193,15 @@ export async function createBusinessProjectFromLead(
       {
         project_id: project.id,
         form_version: 1,
+        requirements_data: {
+          section_a_profile: {
+            displayName: projectName,
+            primaryContactName: lead.name,
+            email: lead.email,
+            phone: lead.phone,
+            whatsapp: lead.phone,
+          },
+        },
         section_a_profile: {
           displayName: projectName,
           primaryContactName: lead.name,
@@ -200,8 +209,7 @@ export async function createBusinessProjectFromLead(
           phone: lead.phone,
           whatsapp: lead.phone,
         },
-        current_step: 1,
-        completion_percentage: 10,
+        last_saved_step: 1,
       },
     ]);
 
@@ -359,8 +367,8 @@ export async function verifyBusinessOnboardingToken(rawToken: string): Promise<{
       .maybeSingle();
 
     if (reqsRow) {
-      step = reqsRow.current_step || 1;
-      const full = (reqsRow.full_payload || {}) as Partial<BusinessRequirementsData>;
+      step = reqsRow.last_saved_step || reqsRow.current_step || 1;
+      const full = (reqsRow.requirements_data || reqsRow.full_payload || {}) as Partial<BusinessRequirementsData>;
       draftReqs = {
         section_a_profile: reqsRow.section_a_profile || full.section_a_profile || {
           displayName: project.project_name || '',
@@ -493,20 +501,45 @@ export async function saveDraftBusinessRequirements(params: {
   if (!supabase) return { success: false, error: 'Database unconfigured' };
 
   try {
-    const updatePayload: Record<string, unknown> = {
+    const { data: existing } = await supabase
+      .from('business_requirements')
+      .select('requirements_data')
+      .eq('project_id', verified.project.id)
+      .maybeSingle();
+
+    const currentReqsData = (existing?.requirements_data || {}) as Record<string, unknown>;
+    const mergedData = {
+      ...currentReqsData,
       [params.sectionKey]: params.sectionData,
-      current_step: params.currentStep,
-      completion_percentage: Math.min(100, Math.round((params.currentStep / 10) * 100)),
+    };
+
+    const updatePayload: Record<string, unknown> = {
+      project_id: verified.project.id,
+      form_version: 1,
+      requirements_data: mergedData,
+      last_saved_step: params.currentStep,
       updated_at: new Date().toISOString(),
     };
 
+    const knownSectionCols = [
+      'section_a_profile',
+      'section_b_project_type',
+      'section_c_objectives',
+      'section_d_target_audience',
+      'section_e_website_reqs',
+      'section_f_features',
+      'section_g_system_reqs',
+      'section_h_content_assets',
+      'section_i_design_preferences',
+      'section_j_domain_hosting',
+    ];
+    if (knownSectionCols.includes(params.sectionKey)) {
+      updatePayload[params.sectionKey] = params.sectionData;
+    }
+
     const { error } = await supabase
       .from('business_requirements')
-      .upsert({
-        project_id: verified.project.id,
-        form_version: 1,
-        ...updatePayload,
-      }, { onConflict: 'project_id' });
+      .upsert(updatePayload, { onConflict: 'project_id' });
 
     if (error) throw error;
     return { success: true };
@@ -551,24 +584,26 @@ export async function submitFinalBusinessRequirements(params: {
   const projectId = verified.project.id;
 
   try {
-    // 2. Prevent accidental duplicate submission within 5 seconds
-    const { data: recentSub } = await supabase
-      .from('business_requirement_submissions')
-      .select('id, submitted_at')
-      .eq('project_id', projectId)
-      .order('submitted_at', { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    // 2. Prevent accidental rapid double-click submissions (if not responding to clarification)
+    if (verified.project.project_status !== 'CLARIFICATION_REQUESTED') {
+      const { data: recentSub } = await supabase
+        .from('business_requirement_submissions')
+        .select('id, created_at')
+        .eq('project_id', projectId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (recentSub) {
-      const diffMs = Date.now() - new Date(recentSub.submitted_at).getTime();
-      if (diffMs < 5000) {
-        return {
-          success: true,
-          submissionId: recentSub.id,
-          projectNumber: verified.project.project_number,
-          projectName: verified.project.project_name,
-        };
+      if (recentSub) {
+        const diffMs = Date.now() - new Date(recentSub.created_at).getTime();
+        if (diffMs < 1000) {
+          return {
+            success: true,
+            submissionId: recentSub.id,
+            projectNumber: verified.project.project_number,
+            projectName: verified.project.project_name,
+          };
+        }
       }
     }
 
@@ -587,12 +622,14 @@ export async function submitFinalBusinessRequirements(params: {
         {
           project_id: projectId,
           version_number: nextVersion,
-          form_version: 2,
-          submitted_by_name: params.contactName.trim(),
-          submitted_by_email: params.contactEmail.trim().toLowerCase(),
-          client_confirmation: true,
-          full_payload: params.payload,
-          review_status: 'PENDING',
+          submission_data: {
+            form_version: 2,
+            submitted_by_name: params.contactName.trim(),
+            submitted_by_email: params.contactEmail.trim().toLowerCase(),
+            client_confirmation: true,
+            full_payload: params.payload,
+          },
+          review_status: 'SUBMITTED',
         },
       ])
       .select()
@@ -622,7 +659,8 @@ export async function submitFinalBusinessRequirements(params: {
     await supabase
       .from('business_requirements')
       .update({
-        completion_percentage: 100,
+        is_submitted: true,
+        submitted_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('project_id', projectId);
@@ -729,18 +767,53 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
     }
 
     // Submissions
-    const { data: submissions } = await supabase
+    const { data: rawSubmissions } = await supabase
       .from('business_requirement_submissions')
       .select('*')
       .eq('project_id', projectId)
       .order('version_number', { ascending: false });
 
+    const submissions: BusinessRequirementSubmission[] = (rawSubmissions || []).map((s: any) => {
+      const subData = (s.submission_data || {}) as Record<string, any>;
+      return {
+        id: s.id,
+        project_id: s.project_id,
+        version_number: s.version_number,
+        form_version: subData.form_version || 2,
+        submitted_by_name: subData.submitted_by_name || '',
+        submitted_by_email: subData.submitted_by_email || '',
+        client_confirmation: subData.client_confirmation ?? true,
+        full_payload: subData.full_payload || subData,
+        review_status: s.review_status,
+        admin_review_notes: s.admin_notes || null,
+        clarification_notes: s.clarification_notes || null,
+        submitted_at: s.created_at,
+        reviewed_at: s.reviewed_at || null,
+        reviewed_by: s.reviewed_by || null,
+      };
+    });
+
     // Design Reviews
-    const { data: designReviews } = await supabase
+    const { data: rawDesignReviews } = await supabase
       .from('design_reviews')
       .select('*')
       .eq('project_id', projectId)
-      .order('design_version', { ascending: false });
+      .order('version_number', { ascending: false });
+
+    const designReviews: DesignReview[] = (rawDesignReviews || []).map((d: any) => ({
+      id: d.id,
+      project_id: d.project_id,
+      design_version: d.version_number,
+      design_title: d.design_title,
+      design_url: d.design_url,
+      design_notes: d.design_notes || null,
+      status: d.status,
+      client_feedback: d.client_feedback || null,
+      revision_count: 0,
+      submitted_at: d.created_at,
+      reviewed_at: d.reviewed_at || null,
+      reviewed_by_client: null,
+    }));
 
     // Activity Log
     const { data: activities } = await supabase
@@ -750,11 +823,20 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
       .order('created_at', { ascending: false });
 
     // Internal Notes
-    const { data: notes } = await supabase
+    const { data: rawNotes } = await supabase
       .from('project_notes')
       .select('*')
       .eq('project_id', projectId)
       .order('created_at', { ascending: false });
+
+    const notes: ProjectNote[] = (rawNotes || []).map((n: any) => ({
+      id: n.id,
+      project_id: n.project_id,
+      author_name: n.author_name,
+      content: n.content,
+      is_internal: n.is_private ?? true,
+      created_at: n.created_at,
+    }));
 
     // Uploaded Assets
     const { data: assets } = await supabase
@@ -778,11 +860,11 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
       success: true,
       project: project as BusinessProject,
       client: (project.client as Client) || undefined,
-      latestSubmission: submissions && submissions.length > 0 ? (submissions[0] as BusinessRequirementSubmission) : undefined,
-      submissions: (submissions || []) as BusinessRequirementSubmission[],
-      designReviews: (designReviews || []) as DesignReview[],
+      latestSubmission: submissions && submissions.length > 0 ? submissions[0] : undefined,
+      submissions,
+      designReviews,
       activities: (activities || []) as ProjectActivity[],
-      notes: (notes || []) as ProjectNote[],
+      notes,
       assets: (assets || []) as BusinessRequirementAsset[],
       onboardingUrl: tokenRow ? `/business-requirements/${tokenRow.token_code}` : undefined,
     };
@@ -816,7 +898,7 @@ export async function updateRequirementsReviewStatus(params: {
       .from('business_requirement_submissions')
       .update({
         review_status: params.reviewStatus,
-        admin_review_notes: params.adminNotes || null,
+        admin_notes: params.adminNotes || null,
         clarification_notes: params.clarificationNotes || null,
         reviewed_at: nowIso,
         reviewed_by: params.reviewerName || 'Ekaagra Engineering',
@@ -885,11 +967,11 @@ export async function createDesignReview(params: {
       .insert([
         {
           project_id: params.projectId,
-          design_version: version,
+          version_number: version,
           design_title: params.designTitle,
           design_url: params.designUrl,
           design_notes: params.designNotes || null,
-          status: 'PENDING_REVIEW',
+          status: 'READY',
         },
       ])
       .select()
@@ -914,7 +996,22 @@ export async function createDesignReview(params: {
       metadata: { reviewId: review.id, url: params.designUrl },
     });
 
-    return { success: true, designReview: review as DesignReview };
+    const mappedReview: DesignReview = {
+      id: review.id,
+      project_id: review.project_id,
+      design_version: review.version_number,
+      design_title: review.design_title,
+      design_url: review.design_url,
+      design_notes: review.design_notes || null,
+      status: review.status,
+      client_feedback: review.client_feedback || null,
+      revision_count: 0,
+      submitted_at: review.created_at,
+      reviewed_at: review.reviewed_at || null,
+      reviewed_by_client: null,
+    };
+
+    return { success: true, designReview: mappedReview };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
@@ -980,9 +1077,8 @@ export async function submitDesignClientFeedback(params: {
       .update({
         status: params.decision === 'APPROVED' ? 'APPROVED' : 'REVISION_REQUESTED',
         client_feedback: params.feedback || null,
-        revision_count: params.decision === 'REVISION_REQUESTED' ? (currentReview.revision_count || 0) + 1 : currentReview.revision_count,
         reviewed_at: nowIso,
-        reviewed_by_client: params.clientName || verified.project.project_name,
+        updated_at: nowIso,
       })
       .eq('id', params.reviewId)
       .eq('project_id', projectId);
@@ -1002,6 +1098,8 @@ export async function submitDesignClientFeedback(params: {
       })
       .eq('id', projectId);
 
+    const versionNum = currentReview.version_number ?? currentReview.design_version ?? 1;
+
     await recordProjectActivity({
       projectId,
       activityType: params.decision === 'APPROVED' ? 'DESIGN_APPROVED' : 'REVISION_REQUESTED',
@@ -1009,12 +1107,12 @@ export async function submitDesignClientFeedback(params: {
       actorName: params.clientName || 'Client',
       description:
         params.decision === 'APPROVED'
-          ? `Design concept v${currentReview.design_version} ("${currentReview.design_title}") approved by client! Payment milestone is now ready to be requested.`
-          : `Client requested design revisions on v${currentReview.design_version}: "${params.feedback}"`,
+          ? `Design concept v${versionNum} ("${currentReview.design_title}") approved by client! Payment milestone is now ready to be requested.`
+          : `Client requested design revisions on v${versionNum}: "${params.feedback}"`,
       metadata: {
         reviewId: params.reviewId,
         decision: params.decision,
-        designVersion: currentReview.design_version,
+        designVersion: versionNum,
       },
     });
 
@@ -1022,7 +1120,7 @@ export async function submitDesignClientFeedback(params: {
       success: true,
       projectNumber: verified.project.project_number,
       projectName: verified.project.project_name,
-      designVersion: currentReview.design_version,
+      designVersion: versionNum,
     };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
@@ -1139,7 +1237,7 @@ export async function addProjectNote(params: {
         project_id: params.projectId,
         author_name: params.authorName,
         content: params.content,
-        is_internal: true,
+        is_private: true,
       },
     ]);
 
