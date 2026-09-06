@@ -47,6 +47,7 @@ export default async function AdminBusinessProjectDetailPage({ params }: PagePro
       designReviews={details.designReviews || []}
       activities={details.activities || []}
       notes={details.notes || []}
+      assets={details.assets || []}
       initialOnboardingUrl={details.onboardingUrl}
     />
   );

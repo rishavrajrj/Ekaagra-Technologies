@@ -14,6 +14,7 @@ import {
   submitDesignClientFeedback,
   updateBusinessProjectStatus,
   addProjectNote,
+  deleteBusinessProjectAsset,
 } from '@/lib/businessProjectsDb';
 import { createOrderRecord, isSupabaseConfigured } from '@/lib/supabase';
 import { generateOrderNumber, isRazorpayConfigured, createRazorpayOrder } from '@/lib/razorpay';
@@ -28,7 +29,11 @@ import {
   sendAdminRequirementsSubmittedEmail,
   sendClientRequirementsConfirmationEmail,
   sendClarificationRequestEmail,
+  sendRequirementsApprovedClientEmail,
   sendDesignReadyClientEmail,
+  sendAdminDesignRevisionRequestedEmail,
+  sendAdminDesignApprovedEmail,
+  sendClientPaymentMilestoneEmail,
 } from '@/lib/email';
 
 /**
@@ -157,6 +162,19 @@ export async function updateRequirementsReviewAction(params: {
       });
     } catch (e) {
       console.warn('[CLARIFICATION EMAIL NON-FATAL]', e);
+    }
+  }
+
+  // If requirements were approved (REVIEWED), notify client that design has begun
+  if (result.success && params.reviewStatus === 'REVIEWED' && params.clientEmail) {
+    try {
+      await sendRequirementsApprovedClientEmail({
+        clientName: params.clientName || 'Valued Client',
+        clientEmail: params.clientEmail,
+        projectName: params.projectName || 'Your Project',
+      });
+    } catch (e) {
+      console.warn('[REQUIREMENTS APPROVED EMAIL NON-FATAL]', e);
     }
   }
 
@@ -318,10 +336,28 @@ export async function createPostDesignPaymentMilestoneAction(params: {
     await updateBusinessProjectStatus(params.projectId, 'PAYMENT_PENDING', `Payment requested for ${params.milestoneTitle}: ₹${params.amountINR}`);
   }
 
+  const paymentUrl = `/pay/${orderNumber}`;
+
+  // Send Milestone Invoice email to client
+  if (params.customerEmail) {
+    try {
+      await sendClientPaymentMilestoneEmail({
+        clientName: params.customerName || 'Valued Client',
+        clientEmail: params.customerEmail,
+        projectName: projectRes.project.project_name,
+        milestoneTitle: params.milestoneTitle,
+        amountINR: params.amountINR,
+        paymentUrl,
+      });
+    } catch (emailErr) {
+      console.warn('[MILESTONE EMAIL NON-FATAL]', emailErr);
+    }
+  }
+
   return {
     success: true,
     orderNumber,
-    paymentUrl: `/pay/${orderNumber}`,
+    paymentUrl,
   };
 }
 
@@ -385,5 +421,44 @@ export async function submitDesignFeedbackAction(params: {
   feedback?: string;
   clientName?: string;
 }) {
-  return submitDesignClientFeedback(params);
+  const result = await submitDesignClientFeedback(params);
+
+  if (result.success) {
+    try {
+      if (params.decision === 'APPROVED') {
+        await sendAdminDesignApprovedEmail({
+          projectName: result.projectName || 'Business Project',
+          projectNumber: result.projectNumber || 'BUS-PROJECT',
+          designVersion: result.designVersion || 1,
+          clientName: params.clientName || 'Client',
+        });
+      } else {
+        await sendAdminDesignRevisionRequestedEmail({
+          projectName: result.projectName || 'Business Project',
+          projectNumber: result.projectNumber || 'BUS-PROJECT',
+          designVersion: result.designVersion || 1,
+          clientFeedback: params.feedback || 'Adjustments requested',
+          clientName: params.clientName || 'Client',
+        });
+      }
+    } catch (err) {
+      console.warn('[DESIGN FEEDBACK EMAIL NON-FATAL]', err);
+    }
+  }
+
+  return result;
+}
+
+export async function deleteBusinessProjectAssetAction(params: {
+  rawToken?: string;
+  projectId?: string;
+  assetId: string;
+}) {
+  if (params.projectId) {
+    const isAuth = await verifyAdminSession();
+    if (!isAuth) {
+      return { success: false, error: 'Unauthorized. Admin session required.' };
+    }
+  }
+  return deleteBusinessProjectAsset(params);
 }

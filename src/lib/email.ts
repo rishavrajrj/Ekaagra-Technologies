@@ -1398,6 +1398,146 @@ export async function sendDesignReadyClientEmail(params: {
   });
 }
 
+export async function sendRequirementsApprovedClientEmail(params: {
+  clientName: string;
+  clientEmail: string;
+  projectName: string;
+}): Promise<EmailDispatchResult> {
+  const subject = `Requirements Approved: Design Phase Started — ${params.projectName}`;
 
+  const html = `
+<!DOCTYPE html><html><body style="font-family: sans-serif; padding: 20px; background: #FAF7F2;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 28px; border-radius: 12px; border: 1px solid #E2E8F0;">
+    <h2 style="color: #4338CA; margin-top: 0;">Requirements Approved &bull; Design In Progress</h2>
+    <p>Dear <strong>${params.clientName}</strong>,</p>
+    <p>Great news! Our engineering and creative team has reviewed and approved the technical requirements for <strong>${params.projectName}</strong>.</p>
+    <div style="background: #EEF2FF; border: 1px solid #C7D2FE; padding: 16px; border-radius: 8px; margin: 16px 0; color: #3730A3; font-size: 13px;">
+      Our UI/UX designers are now drafting your initial custom design concept and responsive layout prototype. You will receive an invitation to review and test the concept as soon as it is ready.
+    </div>
+    <p style="font-size: 12px; color: #64748B;">Reminder: Zero upfront payment is required at this stage. Billing only begins once you approve your design concept.</p>
+  </div>
+</body></html>`;
 
+  const text = `Dear ${params.clientName},\n\nYour requirements for ${params.projectName} have been reviewed and approved! Our designers are now crafting your initial design prototype.\n\nEkaagra Technologies`;
 
+  return sendEmail({
+    to: params.clientEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}
+
+export async function sendAdminDesignRevisionRequestedEmail(params: {
+  projectName: string;
+  projectNumber: string;
+  designVersion: number;
+  clientFeedback: string;
+  clientName: string;
+}): Promise<EmailDispatchResult> {
+  const subject = `[DESIGN REVISION REQUESTED] ${params.projectNumber} — Concept v${params.designVersion}`;
+  const adminUrl = `https://www.ekaagratechnologies.site/admin/business-projects`;
+
+  const html = `
+<!DOCTYPE html><html><body style="font-family: sans-serif; padding: 20px; background: #FAF7F2;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; border: 1px solid #E2E8F0;">
+    <h2 style="color: #D97706; margin-top: 0;">Design Revisions Requested</h2>
+    <p>Client <strong>${params.clientName}</strong> has requested revisions on Concept v${params.designVersion} for project <strong>${params.projectNumber} (${params.projectName})</strong>.</p>
+    <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 16px; border-radius: 8px; margin: 16px 0; font-size: 13px; color: #92400E;">
+      <strong>Client Feedback:</strong><br/>
+      "${params.clientFeedback}"
+    </div>
+    <a href="${adminUrl}" style="display:inline-block; background:#131B2E; color:white; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:13px;">View Project Workspace</a>
+  </div>
+</body></html>`;
+
+  const text = `[DESIGN REVISION REQUESTED] ${params.projectNumber} (v${params.designVersion})\nClient: ${params.clientName}\nFeedback: ${params.clientFeedback}`;
+
+  return sendEmail({
+    to: getAdminEmail(),
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'quote',
+  });
+}
+
+export async function sendAdminDesignApprovedEmail(params: {
+  projectName: string;
+  projectNumber: string;
+  designVersion: number;
+  clientName: string;
+}): Promise<EmailDispatchResult> {
+  const subject = `🎉 [DESIGN APPROVED] ${params.projectNumber} — ${params.projectName}`;
+  const adminUrl = `https://www.ekaagratechnologies.site/admin/business-projects`;
+
+  const html = `
+<!DOCTYPE html><html><body style="font-family: sans-serif; padding: 20px; background: #FAF7F2;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 24px; border-radius: 12px; border: 1px solid #E2E8F0;">
+    <h2 style="color: #059669; margin-top: 0;">🎉 Design Concept Approved!</h2>
+    <p>Client <strong>${params.clientName}</strong> has approved Design Concept v${params.designVersion} for project <strong>${params.projectNumber} (${params.projectName})</strong>.</p>
+    <div style="background: #ECFDF5; border: 1px solid #A7F3D0; padding: 16px; border-radius: 8px; margin: 16px 0; font-size: 13px; color: #065F46;">
+      <strong>Next Step:</strong> The milestone payment workflow is now UNLOCKED. You can create the milestone payment invoice and link for the client.
+    </div>
+    <a href="${adminUrl}" style="display:inline-block; background:#059669; color:white; padding:12px 24px; border-radius:8px; text-decoration:none; font-weight:bold; font-size:13px;">Create Milestone Payment Link</a>
+  </div>
+</body></html>`;
+
+  const text = `[DESIGN APPROVED] ${params.projectNumber} Concept v${params.designVersion} approved by ${params.clientName}. Payment milestone unlocked.\nAdmin: ${adminUrl}`;
+
+  return sendEmail({
+    to: getAdminEmail(),
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'quote',
+  });
+}
+
+export async function sendClientPaymentMilestoneEmail(params: {
+  clientName: string;
+  clientEmail: string;
+  projectName: string;
+  milestoneTitle: string;
+  amountINR: number;
+  paymentUrl: string;
+}): Promise<EmailDispatchResult> {
+  const fullPaymentUrl = params.paymentUrl.startsWith('http')
+    ? params.paymentUrl
+    : `https://www.ekaagratechnologies.site${params.paymentUrl}`;
+
+  const subject = `Milestone Invoice: ${params.milestoneTitle} — ${params.projectName}`;
+
+  const html = `
+<!DOCTYPE html><html><body style="font-family: sans-serif; padding: 20px; background: #FAF7F2;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 28px; border-radius: 12px; border: 1px solid #E2E8F0;">
+    <h2 style="color: #4338CA; margin-top: 0;">Milestone Invoice &amp; Payment Link</h2>
+    <p>Dear <strong>${params.clientName}</strong>,</p>
+    <p>Following your approval of the design concept for <strong>${params.projectName}</strong>, your milestone invoice is ready:</p>
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; padding: 18px; border-radius: 8px; margin: 18px 0;">
+      <div style="font-size: 14px; font-weight: bold; color: #1E293B;">${params.milestoneTitle}</div>
+      <div style="font-size: 24px; font-weight: 800; color: #4338CA; margin: 8px 0;">₹${params.amountINR.toLocaleString('en-IN')}</div>
+      <div style="font-size: 12px; color: #64748B;">Secure payment via UPI, Credit/Debit Card, Net Banking (Razorpay)</div>
+    </div>
+    <div style="text-align: center; margin: 24px 0;">
+      <a href="${fullPaymentUrl}" style="display:inline-block; background:#059669; color:white; padding:14px 28px; border-radius:10px; text-decoration:none; font-weight:bold; font-size: 14px;">Pay Securely Online &rarr;</a>
+    </div>
+    <p style="font-size: 12px; color: #64748B;">Once payment is received, development and engineering sprints will begin immediately.</p>
+  </div>
+</body></html>`;
+
+  const text = `Dear ${params.clientName},\n\nMilestone Invoice for ${params.projectName}:\n${params.milestoneTitle}: ₹${params.amountINR.toLocaleString('en-IN')}\n\nPay here: ${fullPaymentUrl}\n\nEkaagra Technologies`;
+
+  return sendEmail({
+    to: params.clientEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}

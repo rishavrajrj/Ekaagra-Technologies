@@ -1,11 +1,13 @@
 import crypto from 'crypto';
 import { getSupabaseServerClient } from './supabase';
+import { validateBusinessRequirementsPayload } from './businessValidation';
 import type {
   BusinessProject,
   BusinessProjectFilter,
   BusinessProjectStatus,
   BusinessRequirementsData,
   BusinessRequirementSubmission,
+  BusinessRequirementAsset,
   DesignReview,
   ProjectActivity,
   ProjectNote,
@@ -358,13 +360,97 @@ export async function verifyBusinessOnboardingToken(rawToken: string): Promise<{
 
     if (reqsRow) {
       step = reqsRow.current_step || 1;
+      const full = (reqsRow.full_payload || {}) as Partial<BusinessRequirementsData>;
       draftReqs = {
-        section_a_profile: reqsRow.section_a_profile || {},
+        section_a_profile: reqsRow.section_a_profile || full.section_a_profile || {
+          displayName: project.project_name || '',
+          category: 'Retail / Business',
+          description: '',
+          primaryContactName: client?.name || '',
+          email: client?.email || '',
+          phone: client?.phone || '',
+          whatsapp: client?.whatsapp || client?.phone || '',
+          locations: client?.city || 'Motihari, Bihar',
+        },
+        section_b_goals_audience: full.section_b_goals_audience || {
+          primaryType: reqsRow.section_b_project_type?.primaryType || 'Business Website',
+          primaryGoal: reqsRow.section_c_objectives?.primaryGoal || '',
+          problemToSolve: reqsRow.section_c_objectives?.problemToSolve || '',
+          targetCustomerType: reqsRow.section_d_target_audience?.targetCustomerType || 'B2C',
+          targetAudienceDescription: reqsRow.section_d_target_audience?.coreCustomerNeeds || '',
+          geographicReach: reqsRow.section_d_target_audience?.geographicReach || 'Local & Regional (Bihar)',
+          keyVisitorAction: reqsRow.section_c_objectives?.keyVisitorAction || 'Contact for Quotation',
+          successDefinition: reqsRow.section_c_objectives?.successDefinition || '',
+        },
+        section_c_design: full.section_c_design || {
+          styleVibe: reqsRow.section_i_design_preferences?.styleVibe || 'Modern & Clean',
+          preferredColors: reqsRow.section_i_design_preferences?.preferredColors || '',
+          likedWebsites: reqsRow.section_i_design_preferences?.likedWebsites || '',
+          dislikedWebsites: reqsRow.section_i_design_preferences?.dislikedWebsites || '',
+          competitorWebsites: reqsRow.section_i_design_preferences?.competitorWebsites || '',
+        },
+        section_d_structure: full.section_d_structure || {
+          solutionType: 'WEBSITE',
+          requiredPages: reqsRow.section_e_website_reqs?.requiredPages || ['Home Landing Page', 'About Us', 'Services / Products', 'Contact & Inquiries'],
+          customPages: reqsRow.section_e_website_reqs?.customPages || [],
+          multilingual: reqsRow.section_e_website_reqs?.multilingual || false,
+          blogOrNews: reqsRow.section_e_website_reqs?.blogOrNews || false,
+          galleryNeeded: reqsRow.section_e_website_reqs?.galleryNeeded ?? true,
+          careersSection: reqsRow.section_e_website_reqs?.careersSection || false,
+          testimonialsNeeded: reqsRow.section_e_website_reqs?.testimonialsNeeded ?? true,
+        },
+        section_e_assets: full.section_e_assets || {
+          hasLogo: reqsRow.section_h_content_assets?.hasLogo || 'YES',
+          hasBrandGuidelines: reqsRow.section_h_content_assets?.hasBrandGuidelines || false,
+          hasProductOrServicePhotos: reqsRow.section_h_content_assets?.hasProductOrServicePhotos || 'READY',
+          hasWrittenContent: reqsRow.section_h_content_assets?.hasWrittenContent || 'READY',
+          uploadedAssetUrls: reqsRow.section_h_content_assets?.uploadedAssetUrls || [],
+        },
+        section_f_features: full.section_f_features || reqsRow.section_f_features || {
+          selectedFeatures: ['Contact Form', 'WhatsApp Chat', 'Mobile Responsive', 'Google Maps Location'],
+          contactForm: true,
+          whatsAppChat: true,
+          googleMaps: true,
+          searchFilter: false,
+          userAuth: false,
+          adminPanel: false,
+          cms: false,
+          onlineBooking: false,
+          paymentGateway: false,
+          analyticsSeo: true,
+        },
+        section_g_integrations: full.section_g_integrations || {
+          paymentGatewayNeeded: false,
+          preferredPaymentGateway: 'RAZORPAY',
+          whatsappApiNeeded: true,
+          crmIntegration: '',
+          thirdPartyApis: '',
+        },
+        section_h_domain_hosting: full.section_h_domain_hosting || {
+          hasDomain: reqsRow.section_j_domain_hosting?.hasDomain || 'DECIDE_LATER',
+          existingDomain: reqsRow.section_j_domain_hosting?.existingDomain || '',
+          preferredNewDomain: reqsRow.section_j_domain_hosting?.preferredNewDomain || '',
+          hasHosting: reqsRow.section_j_domain_hosting?.hasHosting || false,
+          hostingPreference: 'MANAGED_BY_EKAAGRA',
+          hasBusinessEmail: reqsRow.section_j_domain_hosting?.hasBusinessEmail || false,
+          hasDnsAccess: reqsRow.section_j_domain_hosting?.hasDnsAccess || false,
+          migrationNeeded: reqsRow.section_j_domain_hosting?.migrationNeeded || false,
+          sslCertificateNeeded: true,
+        },
+        section_i_budget_timeline: full.section_i_budget_timeline || {
+          targetBudgetRange: '₹20,000 - ₹50,000',
+          timelineRequirement: 'ONE_TO_TWO_MONTHS',
+          hardDeadlinesOrConstraints: '',
+        },
+        section_j_agreement: full.section_j_agreement || {
+          confirmedAccurate: false,
+          authorizedSignatoryName: client?.name || '',
+        },
+        // Legacy fallbacks
         section_b_project_type: reqsRow.section_b_project_type || { primaryType: 'Business Website' },
         section_c_objectives: reqsRow.section_c_objectives || {},
         section_d_target_audience: reqsRow.section_d_target_audience || {},
         section_e_website_reqs: reqsRow.section_e_website_reqs || {},
-        section_f_features: reqsRow.section_f_features || {},
         section_g_system_reqs: reqsRow.section_g_system_reqs || {},
         section_h_content_assets: reqsRow.section_h_content_assets || {},
         section_i_design_preferences: reqsRow.section_i_design_preferences || {},
@@ -452,13 +538,41 @@ export async function submitFinalBusinessRequirements(params: {
     return { success: false, error: verified.error || 'Unauthorized' };
   }
 
+  // 1. Authoritative Server-Side Validation
+  const validation = validateBusinessRequirementsPayload(params.payload);
+  if (!validation.isValid) {
+    const errorDetails = Object.values(validation.errors).join('. ');
+    return { success: false, error: `Validation error: ${errorDetails}` };
+  }
+
   const supabase = getSupabaseServerClient();
   if (!supabase) return { success: false, error: 'Database unconfigured' };
 
   const projectId = verified.project.id;
 
   try {
-    // 1. Get submission version count
+    // 2. Prevent accidental duplicate submission within 5 seconds
+    const { data: recentSub } = await supabase
+      .from('business_requirement_submissions')
+      .select('id, submitted_at')
+      .eq('project_id', projectId)
+      .order('submitted_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recentSub) {
+      const diffMs = Date.now() - new Date(recentSub.submitted_at).getTime();
+      if (diffMs < 5000) {
+        return {
+          success: true,
+          submissionId: recentSub.id,
+          projectNumber: verified.project.project_number,
+          projectName: verified.project.project_name,
+        };
+      }
+    }
+
+    // 3. Get submission version count
     const { count } = await supabase
       .from('business_requirement_submissions')
       .select('*', { count: 'exact', head: true })
@@ -466,16 +580,16 @@ export async function submitFinalBusinessRequirements(params: {
 
     const nextVersion = (count || 0) + 1;
 
-    // 2. Insert immutable submission record
+    // 4. Insert immutable submission record
     const { data: submission, error: subErr } = await supabase
       .from('business_requirement_submissions')
       .insert([
         {
           project_id: projectId,
           version_number: nextVersion,
-          form_version: 1,
-          submitted_by_name: params.contactName,
-          submitted_by_email: params.contactEmail,
+          form_version: 2,
+          submitted_by_name: params.contactName.trim(),
+          submitted_by_email: params.contactEmail.trim().toLowerCase(),
           client_confirmation: true,
           full_payload: params.payload,
           review_status: 'PENDING',
@@ -488,7 +602,14 @@ export async function submitFinalBusinessRequirements(params: {
       return { success: false, error: subErr?.message || 'Failed to persist requirements submission.' };
     }
 
-    // 3. Update project status to REQUIREMENTS_SUBMITTED
+    // 5. Link any unattached uploaded assets for this project to this submission
+    await supabase
+      .from('business_requirement_assets')
+      .update({ submission_id: submission.id })
+      .eq('project_id', projectId)
+      .is('submission_id', null);
+
+    // 6. Update project status to REQUIREMENTS_SUBMITTED
     await supabase
       .from('projects')
       .update({
@@ -497,7 +618,7 @@ export async function submitFinalBusinessRequirements(params: {
       })
       .eq('id', projectId);
 
-    // 4. Update working requirements draft state
+    // 7. Update working requirements draft state
     await supabase
       .from('business_requirements')
       .update({
@@ -506,13 +627,13 @@ export async function submitFinalBusinessRequirements(params: {
       })
       .eq('project_id', projectId);
 
-    // 5. Audit Trail
+    // 8. Audit Trail
     await recordProjectActivity({
       projectId,
       activityType: 'REQUIREMENTS_SUBMITTED',
       actorType: 'CLIENT',
       actorName: params.contactName,
-      description: `Requirements v${nextVersion} submitted by ${params.contactName} (${params.contactEmail}). Ready for engineering review.`,
+      description: `Requirements v${nextVersion} submitted by ${params.contactName} (${params.contactEmail}). Immutable snapshot captured for engineering review.`,
       metadata: { submissionId: submission.id, version: nextVersion },
     });
 
@@ -589,6 +710,7 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
   designReviews?: DesignReview[];
   activities?: ProjectActivity[];
   notes?: ProjectNote[];
+  assets?: BusinessRequirementAsset[];
   onboardingUrl?: string;
   error?: string;
 }> {
@@ -634,6 +756,13 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
       .eq('project_id', projectId)
       .order('created_at', { ascending: false });
 
+    // Uploaded Assets
+    const { data: assets } = await supabase
+      .from('business_requirement_assets')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('uploaded_at', { ascending: false });
+
     // Find active onboarding token
     const { data: tokenRow } = await supabase
       .from('business_onboarding_tokens')
@@ -654,6 +783,7 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
       designReviews: (designReviews || []) as DesignReview[],
       activities: (activities || []) as ProjectActivity[],
       notes: (notes || []) as ProjectNote[],
+      assets: (assets || []) as BusinessRequirementAsset[],
       onboardingUrl: tokenRow ? `/business-requirements/${tokenRow.token_code}` : undefined,
     };
   } catch (err: unknown) {
@@ -796,7 +926,13 @@ export async function submitDesignClientFeedback(params: {
   decision: 'APPROVED' | 'REVISION_REQUESTED';
   feedback?: string;
   clientName?: string;
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{
+  success: boolean;
+  error?: string;
+  projectNumber?: string;
+  projectName?: string;
+  designVersion?: number;
+}> {
   const verified = await verifyBusinessOnboardingToken(params.rawToken);
   if (!verified.isValid || !verified.project) {
     return { success: false, error: verified.error || 'Unauthorized' };
@@ -808,6 +944,35 @@ export async function submitDesignClientFeedback(params: {
   const projectId = verified.project.id;
 
   try {
+    // 1. Authoritative check that the review belongs to this specific project (IDOR protection)
+    const { data: currentReview, error: fetchErr } = await supabase
+      .from('design_reviews')
+      .select('*')
+      .eq('id', params.reviewId)
+      .eq('project_id', projectId)
+      .single();
+
+    if (fetchErr || !currentReview) {
+      return { success: false, error: 'Design concept review not found or unauthorized for this project.' };
+    }
+
+    // 2. Prevent tampering if already approved
+    if (currentReview.status === 'APPROVED') {
+      return {
+        success: false,
+        error: 'This design concept has already been approved and finalized. Revisions or re-approvals cannot be submitted.',
+      };
+    }
+
+    // 3. Prevent feedback if project is in incompatible stage
+    const allowedStages: BusinessProjectStatus[] = ['DESIGN_READY', 'REVISION_REQUESTED', 'DESIGN_IN_PROGRESS'];
+    if (!allowedStages.includes(verified.project.project_status)) {
+      return {
+        success: false,
+        error: `Design feedback cannot be submitted while project is in ${verified.project.project_status.replace(/_/g, ' ')} stage.`,
+      };
+    }
+
     const nowIso = new Date().toISOString();
 
     const { error: revErr } = await supabase
@@ -815,16 +980,17 @@ export async function submitDesignClientFeedback(params: {
       .update({
         status: params.decision === 'APPROVED' ? 'APPROVED' : 'REVISION_REQUESTED',
         client_feedback: params.feedback || null,
+        revision_count: params.decision === 'REVISION_REQUESTED' ? (currentReview.revision_count || 0) + 1 : currentReview.revision_count,
         reviewed_at: nowIso,
         reviewed_by_client: params.clientName || verified.project.project_name,
       })
-      .eq('id', params.reviewId);
+      .eq('id', params.reviewId)
+      .eq('project_id', projectId);
 
     if (revErr) throw revErr;
 
-    // Update project status
+    // 4. Update project status:
     // ONLY WHEN DESIGN APPROVED: status becomes DESIGN_APPROVED
-    // Later, payment becomes requestable
     const nextProjectStatus: BusinessProjectStatus =
       params.decision === 'APPROVED' ? 'DESIGN_APPROVED' : 'REVISION_REQUESTED';
 
@@ -843,11 +1009,76 @@ export async function submitDesignClientFeedback(params: {
       actorName: params.clientName || 'Client',
       description:
         params.decision === 'APPROVED'
-          ? `Design concept approved by client! Payment milestone is now ready to be requested.`
-          : `Client requested design revisions: "${params.feedback}"`,
-      metadata: { reviewId: params.reviewId, decision: params.decision },
+          ? `Design concept v${currentReview.design_version} ("${currentReview.design_title}") approved by client! Payment milestone is now ready to be requested.`
+          : `Client requested design revisions on v${currentReview.design_version}: "${params.feedback}"`,
+      metadata: {
+        reviewId: params.reviewId,
+        decision: params.decision,
+        designVersion: currentReview.design_version,
+      },
     });
 
+    return {
+      success: true,
+      projectNumber: verified.project.project_number,
+      projectName: verified.project.project_name,
+      designVersion: currentReview.design_version,
+    };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function getBusinessProjectAssets(
+  projectId: string
+): Promise<{ success: boolean; assets: BusinessRequirementAsset[]; error?: string }> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return { success: false, assets: [], error: 'Database unconfigured' };
+
+  try {
+    const { data: assets, error } = await supabase
+      .from('business_requirement_assets')
+      .select('*')
+      .eq('project_id', projectId)
+      .order('uploaded_at', { ascending: false });
+
+    if (error) throw error;
+    return { success: true, assets: (assets || []) as BusinessRequirementAsset[] };
+  } catch (err: unknown) {
+    return { success: false, assets: [], error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function deleteBusinessProjectAsset(params: {
+  rawToken?: string;
+  projectId?: string;
+  assetId: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return { success: false, error: 'Database unconfigured' };
+
+  try {
+    let resolvedProjectId = params.projectId;
+
+    if (params.rawToken) {
+      const verified = await verifyBusinessOnboardingToken(params.rawToken);
+      if (!verified.isValid || !verified.project) {
+        return { success: false, error: 'Unauthorized.' };
+      }
+      resolvedProjectId = verified.project.id;
+    }
+
+    if (!resolvedProjectId) {
+      return { success: false, error: 'Project association required.' };
+    }
+
+    const { error } = await supabase
+      .from('business_requirement_assets')
+      .delete()
+      .eq('id', params.assetId)
+      .eq('project_id', resolvedProjectId);
+
+    if (error) throw error;
     return { success: true };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };

@@ -1,51 +1,42 @@
 'use client';
 
-import { useState, useTransition, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type {
   BusinessProject,
   Client,
   BusinessRequirementsData,
-  SectionAProfile,
-  SectionBProjectType,
-  SectionCObjectives,
-  SectionDTargetAudience,
-  SectionEWebsiteRequirements,
-  SectionFFeatures,
-  SectionGSystemRequirements,
-  SectionHContentAssets,
-  SectionIDesignPreferences,
-  SectionJDomainHosting,
+  BusinessRequirementAsset,
+  BusinessAssetCategory,
 } from '@/lib/types';
 import {
   saveDraftRequirementsAction,
   submitFinalRequirementsAction,
+  deleteBusinessProjectAssetAction,
 } from '@/app/businessProjectActions';
-import Logo from '@/components/ui/Logo';
+import { validateBusinessRequirementsPayload, sanitizeWebUrl } from '@/lib/businessValidation';
 import {
+  Building2,
+  Target,
+  Palette,
+  Globe,
+  UploadCloud,
+  Sliders,
+  Cpu,
+  Server,
+  DollarSign,
+  Sparkles,
   Check,
   ArrowRight,
   ArrowLeft,
-  Building,
-  Layers,
-  Target,
-  Users,
-  Globe,
-  Sliders,
-  Cpu,
-  FileText,
-  Palette,
-  Server,
-  CheckCircle2,
-  AlertCircle,
   Loader2,
-  Save,
-  Send,
-  Sparkles,
-  ShieldCheck,
-  Plus,
+  AlertCircle,
+  FileText,
   Trash2,
   ExternalLink,
+  ShieldCheck,
+  Clock,
   HelpCircle,
+  Info,
 } from 'lucide-react';
 
 interface BusinessRequirementsFormProps {
@@ -59,32 +50,39 @@ interface BusinessRequirementsFormProps {
 const DEFAULT_SECTIONS: BusinessRequirementsData = {
   section_a_profile: {
     displayName: '',
-    category: 'Retail / Business',
+    legalName: '',
+    category: 'Retail / Commercial Business',
     description: '',
+    locations: 'Motihari, Bihar',
     primaryContactName: '',
     email: '',
     phone: '',
     whatsapp: '',
-    locations: 'Motihari, Bihar',
+    website: '',
   },
-  section_b_project_type: {
+  section_b_goals_audience: {
     primaryType: 'Business Website',
     secondaryTypes: [],
-  },
-  section_c_objectives: {
+    primaryGoal: 'Generate local customer leads & inquiries',
     problemToSolve: '',
-    primaryGoal: '',
-    targetUserRoles: '',
-    keyVisitorAction: '',
+    targetCustomerType: 'B2C',
+    targetAudienceDescription: '',
+    geographicReach: 'Local & Regional (Bihar)',
+    keyVisitorAction: 'Call / WhatsApp or fill Contact Form',
     successDefinition: '',
   },
-  section_d_target_audience: {
-    targetCustomerType: 'B2C',
-    geographicReach: 'Local & Regional (Bihar)',
-    coreCustomerNeeds: '',
+  section_c_design: {
+    styleVibe: 'Modern & Clean',
+    preferredColors: '',
+    avoidColors: '',
+    likedWebsites: '',
+    dislikedWebsites: '',
+    competitorWebsites: '',
+    designConstraintsOrRules: '',
   },
-  section_e_website_reqs: {
-    requiredPages: ['Home Landing Page', 'About Us', 'Services / Products', 'Contact & Inquiries'],
+  section_d_structure: {
+    solutionType: 'WEBSITE',
+    requiredPages: ['Home Landing Page', 'About Company', 'Products / Services', 'Contact & Inquiries'],
     customPages: [],
     multilingual: false,
     blogOrNews: false,
@@ -92,8 +90,16 @@ const DEFAULT_SECTIONS: BusinessRequirementsData = {
     careersSection: false,
     testimonialsNeeded: true,
   },
+  section_e_assets: {
+    hasLogo: 'YES',
+    hasBrandGuidelines: false,
+    hasProductOrServicePhotos: 'READY',
+    hasWrittenContent: 'READY',
+    uploadedAssets: [],
+    contentNotes: '',
+  },
   section_f_features: {
-    selectedFeatures: ['Contact Form', 'WhatsApp Chat', 'Mobile Responsive', 'Google Maps Location'],
+    selectedFeatures: ['Contact Form', 'WhatsApp Chat Button', 'Mobile Responsive Layout', 'Google Maps Location'],
     contactForm: true,
     whatsAppChat: true,
     googleMaps: true,
@@ -104,44 +110,49 @@ const DEFAULT_SECTIONS: BusinessRequirementsData = {
     onlineBooking: false,
     paymentGateway: false,
     analyticsSeo: true,
+    notificationsSmsEmail: false,
   },
-  section_g_system_reqs: {
-    userRoles: ['Super Admin', 'Staff Member'],
-    adminCapabilities: '',
-    authPermissions: '',
+  section_g_integrations: {
+    paymentGatewayNeeded: false,
+    preferredPaymentGateway: 'RAZORPAY',
+    whatsappApiNeeded: true,
+    crmIntegration: '',
+    thirdPartyApis: '',
   },
-  section_h_content_assets: {
-    hasLogo: 'YES',
-    hasBrandGuidelines: false,
-    hasProductOrServicePhotos: 'READY',
-    hasWrittenContent: 'READY',
-  },
-  section_i_design_preferences: {
-    styleVibe: 'Modern & Clean',
-    preferredColors: '',
-    likedWebsites: '',
-    dislikedWebsites: '',
-  },
-  section_j_domain_hosting: {
+  section_h_domain_hosting: {
     hasDomain: 'DECIDE_LATER',
+    existingDomain: '',
+    preferredNewDomain: '',
     hasHosting: false,
+    hostingPreference: 'MANAGED_BY_EKAAGRA',
     hasBusinessEmail: false,
     hasDnsAccess: false,
     migrationNeeded: false,
+    sslCertificateNeeded: true,
+  },
+  section_i_budget_timeline: {
+    targetBudgetRange: '₹20,000 - ₹50,000',
+    timelineRequirement: 'ONE_TO_TWO_MONTHS',
+    hardDeadlinesOrConstraints: '',
+  },
+  section_j_agreement: {
+    confirmedAccurate: false,
+    authorizedSignatoryName: '',
+    notesForEkaagraTeam: '',
   },
 };
 
 const STEPS = [
-  { id: 1, label: 'Profile', icon: Building },
-  { id: 2, label: 'Project Type', icon: Layers },
-  { id: 3, label: 'Objectives', icon: Target },
-  { id: 4, label: 'Audience', icon: Users },
-  { id: 5, label: 'Website / Software', icon: Globe },
-  { id: 6, label: 'Features', icon: Sliders },
-  { id: 7, label: 'Assets', icon: FileText },
-  { id: 8, label: 'Design', icon: Palette },
-  { id: 9, label: 'Domain', icon: Server },
-  { id: 10, label: 'Review & Submit', icon: Sparkles },
+  { id: 1, label: 'Company Profile', icon: Building2, desc: 'Brand & contacts' },
+  { id: 2, label: 'Goals & Audience', icon: Target, desc: 'Objectives & users' },
+  { id: 3, label: 'Design & Visuals', icon: Palette, desc: 'Aesthetic & colors' },
+  { id: 4, label: 'Structure & Pages', icon: Globe, desc: 'Site architecture' },
+  { id: 5, label: 'Content & Assets', icon: UploadCloud, desc: 'Files & materials' },
+  { id: 6, label: 'Key Features', icon: Sliders, desc: 'Functionality' },
+  { id: 7, label: 'Integrations & Tech', icon: Cpu, desc: 'APIs & systems' },
+  { id: 8, label: 'Domain & Hosting', icon: Server, desc: 'Infrastructure' },
+  { id: 9, label: 'Budget & Timeline', icon: DollarSign, desc: 'Constraints' },
+  { id: 10, label: 'Review & Submit', icon: Sparkles, desc: 'Finalize intake' },
 ];
 
 export default function BusinessRequirementsForm({
@@ -152,69 +163,222 @@ export default function BusinessRequirementsForm({
   initialStep = 1,
 }: BusinessRequirementsFormProps) {
   const [currentStep, setCurrentStep] = useState(initialStep);
-  const [formData, setFormData] = useState<BusinessRequirementsData>(() => ({
-    ...DEFAULT_SECTIONS,
-    ...initialDraft,
-    section_a_profile: {
-      ...DEFAULT_SECTIONS.section_a_profile,
-      displayName: project.project_name || client?.organization || '',
-      primaryContactName: client?.name || '',
-      email: client?.email || '',
-      phone: client?.phone || '',
-      whatsapp: client?.whatsapp || client?.phone || '',
-      ...(initialDraft?.section_a_profile || {}),
-    },
-  }));
+  const [formData, setFormData] = useState<BusinessRequirementsData>(() => {
+    const base = {
+      ...DEFAULT_SECTIONS,
+      ...initialDraft,
+      section_a_profile: {
+        ...DEFAULT_SECTIONS.section_a_profile,
+        displayName: project.project_name || client?.organization || '',
+        primaryContactName: client?.name || '',
+        email: client?.email || '',
+        phone: client?.phone || '',
+        whatsapp: client?.whatsapp || client?.phone || '',
+        locations: client?.city || 'Motihari, Bihar',
+        ...(initialDraft?.section_a_profile || {}),
+      },
+    };
+    return base;
+  });
 
-  const [customPageInput, setCustomPageInput] = useState('');
-  const [isSaving, startSaving] = useTransition();
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'offline' | 'error'>('idle');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionSuccess, setSubmissionSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [clientConfirmed, setClientConfirmed] = useState(false);
+  const [submissionInfo, setSubmissionInfo] = useState<{ projectNumber?: string; projectName?: string }>({});
 
-  // Auto-save debounced on current step changes
-  const saveCurrentProgress = useCallback(
-    async (stepToSave = currentStep) => {
-      setSaveStatus('saving');
+  // Asset Upload States
+  const [uploadedAssets, setUploadedAssets] = useState<BusinessRequirementAsset[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadCategory, setUploadCategory] = useState<BusinessAssetCategory>('LOGO');
+  const [uploadError, setUploadError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Custom page input
+  const [customPageInput, setCustomPageInput] = useState('');
+
+  // Local Storage Key
+  const localStorageKey = `ekaagra_reqs_draft_${token}`;
+
+  // 1. Load Local Storage backup if newer
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(localStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          setFormData((prev) => ({
+            ...prev,
+            ...parsed,
+          }));
+        }
+      }
+    } catch {
+      // Ignore local storage parse issues
+    }
+  }, [localStorageKey]);
+
+  // 2. Fetch already uploaded assets for this project
+  useEffect(() => {
+    async function loadAssets() {
       try {
-        const res = await saveDraftRequirementsAction({
-          rawToken: token,
-          sectionKey: 'full_payload',
-          sectionData: formData as unknown as Record<string, unknown>,
-          currentStep: stepToSave,
-        });
-
-        if (res.success) {
-          setSaveStatus('saved');
-          setTimeout(() => setSaveStatus('idle'), 3000);
-        } else {
-          setSaveStatus('error');
+        const res = await fetch(`/api/business-assets/upload?token=${encodeURIComponent(token)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.assets)) {
+            setUploadedAssets(data.assets);
+          }
         }
       } catch {
-        setSaveStatus('error');
+        // Non-fatal asset fetch
       }
+    }
+    loadAssets();
+  }, [token]);
+
+  // 3. Debounced Autosave (1500ms)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerAutosave = useCallback(
+    (updatedData: BusinessRequirementsData, step: number) => {
+      // Local backup immediately
+      try {
+        localStorage.setItem(localStorageKey, JSON.stringify(updatedData));
+      } catch {
+        // Non-fatal
+      }
+
+      setSaveStatus('saving');
+
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(async () => {
+        try {
+          const res = await saveDraftRequirementsAction({
+            rawToken: token,
+            sectionKey: 'full_payload',
+            sectionData: updatedData as unknown as Record<string, unknown>,
+            currentStep: step,
+          });
+
+          if (res.success) {
+            setSaveStatus('saved');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+          } else {
+            setSaveStatus('offline');
+          }
+        } catch {
+          setSaveStatus('offline');
+        }
+      }, 1500);
     },
-    [token, currentStep, formData]
+    [token, localStorageKey]
   );
 
+  // Update Section Helper
+  const updateSection = <K extends keyof BusinessRequirementsData>(
+    sectionKey: K,
+    patch: Partial<BusinessRequirementsData[K]>
+  ) => {
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [sectionKey]: {
+          ...(prev[sectionKey] || {}),
+          ...patch,
+        },
+      };
+      triggerAutosave(updated, currentStep);
+      return updated;
+    });
+  };
+
+  // Step Validation
+  const validateStep = (stepNumber: number): boolean => {
+    const errors: Record<string, string> = {};
+
+    if (stepNumber === 1) {
+      const a = formData.section_a_profile;
+      if (!a.displayName?.trim() || a.displayName.trim().length < 2) {
+        errors['displayName'] = 'Brand / Business Name is required (minimum 2 characters).';
+      }
+      if (!a.primaryContactName?.trim() || a.primaryContactName.trim().length < 2) {
+        errors['primaryContactName'] = 'Contact person name is required.';
+      }
+      if (!a.email?.trim() || !/^\S+@\S+\.\S+$/.test(a.email.trim())) {
+        errors['email'] = 'A valid email address is required.';
+      }
+      const cleanPhone = (a.phone || '').replace(/[^0-9]/g, '');
+      if (!cleanPhone || cleanPhone.length < 10) {
+        errors['phone'] = 'A valid 10-digit phone number is required.';
+      }
+    }
+
+    if (stepNumber === 2) {
+      const b = formData.section_b_goals_audience;
+      if (!b.primaryType) {
+        errors['primaryType'] = 'Please select a primary solution type.';
+      }
+      if (!b.primaryGoal?.trim() || b.primaryGoal.trim().length < 5) {
+        errors['primaryGoal'] = 'Please specify your primary goal (minimum 5 characters).';
+      }
+      if (!b.problemToSolve?.trim() || b.problemToSolve.trim().length < 10) {
+        errors['problemToSolve'] = 'Please describe the core business challenge or problem to solve (minimum 10 characters).';
+      }
+    }
+
+    if (stepNumber === 4) {
+      const d = formData.section_d_structure;
+      if (!d.requiredPages || d.requiredPages.length === 0) {
+        errors['requiredPages'] = 'Please select at least one required page or section.';
+      }
+    }
+
+    if (stepNumber === 9) {
+      const i = formData.section_i_budget_timeline;
+      if (!i.targetBudgetRange) {
+        errors['targetBudgetRange'] = 'Please select a target budget range.';
+      }
+    }
+
+    setStepErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleNext = () => {
-    const nextStep = Math.min(10, currentStep + 1);
-    setCurrentStep(nextStep);
-    saveCurrentProgress(nextStep);
-    window.scrollTo({ top: 120, behavior: 'smooth' });
+    if (!validateStep(currentStep)) return;
+    const next = Math.min(10, currentStep + 1);
+    setCurrentStep(next);
+    triggerAutosave(formData, next);
+    window.scrollTo({ top: 100, behavior: 'smooth' });
   };
 
   const handlePrev = () => {
-    const prevStep = Math.max(1, currentStep - 1);
-    setCurrentStep(prevStep);
-    window.scrollTo({ top: 120, behavior: 'smooth' });
+    const prev = Math.max(1, currentStep - 1);
+    setCurrentStep(prev);
+    triggerAutosave(formData, prev);
+    window.scrollTo({ top: 100, behavior: 'smooth' });
   };
 
+  // Final Submit Handler
   const handleFinalSubmit = async () => {
-    if (!clientConfirmed) {
+    if (!formData.section_j_agreement.confirmedAccurate) {
       setSubmitError('Please check the confirmation box to certify your specifications.');
+      return;
+    }
+    if (!formData.section_j_agreement.authorizedSignatoryName?.trim()) {
+      setSubmitError('Please enter the name of the authorized representative submitting this form.');
+      return;
+    }
+
+    // Run authoritative validation
+    const val = validateBusinessRequirementsPayload(formData);
+    if (!val.isValid) {
+      const errList = Object.values(val.errors).join(' ');
+      setSubmitError(`Please complete all required fields: ${errList}`);
       return;
     }
 
@@ -225,1320 +389,1262 @@ export default function BusinessRequirementsForm({
       const res = await submitFinalRequirementsAction({
         rawToken: token,
         payload: formData,
-        contactName: formData.section_a_profile.primaryContactName || client?.name || 'Client',
-        contactEmail: formData.section_a_profile.email || client?.email || 'client@ekaagra.site',
+        contactName: formData.section_j_agreement.authorizedSignatoryName || formData.section_a_profile.primaryContactName,
+        contactEmail: formData.section_a_profile.email,
       });
 
       if (res.success) {
+        setSubmissionInfo({
+          projectNumber: res.projectNumber || project.project_number,
+          projectName: res.projectName || project.project_name,
+        });
         setSubmissionSuccess(true);
-        window.scrollTo({ top: 80, behavior: 'smooth' });
+        // Clear local storage draft upon successful final submission
+        try {
+          localStorage.removeItem(localStorageKey);
+        } catch {
+          // Non-fatal
+        }
+        window.scrollTo({ top: 60, behavior: 'smooth' });
       } else {
-        setSubmitError(res.error || 'Failed to submit requirements. Please verify connection and try again.');
+        setSubmitError(res.error || 'Failed to submit requirements. Please try again.');
       }
     } catch (err: unknown) {
-      setSubmitError(err instanceof Error ? err.message : 'Network error submitting requirements.');
+      setSubmitError(err instanceof Error ? err.message : 'Network error occurred during submission.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Conditionals
-  const isSoftwareProject = [
-    'Web Application',
-    'Custom Software',
-    'CRM',
-    'ERP',
-    'Booking System',
-    'Portal',
-  ].includes(formData.section_b_project_type.primaryType);
+  // Asset Upload
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
+    setIsUploading(true);
+    setUploadError('');
+
+    try {
+      const uploadData = new FormData();
+      uploadData.append('token', token);
+      uploadData.append('file', file);
+      uploadData.append('category', uploadCategory);
+
+      const res = await fetch('/api/business-assets/upload', {
+        method: 'POST',
+        body: uploadData,
+      });
+
+      const json = await res.json();
+      if (json.success && json.asset) {
+        const newAsset = json.asset as BusinessRequirementAsset;
+        const updated = [newAsset, ...uploadedAssets];
+        setUploadedAssets(updated);
+
+        // Update form state
+        const currentUrls = formData.section_e_assets.uploadedAssetUrls || [];
+        updateSection('section_e_assets', {
+          uploadedAssetUrls: [...currentUrls, newAsset.file_url],
+        });
+      } else {
+        setUploadError(json.error || 'File upload failed.');
+      }
+    } catch (err: unknown) {
+      setUploadError(err instanceof Error ? err.message : 'Network error during upload.');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteAsset = async (assetId: string) => {
+    try {
+      const res = await deleteBusinessProjectAssetAction({
+        rawToken: token,
+        assetId,
+      });
+      if (res.success) {
+        setUploadedAssets((prev) => prev.filter((a) => a.id !== assetId));
+      }
+    } catch {
+      // Non-fatal
+    }
+  };
+
+  // Add Custom Page
+  const handleAddCustomPage = () => {
+    if (!customPageInput.trim()) return;
+    const current = formData.section_d_structure.customPages || [];
+    if (!current.includes(customPageInput.trim())) {
+      updateSection('section_d_structure', {
+        customPages: [...current, customPageInput.trim()],
+      });
+    }
+    setCustomPageInput('');
+  };
+
+  const handleRemoveCustomPage = (pageName: string) => {
+    const current = formData.section_d_structure.customPages || [];
+    updateSection('section_d_structure', {
+      customPages: current.filter((p) => p !== pageName),
+    });
+  };
+
+  // Check for Clarification Request
+  const isClarification = project.project_status === 'CLARIFICATION_REQUESTED';
+
+  // ---------------------------------------------------------------------------
+  // SUBMISSION SUCCESS VIEW
+  // ---------------------------------------------------------------------------
   if (submissionSuccess) {
     return (
-      <div className="max-w-3xl mx-auto py-12 px-4 sm:px-6">
-        <div className="bg-white rounded-3xl border border-[#E2E8F0] p-8 sm:p-12 shadow-xl space-y-6 text-center">
-          <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto shadow-md shadow-emerald-600/20">
-            <CheckCircle2 className="w-9 h-9" />
+      <div className="max-w-2xl mx-auto py-12 px-4 text-center space-y-6">
+        <div className="p-8 sm:p-12 bg-white rounded-3xl border border-[#E2E8F0] shadow-xl space-y-4">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-md shadow-emerald-600/20">
+            <Check className="w-9 h-9 stroke-[3]" />
           </div>
 
-          <div className="space-y-2">
-            <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
-              Requirements Received &bull; {project.project_number}
-            </span>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E]">
-              Requirements Submitted Successfully!
-            </h1>
-            <p className="text-sm text-[#64748B] max-w-xl mx-auto leading-relaxed">
-              Thank you, <strong>{formData.section_a_profile.primaryContactName}</strong>. Our engineering and design team has received your project specifications for <strong>{project.project_name}</strong>.
-            </p>
-          </div>
+          <span className="text-[10px] font-mono font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full uppercase tracking-wider">
+            Snapshot Verified &bull; {submissionInfo.projectNumber}
+          </span>
 
-          {/* Next Steps Card */}
-          <div className="p-6 bg-[#FAF7F2] rounded-2xl border border-[#E2E8F0] text-left space-y-3">
-            <div className="flex items-center gap-2 font-bold text-[#131B2E] text-xs uppercase tracking-wider">
-              <Sparkles className="w-4 h-4 text-[#F97360]" />
-              <span>What Happens Next?</span>
+          <h1 className="text-2xl sm:text-3xl font-black text-[#131B2E]">
+            Requirements Submitted Successfully!
+          </h1>
+
+          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-md mx-auto">
+            Thank you, <strong>{formData.section_a_profile.displayName}</strong>. Your detailed project specifications have been securely recorded into an immutable version snapshot for engineering review.
+          </p>
+
+          <div className="p-5 rounded-2xl bg-[#FAF7F2] border border-[#E2E8F0] text-xs text-left space-y-2.5">
+            <div className="font-bold text-[#131B2E] flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>What Happens Next (Zero Upfront Payment Guarantee)</span>
             </div>
-            <ul className="text-xs text-[#475569] space-y-2.5 list-disc list-inside leading-relaxed">
-              <li>Our design team reviews your branding, pages, and feature preferences.</li>
-              <li>We prepare your first custom interactive design concept / prototype.</li>
-              <li>You will receive a notification to review, request revisions, or approve the design.</li>
-              <li className="font-bold text-emerald-800">
-                Zero payment is required today. Payment only becomes due after you inspect and approve your design concept.
+            <ul className="text-[#64748B] space-y-1.5 list-disc pl-4 text-[11px] leading-relaxed">
+              <li>
+                <strong>1. Engineering Review:</strong> Our team reviews your requirements and clarifies any technical or architecture questions.
+              </li>
+              <li>
+                <strong>2. Initial Custom Design Concept:</strong> We craft your custom interactive prototype and layout mockups.
+              </li>
+              <li>
+                <strong>3. Client Review &amp; Approval:</strong> You inspect the design. You may request revisions until you are 100% satisfied.
+              </li>
+              <li>
+                <strong>4. Milestone Invoice:</strong> Only AFTER you approve the design concept will the initial milestone payment link be issued.
               </li>
             </ul>
           </div>
 
-          <div className="pt-2 text-xs text-[#94A3B8]">
-            Confirmation has been sent to <strong>{formData.section_a_profile.email}</strong>.
+          <div className="pt-2 text-[11px] text-[#94A3B8]">
+            Confirmation email sent to <strong>{formData.section_a_profile.email}</strong>. Our team in Motihari is on standby.
           </div>
         </div>
       </div>
     );
   }
 
+  // ---------------------------------------------------------------------------
+  // MAIN INTAKE FORM VIEW
+  // ---------------------------------------------------------------------------
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 space-y-8">
-      {/* Top Banner / Project Header */}
+    <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 space-y-6">
+      {/* Top Header Card */}
       <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-8 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] font-mono font-bold text-[#4338CA] bg-[#4338CA]/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                Official Business Requirements Form
-              </span>
-              <span className="text-[10px] font-mono text-slate-500 font-semibold">
-                v1.0 &bull; {project.project_number}
-              </span>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4">
+          <div className="space-y-0.5">
+            <span className="text-[10px] font-mono font-bold text-[#4338CA] bg-[#4338CA]/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              {project.project_number} &bull; Business Project Workspace
+            </span>
             <h1 className="text-xl sm:text-2xl font-black text-[#131B2E]">
-              {project.project_name}
+              {formData.section_a_profile.displayName || project.project_name}
             </h1>
-            <p className="text-xs text-[#64748B]">
-              Prepared for {formData.section_a_profile.primaryContactName || client?.name} &bull; {project.service_type}
+          </div>
+
+          {/* Real-time Save Indicator */}
+          <div className="flex items-center gap-2">
+            {saveStatus === 'saving' && (
+              <span className="text-[11px] font-bold text-[#64748B] flex items-center gap-1">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
+              </span>
+            )}
+            {saveStatus === 'saved' && (
+              <span className="text-[11px] font-bold text-emerald-600 flex items-center gap-1">
+                <Check className="w-3.5 h-3.5" /> Cloud Synced
+              </span>
+            )}
+            {saveStatus === 'offline' && (
+              <span className="text-[11px] font-bold text-amber-600 flex items-center gap-1" title="Saved to local device cache">
+                <Clock className="w-3.5 h-3.5" /> Saved Locally
+              </span>
+            )}
+            <span className="text-xs font-mono font-bold text-[#4338CA] bg-indigo-50 px-2.5 py-1 rounded-lg">
+              Step {currentStep} of 10
+            </span>
+          </div>
+        </div>
+
+        {/* Clarification Alert Banner if requested by Admin */}
+        {isClarification && (
+          <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-900 space-y-1.5 animate-fadeIn">
+            <div className="font-black uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-amber-950">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              <span>Clarification Requested by Ekaagra Engineering</span>
+            </div>
+            <p className="leading-relaxed text-amber-900">
+              Our team reviewed your previous submission and requested clarification. Please review the highlighted notes, update your specifications, and re-submit.
             </p>
           </div>
+        )}
 
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => saveCurrentProgress(currentStep)}
-              disabled={isSaving}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#E2E8F0] text-xs font-bold text-[#64748B] hover:text-[#131B2E] bg-[#FAF7F2] transition-colors cursor-pointer"
-            >
-              <Save className="w-3.5 h-3.5" />
-              <span>{saveStatus === 'saving' ? 'Saving...' : saveStatus === 'saved' ? 'Saved ✓' : 'Save Progress'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Progress Tracker */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs">
-            <span className="font-extrabold uppercase tracking-wider text-[#131B2E] flex items-center gap-1.5">
-              <span>Section {currentStep} of 10:</span>
-              <span className="text-[#4338CA]">{STEPS[currentStep - 1]?.label}</span>
-            </span>
-            <span className="font-mono text-xs font-bold text-[#64748B]">
-              {Math.round((currentStep / 10) * 100)}% Complete
-            </span>
-          </div>
-
-          <div className="w-full bg-[#FAF7F2] h-2.5 rounded-full overflow-hidden border border-[#E2E8F0]">
-            <div
-              className="bg-[#4338CA] h-full transition-all duration-300 rounded-full"
-              style={{ width: `${(currentStep / 10) * 100}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Step Icons Ribbon */}
-        <div className="hidden md:flex items-center justify-between pt-2 border-t border-[#F1F5F9]">
-          {STEPS.map((s) => {
-            const Icon = s.icon;
-            const isCompleted = s.id < currentStep;
-            const isCurrent = s.id === currentStep;
-
-            return (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => {
-                  setCurrentStep(s.id);
-                  saveCurrentProgress(s.id);
-                }}
-                className={`flex flex-col items-center gap-1 text-[11px] font-bold transition-colors cursor-pointer p-1.5 rounded-lg ${
-                  isCurrent
-                    ? 'text-[#4338CA]'
-                    : isCompleted
-                    ? 'text-emerald-700'
-                    : 'text-slate-400 hover:text-slate-600'
-                }`}
-              >
-                <div
-                  className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-mono ${
+        {/* 10-Step Visual Timeline (Mobile scrollable) */}
+        <div className="overflow-x-auto pb-2 -mx-2 px-2 scrollbar-none">
+          <div className="flex items-center gap-1 min-w-[700px]">
+            {STEPS.map((step) => {
+              const Icon = step.icon;
+              const isDone = currentStep > step.id;
+              const isCurrent = currentStep === step.id;
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => {
+                    if (currentStep > step.id || validateStep(currentStep)) {
+                      setCurrentStep(step.id);
+                    }
+                  }}
+                  className={`flex-1 p-2 rounded-xl text-left transition-all border ${
                     isCurrent
-                      ? 'bg-[#4338CA] text-white shadow-sm'
-                      : isCompleted
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : 'bg-slate-100 text-slate-500'
+                      ? 'bg-[#4338CA] text-white border-[#4338CA] shadow-xs'
+                      : isDone
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                      : 'bg-[#FAF7F2] text-[#64748B] border-[#E2E8F0]'
                   }`}
                 >
-                  {isCompleted ? <Check className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
-                </div>
-                <span className="text-[10px] truncate max-w-[70px]">{s.label}</span>
-              </button>
-            );
-          })}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase">
+                      {step.id < 10 ? `0${step.id}` : step.id}
+                    </span>
+                    {isDone ? <Check className="w-3 h-3 text-emerald-600" /> : <Icon className="w-3 h-3 opacity-70" />}
+                  </div>
+                  <div className="text-[11px] font-black truncate mt-0.5">{step.label}</div>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
-      {/* Main Form Content Container */}
-      <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-10 shadow-xl space-y-8">
+      {/* Step Form Card */}
+      <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-8 shadow-xl space-y-6">
         {/* =================================================================== */}
-        {/* STEP 1: Section A - Business Profile */}
+        {/* SECTION A: COMPANY & BRAND PROFILE */}
         {/* =================================================================== */}
         {currentStep === 1 && (
-          <div className="space-y-6">
+          <div className="space-y-4">
             <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Section A: Business Profile</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Tell us about your organization so we can tailor the voice, branding, and contact channels.
-              </p>
+              <h2 className="text-lg font-black text-[#131B2E]">Section A &bull; Company &amp; Brand Profile</h2>
+              <p className="text-xs text-[#64748B]">Provide essential legal and display details for your organization.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">
-                  Brand / Display Name <span className="text-rose-500">*</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  Brand / Website Display Name <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.section_a_profile.displayName}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_a_profile: { ...formData.section_a_profile, displayName: e.target.value },
-                    })
-                  }
-                  placeholder="e.g. Apex Hospital, Champaran Retailers"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+                  onChange={(e) => updateSection('section_a_profile', { displayName: e.target.value })}
+                  placeholder="e.g. Champaran Sweets & Bakers"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none"
                 />
+                {stepErrors['displayName'] && (
+                  <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['displayName']}</span>
+                )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Legal Entity Name (if different)</label>
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Legal Entity / Registered Name</label>
                 <input
                   type="text"
                   value={formData.section_a_profile.legalName || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_a_profile: { ...formData.section_a_profile, legalName: e.target.value },
-                    })
-                  }
-                  placeholder="e.g. Apex Healthcare Pvt. Ltd."
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+                  onChange={(e) => updateSection('section_a_profile', { legalName: e.target.value })}
+                  placeholder="e.g. Champaran Retail Private Limited (optional)"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Business Category / Industry</label>
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Business Industry / Category</label>
                 <select
                   value={formData.section_a_profile.category}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_a_profile: { ...formData.section_a_profile, category: e.target.value },
-                    })
-                  }
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+                  onChange={(e) => updateSection('section_a_profile', { category: e.target.value })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none font-bold"
                 >
-                  <option value="Retail / Shop / Commerce">Retail / Shop / Commerce</option>
-                  <option value="Healthcare / Clinic / Diagnostic">Healthcare / Clinic / Diagnostic</option>
-                  <option value="Education / Training / Academy">Education / Training / Academy</option>
-                  <option value="Hotel / Restaurant / Hospitality">Hotel / Restaurant / Hospitality</option>
+                  <option value="Retail / Commercial Business">Retail / Commercial Business</option>
+                  <option value="Healthcare / Clinic / Hospital">Healthcare / Clinic / Hospital</option>
+                  <option value="Hospitality / Hotel / Restaurant">Hospitality / Hotel / Restaurant</option>
+                  <option value="Manufacturing / Industrial / Distribution">Manufacturing / Industrial / Distribution</option>
                   <option value="Real Estate / Construction">Real Estate / Construction</option>
-                  <option value="Professional Services / Legal / CA">Professional Services / Legal / CA</option>
-                  <option value="Manufacturing / Industrial">Manufacturing / Industrial</option>
-                  <option value="Technology / Software / Startup">Technology / Software / Startup</option>
-                  <option value="Other">Other</option>
+                  <option value="Coaching / Institute / Education">Coaching / Institute / Education</option>
+                  <option value="Professional Services (Legal, CA, Tech)">Professional Services (Legal, CA, Tech)</option>
+                  <option value="Other Commercial Enterprise">Other Commercial Enterprise</option>
                 </select>
               </div>
 
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Short Business Overview / Description</label>
-                <textarea
-                  rows={3}
-                  value={formData.section_a_profile.description}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_a_profile: { ...formData.section_a_profile, description: e.target.value },
-                    })
-                  }
-                  placeholder="What products or services does your business provide? Who are your primary clients?"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  Primary Location / Headquarters <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.section_a_profile.locations}
+                  onChange={(e) => updateSection('section_a_profile', { locations: e.target.value })}
+                  placeholder="e.g. Motihari, East Champaran, Bihar"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Primary Contact Name</label>
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  Primary Contact Person <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.section_a_profile.primaryContactName}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_a_profile: { ...formData.section_a_profile, primaryContactName: e.target.value },
-                    })
-                  }
-                  placeholder="Full name"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+                  onChange={(e) => updateSection('section_a_profile', { primaryContactName: e.target.value })}
+                  placeholder="Full name of representative"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none"
                 />
+                {stepErrors['primaryContactName'] && (
+                  <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['primaryContactName']}</span>
+                )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Official Email</label>
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  Contact Email <span className="text-rose-500">*</span>
+                </label>
                 <input
                   type="email"
                   value={formData.section_a_profile.email}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_a_profile: { ...formData.section_a_profile, email: e.target.value },
-                    })
-                  }
-                  placeholder="contact@yourbusiness.com"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+                  onChange={(e) => updateSection('section_a_profile', { email: e.target.value })}
+                  placeholder="email@yourdomain.com"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none font-mono"
                 />
+                {stepErrors['email'] && (
+                  <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['email']}</span>
+                )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Phone / WhatsApp</label>
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  Primary Phone Number <span className="text-rose-500">*</span>
+                </label>
                 <input
-                  type="text"
+                  type="tel"
                   value={formData.section_a_profile.phone}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_a_profile: {
-                        ...formData.section_a_profile,
-                        phone: e.target.value,
-                        whatsapp: formData.section_a_profile.whatsapp || e.target.value,
-                      },
-                    })
-                  }
+                  onChange={(e) => updateSection('section_a_profile', { phone: e.target.value })}
                   placeholder="10-digit mobile number"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none font-mono"
                 />
+                {stepErrors['phone'] && (
+                  <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['phone']}</span>
+                )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Locations / City</label>
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">WhatsApp Business Number</label>
                 <input
-                  type="text"
-                  value={formData.section_a_profile.locations || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_a_profile: { ...formData.section_a_profile, locations: e.target.value },
-                    })
-                  }
-                  placeholder="e.g. Main Road, Motihari, Bihar"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+                  type="tel"
+                  value={formData.section_a_profile.whatsapp || ''}
+                  onChange={(e) => updateSection('section_a_profile', { whatsapp: e.target.value })}
+                  placeholder="For chat widget integration"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none font-mono"
                 />
               </div>
             </div>
-          </div>
-        )}
 
-        {/* =================================================================== */}
-        {/* STEP 2: Section B - Project Type */}
-        {/* =================================================================== */}
-        {currentStep === 2 && (
-          <div className="space-y-6">
             <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Section B: Project Type</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                What solution are you looking for? Selecting software vs website adjusts upcoming questions automatically.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              {[
-                { title: 'Business Website', desc: 'Modern showcase website to capture leads and build brand trust.' },
-                { title: 'E-commerce Website', desc: 'Online storefront with catalog, shopping cart, and payments.' },
-                { title: 'Web Application', desc: 'Interactive custom cloud app with accounts and dashboards.' },
-                { title: 'Custom Software', desc: 'Tailor-made software to automate specific operational workflows.' },
-                { title: 'CRM', desc: 'Customer and lead management pipeline for your sales/support team.' },
-                { title: 'ERP', desc: 'Comprehensive enterprise system uniting billing, staff, and inventory.' },
-                { title: 'Booking System', desc: 'Appointment and slot booking calendar with automated reminders.' },
-                { title: 'Portal', desc: 'Dedicated client or vendor login workspace with private data access.' },
-                { title: 'Other', desc: 'Unique or hybrid custom technology requirement.' },
-              ].map((item) => {
-                const isSelected = formData.section_b_project_type.primaryType === item.title;
-                return (
-                  <button
-                    key={item.title}
-                    type="button"
-                    onClick={() =>
-                      setFormData({
-                        ...formData,
-                        section_b_project_type: {
-                          ...formData.section_b_project_type,
-                          primaryType: item.title as any,
-                        },
-                      })
-                    }
-                    className={`p-4 rounded-2xl border text-left transition-all cursor-pointer space-y-1.5 ${
-                      isSelected
-                        ? 'bg-[#4338CA]/5 border-[#4338CA] ring-2 ring-[#4338CA]/20 shadow-sm'
-                        : 'bg-[#FAF7F2] border-[#E2E8F0] hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-xs text-[#131B2E]">{item.title}</span>
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          isSelected ? 'border-[#4338CA] bg-[#4338CA] text-white' : 'border-slate-300'
-                        }`}
-                      >
-                        {isSelected && <Check className="w-2.5 h-2.5" />}
-                      </div>
-                    </div>
-                    <p className="text-[11px] text-[#64748B] leading-relaxed">{item.desc}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* =================================================================== */}
-        {/* STEP 3: Section C - Project Objective */}
-        {/* =================================================================== */}
-        {currentStep === 3 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Section C: Project Objective &amp; Goals</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Help us understand the real-world business outcomes this solution must achieve.
-              </p>
-            </div>
-
-            <div className="space-y-4 text-xs">
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">
-                  What specific problem should this project solve? <span className="text-rose-500">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.section_c_objectives.problemToSolve}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_c_objectives: { ...formData.section_c_objectives, problemToSolve: e.target.value },
-                    })
-                  }
-                  placeholder="e.g. Currently customers call manually on WhatsApp; we lose track of enquiries and have no official presence on Google..."
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">
-                  What is the primary #1 goal of this solution? <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.section_c_objectives.primaryGoal}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_c_objectives: { ...formData.section_c_objectives, primaryGoal: e.target.value },
-                    })
-                  }
-                  placeholder="e.g. Generate 50+ inbound customer enquiries each month / Automate billing"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">
-                  What action should visitors / users take?
-                </label>
-                <input
-                  type="text"
-                  value={formData.section_c_objectives.keyVisitorAction}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_c_objectives: { ...formData.section_c_objectives, keyVisitorAction: e.target.value },
-                    })
-                  }
-                  placeholder="e.g. Click WhatsApp chat / Fill contact form / Register an account / Book a consultation"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">
-                  What does success look like 6 months from now?
-                </label>
-                <input
-                  type="text"
-                  value={formData.section_c_objectives.successDefinition}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_c_objectives: { ...formData.section_c_objectives, successDefinition: e.target.value },
-                    })
-                  }
-                  placeholder="e.g. Top ranking on Google in Motihari / Zero paper records needed"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* =================================================================== */}
-        {/* STEP 4: Section D - Target Audience */}
-        {/* =================================================================== */}
-        {currentStep === 4 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Section D: Target Audience</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Who are we designing and building this for?
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Customer Type</label>
-                <select
-                  value={formData.section_d_target_audience.targetCustomerType}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_d_target_audience: {
-                        ...formData.section_d_target_audience,
-                        targetCustomerType: e.target.value as any,
-                      },
-                    })
-                  }
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
-                >
-                  <option value="B2C">B2C (General Public / Consumers / Patients / Students)</option>
-                  <option value="B2B">B2B (Other Businesses / Corporate Clients / Vendors)</option>
-                  <option value="B2B_AND_B2C">Both B2B and B2C</option>
-                  <option value="INTERNAL_TEAM">Internal Company Staff &amp; Management</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Geographic Reach</label>
-                <input
-                  type="text"
-                  value={formData.section_d_target_audience.geographicReach}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_d_target_audience: {
-                        ...formData.section_d_target_audience,
-                        geographicReach: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="e.g. Motihari &amp; North Bihar / All India / Global"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
-                />
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">
-                  Core Customer Needs / Motivations
-                </label>
-                <textarea
-                  rows={3}
-                  value={formData.section_d_target_audience.coreCustomerNeeds}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_d_target_audience: {
-                        ...formData.section_d_target_audience,
-                        coreCustomerNeeds: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="Why do customers choose you over competitors? Fast service, lower cost, trusted reputation, local availability?"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* =================================================================== */}
-        {/* STEP 5: Section E or G - Website / Software Pages & Roles */}
-        {/* =================================================================== */}
-        {currentStep === 5 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-black text-[#131B2E]">
-                {isSoftwareProject ? 'Section G: Software Architecture & Roles' : 'Section E: Required Pages'}
-              </h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                {isSoftwareProject
-                  ? 'Define the user types, permissions, and administrative workflows required.'
-                  : 'Select the primary pages to be included in your site architecture.'}
-              </p>
-            </div>
-
-            {!isSoftwareProject ? (
-              <div className="space-y-5 text-xs">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider block">
-                  Select Required Pages
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {[
-                    'Home Landing Page',
-                    'About Us',
-                    'Services',
-                    'Products / Catalog',
-                    'Contact Us',
-                    'Photo Gallery',
-                    'Testimonials / Reviews',
-                    'FAQ',
-                    'Blog / News Updates',
-                    'Careers / Jobs',
-                    'Privacy Policy & Terms',
-                  ].map((page) => {
-                    const pages = formData.section_e_website_reqs?.requiredPages || [];
-                    const isChecked = pages.includes(page);
-                    return (
-                      <button
-                        key={page}
-                        type="button"
-                        onClick={() => {
-                          const updated = isChecked ? pages.filter((p) => p !== page) : [...pages, page];
-                          setFormData({
-                            ...formData,
-                            section_e_website_reqs: {
-                              ...formData.section_e_website_reqs!,
-                              requiredPages: updated,
-                            },
-                          });
-                        }}
-                        className={`p-3 rounded-xl border text-left text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${
-                          isChecked
-                            ? 'bg-[#4338CA]/10 border-[#4338CA] text-[#4338CA]'
-                            : 'bg-[#FAF7F2] border-[#E2E8F0] text-[#334155]'
-                        }`}
-                      >
-                        <span>{page}</span>
-                        {isChecked && <Check className="w-3.5 h-3.5 text-[#4338CA]" />}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Custom Page Addition */}
-                <div className="pt-2 space-y-2">
-                  <label className="font-bold text-[#131B2E] uppercase tracking-wider block">Add Custom Pages</label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={customPageInput}
-                      onChange={(e) => setCustomPageInput(e.target.value)}
-                      placeholder="e.g. Doctor Profiles / Patient Portal Link"
-                      className="flex-1 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs text-[#131B2E]"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (customPageInput.trim()) {
-                          const existing = formData.section_e_website_reqs?.customPages || [];
-                          setFormData({
-                            ...formData,
-                            section_e_website_reqs: {
-                              ...formData.section_e_website_reqs!,
-                              customPages: [...existing, customPageInput.trim()],
-                            },
-                          });
-                          setCustomPageInput('');
-                        }
-                      }}
-                      className="px-4 py-2 bg-[#131B2E] text-white rounded-xl font-bold text-xs"
-                    >
-                      Add Page
-                    </button>
-                  </div>
-
-                  {(formData.section_e_website_reqs?.customPages || []).length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {formData.section_e_website_reqs?.customPages?.map((cp, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2.5 py-1 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg text-xs font-bold flex items-center gap-1.5"
-                        >
-                          <span>{cp}</span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const updated = (formData.section_e_website_reqs?.customPages || []).filter(
-                                (_, i) => i !== idx
-                              );
-                              setFormData({
-                                ...formData,
-                                section_e_website_reqs: {
-                                  ...formData.section_e_website_reqs!,
-                                  customPages: updated,
-                                },
-                              });
-                            }}
-                            className="text-indigo-400 hover:text-rose-600"
-                          >
-                            &times;
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4 text-xs">
-                <div className="space-y-1.5">
-                  <label className="font-bold text-[#131B2E] uppercase tracking-wider">User Roles &amp; Permissions</label>
-                  <input
-                    type="text"
-                    value={(formData.section_g_system_reqs?.userRoles || []).join(', ')}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        section_g_system_reqs: {
-                          ...formData.section_g_system_reqs,
-                          userRoles: e.target.value.split(',').map((s) => s.trim()),
-                        },
-                      })
-                    }
-                    placeholder="e.g. Super Admin, Store Manager, Customer, Accountant"
-                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-[#131B2E] uppercase tracking-wider">Admin Dashboard Requirements</label>
-                  <textarea
-                    rows={3}
-                    value={formData.section_g_system_reqs?.adminCapabilities || ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        section_g_system_reqs: {
-                          ...formData.section_g_system_reqs,
-                          adminCapabilities: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="What must the admin see? Daily revenue charts, order status updates, staff management, inventory alerts?"
-                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-bold text-[#131B2E] uppercase tracking-wider">Reports &amp; Export Requirements</label>
-                  <input
-                    type="text"
-                    value={formData.section_g_system_reqs?.reportingNeeds || ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        section_g_system_reqs: {
-                          ...formData.section_g_system_reqs,
-                          reportingNeeds: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="e.g. Monthly GST invoice PDF downloads, Excel export of customer list"
-                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* =================================================================== */}
-        {/* STEP 6: Section F - Features & Integrations */}
-        {/* =================================================================== */}
-        {currentStep === 6 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Section F: Features &amp; Integrations</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Select the interactive features and communication modules you want built.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-              {[
-                { key: 'whatsAppChat', label: '1-Click WhatsApp Chat', desc: 'Direct chat button with pre-filled message.' },
-                { key: 'contactForm', label: 'Contact & Lead Capture Form', desc: 'Email alerts and CRM lead storage.' },
-                { key: 'googleMaps', label: 'Google Maps Location Embed', desc: 'Interactive pin for local store visits.' },
-                { key: 'analyticsSeo', label: 'Google Analytics & Local SEO', desc: 'Structured schema and visitor metrics.' },
-                { key: 'searchFilter', label: 'Live Search & Filter', desc: 'Instant search across products or services.' },
-                { key: 'onlineBooking', label: 'Appointment / Slot Booking', desc: 'Calendar reservation system.' },
-                { key: 'paymentGateway', label: 'Online Payment (Razorpay/UPI)', desc: 'Accept cards, UPI, net banking.' },
-                { key: 'userAuth', label: 'User Accounts / Login', desc: 'Sign up, password reset, profile area.' },
-                { key: 'cms', label: 'Content Management (CMS)', desc: 'Self-manage blogs, notices, and photos.' },
-              ].map((f) => {
-                const isChecked = (formData.section_f_features as any)[f.key];
-                return (
-                  <button
-                    key={f.key}
-                    type="button"
-                    onClick={() => {
-                      setFormData({
-                        ...formData,
-                        section_f_features: {
-                          ...formData.section_f_features,
-                          [f.key]: !isChecked,
-                        },
-                      });
-                    }}
-                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer space-y-1 ${
-                      isChecked
-                        ? 'bg-[#4338CA]/10 border-[#4338CA] text-[#131B2E]'
-                        : 'bg-[#FAF7F2] border-[#E2E8F0] text-[#64748B]'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between font-extrabold text-xs">
-                      <span>{f.label}</span>
-                      <div
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                          isChecked ? 'bg-[#4338CA] border-[#4338CA] text-white' : 'border-slate-300'
-                        }`}
-                      >
-                        {isChecked && <Check className="w-2.5 h-2.5" />}
-                      </div>
-                    </div>
-                    <p className="text-[10px] text-[#64748B]">{f.desc}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="space-y-1.5 pt-2 text-xs">
-              <label className="font-bold text-[#131B2E] uppercase tracking-wider">Any Special Custom Features?</label>
+              <label className="font-bold text-[#131B2E] block mb-1 text-xs">
+                Business Description &bull; What products or services do you offer?
+              </label>
               <textarea
-                rows={2}
-                value={formData.section_f_features.customFeatures || ''}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    section_f_features: { ...formData.section_f_features, customFeatures: e.target.value },
-                  })
-                }
-                placeholder="Explain any custom calculation, SMS alert integration, or specific workflow needed..."
-                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
+                rows={3}
+                value={formData.section_a_profile.description}
+                onChange={(e) => updateSection('section_a_profile', { description: e.target.value })}
+                placeholder="Give a concise summary of your business activities, key strengths, and target market..."
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none"
               />
             </div>
           </div>
         )}
 
         {/* =================================================================== */}
-        {/* STEP 7: Section H - Content & Assets */}
+        {/* SECTION B: BUSINESS GOALS & TARGET AUDIENCE */}
         {/* =================================================================== */}
-        {currentStep === 7 && (
-          <div className="space-y-6">
+        {currentStep === 2 && (
+          <div className="space-y-4 text-xs">
             <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Section H: Content &amp; Assets Readiness</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Tell us what branding assets you have ready. If you need help creating a logo or copywriting, let us know!
-              </p>
+              <h2 className="text-lg font-black text-[#131B2E]">Section B &bull; Business Goals &amp; Target Audience</h2>
+              <p className="text-xs text-[#64748B]">Clarify who will use this software or website, and what you want to achieve.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Do you have a Logo?</label>
-                <select
-                  value={formData.section_h_content_assets.hasLogo}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_h_content_assets: {
-                        ...formData.section_h_content_assets,
-                        hasLogo: e.target.value as any,
-                      },
-                    })
-                  }
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                >
-                  <option value="YES">Yes, we have high-resolution logo files ready</option>
-                  <option value="NEEDS_REDESIGN">We have an old logo but want a modern redesign</option>
-                  <option value="NO">No, we need Ekaagra to design a new brand logo</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Photos / Videos</label>
-                <select
-                  value={formData.section_h_content_assets.hasProductOrServicePhotos}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_h_content_assets: {
-                        ...formData.section_h_content_assets,
-                        hasProductOrServicePhotos: e.target.value as any,
-                      },
-                    })
-                  }
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                >
-                  <option value="READY">Ready (we will provide high-res photos)</option>
-                  <option value="PARTIAL">Partial (some photos ready, need stock images)</option>
-                  <option value="NEED_HELP">Need help / Use licensed professional stock photography</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">
-                  Links to Existing Assets (Google Drive / Dropbox / Website)
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  Primary Solution Type <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="url"
-                  value={(formData.section_h_content_assets.uploadedAssetUrls || []).join(', ')}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_h_content_assets: {
-                        ...formData.section_h_content_assets,
-                        uploadedAssetUrls: e.target.value.split(',').map((s) => s.trim()),
-                      },
-                    })
-                  }
-                  placeholder="https://drive.google.com/drive/folders/..."
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                />
+                <select
+                  value={formData.section_b_goals_audience.primaryType}
+                  onChange={(e) => updateSection('section_b_goals_audience', { primaryType: e.target.value })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="Business Website">Business Website (Informational / Lead Generation)</option>
+                  <option value="E-commerce Website">E-commerce Website (Online Shop &amp; Orders)</option>
+                  <option value="Web Application">Web Application (Interactive Cloud Software)</option>
+                  <option value="Custom Software">Custom Enterprise Software / Portal</option>
+                  <option value="CRM / ERP">CRM / ERP / Billing &amp; Inventory System</option>
+                  <option value="Booking & Appointment System">Booking &amp; Appointment System</option>
+                </select>
               </div>
 
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Additional Content Notes</label>
-                <textarea
-                  rows={2}
-                  value={formData.section_h_content_assets.contentNotes || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_h_content_assets: {
-                        ...formData.section_h_content_assets,
-                        contentNotes: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="e.g. We have a printed brochure we can WhatsApp over..."
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                />
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Customer / User Relationship</label>
+                <select
+                  value={formData.section_b_goals_audience.targetCustomerType}
+                  onChange={(e) => updateSection('section_b_goals_audience', { targetCustomerType: e.target.value as any })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="B2C">B2C (Individual retail consumers / general public)</option>
+                  <option value="B2B">B2B (Other businesses, wholesale distributors)</option>
+                  <option value="B2B_AND_B2C">Both B2B and B2C audiences</option>
+                  <option value="INTERNAL_TEAM">Internal Company Team / Staff Portal</option>
+                </select>
               </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">
+                Primary Goal of this Website or Software <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.section_b_goals_audience.primaryGoal}
+                onChange={(e) => updateSection('section_b_goals_audience', { primaryGoal: e.target.value })}
+                placeholder="e.g. Generate high-intent phone and WhatsApp inquiries from clients in East Champaran"
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
+              {stepErrors['primaryGoal'] && (
+                <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['primaryGoal']}</span>
+              )}
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">
+                Core Problem or Challenge to Solve <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={formData.section_b_goals_audience.problemToSolve}
+                onChange={(e) => updateSection('section_b_goals_audience', { problemToSolve: e.target.value })}
+                placeholder="e.g. Our competitors appear on Google when clients search for our services in Motihari, while we have no official web presence to verify our authenticity..."
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
+              {stepErrors['problemToSolve'] && (
+                <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['problemToSolve']}</span>
+              )}
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">Target Audience &bull; Who are your ideal customers?</label>
+              <input
+                type="text"
+                value={formData.section_b_goals_audience.targetAudienceDescription}
+                onChange={(e) => updateSection('section_b_goals_audience', { targetAudienceDescription: e.target.value })}
+                placeholder="e.g. Families and business owners looking for high quality commercial services in Bihar"
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
             </div>
           </div>
         )}
 
         {/* =================================================================== */}
-        {/* STEP 8: Section I - Design Preferences */}
+        {/* SECTION C: DESIGN & VISUAL PREFERENCES */}
         {/* =================================================================== */}
-        {currentStep === 8 && (
-          <div className="space-y-6">
+        {currentStep === 3 && (
+          <div className="space-y-4 text-xs">
             <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Section I: Design Preferences &amp; Aesthetics</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Tell us about your visual taste. Our design team uses this to create your bespoke concept.
-              </p>
+              <h2 className="text-lg font-black text-[#131B2E]">Section C &bull; Design &amp; Visual Preferences</h2>
+              <p className="text-xs text-[#64748B]">Help our UI/UX designers understand your visual taste and aesthetic guidelines.</p>
             </div>
 
-            <div className="space-y-5 text-xs">
-              <div className="space-y-2">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider block">Visual Tone &amp; Vibe</label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {[
-                    'Modern & Clean',
-                    'Corporate & Prestigious',
-                    'Minimalist',
-                    'Bold & Vibrant',
-                    'Luxury & Premium',
-                    'Friendly & Warm',
-                  ].map((vibe) => {
-                    const isSelected = formData.section_i_design_preferences.styleVibe === vibe;
-                    return (
-                      <button
-                        key={vibe}
-                        type="button"
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            section_i_design_preferences: {
-                              ...formData.section_i_design_preferences,
-                              styleVibe: vibe as any,
-                            },
-                          })
-                        }
-                        className={`p-3 rounded-xl border font-bold text-xs text-left transition-all cursor-pointer flex items-center justify-between ${
-                          isSelected
-                            ? 'bg-[#4338CA]/10 border-[#4338CA] text-[#4338CA]'
-                            : 'bg-[#FAF7F2] border-[#E2E8F0] text-[#334155]'
-                        }`}
-                      >
-                        <span>{vibe}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-[#4338CA]" />}
-                      </button>
-                    );
-                  })}
-                </div>
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-2">Overall Design Vibe &amp; Style</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[
+                  { id: 'Modern & Clean', desc: 'Sleek, ample whitespace, high legibility' },
+                  { id: 'Corporate & Prestigious', desc: 'Authoritative, structured, trust-building' },
+                  { id: 'Minimalist', desc: 'Simplified typography, subtle lines, modern' },
+                  { id: 'Bold & Vibrant', desc: 'Energetic, dynamic accents, engaging' },
+                  { id: 'Luxury & Premium', desc: 'High-end, dark or gold accents, refined' },
+                  { id: 'Friendly & Warm', desc: 'Approachable, warm colors, community-centric' },
+                ].map((vibe) => (
+                  <button
+                    key={vibe.id}
+                    type="button"
+                    onClick={() => updateSection('section_c_design', { styleVibe: vibe.id as any })}
+                    className={`p-3.5 rounded-2xl border text-left cursor-pointer transition-all ${
+                      formData.section_c_design.styleVibe === vibe.id
+                        ? 'border-[#4338CA] bg-indigo-50/60 shadow-xs'
+                        : 'border-[#E2E8F0] bg-[#FAF7F2] hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="font-bold text-[#131B2E]">{vibe.id}</div>
+                    <div className="text-[10px] text-[#64748B] mt-0.5">{vibe.desc}</div>
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Preferred Brand Colors</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Preferred Brand Colors</label>
                 <input
                   type="text"
-                  value={formData.section_i_design_preferences.preferredColors || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_i_design_preferences: {
-                        ...formData.section_i_design_preferences,
-                        preferredColors: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="e.g. Navy Blue &amp; Gold / Emerald Green &amp; Slate White"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
+                  value={formData.section_c_design.preferredColors}
+                  onChange={(e) => updateSection('section_c_design', { preferredColors: e.target.value })}
+                  placeholder="e.g. Deep Navy Blue, White, and Gold accents (#1E3A8A, #D97706)"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Websites You Like (Inspiration URLs)</label>
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Colors to Avoid</label>
                 <input
                   type="text"
-                  value={formData.section_i_design_preferences.likedWebsites || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_i_design_preferences: {
-                        ...formData.section_i_design_preferences,
-                        likedWebsites: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="e.g. apple.com, stripe.com, competitor.com"
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
+                  value={formData.section_c_design.avoidColors || ''}
+                  onChange={(e) => updateSection('section_c_design', { avoidColors: e.target.value })}
+                  placeholder="e.g. Neon green, bright purple"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
                 />
               </div>
+            </div>
 
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Websites You Dislike (What to avoid)</label>
-                <input
-                  type="text"
-                  value={formData.section_i_design_preferences.dislikedWebsites || ''}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_i_design_preferences: {
-                        ...formData.section_i_design_preferences,
-                        dislikedWebsites: e.target.value,
-                      },
-                    })
-                  }
-                  placeholder="e.g. Avoid cluttered text, pop-up ads, dark background..."
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                />
-              </div>
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">
+                Websites You Like (Inspirations) &bull; Include links and what you like
+              </label>
+              <textarea
+                rows={2}
+                value={formData.section_c_design.likedWebsites || ''}
+                onChange={(e) => updateSection('section_c_design', { likedWebsites: e.target.value })}
+                placeholder="e.g. https://apple.com (love the clean typography), https://stripe.com (modern cards)"
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-mono text-[11px]"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">
+                Competitor Websites &bull; Who else in your region or industry do you compete with?
+              </label>
+              <textarea
+                rows={2}
+                value={formData.section_c_design.competitorWebsites || ''}
+                onChange={(e) => updateSection('section_c_design', { competitorWebsites: e.target.value })}
+                placeholder="Competitor URLs or names in Motihari / Bihar..."
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
             </div>
           </div>
         )}
 
         {/* =================================================================== */}
-        {/* STEP 9: Section J - Domain & Hosting */}
+        {/* SECTION D: WEBSITE / APPLICATION STRUCTURE */}
         {/* =================================================================== */}
-        {currentStep === 9 && (
-          <div className="space-y-6">
+        {currentStep === 4 && (
+          <div className="space-y-4 text-xs">
             <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Section J: Domain &amp; Online Infrastructure</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Let us know about your website address (domain) and server hosting preferences.
-              </p>
+              <h2 className="text-lg font-black text-[#131B2E]">Section D &bull; Website / Application Structure</h2>
+              <p className="text-xs text-[#64748B]">Select the required pages, screens, and content architecture.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 text-xs">
-              <div className="space-y-1.5 sm:col-span-2">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Do you already own a domain?</label>
-                <div className="grid grid-cols-3 gap-2 pt-1">
-                  {[
-                    { val: 'YES', label: 'Yes, we own a domain' },
-                    { val: 'NO', label: 'No, need a new domain' },
-                    { val: 'DECIDE_LATER', label: 'Help me choose later' },
-                  ].map((d) => (
-                    <button
-                      key={d.val}
-                      type="button"
-                      onClick={() =>
-                        setFormData({
-                          ...formData,
-                          section_j_domain_hosting: {
-                            ...formData.section_j_domain_hosting,
-                            hasDomain: d.val as any,
-                          },
-                        })
-                      }
-                      className={`p-3 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
-                        formData.section_j_domain_hosting.hasDomain === d.val
-                          ? 'bg-[#4338CA]/10 border-[#4338CA] text-[#4338CA]'
-                          : 'bg-[#FAF7F2] border-[#E2E8F0] text-[#64748B]'
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-2">
+                Standard Pages Required <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  'Home Landing Page',
+                  'About Company',
+                  'Products / Services',
+                  'Contact & Inquiries',
+                  'Customer Testimonials',
+                  'Photo / Project Gallery',
+                  'Blog / News Updates',
+                  'Careers / Jobs',
+                  'Pricing / Rate Card',
+                  'FAQ Section',
+                  'Privacy Policy & Terms',
+                ].map((page) => {
+                  const isChecked = formData.section_d_structure.requiredPages.includes(page);
+                  return (
+                    <label
+                      key={page}
+                      className={`flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all ${
+                        isChecked
+                          ? 'border-[#4338CA] bg-indigo-50/50 font-bold text-[#131B2E]'
+                          : 'border-[#E2E8F0] bg-[#FAF7F2] text-[#64748B]'
                       }`}
                     >
-                      {d.label}
-                    </button>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          const current = formData.section_d_structure.requiredPages;
+                          const next = isChecked ? current.filter((p) => p !== page) : [...current, page];
+                          updateSection('section_d_structure', { requiredPages: next });
+                        }}
+                        className="rounded text-[#4338CA] focus:ring-0"
+                      />
+                      <span className="text-[11px] truncate">{page}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {stepErrors['requiredPages'] && (
+                <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['requiredPages']}</span>
+              )}
+            </div>
+
+            {/* Custom Pages Manager */}
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">Add Custom Pages / Modules</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customPageInput}
+                  onChange={(e) => setCustomPageInput(e.target.value)}
+                  placeholder="e.g. Doctor OPD Timetable, Franchise Application, Wholesale Portal"
+                  className="flex-1 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-2.5 text-xs"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomPage}
+                  className="px-4 py-2 bg-[#4338CA] text-white font-bold rounded-xl text-xs hover:bg-[#3730A3]"
+                >
+                  Add Page
+                </button>
+              </div>
+
+              {(formData.section_d_structure.customPages || []).length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.section_d_structure.customPages?.map((p) => (
+                    <span
+                      key={p}
+                      className="px-3 py-1 bg-indigo-50 border border-indigo-200 text-indigo-950 font-bold text-[11px] rounded-lg flex items-center gap-1.5"
+                    >
+                      <span>{p}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveCustomPage(p)}
+                        className="text-rose-500 hover:text-rose-700"
+                      >
+                        &times;
+                      </button>
+                    </span>
                   ))}
                 </div>
-              </div>
-
-              {formData.section_j_domain_hosting.hasDomain === 'YES' && (
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="font-bold text-[#131B2E] uppercase tracking-wider">Existing Domain Name</label>
-                  <input
-                    type="text"
-                    value={formData.section_j_domain_hosting.existingDomain || ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        section_j_domain_hosting: {
-                          ...formData.section_j_domain_hosting,
-                          existingDomain: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="e.g. apexhospital.com"
-                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] font-mono"
-                  />
-                </div>
               )}
-
-              {formData.section_j_domain_hosting.hasDomain === 'NO' && (
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="font-bold text-[#131B2E] uppercase tracking-wider">Preferred New Domain Name</label>
-                  <input
-                    type="text"
-                    value={formData.section_j_domain_hosting.preferredNewDomain || ''}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        section_j_domain_hosting: {
-                          ...formData.section_j_domain_hosting,
-                          preferredNewDomain: e.target.value,
-                        },
-                      })
-                    }
-                    placeholder="e.g. champaranretailers.in"
-                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E] font-mono"
-                  />
-                </div>
-              )}
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">Business Email Needed?</label>
-                <select
-                  value={formData.section_j_domain_hosting.hasBusinessEmail ? 'YES' : 'NO'}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_j_domain_hosting: {
-                        ...formData.section_j_domain_hosting,
-                        hasBusinessEmail: e.target.value === 'YES',
-                      },
-                    })
-                  }
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                >
-                  <option value="YES">Yes, create business email (info@yourcompany.com)</option>
-                  <option value="NO">No, standard email is fine</option>
-                </select>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-bold text-[#131B2E] uppercase tracking-wider">DNS Management Access</label>
-                <select
-                  value={formData.section_j_domain_hosting.hasDnsAccess ? 'YES' : 'NO'}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      section_j_domain_hosting: {
-                        ...formData.section_j_domain_hosting,
-                        hasDnsAccess: e.target.value === 'YES',
-                      },
-                    })
-                  }
-                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-[#131B2E]"
-                >
-                  <option value="YES">Yes, we have login credentials for domain registrar</option>
-                  <option value="NO">No / Need Ekaagra to configure DNS</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* =================================================================== */}
-        {/* STEP 10: Review & Submit */}
-        {/* =================================================================== */}
-        {currentStep === 10 && (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-xl font-black text-[#131B2E]">Review Your Requirements</h2>
-              <p className="text-xs text-[#64748B] mt-1">
-                Inspect your specifications before final submission to Ekaagra&apos;s central engineering registry.
-              </p>
             </div>
 
-            {submitError && (
-              <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 rounded-2xl text-xs font-bold flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                <span>{submitError}</span>
-              </div>
-            )}
-
-            <div className="space-y-4 text-xs">
-              {/* Profile Review */}
-              <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-[#E2E8F0] space-y-2">
-                <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2 font-bold text-[#131B2E]">
-                  <span>Business Profile</span>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep(1)}
-                    className="text-[#4338CA] hover:underline"
-                  >
-                    Edit
-                  </button>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-[#64748B]">
-                  <div>Brand: <strong className="text-[#131B2E]">{formData.section_a_profile.displayName}</strong></div>
-                  <div>Category: <strong className="text-[#131B2E]">{formData.section_a_profile.category}</strong></div>
-                  <div>Contact: <strong className="text-[#131B2E]">{formData.section_a_profile.primaryContactName}</strong></div>
-                  <div>Phone: <strong className="font-mono text-[#131B2E]">{formData.section_a_profile.phone}</strong></div>
-                </div>
-              </div>
-
-              {/* Solution & Objectives */}
-              <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-[#E2E8F0] space-y-2">
-                <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2 font-bold text-[#131B2E]">
-                  <span>Solution &amp; Objectives</span>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep(2)}
-                    className="text-[#4338CA] hover:underline"
-                  >
-                    Edit
-                  </button>
-                </div>
-                <div className="space-y-1 text-[#64748B]">
-                  <div>Type: <strong className="text-[#4338CA]">{formData.section_b_project_type.primaryType}</strong></div>
-                  <div>Problem: <strong className="text-[#131B2E]">{formData.section_c_objectives.problemToSolve || 'Not specified'}</strong></div>
-                  <div>Primary Goal: <strong className="text-[#131B2E]">{formData.section_c_objectives.primaryGoal || 'Not specified'}</strong></div>
-                </div>
-              </div>
-
-              {/* Pages & Features */}
-              <div className="p-4 bg-[#FAF7F2] rounded-2xl border border-[#E2E8F0] space-y-2">
-                <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2 font-bold text-[#131B2E]">
-                  <span>Pages &amp; Interactive Features</span>
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep(5)}
-                    className="text-[#4338CA] hover:underline"
-                  >
-                    Edit
-                  </button>
-                </div>
-                <div className="space-y-1.5 text-[#64748B]">
-                  {!isSoftwareProject && (
-                    <div>
-                      Pages ({formData.section_e_website_reqs?.requiredPages.length}):{' '}
-                      <span className="text-[#131B2E] font-medium">
-                        {formData.section_e_website_reqs?.requiredPages.join(', ')}
-                      </span>
-                    </div>
-                  )}
-                  <div>
-                    Style Tone: <strong className="text-[#131B2E]">{formData.section_i_design_preferences.styleVibe}</strong>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reassurance Callout */}
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-950 space-y-1">
-                <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-800">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                  <span>Ekaagra Zero-Risk Design Guarantee</span>
-                </div>
-                <p className="text-[11px] leading-relaxed text-emerald-900">
-                  Submitting this form initiates your design phase. You will inspect your custom design concept first. No payment is due until you approve the design.
-                </p>
-              </div>
-
-              {/* Confirmation Checkbox */}
-              <label className="flex items-start gap-3 p-3 rounded-xl border border-[#E2E8F0] bg-[#FAF7F2] cursor-pointer">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <label className="flex items-center gap-2 p-3.5 rounded-xl border border-[#E2E8F0] bg-[#FAF7F2] cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={clientConfirmed}
-                  onChange={(e) => setClientConfirmed(e.target.checked)}
-                  className="mt-0.5 w-4 h-4 text-[#4338CA] rounded border-slate-300 focus:ring-[#4338CA]"
+                  checked={formData.section_d_structure.multilingual}
+                  onChange={(e) => updateSection('section_d_structure', { multilingual: e.target.checked })}
+                  className="rounded text-[#4338CA]"
                 />
-                <span className="text-xs text-[#131B2E] font-semibold leading-relaxed">
-                  I confirm these specifications accurately represent our requirements. I understand Ekaagra will review and prepare our initial design concept.
-                </span>
+                <div>
+                  <div className="font-bold text-[#131B2E]">Multilingual Support Needed</div>
+                  <div className="text-[10px] text-[#64748B]">e.g. English + Hindi toggling</div>
+                </div>
+              </label>
+
+              <label className="flex items-center gap-2 p-3.5 rounded-xl border border-[#E2E8F0] bg-[#FAF7F2] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.section_d_structure.blogOrNews}
+                  onChange={(e) => updateSection('section_d_structure', { blogOrNews: e.target.checked })}
+                  className="rounded text-[#4338CA]"
+                />
+                <div>
+                  <div className="font-bold text-[#131B2E]">Dynamic News / Blog Section</div>
+                  <div className="text-[10px] text-[#64748B]">Publish continuous updates without coding</div>
+                </div>
               </label>
             </div>
           </div>
         )}
 
-        {/* Footer Navigation Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-[#E2E8F0]">
-          <button
-            type="button"
-            onClick={handlePrev}
-            disabled={currentStep === 1 || isSubmitting}
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl border border-[#E2E8F0] text-xs font-bold text-[#64748B] hover:text-[#131B2E] disabled:opacity-40 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Previous</span>
-          </button>
+        {/* =================================================================== */}
+        {/* SECTION E: CONTENT & ASSETS (WITH FILE UPLOADS) */}
+        {/* =================================================================== */}
+        {currentStep === 5 && (
+          <div className="space-y-5 text-xs">
+            <div>
+              <h2 className="text-lg font-black text-[#131B2E]">Section E &bull; Content &amp; Assets</h2>
+              <p className="text-xs text-[#64748B]">
+                Upload logos, brand guidelines, service catalogues, or reference mockups. Files are securely associated with your project.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Do you have a vector or high-res Logo?</label>
+                <select
+                  value={formData.section_e_assets.hasLogo}
+                  onChange={(e) => updateSection('section_e_assets', { hasLogo: e.target.value as any })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="YES">Yes, we have a logo file ready to upload</option>
+                  <option value="NO">No, we need Ekaagra to design a logo for us</option>
+                  <option value="NEEDS_REDESIGN">We have an old logo, but want a redesign</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Status of Written Text &amp; Copy</label>
+                <select
+                  value={formData.section_e_assets.hasWrittenContent}
+                  onChange={(e) => updateSection('section_e_assets', { hasWrittenContent: e.target.value as any })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="READY">Ready &bull; We have our text &amp; brochures ready</option>
+                  <option value="DRAFT">Rough Draft &bull; We will need editorial assistance</option>
+                  <option value="NEED_COPYWRITING">Need Copywriting &bull; We want Ekaagra to write the copy</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Asset Upload Box */}
+            <div className="p-5 rounded-2xl bg-indigo-50/70 border border-indigo-200 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <span className="font-extrabold text-xs text-indigo-950 uppercase tracking-wider block">
+                    Upload Project Assets &amp; Reference Files
+                  </span>
+                  <p className="text-[11px] text-indigo-900">
+                    Allowed: PNG, JPG, WEBP, SVG, PDF, DOCX, XLSX (Max 15MB each). Server-side encrypted.
+                  </p>
+                </div>
+
+                {/* Category selector for next upload */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-indigo-900 uppercase">Category:</span>
+                  <select
+                    value={uploadCategory}
+                    onChange={(e) => setUploadCategory(e.target.value as BusinessAssetCategory)}
+                    className="bg-white border border-indigo-200 rounded-lg px-2.5 py-1 text-[11px] font-bold text-[#131B2E]"
+                  >
+                    <option value="LOGO">Logo</option>
+                    <option value="BRAND_GUIDELINE">Brand Guidelines</option>
+                    <option value="SCREENSHOT">Website Screenshot</option>
+                    <option value="CATALOGUE">Product / Service Catalogue</option>
+                    <option value="DOCUMENT">PDF / Document</option>
+                    <option value="IMAGE">Photos / Images</option>
+                    <option value="REFERENCE_DESIGN">Reference Design</option>
+                    <option value="OTHER">Other Material</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Upload Input */}
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                  className="w-full sm:w-auto text-xs text-[#64748B] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#4338CA] file:text-white hover:file:bg-[#3730A3] cursor-pointer"
+                />
+
+                {isUploading && (
+                  <span className="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Uploading &amp; encrypting file...
+                  </span>
+                )}
+              </div>
+
+              {uploadError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 font-bold">
+                  {uploadError}
+                </div>
+              )}
+
+              {/* Uploaded Files Table */}
+              {uploadedAssets.length > 0 && (
+                <div className="space-y-2 pt-2 border-t border-indigo-200/70">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-950 block">
+                    Attached Files ({uploadedAssets.length})
+                  </span>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                    {uploadedAssets.map((asset) => (
+                      <div
+                        key={asset.id}
+                        className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-indigo-100 text-xs shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2 truncate max-w-[280px] sm:max-w-md">
+                          <FileText className="w-4 h-4 text-[#4338CA] shrink-0" />
+                          <span className="font-bold text-[#131B2E] truncate">{asset.file_name}</span>
+                          <span className="text-[9px] font-mono font-bold bg-indigo-50 text-[#4338CA] px-2 py-0.5 rounded uppercase">
+                            {asset.asset_category}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          {asset.file_size_bytes && (
+                            <span className="text-[10px] text-[#94A3B8] font-mono">
+                              {(asset.file_size_bytes / (1024 * 1024)).toFixed(1)}MB
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAsset(asset.id)}
+                            className="text-rose-500 hover:text-rose-700 p-1"
+                            title="Remove file"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">Additional Content Notes</label>
+              <textarea
+                rows={2}
+                value={formData.section_e_assets.contentNotes || ''}
+                onChange={(e) => updateSection('section_e_assets', { contentNotes: e.target.value })}
+                placeholder="Notes on photo shoots, existing brochure links, Google Drive folders..."
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* SECTION F: FEATURES & FUNCTIONAL REQUIREMENTS */}
+        {/* =================================================================== */}
+        {currentStep === 6 && (
+          <div className="space-y-4 text-xs">
+            <div>
+              <h2 className="text-lg font-black text-[#131B2E]">Section F &bull; Features &amp; Functional Requirements</h2>
+              <p className="text-xs text-[#64748B]">Select the operational features required for your software or portal.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {[
+                { key: 'contactForm', title: 'Interactive Inquiry / Contact Form', desc: 'Captures visitor inquiries directly' },
+                { key: 'whatsAppChat', title: 'WhatsApp Direct Chat Widget', desc: 'Connects customers instantly to your mobile' },
+                { key: 'googleMaps', title: 'Google Maps & Driving Directions', desc: 'Helps local clients find your premises' },
+                { key: 'searchFilter', title: 'Product / Content Search & Filter', desc: 'Fast indexing of catalogues or listings' },
+                { key: 'userAuth', title: 'User Account Registration & Login', desc: 'Secure customer or client accounts' },
+                { key: 'adminPanel', title: 'Custom Admin Management Dashboard', desc: 'Control content, leads, and orders' },
+                { key: 'cms', title: 'Content Management System (CMS)', desc: 'Edit notices, galleries, products easily' },
+                { key: 'onlineBooking', title: 'Appointment / Table Booking', desc: 'Schedule dates, timeslots, and services' },
+                { key: 'paymentGateway', title: 'Online Payment Gateway (Razorpay/UPI)', desc: 'Collect payments, advance deposits, invoices' },
+                { key: 'analyticsSeo', title: 'Search Engine Optimization & Analytics', desc: 'Google Search Console, meta tags, visitor analytics' },
+              ].map((feat) => {
+                const isChecked = Boolean((formData.section_f_features as any)[feat.key]);
+                return (
+                  <label
+                    key={feat.key}
+                    className={`flex items-start gap-2.5 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                      isChecked
+                        ? 'border-[#4338CA] bg-indigo-50/50 shadow-2xs'
+                        : 'border-[#E2E8F0] bg-[#FAF7F2] hover:bg-slate-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) => updateSection('section_f_features', { [feat.key]: e.target.checked } as any)}
+                      className="mt-0.5 rounded text-[#4338CA] focus:ring-0"
+                    />
+                    <div>
+                      <div className="font-bold text-[#131B2E]">{feat.title}</div>
+                      <div className="text-[10px] text-[#64748B] mt-0.5">{feat.desc}</div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">Custom Business Logic / Specific Workflows</label>
+              <textarea
+                rows={2}
+                value={formData.section_f_features.customFeatures || ''}
+                onChange={(e) => updateSection('section_f_features', { customFeatures: e.target.value })}
+                placeholder="e.g. Generate automatic PDF quote when client inputs room dimensions, or email alert on high-value order..."
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* SECTION G: INTEGRATIONS & TECHNICAL REQUIREMENTS */}
+        {/* =================================================================== */}
+        {currentStep === 7 && (
+          <div className="space-y-4 text-xs">
+            <div>
+              <h2 className="text-lg font-black text-[#131B2E]">Section G &bull; Integrations &amp; Technical Requirements</h2>
+              <p className="text-xs text-[#64748B]">Specify third-party APIs, payment gateways, and system architecture.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Payment Gateway Preference</label>
+                <select
+                  value={formData.section_g_integrations.preferredPaymentGateway || 'RAZORPAY'}
+                  onChange={(e) => updateSection('section_g_integrations', { preferredPaymentGateway: e.target.value as any })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="RAZORPAY">Razorpay (Recommended &bull; UPI, Cards, Net Banking)</option>
+                  <option value="PAYTM">Paytm Business Gateway</option>
+                  <option value="CASHFREE">Cashfree Payments</option>
+                  <option value="STRIPE">Stripe (For International Payments)</option>
+                  <option value="NONE">No Online Payment Gateway Required</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">WhatsApp Official Cloud API Integration</label>
+                <select
+                  value={formData.section_g_integrations.whatsappApiNeeded ? 'YES' : 'NO'}
+                  onChange={(e) => updateSection('section_g_integrations', { whatsappApiNeeded: e.target.value === 'YES' })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="YES">Yes &bull; Automatic WhatsApp order alerts and receipts</option>
+                  <option value="NO">No &bull; Simple click-to-chat button is sufficient</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">CRM / Accounting / ERP Integration</label>
+              <input
+                type="text"
+                value={formData.section_g_integrations.crmIntegration || ''}
+                onChange={(e) => updateSection('section_g_integrations', { crmIntegration: e.target.value })}
+                placeholder="e.g. Tally, Zoho Books, Vyapar, Marg ERP (if applicable)"
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">Other External APIs or Security Requirements</label>
+              <textarea
+                rows={2}
+                value={formData.section_g_integrations.thirdPartyApis || ''}
+                onChange={(e) => updateSection('section_g_integrations', { thirdPartyApis: e.target.value })}
+                placeholder="e.g. Shiprocket delivery API, SMS OTP gateway, private database access..."
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* SECTION H: DOMAIN, HOSTING, EMAIL & DEPLOYMENT */}
+        {/* =================================================================== */}
+        {currentStep === 8 && (
+          <div className="space-y-4 text-xs">
+            <div>
+              <h2 className="text-lg font-black text-[#131B2E]">Section H &bull; Domain, Hosting, Email &amp; Deployment</h2>
+              <p className="text-xs text-[#64748B]">Establish infrastructure, DNS management, and business email addresses.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Domain Name Status</label>
+                <select
+                  value={formData.section_h_domain_hosting.hasDomain}
+                  onChange={(e) => updateSection('section_h_domain_hosting', { hasDomain: e.target.value as any })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="YES">We already own a domain name</option>
+                  <option value="NO">We need Ekaagra to purchase &amp; register our domain</option>
+                  <option value="DECIDE_LATER">Decide later during the project</option>
+                </select>
+              </div>
+
+              {formData.section_h_domain_hosting.hasDomain === 'YES' ? (
+                <div>
+                  <label className="font-bold text-[#131B2E] block mb-1">Existing Domain Name</label>
+                  <input
+                    type="text"
+                    value={formData.section_h_domain_hosting.existingDomain || ''}
+                    onChange={(e) => updateSection('section_h_domain_hosting', { existingDomain: e.target.value })}
+                    placeholder="e.g. yourcompany.com or yourcompany.in"
+                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-mono"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="font-bold text-[#131B2E] block mb-1">Preferred New Domain Name</label>
+                  <input
+                    type="text"
+                    value={formData.section_h_domain_hosting.preferredNewDomain || ''}
+                    onChange={(e) => updateSection('section_h_domain_hosting', { preferredNewDomain: e.target.value })}
+                    placeholder="e.g. yourbrandbihar.com"
+                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-mono"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Hosting Preference</label>
+                <select
+                  value={formData.section_h_domain_hosting.hostingPreference}
+                  onChange={(e) => updateSection('section_h_domain_hosting', { hostingPreference: e.target.value as any })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="MANAGED_BY_EKAAGRA">Managed Cloud Hosting by Ekaagra (High Speed, SSL, Backups)</option>
+                  <option value="CLIENT_AWS_CLOUD">Client Cloud (AWS / Vercel / Google Cloud)</option>
+                  <option value="CLIENT_CPANEL">Client cPanel / Shared Server</option>
+                  <option value="DECIDE_LATER">Decide later with Ekaagra Engineers</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Custom Business Email (@company.com)</label>
+                <select
+                  value={formData.section_h_domain_hosting.hasBusinessEmail ? 'YES' : 'NO'}
+                  onChange={(e) => updateSection('section_h_domain_hosting', { hasBusinessEmail: e.target.value === 'YES' })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="YES">Yes &bull; Setup business mailboxes (Google Workspace / Zoho)</option>
+                  <option value="NO">No &bull; We will use regular Gmail / existing email</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* SECTION I: BUDGET, TIMELINE & BUSINESS CONSTRAINTS */}
+        {/* =================================================================== */}
+        {currentStep === 9 && (
+          <div className="space-y-4 text-xs">
+            <div>
+              <h2 className="text-lg font-black text-[#131B2E]">Section I &bull; Budget, Timeline &amp; Business Constraints</h2>
+              <p className="text-xs text-[#64748B]">Set expectation boundaries to ensure realistic milestone scheduling.</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  Target Budget Bracket <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={formData.section_i_budget_timeline.targetBudgetRange}
+                  onChange={(e) => updateSection('section_i_budget_timeline', { targetBudgetRange: e.target.value })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="₹15,000 - ₹30,000">₹15,000 - ₹30,000 (Starter Business Website)</option>
+                  <option value="₹30,000 - ₹60,000">₹30,000 - ₹60,000 (Custom Commercial Solution)</option>
+                  <option value="₹60,000 - ₹1,20,000">₹60,000 - ₹1,20,000 (E-commerce / Web App)</option>
+                  <option value="₹1,20,000+">₹1,20,000+ (Full Custom Enterprise Portal)</option>
+                  <option value="FLEXIBLE_BASED_ON_DESIGN">Flexible / Based on approved design</option>
+                </select>
+                {stepErrors['targetBudgetRange'] && (
+                  <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['targetBudgetRange']}</span>
+                )}
+              </div>
+
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Target Launch Timeline</label>
+                <select
+                  value={formData.section_i_budget_timeline.timelineRequirement}
+                  onChange={(e) => updateSection('section_i_budget_timeline', { timelineRequirement: e.target.value as any })}
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
+                >
+                  <option value="IMMEDIATE">Urgent / Fast-track (Within 2 to 3 weeks)</option>
+                  <option value="ONE_TO_TWO_MONTHS">Standard (1 to 2 Months)</option>
+                  <option value="TWO_TO_FOUR_MONTHS">Comprehensive (2 to 4 Months)</option>
+                  <option value="FLEXIBLE">Flexible / Quality-driven</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">
+                Hard Deadlines, Regulatory, or Business Constraints
+              </label>
+              <textarea
+                rows={3}
+                value={formData.section_i_budget_timeline.hardDeadlinesOrConstraints || ''}
+                onChange={(e) => updateSection('section_i_budget_timeline', { hardDeadlinesOrConstraints: e.target.value })}
+                placeholder="e.g. We have a grand opening on Diwali, or our existing domain expires next month..."
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* =================================================================== */}
+        {/* SECTION J: FINAL REVIEW & SUBMISSION AGREEMENT */}
+        {/* =================================================================== */}
+        {currentStep === 10 && (
+          <div className="space-y-5 text-xs">
+            <div>
+              <h2 className="text-lg font-black text-[#131B2E]">Section J &bull; Final Review &amp; Submission Agreement</h2>
+              <p className="text-xs text-[#64748B]">Review your specifications before creating an immutable submission snapshot.</p>
+            </div>
+
+            {/* Summary Review Cards */}
+            <div className="space-y-3">
+              <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#E2E8F0] space-y-2">
+                <div className="font-bold text-[#131B2E] uppercase text-[11px] tracking-wider">Specifications Summary</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-[#64748B]">
+                  <div>Brand: <strong className="text-[#131B2E] block">{formData.section_a_profile.displayName}</strong></div>
+                  <div>Primary Type: <strong className="text-[#4338CA] block">{formData.section_b_goals_audience.primaryType}</strong></div>
+                  <div>Style: <strong className="text-[#131B2E] block">{formData.section_c_design.styleVibe}</strong></div>
+                  <div>Pages: <strong className="text-[#131B2E] block">{formData.section_d_structure.requiredPages.length} selected</strong></div>
+                </div>
+              </div>
+
+              {/* Zero upfront payment reminder banner */}
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-emerald-900">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                  <span>Design-First Principle &bull; Zero Upfront Fee</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-emerald-800">
+                  Submitting this form does not require any payment. Ekaagra Technologies will review these requirements, create your custom design concept, and present it for your inspection.
+                  <strong> You only pay after you review and approve the design concept.</strong>
+                </p>
+              </div>
+            </div>
+
+            {/* Signatory Inputs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  Authorized Signatory / Representative Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.section_j_agreement.authorizedSignatoryName}
+                  onChange={(e) => updateSection('section_j_agreement', { authorizedSignatoryName: e.target.value })}
+                  placeholder="Your full legal name"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+                />
+              </div>
+
+              <div>
+                <label className="font-bold text-[#131B2E] block mb-1">Title / Designation (Optional)</label>
+                <input
+                  type="text"
+                  value={formData.section_j_agreement.authorizedSignatoryTitle || ''}
+                  onChange={(e) => updateSection('section_j_agreement', { authorizedSignatoryTitle: e.target.value })}
+                  placeholder="e.g. Managing Director, Partner, Proprietor"
+                  className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="font-bold text-[#131B2E] block mb-1">Special Notes for the Ekaagra Engineering Team</label>
+              <textarea
+                rows={2}
+                value={formData.section_j_agreement.notesForEkaagraTeam || ''}
+                onChange={(e) => updateSection('section_j_agreement', { notesForEkaagraTeam: e.target.value })}
+                placeholder="Any special instructions, immediate concerns, or timing preferences..."
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
+              />
+            </div>
+
+            {/* Confirmation Checkbox */}
+            <label className="flex items-start gap-3 p-4 rounded-2xl border-2 border-indigo-200 bg-indigo-50/50 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={formData.section_j_agreement.confirmedAccurate}
+                onChange={(e) => updateSection('section_j_agreement', { confirmedAccurate: e.target.checked })}
+                className="mt-1 rounded text-[#4338CA] focus:ring-0"
+              />
+              <div className="space-y-0.5">
+                <span className="font-bold text-[#131B2E] block text-xs">
+                  I confirm that the specifications and requirements provided above are accurate and ready for review.
+                </span>
+                <span className="text-[10px] text-[#64748B] block">
+                  Clicking &ldquo;Submit Final Requirements&rdquo; creates an immutable snapshot version for our design team.
+                </span>
+              </div>
+            </label>
+
+            {submitError && (
+              <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span>{submitError}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Navigation & Submission Footer */}
+        <div className="flex items-center justify-between pt-4 border-t border-[#E2E8F0]">
+          {currentStep > 1 ? (
+            <button
+              type="button"
+              onClick={handlePrev}
+              disabled={isSubmitting}
+              className="px-5 py-3 rounded-xl border border-[#E2E8F0] bg-white text-[#131B2E] text-xs font-bold hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+          ) : (
+            <div />
+          )}
 
           {currentStep < 10 ? (
             <button
               type="button"
               onClick={handleNext}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white font-extrabold text-xs uppercase tracking-wider transition-all shadow-md shadow-[#4338CA]/20 cursor-pointer"
+              className="px-6 py-3 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-black flex items-center gap-2 cursor-pointer shadow-md shadow-[#4338CA]/20 transition-all"
             >
-              <span>Save &amp; Continue</span>
+              <span>Next Section</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
             <button
               type="button"
               onClick={handleFinalSubmit}
-              disabled={isSubmitting || !clientConfirmed}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-600/25 cursor-pointer"
+              disabled={isSubmitting}
+              className="px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/25 transition-all"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Submitting Requirements...</span>
+                  <span>Submitting Immutable Snapshot...</span>
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" />
-                  <span>Submit Requirements for Review</span>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Submit Final Requirements &rarr;</span>
                 </>
               )}
             </button>

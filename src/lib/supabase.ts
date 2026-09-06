@@ -486,6 +486,35 @@ export async function markOrderPaid(params: {
       }
     }
 
+    // Also update associated business project if present
+    if (currentRes.data.project_id) {
+      try {
+        await supabase
+          .from('projects')
+          .update({
+            project_status: 'PAID',
+            updated_at: nowIso,
+          })
+          .eq('id', currentRes.data.project_id);
+
+        await supabase.from('project_activity').insert([
+          {
+            project_id: currentRes.data.project_id,
+            activity_type: 'PAYMENT_RECEIVED',
+            actor_type: 'SYSTEM',
+            description: `Milestone payment received for order ${params.orderNumber} (₹${currentRes.data.amount_inr}). Project status updated to PAID. Ready for development.`,
+            metadata: {
+              orderNumber: params.orderNumber,
+              gatewayPaymentId: params.gatewayPaymentId,
+              amountINR: currentRes.data.amount_inr,
+            },
+          },
+        ]);
+      } catch (projErr) {
+        console.warn('[PROJECT STATUS PAYMENT UPDATE NON-FATAL]', projErr);
+      }
+    }
+
     return { success: true, data: data as Order, alreadyPaid: false };
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

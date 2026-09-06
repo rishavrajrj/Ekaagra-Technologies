@@ -1109,6 +1109,7 @@ export interface OrderMetadata {
 export interface Order {
   id: string;
   lead_id?: string | null;
+  project_id?: string | null;
   order_number: string;
   customer_name: string;
   customer_email: string;
@@ -1262,7 +1263,7 @@ export interface SectionAProfile {
   category: string;
   description: string;
   yearEstablished?: string;
-  locations?: string;
+  locations: string;
   primaryContactName: string;
   email: string;
   phone: string;
@@ -1277,6 +1278,121 @@ export interface SectionAProfile {
   };
 }
 
+export interface SectionBGoalsAudience {
+  primaryType: string;
+  secondaryTypes?: string[];
+  customTypeDetails?: string;
+  primaryGoal: string;
+  secondaryGoals?: string[];
+  problemToSolve: string;
+  targetCustomerType: 'B2B' | 'B2C' | 'B2B_AND_B2C' | 'INTERNAL_TEAM';
+  targetAudienceDescription: string;
+  geographicReach: string;
+  keyVisitorAction: string;
+  successDefinition: string;
+}
+
+export interface SectionCDesignPreferences {
+  styleVibe: 'Modern & Clean' | 'Corporate & Prestigious' | 'Minimalist' | 'Bold & Vibrant' | 'Luxury & Premium' | 'Friendly & Warm';
+  preferredColors: string;
+  avoidColors?: string;
+  likedWebsites?: string;
+  dislikedWebsites?: string;
+  competitorWebsites?: string;
+  brandPersonalityKeywords?: string[];
+  designConstraintsOrRules?: string;
+}
+
+export interface SectionDWebsiteStructure {
+  solutionType: 'WEBSITE' | 'WEB_APPLICATION' | 'PORTAL' | 'CUSTOM_SOFTWARE';
+  requiredPages: string[];
+  customPages?: string[];
+  homepageFocus?: string;
+  navigationStructure?: string;
+  multilingual: boolean;
+  languages?: string[];
+  blogOrNews: boolean;
+  galleryNeeded: boolean;
+  careersSection: boolean;
+  testimonialsNeeded: boolean;
+}
+
+export interface SectionEContentAssets {
+  hasLogo: 'YES' | 'NO' | 'NEEDS_REDESIGN';
+  hasBrandGuidelines: boolean;
+  hasProductOrServicePhotos: 'READY' | 'PARTIAL' | 'NEED_HELP';
+  hasWrittenContent: 'READY' | 'DRAFT' | 'NEED_COPYWRITING';
+  uploadedAssetUrls?: string[];
+  uploadedAssets?: Array<{
+    id?: string;
+    category: string;
+    fileName: string;
+    fileUrl: string;
+    fileSize?: number;
+    mimeType?: string;
+  }>;
+  contentNotes?: string;
+}
+
+export interface SectionFFeatures {
+  selectedFeatures: string[];
+  customFeatures?: string;
+  contactForm: boolean;
+  whatsAppChat: boolean;
+  googleMaps: boolean;
+  searchFilter: boolean;
+  userAuth: boolean;
+  adminPanel: boolean;
+  cms: boolean;
+  onlineBooking: boolean;
+  paymentGateway: boolean;
+  analyticsSeo: boolean;
+  notificationsSmsEmail?: boolean;
+}
+
+export interface SectionGIntegrations {
+  paymentGatewayNeeded: boolean;
+  preferredPaymentGateway?: 'RAZORPAY' | 'PAYTM' | 'CASHFREE' | 'STRIPE' | 'NONE' | 'OTHER';
+  whatsappApiNeeded: boolean;
+  crmIntegration?: string;
+  accountingIntegration?: string;
+  thirdPartyApis?: string;
+  userRoles?: string[];
+  adminCapabilities?: string;
+  securityComplianceNotes?: string;
+}
+
+export interface SectionHDomainHosting {
+  hasDomain: 'YES' | 'NO' | 'DECIDE_LATER';
+  existingDomain?: string;
+  preferredNewDomain?: string;
+  hasHosting: boolean;
+  existingHostingProvider?: string;
+  hostingPreference: 'MANAGED_BY_EKAAGRA' | 'CLIENT_AWS_CLOUD' | 'CLIENT_CPANEL' | 'DECIDE_LATER';
+  hasBusinessEmail: boolean;
+  businessEmailAccountsNeeded?: string;
+  hasDnsAccess: boolean;
+  migrationNeeded: boolean;
+  sslCertificateNeeded?: boolean;
+}
+
+export interface SectionIBudgetTimeline {
+  targetBudgetRange: string;
+  timelineRequirement: 'IMMEDIATE' | 'ONE_TO_TWO_MONTHS' | 'TWO_TO_FOUR_MONTHS' | 'FLEXIBLE';
+  targetLaunchDate?: string;
+  hardDeadlinesOrConstraints?: string;
+  decisionMakers?: string;
+}
+
+export interface SectionJAgreement {
+  confirmedAccurate: boolean;
+  authorizedSignatoryName: string;
+  authorizedSignatoryTitle?: string;
+  notesForEkaagraTeam?: string;
+  agreedAt?: string;
+}
+
+// Backwards compatibility legacy structures
 export interface SectionBProjectType {
   primaryType:
     | 'Business Website'
@@ -1318,21 +1434,6 @@ export interface SectionEWebsiteRequirements {
   galleryNeeded: boolean;
   careersSection: boolean;
   testimonialsNeeded: boolean;
-}
-
-export interface SectionFFeatures {
-  selectedFeatures: string[];
-  customFeatures?: string;
-  contactForm: boolean;
-  whatsAppChat: boolean;
-  googleMaps: boolean;
-  searchFilter: boolean;
-  userAuth: boolean;
-  adminPanel: boolean;
-  cms: boolean;
-  onlineBooking: boolean;
-  paymentGateway: boolean;
-  analyticsSeo: boolean;
 }
 
 export interface SectionGSystemRequirements {
@@ -1378,15 +1479,25 @@ export interface SectionJDomainHosting {
 
 export interface BusinessRequirementsData {
   section_a_profile: SectionAProfile;
-  section_b_project_type: SectionBProjectType;
-  section_c_objectives: SectionCObjectives;
-  section_d_target_audience: SectionDTargetAudience;
-  section_e_website_reqs?: SectionEWebsiteRequirements;
+  section_b_goals_audience: SectionBGoalsAudience;
+  section_c_design: SectionCDesignPreferences;
+  section_d_structure: SectionDWebsiteStructure;
+  section_e_assets: SectionEContentAssets;
   section_f_features: SectionFFeatures;
+  section_g_integrations: SectionGIntegrations;
+  section_h_domain_hosting: SectionHDomainHosting;
+  section_i_budget_timeline: SectionIBudgetTimeline;
+  section_j_agreement: SectionJAgreement;
+
+  // Legacy mappings for backwards-compatible persistence
+  section_b_project_type?: SectionBProjectType;
+  section_c_objectives?: SectionCObjectives;
+  section_d_target_audience?: SectionDTargetAudience;
+  section_e_website_reqs?: SectionEWebsiteRequirements;
   section_g_system_reqs?: SectionGSystemRequirements;
-  section_h_content_assets: SectionHContentAssets;
-  section_i_design_preferences: SectionIDesignPreferences;
-  section_j_domain_hosting: SectionJDomainHosting;
+  section_h_content_assets?: SectionHContentAssets;
+  section_i_design_preferences?: SectionIDesignPreferences;
+  section_j_domain_hosting?: SectionJDomainHosting;
 }
 
 export interface BusinessRequirementSubmission {
@@ -1406,15 +1517,27 @@ export interface BusinessRequirementSubmission {
   reviewed_by?: string | null;
 }
 
+export type BusinessAssetCategory =
+  | 'LOGO'
+  | 'BRAND_GUIDELINE'
+  | 'SCREENSHOT'
+  | 'CATALOGUE'
+  | 'DOCUMENT'
+  | 'IMAGE'
+  | 'REFERENCE_DESIGN'
+  | 'OTHER';
+
 export interface BusinessRequirementAsset {
   id: string;
   project_id: string;
   submission_id?: string | null;
-  asset_category: 'LOGO' | 'BRAND_GUIDELINE' | 'DOCUMENT' | 'IMAGE' | 'OTHER';
+  asset_category: BusinessAssetCategory;
   file_name: string;
   file_url: string;
+  storage_path?: string | null;
   file_size_bytes?: number | null;
   mime_type?: string | null;
+  uploaded_by?: string;
   uploaded_at: string;
 }
 
