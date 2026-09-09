@@ -109,6 +109,12 @@ const TLD_METADATA: TldMetadata[] = [
     defaultReason: 'Modern dedicated extension clearly identifying your school campus.',
   },
   {
+    extension: '.edu.in',
+    categoryAffinity: { general: 2, school: 10, business: 1, tech: 1 },
+    defaultBadge: 'Best Overall',
+    defaultReason: 'Premier government-recognized institutional domain for accredited Indian schools.',
+  },
+  {
     extension: '.ac.in',
     categoryAffinity: { general: 3, school: 10, business: 2, tech: 2 },
     defaultBadge: 'Good for India',
@@ -267,7 +273,7 @@ export class GoDaddyDomainProvider implements IDomainProvider {
       if (requestedDomain) {
         candidates.push(requestedDomain.toLowerCase());
       }
-      const schoolExtensions = ['.in', '.com', '.org', '.school', '.ac.in'];
+      const schoolExtensions = ['.edu.in', '.ac.in', '.in', '.com', '.org', '.school'];
       const defaultExtensions = category === 'school'
         ? schoolExtensions
         : TLD_METADATA.map((m) => m.extension);

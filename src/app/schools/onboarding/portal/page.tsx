@@ -42,6 +42,9 @@ export default async function SchoolOnboardingPortalPage({
         }
       }
     }
+    if (!activeToken) {
+      activeToken = project;
+    }
   }
 
   return <SchoolOnboardingPortal token={activeToken || ''} />;

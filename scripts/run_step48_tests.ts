@@ -274,7 +274,7 @@ for (const p of productList) {
 
   assert(isSectionApplicable('schoolProfile', p), `Profile is mandatory for ${p}`);
   assert(isSectionApplicable('brandingDesign', p), `Branding is mandatory for ${p}`);
-  assert(isSectionApplicable('domainPresence', p), `Domain is mandatory for ${p}`);
+  assert(!isSectionApplicable('domainPresence', p), `Domain configuration must NOT be part of school onboarding for ${p}`);
 
   if (p === 'school-website') {
     assert(!isSectionApplicable('institutionStructure', p), 'Website only does not need ERP structure');

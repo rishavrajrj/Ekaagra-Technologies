@@ -3,6 +3,9 @@
 import { verifyAdminSession } from '@/lib/adminAuth';
 import {
   createBusinessProjectFromLead,
+  createDirectProject,
+  requestMissingInformation,
+  recordProjectActivity,
   getBusinessProjects,
   getBusinessProjectDetails,
   generateBusinessOnboardingToken,
@@ -16,13 +19,15 @@ import {
   addProjectNote,
   deleteBusinessProjectAsset,
 } from '@/lib/businessProjectsDb';
-import { createOrderRecord, isSupabaseConfigured } from '@/lib/supabase';
+import { createOrderRecord, isSupabaseConfigured, getSupabaseServerClient } from '@/lib/supabase';
 import { generateOrderNumber, isRazorpayConfigured, createRazorpayOrder } from '@/lib/razorpay';
 import { calculateVerifiedOrderTotal } from '@/lib/pricingEngine';
 import type {
   BusinessProjectFilter,
   BusinessProjectStatus,
   BusinessRequirementsData,
+  DirectProjectInput,
+  MissingRequirementItem,
 } from '@/lib/types';
 import {
   sendBusinessRequirementsInviteEmail,
@@ -74,6 +79,145 @@ export async function createBusinessProjectAction(
   }
 
   return result;
+}
+
+export async function createDirectProjectAction(input: DirectProjectInput) {
+  const isAuth = await verifyAdminSession();
+  if (!isAuth) {
+    return { success: false, error: 'Unauthorized. Admin session required.' };
+  }
+
+  const result = await createDirectProject(input);
+
+  // If send intake selected and email present, attempt sending invitation email
+  if (result.success && result.project && result.token && input.initialAction === 'SEND_INTAKE') {
+    try {
+      const recipientEmail = input.email.trim();
+      const recipientName = input.primaryContactName.trim();
+
+      if (recipientEmail) {
+        await sendBusinessRequirementsInviteEmail({
+          clientName: recipientName,
+          clientEmail: recipientEmail,
+          projectName: result.project.project_name,
+          onboardingUrl: result.onboardingUrl || `/business-requirements/${result.token}`,
+        });
+      }
+    } catch (emailErr) {
+      console.warn('[NON-FATAL] Failed to send direct intake invite email:', emailErr);
+    }
+  }
+
+  return result;
+}
+
+export async function requestMissingInformationAction(params: {
+  projectId: string;
+  missingItems: MissingRequirementItem[];
+  notes?: string;
+  clientEmail?: string;
+  clientName?: string;
+  projectName?: string;
+  onboardingUrl?: string;
+}) {
+  const isAuth = await verifyAdminSession();
+  if (!isAuth) {
+    return { success: false, error: 'Unauthorized. Admin session required.' };
+  }
+
+  const result = await requestMissingInformation({
+    projectId: params.projectId,
+    missingItems: params.missingItems,
+    notes: params.notes,
+    adminName: 'Ekaagra Admin',
+  });
+
+  // If email is provided, dispatch clarification notification to client
+  if (result.success && params.clientEmail && params.missingItems.length > 0) {
+    try {
+      const missingTitles = params.missingItems.map((m) => m.title).join(', ');
+      await sendClarificationRequestEmail({
+        clientName: params.clientName || 'Valued Client',
+        clientEmail: params.clientEmail,
+        projectName: params.projectName || 'Your Project',
+        clarificationNotes: `Please provide the following pending items: ${missingTitles}.${params.notes ? ` Additional notes: ${params.notes}` : ''}`,
+        formUrl: params.onboardingUrl || 'https://www.ekaagratechnologies.site',
+      });
+    } catch (emailErr) {
+      console.warn('[MISSING INFO EMAIL NON-FATAL]', emailErr);
+    }
+  }
+
+  return result;
+}
+
+export async function sendIntakeReminderEmailAction(params: {
+  projectId: string;
+  clientEmail: string;
+  clientName: string;
+  projectName: string;
+  onboardingUrl: string;
+}) {
+  const isAuth = await verifyAdminSession();
+  if (!isAuth) {
+    return { success: false, error: 'Unauthorized. Admin session required.' };
+  }
+
+  try {
+    await sendBusinessRequirementsInviteEmail({
+      clientName: params.clientName || 'Valued Client',
+      clientEmail: params.clientEmail,
+      projectName: params.projectName,
+      onboardingUrl: params.onboardingUrl,
+    });
+
+    await recordProjectActivity({
+      projectId: params.projectId,
+      activityType: 'INTAKE_REMINDER_SENT',
+      actorType: 'ADMIN',
+      actorName: 'Admin',
+      description: `Intake link reminder dispatched to ${params.clientEmail}.`,
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+export async function fetchUnconvertedLeadsAction(query?: string) {
+  const isAuth = await verifyAdminSession();
+  if (!isAuth) {
+    return { success: false, leads: [], error: 'Unauthorized.' };
+  }
+
+  const supabase = getSupabaseServerClient();
+  if (!supabase) {
+    return { success: false, leads: [], error: 'Database unconfigured' };
+  }
+
+  try {
+    let q = supabase
+      .from('leads')
+      .select('id, name, organization, email, phone, service, project_type, budget, source, status, created_at, lead_domain, type')
+      .neq('lead_domain', 'SCHOOL')
+      .neq('type', 'SCHOOL')
+      .not('status', 'in', '("PROJECT_CONFIRMED","CONVERTED","CANCELLED","PROJECT_LOST")')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (query && query.trim() !== '') {
+      const term = `%${query.trim()}%`;
+      q = q.or(`name.ilike.${term},organization.ilike.${term},email.ilike.${term},phone.ilike.${term}`);
+    }
+
+    const { data, error } = await q;
+    if (error) throw error;
+
+    return { success: true, leads: data || [] };
+  } catch (err: unknown) {
+    return { success: false, leads: [], error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 export async function fetchBusinessProjectsAction(filter: BusinessProjectFilter = {}) {
@@ -376,6 +520,8 @@ export async function saveDraftRequirementsAction(params: {
   sectionKey: string;
   sectionData: Record<string, unknown>;
   currentStep: number;
+  actorType?: 'CLIENT' | 'ADMIN';
+  adminName?: string;
 }) {
   return saveDraftBusinessRequirements(params);
 }
@@ -385,6 +531,8 @@ export async function submitFinalRequirementsAction(params: {
   payload: BusinessRequirementsData;
   contactName: string;
   contactEmail: string;
+  actorType?: 'CLIENT' | 'ADMIN';
+  adminName?: string;
 }) {
   const result = await submitFinalBusinessRequirements(params);
 

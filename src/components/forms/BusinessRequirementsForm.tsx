@@ -45,6 +45,7 @@ interface BusinessRequirementsFormProps {
   client?: Client;
   initialDraft?: BusinessRequirementsData;
   initialStep?: number;
+  isAdminMode?: boolean;
 }
 
 const DEFAULT_SECTIONS: BusinessRequirementsData = {
@@ -142,16 +143,59 @@ const DEFAULT_SECTIONS: BusinessRequirementsData = {
   },
 };
 
-const STEPS = [
-  { id: 1, label: 'Company Profile', icon: Building2, desc: 'Brand & contacts' },
-  { id: 2, label: 'Goals & Audience', icon: Target, desc: 'Objectives & users' },
+export function isSchoolProjectCheck(project: BusinessProject, client?: Client | null): boolean {
+  if (project.project_type === 'SCHOOL') return true;
+  const combined = [
+    project.project_name,
+    project.service_type,
+    client?.organization,
+    (project.metadata as any)?.initialBudget,
+    (project.metadata as any)?.originalDescription,
+  ]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
+
+  return (
+    combined.includes('school') ||
+    combined.includes('academy') ||
+    combined.includes('vidyalaya') ||
+    combined.includes('institution') ||
+    combined.includes('cbse') ||
+    combined.includes('icse') ||
+    combined.includes('convent') ||
+    combined.includes('matriculation')
+  );
+}
+
+export function getInitialSchoolBudget(project: BusinessProject): string {
+  const metadataBudget = (project.metadata as any)?.initialBudget;
+  if (metadataBudget && typeof metadataBudget === 'string' && metadataBudget.includes('₹')) {
+    return metadataBudget;
+  }
+  const svc = (project.service_type || '').toLowerCase();
+  if (svc.includes('complete') || (svc.includes('cms') && svc.includes('erp'))) {
+    return '₹39,999 - ₹74,999 (Website + CMS + ERP)';
+  } else if (svc.includes('erp')) {
+    return '₹24,999 - ₹49,999 (School ERP)';
+  } else if (svc.includes('cms')) {
+    return '₹16,999 (School Website + CMS)';
+  } else if (svc.includes('school')) {
+    return '₹9,999 (School Website)';
+  }
+  return '₹16,999 (School Website + CMS)';
+}
+
+const getSteps = (isSchool: boolean) => [
+  { id: 1, label: isSchool ? 'School Profile' : 'Company Profile', icon: Building2, desc: isSchool ? 'Campus & contacts' : 'Brand & contacts' },
+  { id: 2, label: isSchool ? 'Goals & Students' : 'Goals & Audience', icon: Target, desc: isSchool ? 'Objectives & students' : 'Objectives & users' },
   { id: 3, label: 'Design & Visuals', icon: Palette, desc: 'Aesthetic & colors' },
   { id: 4, label: 'Structure & Pages', icon: Globe, desc: 'Site architecture' },
-  { id: 5, label: 'Content & Assets', icon: UploadCloud, desc: 'Files & materials' },
+  { id: 5, label: 'Content & Assets', icon: UploadCloud, desc: isSchool ? 'Prospectus & files' : 'Files & materials' },
   { id: 6, label: 'Key Features', icon: Sliders, desc: 'Functionality' },
   { id: 7, label: 'Integrations & Tech', icon: Cpu, desc: 'APIs & systems' },
   { id: 8, label: 'Domain & Hosting', icon: Server, desc: 'Infrastructure' },
-  { id: 9, label: 'Budget & Timeline', icon: DollarSign, desc: 'Constraints' },
+  { id: 9, label: 'Budget & Timeline', icon: DollarSign, desc: isSchool ? 'School plan' : 'Constraints' },
   { id: 10, label: 'Review & Submit', icon: Sparkles, desc: 'Finalize intake' },
 ];
 
@@ -161,10 +205,13 @@ export default function BusinessRequirementsForm({
   client,
   initialDraft,
   initialStep = 1,
+  isAdminMode = false,
 }: BusinessRequirementsFormProps) {
+  const isInitialSchool = isSchoolProjectCheck(project, client);
+
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [formData, setFormData] = useState<BusinessRequirementsData>(() => {
-    const base = {
+    const base: BusinessRequirementsData = {
       ...DEFAULT_SECTIONS,
       ...initialDraft,
       section_a_profile: {
@@ -175,11 +222,74 @@ export default function BusinessRequirementsForm({
         phone: client?.phone || '',
         whatsapp: client?.whatsapp || client?.phone || '',
         locations: client?.city || 'Motihari, Bihar',
+        category:
+          initialDraft?.section_a_profile?.category ||
+          (isInitialSchool ? 'K-12 School / CBSE / ICSE / State Board' : DEFAULT_SECTIONS.section_a_profile.category),
         ...(initialDraft?.section_a_profile || {}),
+      },
+      section_b_goals_audience: {
+        ...DEFAULT_SECTIONS.section_b_goals_audience,
+        primaryType:
+          initialDraft?.section_b_goals_audience?.primaryType ||
+          (isInitialSchool
+            ? project.service_type?.toLowerCase().includes('erp')
+              ? 'School ERP'
+              : project.service_type?.toLowerCase().includes('cms')
+              ? 'School Website + CMS'
+              : 'School Website'
+            : DEFAULT_SECTIONS.section_b_goals_audience.primaryType),
+        primaryGoal:
+          initialDraft?.section_b_goals_audience?.primaryGoal ||
+          (isInitialSchool
+            ? 'Showcase school achievements, satisfy CBSE mandatory disclosures, and streamline online admissions'
+            : DEFAULT_SECTIONS.section_b_goals_audience.primaryGoal),
+        keyVisitorAction:
+          initialDraft?.section_b_goals_audience?.keyVisitorAction ||
+          (isInitialSchool
+            ? 'Submit Admission Inquiry / Download Prospectus or Contact Campus'
+            : DEFAULT_SECTIONS.section_b_goals_audience.keyVisitorAction),
+        ...(initialDraft?.section_b_goals_audience || {}),
+      },
+      section_d_structure: {
+        ...DEFAULT_SECTIONS.section_d_structure,
+        requiredPages:
+          initialDraft?.section_d_structure?.requiredPages && initialDraft.section_d_structure.requiredPages.length > 0
+            ? initialDraft.section_d_structure.requiredPages
+            : isInitialSchool
+            ? [
+                'Home Landing Page',
+                'About School & Management',
+                'Principal Message',
+                'Mandatory Public Disclosure (CBSE)',
+                'Academics & Curriculum',
+                'Admissions & Inquiries',
+                'Photo & Event Gallery',
+                'Notices & Circulars',
+              ]
+            : DEFAULT_SECTIONS.section_d_structure.requiredPages,
+        ...(initialDraft?.section_d_structure || {}),
+      },
+      section_i_budget_timeline: {
+        ...DEFAULT_SECTIONS.section_i_budget_timeline,
+        targetBudgetRange:
+          initialDraft?.section_i_budget_timeline?.targetBudgetRange &&
+          !['₹15,000 - ₹30,000', '₹20,000 - ₹50,000'].includes(initialDraft.section_i_budget_timeline.targetBudgetRange)
+            ? initialDraft.section_i_budget_timeline.targetBudgetRange
+            : isInitialSchool
+            ? getInitialSchoolBudget(project)
+            : DEFAULT_SECTIONS.section_i_budget_timeline.targetBudgetRange,
+        ...(initialDraft?.section_i_budget_timeline || {}),
       },
     };
     return base;
   });
+
+  const isSchoolProject =
+    isInitialSchool ||
+    formData.section_a_profile.category === 'Coaching / Institute / Education' ||
+    Boolean(formData.section_a_profile.category?.includes('School'));
+
+  const steps = getSteps(isSchoolProject);
 
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'offline' | 'error'>('idle');
@@ -191,6 +301,7 @@ export default function BusinessRequirementsForm({
   // Asset Upload States
   const [uploadedAssets, setUploadedAssets] = useState<BusinessRequirementAsset[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [deletingAssetId, setDeletingAssetId] = useState<string | null>(null);
   const [uploadCategory, setUploadCategory] = useState<BusinessAssetCategory>('LOGO');
   const [uploadError, setUploadError] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -218,6 +329,44 @@ export default function BusinessRequirementsForm({
       // Ignore local storage parse issues
     }
   }, [localStorageKey]);
+
+  // Migrate legacy generic business values to school plan if project is school
+  useEffect(() => {
+    if (isSchoolProject) {
+      const currentBudget = formData.section_i_budget_timeline.targetBudgetRange;
+      if (
+        !currentBudget ||
+        currentBudget === '₹15,000 - ₹30,000' ||
+        currentBudget === '₹20,000 - ₹50,000' ||
+        currentBudget.includes('Starter Business Website')
+      ) {
+        const suggested = getInitialSchoolBudget(project);
+        setFormData((prev) => ({
+          ...prev,
+          section_i_budget_timeline: {
+            ...prev.section_i_budget_timeline,
+            targetBudgetRange: suggested,
+          },
+        }));
+      }
+
+      const currentType = formData.section_b_goals_audience.primaryType;
+      if (currentType === 'Business Website') {
+        const suggestedType = project.service_type?.toLowerCase().includes('erp')
+          ? 'School ERP'
+          : project.service_type?.toLowerCase().includes('cms')
+          ? 'School Website + CMS'
+          : 'School Website';
+        setFormData((prev) => ({
+          ...prev,
+          section_b_goals_audience: {
+            ...prev.section_b_goals_audience,
+            primaryType: suggestedType,
+          },
+        }));
+      }
+    }
+  }, [isSchoolProject, project]);
 
   // 2. Fetch already uploaded assets for this project
   useEffect(() => {
@@ -262,6 +411,8 @@ export default function BusinessRequirementsForm({
             sectionKey: 'full_payload',
             sectionData: updatedData as unknown as Record<string, unknown>,
             currentStep: step,
+            actorType: isAdminMode ? 'ADMIN' : 'CLIENT',
+            adminName: isAdminMode ? 'Ekaagra Operations Admin' : undefined,
           });
 
           if (res.success) {
@@ -391,6 +542,8 @@ export default function BusinessRequirementsForm({
         payload: formData,
         contactName: formData.section_j_agreement.authorizedSignatoryName || formData.section_a_profile.primaryContactName,
         contactEmail: formData.section_a_profile.email,
+        actorType: isAdminMode ? 'ADMIN' : 'CLIENT',
+        adminName: isAdminMode ? 'Ekaagra Operations Admin' : undefined,
       });
 
       if (res.success) {
@@ -458,6 +611,8 @@ export default function BusinessRequirementsForm({
   };
 
   const handleDeleteAsset = async (assetId: string) => {
+    if (!window.confirm('Are you sure you want to remove this file?')) return;
+    setDeletingAssetId(assetId);
     try {
       const res = await deleteBusinessProjectAssetAction({
         rawToken: token,
@@ -465,9 +620,13 @@ export default function BusinessRequirementsForm({
       });
       if (res.success) {
         setUploadedAssets((prev) => prev.filter((a) => a.id !== assetId));
+      } else {
+        alert(res.error || 'Failed to remove file.');
       }
-    } catch {
-      // Non-fatal
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Error removing file.');
+    } finally {
+      setDeletingAssetId(null);
     }
   };
 
@@ -549,21 +708,21 @@ export default function BusinessRequirementsForm({
   // MAIN INTAKE FORM VIEW
   // ---------------------------------------------------------------------------
   return (
-    <div className="max-w-4xl mx-auto py-6 px-4 sm:px-6 space-y-6">
+    <div className="max-w-4xl mx-auto py-4 sm:py-6 px-3 sm:px-6 space-y-4 sm:space-y-6">
       {/* Top Header Card */}
-      <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-8 shadow-sm space-y-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#E2E8F0] p-4 sm:p-8 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-4">
           <div className="space-y-0.5">
             <span className="text-[10px] font-mono font-bold text-[#4338CA] bg-[#4338CA]/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              {project.project_number} &bull; Business Project Workspace
+              {project.project_number} &bull; {isSchoolProject ? 'School Project Workspace' : 'Business Project Workspace'}
             </span>
-            <h1 className="text-xl sm:text-2xl font-black text-[#131B2E]">
+            <h1 className="text-lg sm:text-2xl font-black text-[#131B2E]">
               {formData.section_a_profile.displayName || project.project_name}
             </h1>
           </div>
 
-          {/* Real-time Save Indicator */}
-          <div className="flex items-center gap-2">
+          {/* Real-time Save Indicator & Step Indicator */}
+          <div className="flex items-center gap-2 flex-wrap">
             {saveStatus === 'saving' && (
               <span className="text-[11px] font-bold text-[#64748B] flex items-center gap-1">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...
@@ -585,23 +744,77 @@ export default function BusinessRequirementsForm({
           </div>
         </div>
 
-        {/* Clarification Alert Banner if requested by Admin */}
-        {isClarification && (
-          <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-900 space-y-1.5 animate-fadeIn">
-            <div className="font-black uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-amber-950">
-              <AlertCircle className="w-4 h-4 text-amber-600" />
-              <span>Clarification Requested by Ekaagra Engineering</span>
+        {/* Admin On-Behalf Mode Banner */}
+        {isAdminMode && (
+          <div className="p-4 rounded-2xl bg-purple-50 border-2 border-purple-300 text-xs text-purple-950 space-y-1 animate-fadeIn">
+            <div className="font-black uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-purple-900">
+              <ShieldCheck className="w-4 h-4 text-purple-600" />
+              <span>Admin Mode: Completing Intake on Behalf of Client</span>
             </div>
-            <p className="leading-relaxed text-amber-900">
-              Our team reviewed your previous submission and requested clarification. Please review the highlighted notes, update your specifications, and re-submit.
+            <p className="text-purple-800 leading-relaxed">
+              You are completing this requirements form directly as an administrator. Progress saves and final submission will be attributed to <strong>ADMIN_ENTERED</strong> in the project activity logs.
             </p>
           </div>
         )}
 
+        {/* Clarification / Missing Information Alert Banner */}
+        {((project.metadata as any)?.missingRequirements?.length > 0 || isClarification) && (
+          <div className="p-4 rounded-2xl bg-rose-50 border-2 border-rose-300 text-xs text-rose-900 space-y-2 animate-fadeIn">
+            <div className="font-black uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-rose-950">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>Missing Information / Changes Requested</span>
+            </div>
+            <p className="leading-relaxed text-rose-900">
+              Our project engineering team reviewed your project intake and identified items that need to be supplied or completed:
+            </p>
+            {((project.metadata as any)?.missingRequirements || []).length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {((project.metadata as any)?.missingRequirements || []).map((m: any, idx: number) => (
+                  <button
+                    type="button"
+                    key={idx}
+                    onClick={() => {
+                      if (m.stepNumber) setCurrentStep(m.stepNumber);
+                    }}
+                    className={`px-3 py-1 bg-white text-rose-800 font-bold rounded-xl border border-rose-200 text-xs shadow-2xs ${
+                      m.stepNumber ? 'cursor-pointer hover:bg-rose-100 hover:border-rose-400' : ''
+                    }`}
+                  >
+                    • {m.title || m.item || String(m)} {m.stepNumber ? `(Jump to Step ${m.stepNumber} →)` : ''}
+                  </button>
+                ))}
+              </div>
+            )}
+            {(project.metadata as any)?.missingRequirementsNotes && (
+              <p className="text-xs text-rose-800 italic bg-white/70 p-2.5 rounded-xl border border-rose-200 mt-2">
+                Team Notes: "{(project.metadata as any)?.missingRequirementsNotes}"
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Mobile Step Status Header & Progress Bar */}
+        <div className="sm:hidden space-y-2 pt-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-extrabold text-[#131B2E]">
+              Step {currentStep} of 10 &bull; {steps[currentStep - 1]?.label}
+            </span>
+            <span className="font-mono font-bold text-[#4338CA]">
+              {Math.round((currentStep / 10) * 100)}%
+            </span>
+          </div>
+          <div className="w-full bg-[#E2E8F0] h-2 rounded-full overflow-hidden">
+            <div
+              className="bg-[#4338CA] h-full transition-all duration-300 rounded-full"
+              style={{ width: `${(currentStep / 10) * 100}%` }}
+            />
+          </div>
+        </div>
+
         {/* 10-Step Visual Timeline (Mobile scrollable) */}
-        <div className="overflow-x-auto pb-2 -mx-2 px-2 scrollbar-none">
-          <div className="flex items-center gap-1 min-w-[700px]">
-            {STEPS.map((step) => {
+        <div className="overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin">
+          <div className="flex items-center gap-1.5 min-w-[720px]">
+            {steps.map((step) => {
               const Icon = step.icon;
               const isDone = currentStep > step.id;
               const isCurrent = currentStep === step.id;
@@ -614,12 +827,12 @@ export default function BusinessRequirementsForm({
                       setCurrentStep(step.id);
                     }
                   }}
-                  className={`flex-1 p-2 rounded-xl text-left transition-all border ${
+                  className={`flex-1 p-2 rounded-xl text-left transition-all border cursor-pointer ${
                     isCurrent
                       ? 'bg-[#4338CA] text-white border-[#4338CA] shadow-xs'
                       : isDone
-                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                      : 'bg-[#FAF7F2] text-[#64748B] border-[#E2E8F0]'
+                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100/70'
+                      : 'bg-[#FAF7F2] text-[#64748B] border-[#E2E8F0] hover:bg-slate-100'
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -637,27 +850,34 @@ export default function BusinessRequirementsForm({
       </div>
 
       {/* Step Form Card */}
-      <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-8 shadow-xl space-y-6">
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#E2E8F0] p-4 sm:p-8 shadow-xl space-y-6">
         {/* =================================================================== */}
         {/* SECTION A: COMPANY & BRAND PROFILE */}
         {/* =================================================================== */}
         {currentStep === 1 && (
           <div className="space-y-4">
             <div>
-              <h2 className="text-lg font-black text-[#131B2E]">Section A &bull; Company &amp; Brand Profile</h2>
-              <p className="text-xs text-[#64748B]">Provide essential legal and display details for your organization.</p>
+              <h2 className="text-lg font-black text-[#131B2E]">
+                {isSchoolProject ? 'Section A \u2022 School & Institutional Profile' : 'Section A \u2022 Company & Brand Profile'}
+              </h2>
+              <p className="text-xs text-[#64748B]">
+                {isSchoolProject
+                  ? 'Provide official school details, board affiliation, and administrative contacts.'
+                  : 'Provide essential legal and display details for your organization.'}
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="font-bold text-[#131B2E] block mb-1">
-                  Brand / Website Display Name <span className="text-rose-500">*</span>
+                  {isSchoolProject ? 'School / Institution Name' : 'Brand / Website Display Name'}{' '}
+                  <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.section_a_profile.displayName}
                   onChange={(e) => updateSection('section_a_profile', { displayName: e.target.value })}
-                  placeholder="e.g. Champaran Sweets & Bakers"
+                  placeholder={isSchoolProject ? 'e.g. SparkNest Academy School, Motihari' : 'e.g. Champaran Sweets & Bakers'}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none"
                 />
                 {stepErrors['displayName'] && (
@@ -666,31 +886,47 @@ export default function BusinessRequirementsForm({
               </div>
 
               <div>
-                <label className="font-bold text-[#131B2E] block mb-1">Legal Entity / Registered Name</label>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  {isSchoolProject ? 'Trust / Society / Legal Registered Name' : 'Legal Entity / Registered Name'}
+                </label>
                 <input
                   type="text"
                   value={formData.section_a_profile.legalName || ''}
                   onChange={(e) => updateSection('section_a_profile', { legalName: e.target.value })}
-                  placeholder="e.g. Champaran Retail Private Limited (optional)"
+                  placeholder={isSchoolProject ? 'e.g. SparkNest Educational Trust (optional)' : 'e.g. Champaran Retail Private Limited (optional)'}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="font-bold text-[#131B2E] block mb-1">Business Industry / Category</label>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  {isSchoolProject ? 'Institution / Board Affiliation Category' : 'Business Industry / Category'}
+                </label>
                 <select
                   value={formData.section_a_profile.category}
                   onChange={(e) => updateSection('section_a_profile', { category: e.target.value })}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs focus:bg-white focus:border-[#4338CA] focus:outline-none font-bold"
                 >
-                  <option value="Retail / Commercial Business">Retail / Commercial Business</option>
-                  <option value="Healthcare / Clinic / Hospital">Healthcare / Clinic / Hospital</option>
-                  <option value="Hospitality / Hotel / Restaurant">Hospitality / Hotel / Restaurant</option>
-                  <option value="Manufacturing / Industrial / Distribution">Manufacturing / Industrial / Distribution</option>
-                  <option value="Real Estate / Construction">Real Estate / Construction</option>
-                  <option value="Coaching / Institute / Education">Coaching / Institute / Education</option>
-                  <option value="Professional Services (Legal, CA, Tech)">Professional Services (Legal, CA, Tech)</option>
-                  <option value="Other Commercial Enterprise">Other Commercial Enterprise</option>
+                  {isSchoolProject ? (
+                    <>
+                      <option value="K-12 School / CBSE / ICSE / State Board">K-12 School (CBSE / ICSE / State Board)</option>
+                      <option value="Coaching / Institute / Education">Coaching / Institute / Education</option>
+                      <option value="Play School / Pre-Primary & Daycare">Play School / Pre-Primary &amp; Daycare</option>
+                      <option value="College / Degree / Higher Education Institute">College / Degree / Higher Education Institute</option>
+                      <option value="Other Educational Organization">Other Educational Organization</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Retail / Commercial Business">Retail / Commercial Business</option>
+                      <option value="Healthcare / Clinic / Hospital">Healthcare / Clinic / Hospital</option>
+                      <option value="Hospitality / Hotel / Restaurant">Hospitality / Hotel / Restaurant</option>
+                      <option value="Manufacturing / Industrial / Distribution">Manufacturing / Industrial / Distribution</option>
+                      <option value="Real Estate / Construction">Real Estate / Construction</option>
+                      <option value="Coaching / Institute / Education">Coaching / Institute / Education</option>
+                      <option value="Professional Services (Legal, CA, Tech)">Professional Services (Legal, CA, Tech)</option>
+                      <option value="Other Commercial Enterprise">Other Commercial Enterprise</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -788,8 +1024,14 @@ export default function BusinessRequirementsForm({
         {currentStep === 2 && (
           <div className="space-y-4 text-xs">
             <div>
-              <h2 className="text-lg font-black text-[#131B2E]">Section B &bull; Business Goals &amp; Target Audience</h2>
-              <p className="text-xs text-[#64748B]">Clarify who will use this software or website, and what you want to achieve.</p>
+              <h2 className="text-lg font-black text-[#131B2E]">
+                {isSchoolProject ? 'Section B \u2022 Educational Goals & Target Audience' : 'Section B \u2022 Business Goals & Target Audience'}
+              </h2>
+              <p className="text-xs text-[#64748B]">
+                {isSchoolProject
+                  ? 'Clarify school objectives, digital solution tier, and campus stakeholders.'
+                  : 'Clarify who will use this software or website, and what you want to achieve.'}
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -802,26 +1044,51 @@ export default function BusinessRequirementsForm({
                   onChange={(e) => updateSection('section_b_goals_audience', { primaryType: e.target.value })}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
                 >
-                  <option value="Business Website">Business Website (Informational / Lead Generation)</option>
-                  <option value="E-commerce Website">E-commerce Website (Online Shop &amp; Orders)</option>
-                  <option value="Web Application">Web Application (Interactive Cloud Software)</option>
-                  <option value="Custom Software">Custom Enterprise Software / Portal</option>
-                  <option value="CRM / ERP">CRM / ERP / Billing &amp; Inventory System</option>
-                  <option value="Booking & Appointment System">Booking &amp; Appointment System</option>
+                  {isSchoolProject ? (
+                    <>
+                      <option value="School Website">School Website (Official Web Presence &amp; Admissions)</option>
+                      <option value="School Website + CMS">School Website + CMS (Staff Dynamic Updates &amp; Notice Board)</option>
+                      <option value="School ERP">School ERP (Student SIS, Attendance, Marks &amp; Operations)</option>
+                      <option value="Website + CMS + ERP">Website + CMS + ERP (Complete All-in-One Platform)</option>
+                      <option value="Custom Educational Portal">Custom Educational Software / Multi-Branch Portal</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Business Website">Business Website (Informational / Lead Generation)</option>
+                      <option value="E-commerce Website">E-commerce Website (Online Shop &amp; Orders)</option>
+                      <option value="Web Application">Web Application (Interactive Cloud Software)</option>
+                      <option value="Custom Software">Custom Enterprise Software / Portal</option>
+                      <option value="CRM / ERP">CRM / ERP / Billing &amp; Inventory System</option>
+                      <option value="Booking & Appointment System">Booking &amp; Appointment System</option>
+                    </>
+                  )}
                 </select>
               </div>
 
               <div>
-                <label className="font-bold text-[#131B2E] block mb-1">Customer / User Relationship</label>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  {isSchoolProject ? 'Primary Campus Audience / Stakeholders' : 'Customer / User Relationship'}
+                </label>
                 <select
                   value={formData.section_b_goals_audience.targetCustomerType}
                   onChange={(e) => updateSection('section_b_goals_audience', { targetCustomerType: e.target.value as any })}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
                 >
-                  <option value="B2C">B2C (Individual retail consumers / general public)</option>
-                  <option value="B2B">B2B (Other businesses, wholesale distributors)</option>
-                  <option value="B2B_AND_B2C">Both B2B and B2C audiences</option>
-                  <option value="INTERNAL_TEAM">Internal Company Team / Staff Portal</option>
+                  {isSchoolProject ? (
+                    <>
+                      <option value="B2C">Parents &amp; Prospective Students (Public Admissions &amp; Inquiries)</option>
+                      <option value="INTERNAL_TEAM">School Teachers, Faculty &amp; Administrative Staff</option>
+                      <option value="B2B_AND_B2C">Both Parents/Students and Campus Staff (Hybrid)</option>
+                      <option value="B2B">Trustees, Board Inspectors &amp; External Affiliations</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="B2C">B2C (Individual retail consumers / general public)</option>
+                      <option value="B2B">B2B (Other businesses, wholesale distributors)</option>
+                      <option value="B2B_AND_B2C">Both B2B and B2C audiences</option>
+                      <option value="INTERNAL_TEAM">Internal Company Team / Staff Portal</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
@@ -834,7 +1101,11 @@ export default function BusinessRequirementsForm({
                 type="text"
                 value={formData.section_b_goals_audience.primaryGoal}
                 onChange={(e) => updateSection('section_b_goals_audience', { primaryGoal: e.target.value })}
-                placeholder="e.g. Generate high-intent phone and WhatsApp inquiries from clients in East Champaran"
+                placeholder={
+                  isSchoolProject
+                    ? 'e.g. Modernize our school portal, satisfy CBSE disclosure guidelines, and increase online admissions'
+                    : 'e.g. Generate high-intent phone and WhatsApp inquiries from clients in East Champaran'
+                }
                 className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
               />
               {stepErrors['primaryGoal'] && (
@@ -850,7 +1121,11 @@ export default function BusinessRequirementsForm({
                 rows={3}
                 value={formData.section_b_goals_audience.problemToSolve}
                 onChange={(e) => updateSection('section_b_goals_audience', { problemToSolve: e.target.value })}
-                placeholder="e.g. Our competitors appear on Google when clients search for our services in Motihari, while we have no official web presence to verify our authenticity..."
+                placeholder={
+                  isSchoolProject
+                    ? 'e.g. Our existing website is outdated, not mobile responsive, lacks CBSE mandatory disclosures, and fee records are still managed on paper...'
+                    : 'e.g. Our competitors appear on Google when clients search for our services in Motihari, while we have no official web presence to verify our authenticity...'
+                }
                 className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
               />
               {stepErrors['problemToSolve'] && (
@@ -883,7 +1158,7 @@ export default function BusinessRequirementsForm({
 
             <div>
               <label className="font-bold text-[#131B2E] block mb-2">Overall Design Vibe &amp; Style</label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
                 {[
                   { id: 'Modern & Clean', desc: 'Sleek, ample whitespace, high legibility' },
                   { id: 'Corporate & Prestigious', desc: 'Authoritative, structured, trust-building' },
@@ -975,20 +1250,36 @@ export default function BusinessRequirementsForm({
               <label className="font-bold text-[#131B2E] block mb-2">
                 Standard Pages Required <span className="text-rose-500">*</span>
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {[
-                  'Home Landing Page',
-                  'About Company',
-                  'Products / Services',
-                  'Contact & Inquiries',
-                  'Customer Testimonials',
-                  'Photo / Project Gallery',
-                  'Blog / News Updates',
-                  'Careers / Jobs',
-                  'Pricing / Rate Card',
-                  'FAQ Section',
-                  'Privacy Policy & Terms',
-                ].map((page) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                {(isSchoolProject
+                  ? [
+                      'Home Landing Page',
+                      'About School & Management',
+                      'Principal Message',
+                      'Mandatory Public Disclosure (CBSE)',
+                      'Academics & Curriculum',
+                      'Admissions & Inquiries',
+                      'Fee Structure & Rules',
+                      'Campus Facilities & Tour',
+                      'Photo & Event Gallery',
+                      'Notices & Circulars',
+                      'Faculty & Staff Directory',
+                      'Contact & Campus Location',
+                    ]
+                  : [
+                      'Home Landing Page',
+                      'About Company',
+                      'Products / Services',
+                      'Contact & Inquiries',
+                      'Customer Testimonials',
+                      'Photo / Project Gallery',
+                      'Blog / News Updates',
+                      'Careers / Jobs',
+                      'Pricing / Rate Card',
+                      'FAQ Section',
+                      'Privacy Policy & Terms',
+                    ]
+                ).map((page) => {
                   const isChecked = formData.section_d_structure.requiredPages.includes(page);
                   return (
                     <label
@@ -1022,18 +1313,22 @@ export default function BusinessRequirementsForm({
             {/* Custom Pages Manager */}
             <div>
               <label className="font-bold text-[#131B2E] block mb-1">Add Custom Pages / Modules</label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={customPageInput}
                   onChange={(e) => setCustomPageInput(e.target.value)}
-                  placeholder="e.g. Doctor OPD Timetable, Franchise Application, Wholesale Portal"
+                  placeholder={
+                    isSchoolProject
+                      ? 'e.g. TC Verification Portal, Bus Routes & Transport, Alumni Network'
+                      : 'e.g. Doctor OPD Timetable, Franchise Application, Wholesale Portal'
+                  }
                   className="flex-1 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-2.5 text-xs"
                 />
                 <button
                   type="button"
                   onClick={handleAddCustomPage}
-                  className="px-4 py-2 bg-[#4338CA] text-white font-bold rounded-xl text-xs hover:bg-[#3730A3]"
+                  className="px-4 py-2.5 bg-[#4338CA] text-white font-bold rounded-xl text-xs hover:bg-[#3730A3] cursor-pointer shrink-0"
                 >
                   Add Page
                 </button>
@@ -1050,7 +1345,9 @@ export default function BusinessRequirementsForm({
                       <button
                         type="button"
                         onClick={() => handleRemoveCustomPage(p)}
-                        className="text-rose-500 hover:text-rose-700"
+                        className="inline-flex items-center justify-center p-0.5 ml-0.5 text-rose-500 hover:text-rose-700 hover:bg-rose-100/70 rounded transition-colors cursor-pointer"
+                        title={`Remove ${p}`}
+                        aria-label={`Remove page ${p}`}
                       >
                         &times;
                       </button>
@@ -1197,7 +1494,7 @@ export default function BusinessRequirementsForm({
                         key={asset.id}
                         className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-indigo-100 text-xs shadow-2xs"
                       >
-                        <div className="flex items-center gap-2 truncate max-w-[280px] sm:max-w-md">
+                        <div className="flex items-center gap-2 truncate min-w-0 flex-1 mr-2">
                           <FileText className="w-4 h-4 text-[#4338CA] shrink-0" />
                           <span className="font-bold text-[#131B2E] truncate">{asset.file_name}</span>
                           <span className="text-[9px] font-mono font-bold bg-indigo-50 text-[#4338CA] px-2 py-0.5 rounded uppercase">
@@ -1214,10 +1511,12 @@ export default function BusinessRequirementsForm({
                           <button
                             type="button"
                             onClick={() => handleDeleteAsset(asset.id)}
-                            className="text-rose-500 hover:text-rose-700 p-1"
+                            disabled={deletingAssetId === asset.id}
+                            className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                             title="Remove file"
+                            aria-label={`Remove ${asset.file_name}`}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className={`w-3.5 h-3.5 ${deletingAssetId === asset.id ? 'animate-spin text-rose-600' : ''}`} />
                           </button>
                         </div>
                       </div>
@@ -1252,16 +1551,56 @@ export default function BusinessRequirementsForm({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[
-                { key: 'contactForm', title: 'Interactive Inquiry / Contact Form', desc: 'Captures visitor inquiries directly' },
-                { key: 'whatsAppChat', title: 'WhatsApp Direct Chat Widget', desc: 'Connects customers instantly to your mobile' },
-                { key: 'googleMaps', title: 'Google Maps & Driving Directions', desc: 'Helps local clients find your premises' },
-                { key: 'searchFilter', title: 'Product / Content Search & Filter', desc: 'Fast indexing of catalogues or listings' },
-                { key: 'userAuth', title: 'User Account Registration & Login', desc: 'Secure customer or client accounts' },
-                { key: 'adminPanel', title: 'Custom Admin Management Dashboard', desc: 'Control content, leads, and orders' },
-                { key: 'cms', title: 'Content Management System (CMS)', desc: 'Edit notices, galleries, products easily' },
-                { key: 'onlineBooking', title: 'Appointment / Table Booking', desc: 'Schedule dates, timeslots, and services' },
-                { key: 'paymentGateway', title: 'Online Payment Gateway (Razorpay/UPI)', desc: 'Collect payments, advance deposits, invoices' },
-                { key: 'analyticsSeo', title: 'Search Engine Optimization & Analytics', desc: 'Google Search Console, meta tags, visitor analytics' },
+                {
+                  key: 'contactForm',
+                  title: isSchoolProject ? 'Online Admission Inquiry Form' : 'Interactive Inquiry / Contact Form',
+                  desc: isSchoolProject ? 'Captures parent inquiries & student applications' : 'Captures visitor inquiries directly',
+                },
+                {
+                  key: 'whatsAppChat',
+                  title: 'WhatsApp Direct Chat Widget',
+                  desc: isSchoolProject ? 'Direct link for parents to contact school office' : 'Connects customers instantly to your mobile',
+                },
+                {
+                  key: 'googleMaps',
+                  title: isSchoolProject ? 'Google Maps Campus Driving Directions' : 'Google Maps & Driving Directions',
+                  desc: isSchoolProject ? 'Helps parents and visitors find your school campus' : 'Helps local clients find your premises',
+                },
+                {
+                  key: 'searchFilter',
+                  title: isSchoolProject ? 'Notices / Curriculum Search & Filter' : 'Product / Content Search & Filter',
+                  desc: isSchoolProject ? 'Fast indexing of circulars, syllabus, or faculty' : 'Fast indexing of catalogues or listings',
+                },
+                {
+                  key: 'userAuth',
+                  title: isSchoolProject ? 'Student / Staff Account Portal Login' : 'User Account Registration & Login',
+                  desc: isSchoolProject ? 'Secure credentials for parents, teachers, and staff' : 'Secure customer or client accounts',
+                },
+                {
+                  key: 'adminPanel',
+                  title: isSchoolProject ? 'Principal & Staff Management Dashboard' : 'Custom Admin Management Dashboard',
+                  desc: isSchoolProject ? 'Manage admissions, notices, student records' : 'Control content, leads, and orders',
+                },
+                {
+                  key: 'cms',
+                  title: isSchoolProject ? 'School CMS (Notices, Events & Gallery)' : 'Content Management System (CMS)',
+                  desc: isSchoolProject ? 'Publish circulars, date sheets, event photos easily' : 'Edit notices, galleries, products easily',
+                },
+                {
+                  key: 'onlineBooking',
+                  title: isSchoolProject ? 'Parent-Teacher Meeting (PTM) Booking' : 'Appointment / Table Booking',
+                  desc: isSchoolProject ? 'Schedule parent counseling & admission visit slots' : 'Schedule dates, timeslots, and services',
+                },
+                {
+                  key: 'paymentGateway',
+                  title: isSchoolProject ? 'Online Academic Fee Payment Gateway' : 'Online Payment Gateway (Razorpay/UPI)',
+                  desc: isSchoolProject ? 'Collect term fees, admission dues, and issue receipts' : 'Collect payments, advance deposits, invoices',
+                },
+                {
+                  key: 'analyticsSeo',
+                  title: 'Search Engine Optimization & Analytics',
+                  desc: isSchoolProject ? 'Top Google ranking for school searches in your district' : 'Google Search Console, meta tags, visitor analytics',
+                },
               ].map((feat) => {
                 const isChecked = Boolean((formData.section_f_features as any)[feat.key]);
                 return (
@@ -1289,12 +1628,18 @@ export default function BusinessRequirementsForm({
             </div>
 
             <div>
-              <label className="font-bold text-[#131B2E] block mb-1">Custom Business Logic / Specific Workflows</label>
+              <label className="font-bold text-[#131B2E] block mb-1">
+                {isSchoolProject ? 'Custom School Logic / Specific Administrative Workflows' : 'Custom Business Logic / Specific Workflows'}
+              </label>
               <textarea
                 rows={2}
                 value={formData.section_f_features.customFeatures || ''}
                 onChange={(e) => updateSection('section_f_features', { customFeatures: e.target.value })}
-                placeholder="e.g. Generate automatic PDF quote when client inputs room dimensions, or email alert on high-value order..."
+                placeholder={
+                  isSchoolProject
+                    ? 'e.g. CBSE mandatory disclosure document archive, TC serial verification lookup, automated absence SMS alerts...'
+                    : 'e.g. Generate automatic PDF quote when client inputs room dimensions, or email alert on high-value order...'
+                }
                 className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
               />
             </div>
@@ -1395,8 +1740,8 @@ export default function BusinessRequirementsForm({
                     type="text"
                     value={formData.section_h_domain_hosting.existingDomain || ''}
                     onChange={(e) => updateSection('section_h_domain_hosting', { existingDomain: e.target.value })}
-                    placeholder="e.g. yourcompany.com or yourcompany.in"
-                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-mono"
+                    placeholder={isSchoolProject ? 'e.g. sparknestschool.com or sparknest.edu.in' : 'e.g. yourcompany.com or yourcompany.in'}
+                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-mono text-xs"
                   />
                 </div>
               ) : (
@@ -1406,8 +1751,8 @@ export default function BusinessRequirementsForm({
                     type="text"
                     value={formData.section_h_domain_hosting.preferredNewDomain || ''}
                     onChange={(e) => updateSection('section_h_domain_hosting', { preferredNewDomain: e.target.value })}
-                    placeholder="e.g. yourbrandbihar.com"
-                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-mono"
+                    placeholder={isSchoolProject ? 'e.g. sparknestacademy.com or sparknestschool.in' : 'e.g. yourbrandbihar.com'}
+                    className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-mono text-xs"
                   />
                 </div>
               )}
@@ -1429,13 +1774,19 @@ export default function BusinessRequirementsForm({
               </div>
 
               <div>
-                <label className="font-bold text-[#131B2E] block mb-1">Custom Business Email (@company.com)</label>
+                <label className="font-bold text-[#131B2E] block mb-1">
+                  {isSchoolProject ? 'Official School Email (@school.edu.in / @school.com)' : 'Custom Business Email (@company.com)'}
+                </label>
                 <select
                   value={formData.section_h_domain_hosting.hasBusinessEmail ? 'YES' : 'NO'}
                   onChange={(e) => updateSection('section_h_domain_hosting', { hasBusinessEmail: e.target.value === 'YES' })}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
                 >
-                  <option value="YES">Yes &bull; Setup business mailboxes (Google Workspace / Zoho)</option>
+                  <option value="YES">
+                    {isSchoolProject
+                      ? 'Yes \u2022 Setup institutional mailboxes (Google Workspace / Zoho)'
+                      : 'Yes \u2022 Setup business mailboxes (Google Workspace / Zoho)'}
+                  </option>
                   <option value="NO">No &bull; We will use regular Gmail / existing email</option>
                 </select>
               </div>
@@ -1449,8 +1800,16 @@ export default function BusinessRequirementsForm({
         {currentStep === 9 && (
           <div className="space-y-4 text-xs">
             <div>
-              <h2 className="text-lg font-black text-[#131B2E]">Section I &bull; Budget, Timeline &amp; Business Constraints</h2>
-              <p className="text-xs text-[#64748B]">Set expectation boundaries to ensure realistic milestone scheduling.</p>
+              <h2 className="text-lg font-black text-[#131B2E]">
+                {isSchoolProject
+                  ? 'Section I \u2022 Budget, Timeline & School Plans'
+                  : 'Section I \u2022 Budget, Timeline & Business Constraints'}
+              </h2>
+              <p className="text-xs text-[#64748B]">
+                {isSchoolProject
+                  ? 'Select your target school plan tier and set expectation boundaries for academic scheduling.'
+                  : 'Set expectation boundaries to ensure realistic milestone scheduling.'}
+              </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1463,11 +1822,49 @@ export default function BusinessRequirementsForm({
                   onChange={(e) => updateSection('section_i_budget_timeline', { targetBudgetRange: e.target.value })}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
                 >
-                  <option value="₹15,000 - ₹30,000">₹15,000 - ₹30,000 (Starter Business Website)</option>
-                  <option value="₹30,000 - ₹60,000">₹30,000 - ₹60,000 (Custom Commercial Solution)</option>
-                  <option value="₹60,000 - ₹1,20,000">₹60,000 - ₹1,20,000 (E-commerce / Web App)</option>
-                  <option value="₹1,20,000+">₹1,20,000+ (Full Custom Enterprise Portal)</option>
-                  <option value="FLEXIBLE_BASED_ON_DESIGN">Flexible / Based on approved design</option>
+                  {isSchoolProject ? (
+                    <>
+                      <option value="₹9,999 (School Website)">₹9,999 &bull; School Website (10 Pages, Admissions &amp; Notices)</option>
+                      <option value="₹16,999 (School Website + CMS)">₹16,999 &bull; School Website + Staff CMS Admin Panel</option>
+                      <option value="₹24,999 - ₹49,999 (School ERP)">₹24,999 - ₹49,999 &bull; School ERP (Attendance, Marks, TC &amp; Fees)</option>
+                      <option value="₹39,999 - ₹74,999 (Website + CMS + ERP)">₹39,999 - ₹74,999 &bull; Complete Platform (Website + CMS + ERP)</option>
+                      <option value="₹75,000 - ₹1,20,000+ (Enterprise Campus Suite)">₹75,000 - ₹1,20,000+ &bull; Enterprise Campus Suite (1,500+ Students / Multi-Branch)</option>
+                      <option value="FLEXIBLE_BASED_ON_DESIGN">Flexible / Based on approved school plan &amp; student count</option>
+                      {formData.section_i_budget_timeline.targetBudgetRange &&
+                        ![
+                          '₹9,999 (School Website)',
+                          '₹16,999 (School Website + CMS)',
+                          '₹24,999 - ₹49,999 (School ERP)',
+                          '₹39,999 - ₹74,999 (Website + CMS + ERP)',
+                          '₹75,000 - ₹1,20,000+ (Enterprise Campus Suite)',
+                          'FLEXIBLE_BASED_ON_DESIGN',
+                        ].includes(formData.section_i_budget_timeline.targetBudgetRange) && (
+                          <option value={formData.section_i_budget_timeline.targetBudgetRange}>
+                            {formData.section_i_budget_timeline.targetBudgetRange}
+                          </option>
+                        )}
+                    </>
+                  ) : (
+                    <>
+                      <option value="₹15,000 - ₹30,000">₹15,000 - ₹30,000 (Starter Business Website)</option>
+                      <option value="₹30,000 - ₹60,000">₹30,000 - ₹60,000 (Custom Commercial Solution)</option>
+                      <option value="₹60,000 - ₹1,20,000">₹60,000 - ₹1,20,000 (E-commerce / Web App)</option>
+                      <option value="₹1,20,000+">₹1,20,000+ (Full Custom Enterprise Portal)</option>
+                      <option value="FLEXIBLE_BASED_ON_DESIGN">Flexible / Based on approved design</option>
+                      {formData.section_i_budget_timeline.targetBudgetRange &&
+                        ![
+                          '₹15,000 - ₹30,000',
+                          '₹30,000 - ₹60,000',
+                          '₹60,000 - ₹1,20,000',
+                          '₹1,20,000+',
+                          'FLEXIBLE_BASED_ON_DESIGN',
+                        ].includes(formData.section_i_budget_timeline.targetBudgetRange) && (
+                          <option value={formData.section_i_budget_timeline.targetBudgetRange}>
+                            {formData.section_i_budget_timeline.targetBudgetRange}
+                          </option>
+                        )}
+                    </>
+                  )}
                 </select>
                 {stepErrors['targetBudgetRange'] && (
                   <span className="text-[10px] text-rose-500 font-bold block mt-1">{stepErrors['targetBudgetRange']}</span>
@@ -1481,23 +1878,107 @@ export default function BusinessRequirementsForm({
                   onChange={(e) => updateSection('section_i_budget_timeline', { timelineRequirement: e.target.value as any })}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 font-bold text-[#131B2E]"
                 >
-                  <option value="IMMEDIATE">Urgent / Fast-track (Within 2 to 3 weeks)</option>
-                  <option value="ONE_TO_TWO_MONTHS">Standard (1 to 2 Months)</option>
-                  <option value="TWO_TO_FOUR_MONTHS">Comprehensive (2 to 4 Months)</option>
-                  <option value="FLEXIBLE">Flexible / Quality-driven</option>
+                  {isSchoolProject ? (
+                    <>
+                      <option value="IMMEDIATE">Urgent / Fast-track (Within 2 to 3 weeks before new session)</option>
+                      <option value="ONE_TO_TWO_MONTHS">Standard (1 to 2 Months &bull; Ready for Admissions)</option>
+                      <option value="TWO_TO_FOUR_MONTHS">Comprehensive (2 to 4 Months &bull; Phased ERP Rollout)</option>
+                      <option value="FLEXIBLE">Flexible / Quality-driven</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="IMMEDIATE">Urgent / Fast-track (Within 2 to 3 weeks)</option>
+                      <option value="ONE_TO_TWO_MONTHS">Standard (1 to 2 Months)</option>
+                      <option value="TWO_TO_FOUR_MONTHS">Comprehensive (2 to 4 Months)</option>
+                      <option value="FLEXIBLE">Flexible / Quality-driven</option>
+                    </>
+                  )}
                 </select>
               </div>
             </div>
 
+            {/* School Plan Quick Selector Reference for Schools */}
+            {isSchoolProject && (
+              <div className="p-3.5 sm:p-4 bg-indigo-50/60 border border-indigo-200/80 rounded-2xl space-y-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#4338CA]" />
+                    Official Ekaagra School Plans
+                  </span>
+                  <span className="text-[10px] text-indigo-700 font-medium">Click any plan card to select</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+                  {[
+                    {
+                      name: 'School Website',
+                      price: '₹9,999',
+                      tag: '10 Pages, Mobile & Admissions',
+                      targetVal: '₹9,999 (School Website)',
+                    },
+                    {
+                      name: 'School Website + CMS',
+                      price: '₹16,999',
+                      tag: 'Staff CMS Admin Panel',
+                      targetVal: '₹16,999 (School Website + CMS)',
+                    },
+                    {
+                      name: 'School ERP',
+                      price: 'From ₹24,999',
+                      tag: 'SIS, Attendance & Marks',
+                      targetVal: '₹24,999 - ₹49,999 (School ERP)',
+                    },
+                    {
+                      name: 'Website + CMS + ERP',
+                      price: 'From ₹39,999',
+                      tag: 'Complete All-in-One Platform',
+                      badge: 'RECOMMENDED',
+                      targetVal: '₹39,999 - ₹74,999 (Website + CMS + ERP)',
+                    },
+                  ].map((plan) => {
+                    const isSelected = formData.section_i_budget_timeline.targetBudgetRange === plan.targetVal;
+                    return (
+                      <button
+                        key={plan.name}
+                        type="button"
+                        onClick={() => updateSection('section_i_budget_timeline', { targetBudgetRange: plan.targetVal })}
+                        className={`text-left p-3 rounded-xl border transition-all cursor-pointer ${
+                          isSelected
+                            ? 'bg-white border-[#4338CA] shadow-sm ring-2 ring-[#4338CA]'
+                            : 'bg-white/80 border-indigo-100 hover:border-indigo-300 hover:bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-bold text-xs text-[#131B2E]">{plan.name}</span>
+                          {plan.badge && (
+                            <span className="text-[8px] font-extrabold bg-[#4338CA] text-white px-1.5 py-0.5 rounded-full">
+                              {plan.badge}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-sm font-black font-mono text-[#4338CA] mt-1">{plan.price}</div>
+                        <div className="text-[10px] text-[#64748B] mt-0.5">{plan.tag}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="font-bold text-[#131B2E] block mb-1">
-                Hard Deadlines, Regulatory, or Business Constraints
+                {isSchoolProject
+                  ? 'Hard Deadlines, Affiliation Audits, or Academic Constraints'
+                  : 'Hard Deadlines, Regulatory, or Business Constraints'}
               </label>
               <textarea
                 rows={3}
                 value={formData.section_i_budget_timeline.hardDeadlinesOrConstraints || ''}
                 onChange={(e) => updateSection('section_i_budget_timeline', { hardDeadlinesOrConstraints: e.target.value })}
-                placeholder="e.g. We have a grand opening on Diwali, or our existing domain expires next month..."
+                placeholder={
+                  isSchoolProject
+                    ? 'e.g. CBSE Board inspection next month, annual admission open day in March, or domain expiring soon...'
+                    : 'e.g. We have a grand opening on Diwali, or our existing domain expires next month...'
+                }
                 className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
               />
             </div>
@@ -1560,7 +2041,7 @@ export default function BusinessRequirementsForm({
                   type="text"
                   value={formData.section_j_agreement.authorizedSignatoryTitle || ''}
                   onChange={(e) => updateSection('section_j_agreement', { authorizedSignatoryTitle: e.target.value })}
-                  placeholder="e.g. Managing Director, Partner, Proprietor"
+                  placeholder={isSchoolProject ? 'e.g. Principal, Director, Secretary' : 'e.g. Managing Director, Partner, Proprietor'}
                   className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
                 />
               </div>
@@ -1572,7 +2053,11 @@ export default function BusinessRequirementsForm({
                 rows={2}
                 value={formData.section_j_agreement.notesForEkaagraTeam || ''}
                 onChange={(e) => updateSection('section_j_agreement', { notesForEkaagraTeam: e.target.value })}
-                placeholder="Any special instructions, immediate concerns, or timing preferences..."
+                placeholder={
+                  isSchoolProject
+                    ? 'Any special instructions regarding CBSE guidelines, school board affiliations, or preferred launch date...'
+                    : 'Any special instructions, immediate concerns, or timing preferences...'
+                }
                 className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3"
               />
             </div>
@@ -1605,13 +2090,13 @@ export default function BusinessRequirementsForm({
         )}
 
         {/* Navigation & Submission Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-[#E2E8F0]">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-[#E2E8F0]">
           {currentStep > 1 ? (
             <button
               type="button"
               onClick={handlePrev}
               disabled={isSubmitting}
-              className="px-5 py-3 rounded-xl border border-[#E2E8F0] bg-white text-[#131B2E] text-xs font-bold hover:bg-slate-50 flex items-center gap-2 cursor-pointer transition-colors"
+              className="w-full sm:w-auto px-5 py-3 rounded-xl border border-[#E2E8F0] bg-white text-[#131B2E] text-xs font-bold hover:bg-slate-50 flex items-center justify-center gap-2 cursor-pointer transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
@@ -1624,7 +2109,7 @@ export default function BusinessRequirementsForm({
             <button
               type="button"
               onClick={handleNext}
-              className="px-6 py-3 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-black flex items-center gap-2 cursor-pointer shadow-md shadow-[#4338CA]/20 transition-all"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-[#4338CA]/20 transition-all"
             >
               <span>Next Section</span>
               <ArrowRight className="w-4 h-4" />
@@ -1634,7 +2119,7 @@ export default function BusinessRequirementsForm({
               type="button"
               onClick={handleFinalSubmit}
               disabled={isSubmitting}
-              className="px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/25 transition-all"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-600/25 transition-all"
             >
               {isSubmitting ? (
                 <>

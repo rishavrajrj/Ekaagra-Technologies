@@ -6,6 +6,7 @@ import type { BusinessProject, BusinessProjectFilter, BusinessProjectStatus } fr
 import { fetchBusinessProjectsAction } from '@/app/businessProjectActions';
 import { adminLogoutAction } from '@/app/actions';
 import Logo from '@/components/ui/Logo';
+import DirectProjectCreationModal from '@/components/admin/DirectProjectCreationModal';
 import {
   Briefcase,
   Search,
@@ -23,6 +24,9 @@ import {
   AlertCircle,
   Eye,
   Plus,
+  Sparkles,
+  Send,
+  PhoneCall,
 } from 'lucide-react';
 
 interface BusinessProjectsDashboardProps {
@@ -58,6 +62,7 @@ export default function BusinessProjectsDashboard({
   const [total, setTotal] = useState(initialTotal);
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<BusinessProjectStatus | 'ALL'>('ALL');
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [isPending, startTransition] = useTransition();
 
@@ -68,6 +73,7 @@ export default function BusinessProjectsDashboard({
         pageSize: 20,
         query: newQuery,
         status: newStatus,
+        projectType: 'BUSINESS',
       });
 
       if (res.success) {
@@ -106,88 +112,75 @@ export default function BusinessProjectsDashboard({
   ).length;
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#131B2E]">
-      {/* Admin Navbar */}
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="hover:opacity-90 transition-opacity">
-              <Logo size="sm" />
-            </Link>
-            <span className="hidden sm:inline-block w-px h-5 bg-[#E2E8F0]" />
-            <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#131B2E]">
-              Business Projects Hub
+    <div className="eka-content-container space-y-5 sm:space-y-6 min-w-0">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Business Projects
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              {total} Total
             </span>
           </div>
-
-          <div className="flex items-center gap-2 sm:gap-3 text-xs">
-            <Link
-              href="/admin/leads"
-              className="px-3 py-1.5 rounded-lg font-bold text-[#64748B] hover:text-[#131B2E] hover:bg-slate-100 transition-colors"
-            >
-              Leads
-            </Link>
-            <Link
-              href="/admin/business-projects"
-              className="px-3 py-1.5 rounded-lg font-bold text-[#4338CA] bg-[#4338CA]/10 transition-colors"
-            >
-              Business Projects
-            </Link>
-            <Link
-              href="/admin/school-projects"
-              className="px-3 py-1.5 rounded-lg font-bold text-[#64748B] hover:text-[#131B2E] hover:bg-slate-100 transition-colors"
-            >
-              School Hub
-            </Link>
-            <Link
-              href="/admin/orders"
-              className="px-3 py-1.5 rounded-lg font-bold text-[#64748B] hover:text-[#131B2E] hover:bg-slate-100 transition-colors"
-            >
-              Orders &amp; Payments
-            </Link>
-            <button
-              onClick={() => adminLogoutAction()}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-rose-600 hover:bg-rose-50 font-bold transition-colors ml-2"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Logout</span>
-            </button>
-          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage corporate clients, websites, custom software, requirements intake, and milestone delivery.
+          </p>
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => refreshProjects()}
+            disabled={isPending}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 shadow-xs transition-colors cursor-pointer"
+            title="Refresh projects"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isPending ? 'animate-spin text-indigo-600' : ''}`} />
+            <span>Refresh</span>
+          </button>
+
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>New Project</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-6">
         {/* Metrics Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
-            <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase">Total Projects</span>
-            <div className="text-2xl font-mono font-extrabold text-[#131B2E]">{total}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2.5 sm:gap-3">
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
+            <span className="text-[10px] font-mono font-bold text-[#64748B] uppercase truncate block">Total Projects</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-[#131B2E]">{total}</div>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
-            <span className="text-[10px] font-mono font-bold text-amber-600 uppercase">Reqs Pending</span>
-            <div className="text-2xl font-mono font-extrabold text-amber-700">{reqsPendingCount}</div>
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
+            <span className="text-[10px] font-mono font-bold text-amber-600 uppercase truncate block">Reqs Pending</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-amber-700">{reqsPendingCount}</div>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
-            <span className="text-[10px] font-mono font-bold text-purple-600 uppercase">Under Review</span>
-            <div className="text-2xl font-mono font-extrabold text-purple-700">{underReviewCount}</div>
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
+            <span className="text-[10px] font-mono font-bold text-purple-600 uppercase truncate block">Under Review</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-purple-700">{underReviewCount}</div>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
-            <span className="text-[10px] font-mono font-bold text-sky-600 uppercase">In Design</span>
-            <div className="text-2xl font-mono font-extrabold text-sky-700">{inDesignCount}</div>
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
+            <span className="text-[10px] font-mono font-bold text-sky-600 uppercase truncate block">In Design</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-sky-700">{inDesignCount}</div>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
-            <span className="text-[10px] font-mono font-bold text-emerald-600 uppercase">Design Approved</span>
-            <div className="text-2xl font-mono font-extrabold text-emerald-700">{designApprovedCount}</div>
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
+            <span className="text-[10px] font-mono font-bold text-emerald-600 uppercase truncate block">Design Approved</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-emerald-700">{designApprovedCount}</div>
           </div>
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
-            <span className="text-[10px] font-mono font-bold text-blue-600 uppercase">Development</span>
-            <div className="text-2xl font-mono font-extrabold text-blue-700">{developmentCount}</div>
+          <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-1">
+            <span className="text-[10px] font-mono font-bold text-blue-600 uppercase truncate block">Development</span>
+            <div className="text-xl sm:text-2xl font-mono font-extrabold text-blue-700">{developmentCount}</div>
           </div>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white p-4 sm:p-5 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
           <form onSubmit={handleSearch} className="flex-1 w-full flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -196,26 +189,28 @@ export default function BusinessProjectsDashboard({
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search projects by name, BUS-2026 number, service..."
-                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#131B2E] placeholder-[#94A3B8] focus:outline-none focus:border-[#4338CA]"
+                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl pl-10 pr-4 py-2.5 text-xs text-[#131B2E] placeholder-[#94A3B8] focus:outline-none focus:border-[#4338CA] min-h-[40px]"
               />
             </div>
             <button
               type="submit"
               disabled={isPending}
-              className="px-4 py-2.5 bg-[#131B2E] hover:bg-[#4338CA] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2.5 bg-[#131B2E] hover:bg-[#4338CA] text-white text-xs font-bold rounded-xl transition-colors cursor-pointer min-h-[40px]"
             >
               Search
             </button>
           </form>
 
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <Filter className="w-3.5 h-3.5 text-[#64748B]" />
+          <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+            <Filter className="w-3.5 h-3.5 text-[#64748B] shrink-0" />
+
             <select
               value={statusFilter}
               onChange={(e) => handleStatusChange(e.target.value as any)}
-              className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+              className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-[#131B2E] focus:outline-none focus:border-[#4338CA] min-h-[40px]"
             >
               <option value="ALL">All Statuses</option>
+              <option value="NEW_PROJECT">New Project</option>
               <option value="REQUIREMENTS_PENDING">Requirements Pending</option>
               <option value="REQUIREMENTS_SUBMITTED">Requirements Submitted</option>
               <option value="REQUIREMENTS_UNDER_REVIEW">Requirements Under Review</option>
@@ -236,7 +231,7 @@ export default function BusinessProjectsDashboard({
               type="button"
               onClick={() => refreshProjects()}
               disabled={isPending}
-              className="p-2.5 bg-[#FAF7F2] hover:bg-[#E2E8F0] text-[#64748B] rounded-xl border border-[#E2E8F0] transition-colors cursor-pointer"
+              className="p-2.5 bg-[#FAF7F2] hover:bg-[#E2E8F0] text-[#64748B] rounded-xl border border-[#E2E8F0] transition-colors cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center shrink-0"
               title="Refresh projects"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isPending ? 'animate-spin' : ''}`} />
@@ -244,96 +239,211 @@ export default function BusinessProjectsDashboard({
           </div>
         </div>
 
-        {/* Projects Table */}
+        {/* Projects Table & Mobile Cards */}
         <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#FAF7F2] border-b border-[#E2E8F0] text-[10px] font-extrabold uppercase tracking-wider text-[#64748B]">
-                  <th className="py-3.5 px-4 sm:px-6">Project / Number</th>
-                  <th className="py-3.5 px-4">Client / Organization</th>
-                  <th className="py-3.5 px-4">Service Type</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Created Date</th>
-                  <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E2E8F0] text-xs">
-                {projects.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-[#94A3B8]">
-                      <Briefcase className="w-8 h-8 mx-auto mb-2 opacity-40 text-[#4338CA]" />
-                      <p className="font-semibold text-sm text-[#131B2E]">No business projects found.</p>
-                      <p className="text-xs mt-1 text-[#64748B]">
-                        Confirm leads in the{' '}
-                        <Link href="/admin/leads" className="text-[#4338CA] underline font-bold">
-                          Leads Dashboard
-                        </Link>{' '}
-                        to create new business projects.
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  projects.map((proj) => {
-                    const statusTheme = STATUS_COLORS[proj.project_status] || STATUS_COLORS.NEW_PROJECT;
-                    const dateFormatted = new Date(proj.created_at).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    });
+          {projects.length === 0 ? (
+            <div className="py-12 text-center text-[#94A3B8] p-6">
+              <Briefcase className="w-8 h-8 mx-auto mb-2 opacity-40 text-[#4338CA]" />
+              <p className="font-semibold text-sm text-[#131B2E]">No projects found.</p>
+              <p className="text-xs mt-1 text-[#64748B]">
+                Create a project directly via the{' '}
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="text-[#4338CA] underline font-bold cursor-pointer"
+                >
+                  + New Project
+                </button>{' '}
+                button above, or convert leads in the{' '}
+                <Link href="/admin/leads" className="text-[#4338CA] underline font-bold">
+                  Leads Dashboard
+                </Link>.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table (>= 768px) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#FAF7F2] border-b border-[#E2E8F0] text-[10px] font-extrabold uppercase tracking-wider text-[#64748B]">
+                      <th className="py-3.5 px-4 sm:px-6">Project / Number</th>
+                      <th className="py-3.5 px-4">Client / Organization</th>
+                      <th className="py-3.5 px-4">Service &amp; Source</th>
+                      <th className="py-3.5 px-4">Status &amp; Intake</th>
+                      <th className="py-3.5 px-4">Created Date</th>
+                      <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs">
+                    {projects.map((proj) => {
+                      const statusTheme = STATUS_COLORS[proj.project_status] || STATUS_COLORS.NEW_PROJECT;
+                      const dateFormatted = new Date(proj.created_at).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      });
+                      const isSchool = proj.project_type === 'SCHOOL' || proj.project_number.startsWith('SCH-');
+                      const intakeStatus = (proj.metadata as any)?.intakeStatus || 'NOT_STARTED';
+                      const intakePercent = (proj.metadata as any)?.intakeProgressPercent;
+                      const acqSource = (proj.metadata as any)?.acquisitionSource || proj.acquisition_source || (proj.lead_id ? 'WEBSITE_LEAD' : 'DIRECT');
 
-                    return (
-                      <tr key={proj.id} className="hover:bg-[#FAF7F2]/80 transition-colors group">
-                        <td className="py-3.5 px-4 sm:px-6">
-                          <span className="font-mono text-[11px] font-bold text-[#4338CA] block">
-                            {proj.project_number}
-                          </span>
-                          <span className="font-black text-sm text-[#131B2E] group-hover:text-[#4338CA] transition-colors">
-                            {proj.project_name}
-                          </span>
-                        </td>
+                      return (
+                        <tr key={proj.id} className="hover:bg-[#FAF7F2]/80 dark:hover:bg-white/[0.04] transition-colors group">
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-mono text-[11px] font-bold text-[#4338CA]">
+                                {proj.project_number}
+                              </span>
+                              {isSchool && (
+                                <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200">
+                                  <School className="w-2.5 h-2.5" /> SCHOOL
+                                </span>
+                              )}
+                            </div>
+                            <span className="font-black text-sm text-[#131B2E] group-hover:text-[#4338CA] transition-colors block">
+                              {proj.project_name}
+                            </span>
+                          </td>
 
-                        <td className="py-3.5 px-4">
-                          <div className="font-bold text-[#131B2E]">{proj.client?.name || 'Client'}</div>
-                          {proj.client?.email && (
-                            <div className="text-[11px] text-[#64748B]">{proj.client.email}</div>
-                          )}
-                        </td>
+                          <td className="py-3.5 px-4">
+                            <div className="font-bold text-[#131B2E]">{proj.client?.name || 'Client'}</div>
+                            <div className="text-[11px] text-[#64748B] flex items-center gap-1.5">
+                              {proj.client?.organization && (
+                                <span className="font-medium text-slate-700">{proj.client.organization}</span>
+                              )}
+                              {proj.client?.email && <span>&bull; {proj.client.email}</span>}
+                            </div>
+                          </td>
 
-                        <td className="py-3.5 px-4 text-[#475569] font-medium">
-                          {proj.service_type}
-                        </td>
+                          <td className="py-3.5 px-4">
+                            <div className="font-medium text-slate-800">{proj.service_type}</div>
+                            <div className="text-[10px] text-slate-500 font-mono uppercase mt-0.5">
+                              Source: <span className="font-bold text-slate-700">{acqSource.replace(/_/g, ' ')}</span>
+                            </div>
+                          </td>
 
-                        <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${statusTheme.bg} ${statusTheme.text} ${statusTheme.border}`}
-                          >
-                            {proj.project_status.replace(/_/g, ' ')}
-                          </span>
-                        </td>
+                          <td className="py-3.5 px-4">
+                            <div className="space-y-1">
+                              <span
+                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${statusTheme.bg} ${statusTheme.text} ${statusTheme.border}`}
+                              >
+                                {proj.project_status.replace(/_/g, ' ')}
+                              </span>
 
-                        <td className="py-3.5 px-4 text-[#64748B] text-[11px] whitespace-nowrap">
-                          {dateFormatted}
-                        </td>
+                              {intakeStatus && (
+                                <div className="flex items-center gap-1.5 text-[10px]">
+                                  <span className="font-bold text-slate-500">Intake:</span>
+                                  <span className={`font-extrabold uppercase ${
+                                    intakeStatus === 'COMPLETED'
+                                      ? 'text-emerald-700'
+                                      : intakeStatus === 'SUBMITTED' || intakeStatus === 'UNDER_REVIEW'
+                                      ? 'text-indigo-700'
+                                      : intakeStatus === 'CHANGES_REQUESTED'
+                                      ? 'text-rose-700'
+                                      : 'text-amber-700'
+                                  }`}>
+                                    {intakeStatus.replace(/_/g, ' ')}
+                                    {intakePercent !== undefined && ` (${intakePercent}%)`}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </td>
 
-                        <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
-                          <Link
-                            href={`/admin/business-projects/${proj.id}`}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#FAF7F2] group-hover:bg-[#4338CA] group-hover:text-white text-[#131B2E] text-xs font-bold rounded-lg border border-[#E2E8F0] transition-all cursor-pointer"
-                          >
-                            <span>Open Hub</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          <td className="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
+                            {dateFormatted}
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6 text-right">
+                            <Link
+                              href={`/admin/business-projects/${proj.id}`}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#FAF7F2] hover:bg-[#4338CA] hover:text-white text-[#131B2E] text-xs font-bold border border-[#E2E8F0] transition-all cursor-pointer"
+                            >
+                              <span>Manage</span>
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards (< 768px) */}
+              <div className="md:hidden divide-y divide-[#E2E8F0]">
+                {projects.map((proj) => {
+                  const statusTheme = STATUS_COLORS[proj.project_status] || STATUS_COLORS.NEW_PROJECT;
+                  const dateFormatted = new Date(proj.created_at).toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  });
+                  const isSchool = proj.project_type === 'SCHOOL' || proj.project_number.startsWith('SCH-');
+                  const intakeStatus = (proj.metadata as any)?.intakeStatus || 'NOT_STARTED';
+                  const acqSource = (proj.metadata as any)?.acquisitionSource || proj.acquisition_source || (proj.lead_id ? 'WEBSITE_LEAD' : 'DIRECT');
+
+                  return (
+                    <div key={proj.id} className="p-4 space-y-3 hover:bg-[#FAF7F2]/60 transition-colors">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono text-xs font-bold text-[#4338CA]">
+                              {proj.project_number}
+                            </span>
+                            {isSchool && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200">
+                                SCHOOL
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-black text-sm text-[#131B2E]">{proj.project_name}</h4>
+                          <p className="text-xs text-slate-500">
+                            {proj.client?.name || 'Client'} {proj.client?.organization ? `• ${proj.client.organization}` : ''}
+                          </p>
+                        </div>
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border shrink-0 ${statusTheme.bg} ${statusTheme.text} ${statusTheme.border}`}
+                        >
+                          {proj.project_status.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-xs bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E2E8F0]">
+                        <div>
+                          <span className="text-[10px] text-slate-500 font-bold uppercase block">Service &amp; Source</span>
+                          <span className="font-medium text-slate-800">{proj.service_type}</span>
+                          <span className="text-[10px] font-mono text-slate-500 block">{acqSource}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] text-slate-500 font-bold uppercase block">Intake Status</span>
+                          <span className="font-bold text-indigo-700 uppercase text-[11px] block">{intakeStatus.replace(/_/g, ' ')}</span>
+                          <span className="font-mono text-[10px] text-slate-500">{dateFormatted}</span>
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/admin/business-projects/${proj.id}`}
+                        className="min-h-[44px] w-full inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold transition-all shadow-xs"
+                      >
+                        <span>Open Project Workspace</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
-      </main>
+      </div>
+
+      {/* Direct Project Creation Modal */}
+      <DirectProjectCreationModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onProjectCreated={() => refreshProjects()}
+      />
     </div>
   );
 }

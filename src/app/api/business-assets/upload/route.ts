@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyBusinessOnboardingToken } from '@/lib/businessProjectsDb';
 import { getSupabaseServerClient } from '@/lib/supabase';
-import { validateAssetUpload, sanitizeFileName } from '@/lib/businessValidation';
+import { validateAssetUpload } from '@/lib/businessValidation';
 import type { BusinessAssetCategory } from '@/lib/types';
+import { processAndUploadCanonicalAsset } from '@/lib/imageUploadService';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,57 +54,38 @@ export async function POST(req: NextRequest) {
     }
 
     const assetCategory = categoryParam || validation.category;
-    const sanitizedName = sanitizeFileName(file.name);
-    const storagePath = `${project.id}/${sanitizedName}`;
 
     // 3. Convert file to ArrayBuffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
 
-    let fileUrl = '';
+    // 4. Delegate to Centralized Canonical Upload Service (Sharp WebP optimization & strict validation)
+    const assetResult = await processAndUploadCanonicalAsset({
+      file: {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      },
+      buffer,
+      tenantId: project.id,
+      bucketName: 'business-assets',
+      itemType: assetCategory === 'DOCUMENT' ? 'document' : 'image',
+    });
+
     const supabase = getSupabaseServerClient();
-
     if (supabase) {
-      // Attempt upload to Supabase Storage bucket 'business-assets'
-      const { data: uploadData, error: uploadErr } = await supabase.storage
-        .from('business-assets')
-        .upload(storagePath, buffer, {
-          contentType: file.type || 'application/octet-stream',
-          upsert: false,
-        });
-
-      if (!uploadErr && uploadData) {
-        const { data: publicUrlData } = supabase.storage
-          .from('business-assets')
-          .getPublicUrl(storagePath);
-        fileUrl = publicUrlData?.publicUrl || '';
-      } else {
-        console.warn(
-          '[STORAGE WARNING] Could not upload to bucket business-assets. Falling back to data URL storage.',
-          uploadErr?.message
-        );
-        // Fallback for local testing or unprovisioned storage bucket
-        const base64 = buffer.toString('base64');
-        fileUrl = `data:${file.type || 'application/octet-stream'};base64,${base64.slice(0, 1000)}...[asset-ref]`;
-      }
-
-      // If fileUrl is still empty, construct reference URL
-      if (!fileUrl) {
-        fileUrl = `/api/business-assets/${storagePath}`;
-      }
-
-      // 4. Record asset in database
+      // Record asset in database
       const { data: assetRecord, error: dbErr } = await supabase
         .from('business_requirement_assets')
         .insert([
           {
             project_id: project.id,
             asset_category: assetCategory,
-            file_name: file.name,
-            file_url: fileUrl,
-            storage_path: storagePath,
-            file_size_bytes: file.size,
-            mime_type: file.type || 'application/octet-stream',
+            file_name: assetResult.name,
+            file_url: assetResult.url,
+            storage_path: assetResult.storageKey,
+            file_size_bytes: assetResult.size,
+            mime_type: assetResult.type,
             uploaded_by: 'CLIENT',
           },
         ])

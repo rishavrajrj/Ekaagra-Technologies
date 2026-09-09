@@ -19,8 +19,10 @@ import {
   Download,
   CreditCard,
   Briefcase,
+  Plus,
 } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
+import DirectSchoolOnboardingModal from '@/components/admin/DirectSchoolOnboardingModal';
 import {
   fetchSchoolProjectsAction,
   getSchoolProjectDetailsAction,
@@ -95,6 +97,7 @@ export default function SchoolProjectsHub() {
   const [changeRequestComment, setChangeRequestComment] = useState('');
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isDirectModalOpen, setIsDirectModalOpen] = useState(false);
 
   const loadProjects = useCallback(async () => {
     setIsLoading(true);
@@ -203,81 +206,44 @@ export default function SchoolProjectsHub() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#131B2E] flex flex-col">
-      {/* Top Navbar */}
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo size="sm" />
-            <span className="hidden sm:inline-block w-px h-5 bg-[#E2E8F0]" />
-            <div className="flex items-center gap-2">
-              <School className="w-5 h-5 text-[#4338CA]" />
-              <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#131B2E]">
-                School Projects & Intake 2.0
-              </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-bold border border-indigo-200">
-                Option 3 Hub
-              </span>
-            </div>
+    <div className="eka-content-container space-y-5 sm:space-y-6 min-w-0">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              School Projects
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-50 text-violet-700 border border-violet-200">
+              {total} Total
+            </span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/business-projects"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4338CA]/10 hover:bg-[#4338CA]/20 text-[#4338CA] text-xs font-bold rounded-lg border border-[#4338CA]/20 transition-colors"
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>Business Projects</span>
-            </Link>
-
-            <Link
-              href="/admin/orders"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200 transition-colors"
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Orders &amp; Payments</span>
-            </Link>
-
-            <Link
-              href="/admin/leads"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF7F2] hover:bg-[#E2E8F0] text-xs font-bold rounded-lg border border-[#E2E8F0] transition-colors"
-            >
-              <ArrowRight className="w-3.5 h-3.5 rotate-180" />
-              <span>Sales Leads</span>
-            </Link>
-
-            <button
-              onClick={() => loadProjects()}
-              disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-xs font-bold rounded-lg border border-[#E2E8F0] transition-colors cursor-pointer"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </button>
-          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Manage school onboarding, intake, content, media, review workflows, and platform provisioning.
+          </p>
         </div>
-      </header>
 
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {/* Header Title */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E]">
-              Confirmed School Projects
-            </h1>
-            <p className="text-xs sm:text-sm text-[#64748B] mt-1">
-              Universal detailed intake, media asset collections, reviewer change requests, and controlled Step 41/42 provisioning handoff.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="bg-white border border-[#E2E8F0] rounded-xl px-4 py-2 flex items-center gap-3 shadow-xs">
-              <span className="text-xs font-bold text-[#64748B]">Total Active Projects:</span>
-              <span className="text-lg font-extrabold text-[#4338CA]">{total}</span>
-            </div>
-          </div>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => loadProjects()}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 shadow-xs transition-colors cursor-pointer"
+            title="Refresh projects"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-indigo-600' : ''}`} />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={() => setIsDirectModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Start School Onboarding</span>
+          </button>
         </div>
+      </div>
+
+      <div className="space-y-6">
 
         {/* Filters Bar */}
         <div className="bg-white rounded-2xl p-4 border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between">
@@ -334,8 +300,111 @@ export default function SchoolProjectsHub() {
           </div>
         </div>
 
-        {/* Projects Table */}
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
+        {/* Mobile School Projects Cards (< 768px) */}
+        <div className="md:hidden space-y-3">
+          {isLoading ? (
+            <div className="py-16 flex flex-col items-center justify-center space-y-3 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs">
+              <RefreshCw className="w-6 h-6 text-[#4338CA] animate-spin" />
+              <p className="text-xs text-[#64748B] font-medium">Loading school projects...</p>
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="py-16 text-center space-y-3 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs p-6">
+              <Building2 className="w-10 h-10 text-[#94A3B8] mx-auto" />
+              <h3 className="text-sm font-bold text-[#131B2E]">No School Projects Found</h3>
+              <p className="text-xs text-[#64748B] max-w-xs mx-auto">
+                No school projects match your current filters. Confirmed leads can be transitioned here via &quot;Start School Onboarding&quot;.
+              </p>
+            </div>
+          ) : (
+            projects.map((proj) => {
+              const statusTheme = STATUS_COLORS[proj.status] || STATUS_COLORS.draft;
+              const mediaInfo = MEDIA_STATUS_LABELS[proj.media_status] || MEDIA_STATUS_LABELS.not_started;
+              const udiseCode = (proj.metadata as any)?.udiseCode || (proj.metadata as any)?.school_id || null;
+
+              return (
+                <div
+                  key={proj.id}
+                  className="bg-white rounded-2xl p-4 border border-[#E2E8F0] shadow-xs space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-mono text-xs font-bold text-[#4338CA]">
+                          {proj.project_number}
+                        </span>
+                        {udiseCode && (
+                          <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold" title="UDISE+ School ID">
+                            UDISE: {udiseCode}
+                          </span>
+                        )}
+                        <span
+                          className={`inline-block px-2 py-0.5 rounded-full font-bold text-[10px] uppercase tracking-wider border ${statusTheme.bg} ${statusTheme.text} ${statusTheme.border}`}
+                        >
+                          {proj.status.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                      <h3 className="font-extrabold text-[#131B2E] text-sm mt-1">
+                        {proj.school_name}
+                      </h3>
+                      <p className="text-xs text-[#64748B] mt-0.5">
+                        {proj.city ? `${proj.city}, ${proj.state || ''}` : 'Location unconfirmed'} • Contact: {proj.primary_contact_name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                    <span className="inline-block px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-semibold text-[11px] border border-slate-200">
+                      {PRODUCT_LABELS[proj.product_id] || proj.product_id}
+                    </span>
+                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${mediaInfo.badgeClass}`}>
+                      {mediaInfo.label}
+                    </span>
+                  </div>
+
+                  {/* Completeness Bar */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-500 font-medium">Intake Completeness</span>
+                      <span className="font-mono font-bold text-[#131B2E]">{proj.completeness_percentage}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                      <div
+                        className={`h-full rounded-full ${
+                          proj.completeness_percentage >= 100
+                            ? 'bg-emerald-500'
+                            : proj.completeness_percentage > 50
+                            ? 'bg-indigo-500'
+                            : 'bg-amber-500'
+                        }`}
+                        style={{ width: `${proj.completeness_percentage}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <Link
+                      href={`/admin/school-projects/${proj.id}`}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 font-bold rounded-xl text-xs border border-violet-200 transition-colors cursor-pointer min-h-[44px]"
+                    >
+                      <span>Workspace</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                    <button
+                      onClick={() => loadProjectDetails(proj.id)}
+                      className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold rounded-xl text-xs transition-colors cursor-pointer min-h-[44px]"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Review</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Desktop Projects Table (>= 768px) */}
+        <div className="hidden md:block bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
           {isLoading ? (
             <div className="py-20 flex flex-col items-center justify-center space-y-3">
               <RefreshCw className="w-6 h-6 text-[#4338CA] animate-spin" />
@@ -367,10 +436,16 @@ export default function SchoolProjectsHub() {
                   {projects.map((proj) => {
                     const statusTheme = STATUS_COLORS[proj.status] || STATUS_COLORS.draft;
                     const mediaInfo = MEDIA_STATUS_LABELS[proj.media_status] || MEDIA_STATUS_LABELS.not_started;
+                    const udiseCode = (proj.metadata as any)?.udiseCode || (proj.metadata as any)?.school_id || null;
                     return (
                       <tr key={proj.id} className="hover:bg-[#FAF7F2]/50 transition-colors">
                         <td className="py-4 px-4 font-mono font-bold text-[#4338CA]">
-                          {proj.project_number}
+                          <div>{proj.project_number}</div>
+                          {udiseCode && (
+                            <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold inline-block mt-1" title="UDISE+ School ID">
+                              UDISE: {udiseCode}
+                            </span>
+                          )}
                         </td>
                         <td className="py-4 px-4">
                           <div className="font-extrabold text-[#131B2E] text-sm">{proj.school_name}</div>
@@ -417,13 +492,23 @@ export default function SchoolProjectsHub() {
                           </span>
                         </td>
                         <td className="py-4 px-4 text-right">
-                          <button
-                            onClick={() => loadProjectDetails(proj.id)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Review</span>
-                          </button>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <Link
+                              href={`/admin/school-projects/${proj.id}`}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-violet-50 hover:bg-violet-100 text-violet-700 font-bold rounded-lg text-xs border border-violet-200 transition-colors cursor-pointer"
+                              title="Open dedicated School Project Workspace"
+                            >
+                              <span>Workspace</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </Link>
+                            <button
+                              onClick={() => loadProjectDetails(proj.id)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold rounded-lg text-xs transition-colors cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Review</span>
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -433,29 +518,34 @@ export default function SchoolProjectsHub() {
             </div>
           )}
         </div>
-      </main>
+      </div>
 
-      {/* Review Workspace Drawer */}
+      {/* Review Workspace Drawer (Responsive Bottom Sheet on Mobile / Slide-Over on Desktop) */}
       {selectedProjectId && (
-        <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
+        <div className="fixed inset-0 z-50 overflow-hidden flex items-end sm:items-stretch justify-end">
           <div
             className="fixed inset-0 bg-[#131B2E]/60 backdrop-blur-xs transition-opacity"
             onClick={() => setSelectedProjectId(null)}
           />
 
-          <div className="relative w-full max-w-2xl bg-white shadow-2xl z-10 flex flex-col h-full overflow-y-auto animate-slideLeft">
+          <div className="relative w-full max-w-2xl bg-white shadow-2xl z-10 flex flex-col h-[90vh] sm:h-full rounded-t-3xl sm:rounded-none overflow-y-auto animate-slideLeft">
             {/* Header */}
-            <div className="p-6 border-b border-[#E2E8F0] flex items-start justify-between bg-[#FAF7F2]">
+            <div className="p-4 sm:p-6 border-b border-[#E2E8F0] flex items-start justify-between bg-[#FAF7F2] sticky top-0 z-10">
               <div className="space-y-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-mono text-xs font-extrabold text-[#4338CA]">
                     {projectDetails?.project.project_number}
                   </span>
+                  {projectDetails?.currentSubmission?.intake_payload?.schoolProfile?.udiseCode && (
+                    <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold">
+                      UDISE: {projectDetails.currentSubmission.intake_payload.schoolProfile.udiseCode}
+                    </span>
+                  )}
                   <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 uppercase">
                     {projectDetails?.project.status.replace(/_/g, ' ')}
                   </span>
                 </div>
-                <h2 className="text-xl font-extrabold text-[#131B2E]">
+                <h2 className="text-lg sm:text-xl font-extrabold text-[#131B2E]">
                   {projectDetails?.project.school_name || 'Loading School Project...'}
                 </h2>
                 <p className="text-xs text-[#64748B]">
@@ -465,7 +555,7 @@ export default function SchoolProjectsHub() {
 
               <button
                 onClick={() => setSelectedProjectId(null)}
-                className="p-2 text-[#94A3B8] hover:text-[#131B2E] rounded-xl hover:bg-white transition-colors"
+                className="p-2 text-[#94A3B8] hover:text-[#131B2E] rounded-xl hover:bg-white transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -537,12 +627,12 @@ export default function SchoolProjectsHub() {
                     Reviewer Actions
                   </h3>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {/* Approve Button */}
                     <button
                       onClick={handleApprove}
                       disabled={isSubmittingAction || projectDetails.project.status === 'approved' || projectDetails.project.status === 'handed_off'}
-                      className={`p-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      className={`p-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px] ${
                         projectDetails.project.status === 'approved' || projectDetails.project.status === 'handed_off'
                           ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
                           : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs'
@@ -556,7 +646,7 @@ export default function SchoolProjectsHub() {
                     <button
                       onClick={handlePlatformHandoff}
                       disabled={isSubmittingAction || projectDetails.project.status === 'handed_off' || !projectDetails.approvedSnapshot}
-                      className={`p-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                      className={`p-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer min-h-[44px] ${
                         projectDetails.project.status === 'handed_off'
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 cursor-not-allowed'
                           : !projectDetails.approvedSnapshot
@@ -578,11 +668,11 @@ export default function SchoolProjectsHub() {
                     <span className="text-[11px] font-bold text-[#64748B]">
                       Request Changes / Clarifications from School:
                     </span>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <select
                         value={changeRequestSection}
                         onChange={(e) => setChangeRequestSection(e.target.value)}
-                        className="px-2.5 py-2 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl text-xs font-bold"
+                        className="px-2.5 py-2 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl text-xs font-bold min-h-[44px]"
                       >
                         {INTAKE_SECTIONS.map((sec) => (
                           <option key={sec.key} value={sec.key}>
@@ -595,12 +685,12 @@ export default function SchoolProjectsHub() {
                         placeholder="e.g. Please upload higher-resolution logo or verify student count"
                         value={changeRequestComment}
                         onChange={(e) => setChangeRequestComment(e.target.value)}
-                        className="flex-1 px-3 py-2 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl text-xs"
+                        className="flex-1 px-3 py-2 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl text-xs min-h-[44px]"
                       />
                       <button
                         onClick={handleRequestChanges}
                         disabled={isSubmittingAction || !changeRequestComment.trim()}
-                        className="px-3 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center gap-1 transition-colors cursor-pointer"
+                        className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white font-bold rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer min-h-[44px]"
                       >
                         <Send className="w-3.5 h-3.5" />
                         <span>Send</span>
@@ -682,7 +772,89 @@ export default function SchoolProjectsHub() {
                   </div>
                 )}
 
-                {/* 5. Submitted Intake Payload Summary */}
+                {/* 5. Project Delivery & Priorities Plan (Admin Insight) */}
+                {projectDetails.currentSubmission?.intake_payload?.projectDelivery && (() => {
+                  const pd = projectDetails.currentSubmission.intake_payload.projectDelivery as any;
+                  return (
+                    <div className="p-4 bg-white rounded-2xl border border-[#E2E8F0] shadow-xs space-y-3">
+                      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-[#4338CA]" />
+                          <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#131B2E]">
+                            Project Timeline &amp; Delivery Priorities
+                          </h4>
+                        </div>
+                        <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          pd.deliveryPriority === 'urgent'
+                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                            : pd.deliveryPriority === 'priority'
+                            ? 'bg-indigo-100 text-indigo-900'
+                            : 'bg-slate-100 text-slate-700'
+                        }`}>
+                          {pd.deliveryPriority === 'urgent' ? 'Urgent / Expedited' : pd.deliveryPriority === 'priority' ? 'Priority Queue' : 'Standard Delivery'}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-[11px]">
+                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[#64748B] block text-[10px] uppercase font-bold">Target Launch</span>
+                          <span className="font-bold text-[#131B2E] mt-0.5 block truncate">
+                            {pd.targetLaunchTimeline === 'specific-date' && pd.targetLaunchDate ? pd.targetLaunchDate : pd.targetLaunchTimeline || pd.targetLaunchDate || 'Within 3-4 weeks'}
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[#64748B] block text-[10px] uppercase font-bold">Expedited Surcharge</span>
+                          <span className="font-bold text-[#131B2E] mt-0.5 block">
+                            {pd.deliveryPriority === 'urgent' ? `+₹${(pd.expeditedFeeINR || 0).toLocaleString('en-IN')}` : 'Included (₹0)'}
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[#64748B] block text-[10px] uppercase font-bold">Decision Maker</span>
+                          <span className="font-bold text-[#131B2E] mt-0.5 block truncate">
+                            {pd.decisionMakerName || pd.decisionMakers || 'Not specified'}
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+                          <span className="text-[#64748B] block text-[10px] uppercase font-bold">Contact</span>
+                          <span className="font-mono text-[10px] text-[#131B2E] mt-0.5 block truncate">
+                            {pd.decisionMakerPhone || pd.decisionMakerEmail || '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-[#475569] space-y-1 pt-1">
+                        <div>
+                          <span className="font-bold text-[#131B2E]">Phase 1 Essentials ({(pd.phase1Priorities || []).length}): </span>
+                          <span>{(pd.phase1Priorities || []).join(', ') || pd.phase1Requirements || 'Default essentials'}</span>
+                        </div>
+                        {pd.phase2Priorities && pd.phase2Priorities.length > 0 && (
+                          <div>
+                            <span className="font-bold text-[#131B2E]">Phase 2 Enhancements ({pd.phase2Priorities.length}): </span>
+                            <span>{pd.phase2Priorities.join(', ')}</span>
+                          </div>
+                        )}
+                        {pd.importantDeadlineDate && (
+                          <div>
+                            <span className="font-bold text-[#131B2E]">Important Deadline: </span>
+                            <span className="text-[#4338CA]">{pd.importantDeadlineType || 'Milestone'} on {pd.importantDeadlineDate}</span>
+                            {pd.importantDeadlineNotes ? ` (${pd.importantDeadlineNotes})` : ''}
+                          </div>
+                        )}
+                        {pd.deliveryNotes && (
+                          <div>
+                            <span className="font-bold text-[#131B2E]">Delivery Notes: </span>
+                            <span className="italic">{pd.deliveryNotes}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 6. Submitted Intake Payload Summary */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#131B2E]">
                     Submitted Intake Responses (Version {projectDetails.currentSubmission?.version_number || 1})
@@ -708,6 +880,16 @@ export default function SchoolProjectsHub() {
           </div>
         </div>
       )}
+
+      {/* Direct School Onboarding Modal */}
+      <DirectSchoolOnboardingModal
+        isOpen={isDirectModalOpen}
+        onClose={() => setIsDirectModalOpen(false)}
+        onProjectCreated={() => {
+          setIsDirectModalOpen(false);
+          loadProjects();
+        }}
+      />
     </div>
   );
 }

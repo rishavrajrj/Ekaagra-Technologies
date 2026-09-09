@@ -11,6 +11,8 @@ import type {
   Client,
   BusinessProjectStatus,
   BusinessRequirementAsset,
+  BusinessRequirementsData,
+  MissingRequirementItem,
 } from '@/lib/types';
 import {
   updateBusinessProjectStatusAction,
@@ -20,6 +22,8 @@ import {
   addProjectNoteAction,
   createPostDesignPaymentMilestoneAction,
   deleteBusinessProjectAssetAction,
+  requestMissingInformationAction,
+  sendIntakeReminderEmailAction,
 } from '@/app/businessProjectActions';
 import Logo from '@/components/ui/Logo';
 import {
@@ -29,6 +33,7 @@ import {
   CheckCircle2,
   Clock,
   AlertCircle,
+  AlertTriangle,
   Copy,
   Check,
   Send,
@@ -49,6 +54,12 @@ import {
   Trash2,
   FolderOpen,
   Download,
+  UserCheck,
+  FileEdit,
+  ListChecks,
+  Eye,
+  SendHorizontal,
+  School,
 } from 'lucide-react';
 
 function formatBytes(bytes?: number | null): string {
@@ -74,6 +85,15 @@ interface BusinessProjectDetailViewProps {
   notes: ProjectNote[];
   assets?: BusinessRequirementAsset[];
   initialOnboardingUrl?: string;
+  draftRequirements?: BusinessRequirementsData;
+  intakeProgress?: {
+    percentage: number;
+    checklist: Array<{
+      label: string;
+      step: number;
+      completed: boolean;
+    }>;
+  };
 }
 
 export default function BusinessProjectDetailView({
@@ -86,6 +106,8 @@ export default function BusinessProjectDetailView({
   notes: initialNotes,
   assets = [],
   initialOnboardingUrl,
+  draftRequirements,
+  intakeProgress: initialIntakeProgress,
 }: BusinessProjectDetailViewProps) {
   const [project, setProject] = useState<BusinessProject>(initialProject);
   const [designReviews, setDesignReviews] = useState<DesignReview[]>(initialDesignReviews);
@@ -100,6 +122,14 @@ export default function BusinessProjectDetailView({
   const [onboardingUrl, setOnboardingUrl] = useState<string | undefined>(initialOnboardingUrl);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Intake Management & Missing Info State
+  const [showMissingModal, setShowMissingModal] = useState(false);
+  const [selectedMissingItems, setSelectedMissingItems] = useState<string[]>([]);
+  const [customMissingItem, setCustomMissingItem] = useState('');
+  const [missingNotes, setMissingNotes] = useState('');
+  const [isSendingMissing, setIsSendingMissing] = useState(false);
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
 
   // Status Change Dialog
   const [statusMsg, setStatusMsg] = useState('');
@@ -136,6 +166,89 @@ export default function BusinessProjectDetailView({
         setTimeout(() => setStatusMsg(''), 3000);
       }
     });
+  };
+
+  const handleSendReminder = async () => {
+    if (!onboardingUrl) return;
+    setIsSendingReminder(true);
+    try {
+      const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${onboardingUrl}` : onboardingUrl;
+      const res = await sendIntakeReminderEmailAction({
+        projectId: project.id,
+        clientEmail: client?.email || project.client?.email || '',
+        clientName: client?.name || project.client?.name || 'Valued Client',
+        projectName: project.project_name,
+        onboardingUrl: fullUrl,
+      });
+      if (res.success) {
+        setStatusMsg('Intake invitation & reminder email sent ✓');
+      } else {
+        setStatusMsg(res.error || 'Failed to send email');
+      }
+      setTimeout(() => setStatusMsg(''), 4000);
+    } catch {
+      setStatusMsg('Error sending reminder');
+      setTimeout(() => setStatusMsg(''), 4000);
+    } finally {
+      setIsSendingReminder(false);
+    }
+  };
+
+  const handleRequestMissingInfo = async () => {
+    const items = [...selectedMissingItems];
+    if (customMissingItem.trim()) {
+      items.push(customMissingItem.trim());
+    }
+    if (items.length === 0) {
+      alert('Please select or specify at least one missing item.');
+      return;
+    }
+
+    const mappedItems: MissingRequirementItem[] = items.map((item, idx) => ({
+      id: `req-miss-${Date.now()}-${idx}`,
+      category: 'CONTENT_OR_MEDIA',
+      title: item,
+      stepNumber: item.includes('Logo') ? 5 : item.includes('Photo') ? 5 : item.includes('Domain') ? 8 : 1,
+      resolved: false,
+    }));
+
+    setIsSendingMissing(true);
+    try {
+      const res = await requestMissingInformationAction({
+        projectId: project.id,
+        missingItems: mappedItems,
+        notes: missingNotes.trim() || undefined,
+        clientEmail: client?.email || project.client?.email,
+        clientName: client?.name || project.client?.name,
+        projectName: project.project_name,
+        onboardingUrl: onboardingUrl ? (typeof window !== 'undefined' ? `${window.location.origin}${onboardingUrl}` : onboardingUrl) : undefined,
+      });
+
+      if (res.success) {
+        setProject((prev) => ({
+          ...prev,
+          project_status: 'CLARIFICATION_REQUESTED',
+          metadata: {
+            ...(prev.metadata || {}),
+            intakeStatus: 'CHANGES_REQUESTED',
+            missingRequirements: mappedItems,
+            missingRequirementsNotes: missingNotes.trim() || undefined,
+          },
+        }));
+        setShowMissingModal(false);
+        setSelectedMissingItems([]);
+        setCustomMissingItem('');
+        setMissingNotes('');
+        setStatusMsg('Missing information request dispatched to client ✓');
+        setTimeout(() => setStatusMsg(''), 4000);
+      } else {
+        alert(res.error || 'Failed to dispatch request');
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error requesting missing info');
+    } finally {
+      setIsSendingMissing(false);
+    }
   };
 
   const handleMarkReviewed = () => {
@@ -317,55 +430,52 @@ export default function BusinessProjectDetailView({
   ].includes(project.project_status);
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#131B2E]">
-      {/* Top Navbar */}
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/business-projects"
-              className="p-2 rounded-xl text-[#64748B] hover:text-[#131B2E] hover:bg-slate-100 transition-colors"
-              title="Back to projects"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-mono font-bold text-[#4338CA] bg-[#4338CA]/10 px-2 py-0.5 rounded uppercase">
-                {project.project_number}
-              </span>
-              <h1 className="text-sm sm:text-base font-black text-[#131B2E] truncate max-w-[280px] sm:max-w-md">
-                {project.project_name}
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {statusMsg && (
-              <span className="text-xs font-bold text-emerald-600 mr-2 animate-fadeIn">{statusMsg}</span>
-            )}
-            <Link
-              href="/admin/business-projects"
-              className="px-3 py-1.5 rounded-lg font-bold text-[#64748B] hover:text-[#131B2E] text-xs transition-colors"
-            >
-              Projects
-            </Link>
-            <Link
-              href="/admin/leads"
-              className="px-3 py-1.5 rounded-lg font-bold text-[#64748B] hover:text-[#131B2E] text-xs transition-colors"
-            >
-              Leads
-            </Link>
+    <div className="eka-content-container space-y-5 sm:space-y-6 min-w-0">
+      {/* Detail Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <Link
+            href="/admin/business-projects"
+            className="p-2 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition-colors shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
+            title="Back to projects"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="space-y-0.5 min-w-0">
+            <span className="text-[10px] font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded uppercase">
+              {project.project_number}
+            </span>
+            <h2 className="text-sm sm:text-lg font-black text-slate-900 truncate">
+              {project.project_name}
+            </h2>
           </div>
         </div>
-      </header>
 
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex items-center gap-2 flex-wrap">
+          {statusMsg && (
+            <span className="text-xs font-bold text-emerald-600 mr-1 animate-fadeIn">{statusMsg}</span>
+          )}
+          <Link
+            href="/admin/business-projects"
+            className="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 text-xs transition-colors border border-slate-200"
+          >
+            All Projects
+          </Link>
+          <Link
+            href="/admin/leads"
+            className="px-3 py-1.5 rounded-lg font-bold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 text-xs transition-colors border border-slate-200"
+          >
+            Leads
+          </Link>
+        </div>
+      </div>
+
+      <div className="space-y-6">
         {/* Project Snapshot Card & 4-Stage Visual Milestones */}
-        <div className="bg-white rounded-3xl border border-[#E2E8F0] p-6 sm:p-8 shadow-sm space-y-6">
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#E2E8F0] p-4 sm:p-8 shadow-xs space-y-6">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-[#E2E8F0] pb-6">
             <div className="space-y-1.5">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-black uppercase tracking-wider text-[#131B2E]">
                   Status Pipeline:
                 </span>
@@ -373,7 +483,7 @@ export default function BusinessProjectDetailView({
                   {project.project_status.replace(/_/g, ' ')}
                 </span>
               </div>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[#64748B] break-words">
                 Client: <strong>{client?.name || 'Primary Contact'}</strong> &bull;{' '}
                 {client?.email && <span className="font-mono">{client.email} &bull; </span>}
                 Service: <strong>{project.service_type}</strong>
@@ -381,13 +491,13 @@ export default function BusinessProjectDetailView({
             </div>
 
             {/* Manual Status Override Selector */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="font-bold text-[#64748B] uppercase tracking-wider text-[11px]">Override Status:</span>
+            <div className="flex items-center gap-2 text-xs flex-wrap">
+              <span className="font-bold text-[#64748B] uppercase tracking-wider text-[11px] shrink-0">Override Status:</span>
               <select
                 value={project.project_status}
                 onChange={(e) => handleStatusUpdate(e.target.value as any)}
                 disabled={isPending}
-                className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3 py-2 font-bold text-xs text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+                className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3 py-2 font-bold text-xs text-[#131B2E] focus:outline-none focus:border-[#4338CA] min-h-[38px]"
               >
                 <option value="NEW_PROJECT">New Project</option>
                 <option value="REQUIREMENTS_PENDING">Requirements Pending</option>
@@ -405,12 +515,13 @@ export default function BusinessProjectDetailView({
                 <option value="FINAL_APPROVAL">Final Approval</option>
                 <option value="LAUNCHED">Launched</option>
                 <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
           </div>
 
           {/* 4-Stage Horizontal Pipeline Ribbon */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
             {/* Stage 1: Requirements */}
             <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#E2E8F0] space-y-2">
               <div className="flex items-center justify-between font-extrabold uppercase text-[10px] tracking-wider text-[#64748B]">
@@ -486,50 +597,209 @@ export default function BusinessProjectDetailView({
             </div>
           </div>
 
-          {/* Secure Onboarding Link Ribbon */}
-          <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-            <div className="space-y-0.5">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-900 block">
-                Secure Client Onboarding Workspace Link:
-              </span>
-              <span className="font-mono text-[11px] text-indigo-950 truncate max-w-md block">
-                {onboardingUrl
-                  ? typeof window !== 'undefined'
-                    ? `${window.location.origin}${onboardingUrl}`
-                    : onboardingUrl
-                  : 'Link not generated yet'}
-              </span>
-            </div>
+          {/* =================================================================== */}
+          {/* DEDICATED PROJECT INTAKE WORKSPACE CARD */}
+          {/* =================================================================== */}
+          {(() => {
+            const intakeStatus = (project.metadata as any)?.intakeStatus || (latestSubmission ? 'SUBMITTED' : 'NOT_STARTED');
+            const isFilledByAdmin = (project.metadata as any)?.lastIntakeModifiedBy === 'ADMIN_ENTERED' || (project.metadata as any)?.completedOnBehalf === true;
+            const acqSource = (project.metadata as any)?.acquisitionSource || project.acquisition_source || (project.lead_id ? 'WEBSITE_LEAD' : 'DIRECT');
+            const progressPercent = initialIntakeProgress?.percentage ?? ((project.metadata as any)?.intakeProgressPercent ?? (latestSubmission ? 100 : 0));
+            const missingReqsList = (project.metadata as any)?.missingRequirements || [];
+            const missingNotesMsg = (project.metadata as any)?.missingRequirementsNotes || '';
 
-            <div className="flex items-center gap-2">
-              {onboardingUrl && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    const url = `${window.location.origin}${onboardingUrl}`;
-                    navigator.clipboard.writeText(url);
-                    setCopiedLink(true);
-                    setTimeout(() => setCopiedLink(false), 2000);
-                  }}
-                  className="px-3 py-1.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
-                >
-                  {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  <span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
-                </button>
-              )}
+            const steps = initialIntakeProgress?.checklist
+              ? initialIntakeProgress.checklist.map((c) => ({
+                  stepNumber: c.step,
+                  title: c.label,
+                  completed: c.completed,
+                  missingDetails: 'Pending details',
+                }))
+              : [
+                  { stepNumber: 1, title: 'Profile & Contact Details', completed: Boolean(draftRequirements?.section_a_profile?.displayName || client?.name), missingDetails: 'Brand/School name & contacts' },
+                  { stepNumber: 2, title: 'Goals & Target Audience', completed: Boolean(draftRequirements?.section_b_goals_audience?.primaryType), missingDetails: 'Primary objective & audience' },
+                  { stepNumber: 3, title: 'Visual & Design Style', completed: Boolean(draftRequirements?.section_c_design?.styleVibe), missingDetails: 'Color preferences & style vibe' },
+                  { stepNumber: 4, title: 'Pages & Architecture', completed: Boolean(draftRequirements?.section_d_structure?.requiredPages?.length), missingDetails: 'Required site pages' },
+                  { stepNumber: 5, title: 'Content & Brand Assets', completed: Boolean(draftRequirements?.section_e_assets?.hasLogo), missingDetails: 'Logo, copy & media uploads' },
+                  { stepNumber: 6, title: 'Final Review & Agreement', completed: Boolean(latestSubmission || draftRequirements?.section_j_agreement?.confirmedAccurate), missingDetails: 'Client confirmation & signoff' },
+                ];
 
-              <button
-                type="button"
-                onClick={handleRegenerateToken}
-                disabled={isPending}
-                className="px-3 py-1.5 bg-white hover:bg-slate-50 text-[#131B2E] font-bold rounded-lg border border-indigo-200 text-xs flex items-center gap-1 cursor-pointer"
-                title="Generate a fresh token"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isPending ? 'animate-spin' : ''}`} />
-                <span>Regenerate Link</span>
-              </button>
-            </div>
-          </div>
+            const copyIntakeLink = () => {
+              if (!onboardingUrl) return;
+              const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${onboardingUrl}` : onboardingUrl;
+              navigator.clipboard.writeText(fullUrl);
+              setCopiedLink(true);
+              setTimeout(() => setCopiedLink(false), 2000);
+            };
+
+            return (
+              <div className="p-5 sm:p-7 rounded-2xl bg-indigo-50/50 border border-indigo-200/80 space-y-5">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-indigo-200/60 pb-4">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-black uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                        <ListChecks className="w-4 h-4 text-indigo-600" />
+                        Project Intake &amp; Requirements
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${
+                        intakeStatus === 'COMPLETED'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : intakeStatus === 'CHANGES_REQUESTED'
+                          ? 'bg-rose-100 text-rose-800 border-rose-300'
+                          : intakeStatus === 'SUBMITTED' || intakeStatus === 'UNDER_REVIEW'
+                          ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+                          : intakeStatus === 'IN_PROGRESS'
+                          ? 'bg-sky-100 text-sky-800 border-sky-300'
+                          : 'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}>
+                        {intakeStatus.replace(/_/g, ' ')}
+                      </span>
+                      {isFilledByAdmin && (
+                        <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-purple-100 text-purple-800 border border-purple-300 flex items-center gap-1">
+                          <UserCheck className="w-3 h-3" /> ADMIN ENTERED
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-indigo-900/80">
+                      Acquisition Source: <strong className="text-indigo-950 font-bold">{acqSource.replace(/_/g, ' ')}</strong> &bull; Token Code: <span className="font-mono font-bold text-indigo-700">{(project.metadata as any)?.onboardingTokenCode || 'Active'}</span>
+                    </p>
+                  </div>
+
+                  {/* Quick Action Toolbar */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {onboardingUrl && (
+                      <>
+                        <Link
+                          href={onboardingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-800 text-xs font-bold rounded-xl border border-indigo-200 transition-colors cursor-pointer shadow-2xs"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>View Intake</span>
+                        </Link>
+
+                        <Link
+                          href={`${onboardingUrl}?mode=admin`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-2xs"
+                          title="Open intake form in Admin mode to fill details on behalf of client"
+                        >
+                          <FileEdit className="w-3.5 h-3.5" />
+                          <span>Complete on Behalf</span>
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={copyIntakeLink}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-2xs"
+                        >
+                          {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedLink ? 'Copied' : 'Copy Link'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleSendReminder}
+                          disabled={isSendingReminder}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-indigo-200 transition-colors cursor-pointer shadow-2xs disabled:opacity-50"
+                          title="Resend invitation/reminder email to client"
+                        >
+                          <Send className={`w-3.5 h-3.5 ${isSendingReminder ? 'animate-spin text-indigo-600' : ''}`} />
+                          <span>Resend Link</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowMissingModal(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition-colors cursor-pointer shadow-2xs"
+                          title="Highlight missing requirements for client review"
+                        >
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          <span>Request Missing Info</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleRegenerateToken}
+                          disabled={isPending}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-500 hover:text-slate-700 text-xs rounded-xl border border-indigo-200 transition-colors cursor-pointer"
+                          title="Regenerate secure access link"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${isPending ? 'animate-spin' : ''}`} />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-indigo-950">Intake Progress Completion:</span>
+                    <span className="font-mono font-black text-indigo-700">{progressPercent}%</span>
+                  </div>
+                  <div className="w-full bg-indigo-100/70 rounded-full h-2.5 overflow-hidden border border-indigo-200">
+                    <div
+                      className="bg-[#4338CA] h-full rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.max(0, progressPercent))}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* 6-Step Requirements Checklist Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
+                  {steps.map((s) => (
+                    <div
+                      key={s.stepNumber}
+                      className={`p-3 rounded-xl border flex items-start gap-2.5 transition-colors ${
+                        s.completed
+                          ? 'bg-emerald-50/70 border-emerald-200 text-emerald-900'
+                          : 'bg-white border-indigo-100 text-slate-700'
+                      }`}
+                    >
+                      <div className="mt-0.5 shrink-0">
+                        {s.completed ? (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                        ) : (
+                          <Clock className="w-4 h-4 text-slate-400" />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-bold text-[11px] text-slate-900 truncate">{s.title}</div>
+                        <div className="text-[10px] text-slate-500 truncate">
+                          {s.completed ? 'Information supplied ✓' : s.missingDetails || 'Pending details'}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Missing Information Banner if Changes Requested */}
+                {missingReqsList && missingReqsList.length > 0 && (
+                  <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs space-y-2">
+                    <div className="flex items-center gap-2 font-bold text-rose-900">
+                      <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                      <span>Missing Requirements Highlighted for Client</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {missingReqsList.map((m: any, idx: number) => (
+                        <span key={idx} className="px-2.5 py-1 bg-white text-rose-700 font-semibold rounded-lg border border-rose-200 text-xs shadow-2xs">
+                          • {m.title || m.item || String(m)}
+                        </span>
+                      ))}
+                    </div>
+                    {missingNotesMsg && (
+                      <p className="text-[11px] text-rose-700 italic bg-white/60 p-2 rounded-lg border border-rose-100">
+                        Admin Note: "{missingNotesMsg}"
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
         {/* Tab Navigation */}
@@ -1024,72 +1294,103 @@ export default function BusinessProjectDetailView({
 
               return (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredAssets.map((asset) => (
-                    <div key={asset.id} className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#E2E8F0] flex flex-col justify-between space-y-3">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800">
-                            {asset.asset_category?.replace(/_/g, ' ') || 'ASSET'}
-                          </span>
-                          {asset.file_size_bytes && (
-                            <span className="text-[10px] font-mono text-[#64748B]">
-                              {formatBytes(asset.file_size_bytes)}
+                  {filteredAssets.map((asset) => {
+                    const isCorrupted = Boolean(asset.file_url && asset.file_url.includes('[asset-ref]'));
+                    const viewUrl = `/api/business-assets/view?id=${asset.id}`;
+                    const downloadUrl = `/api/business-assets/view?id=${asset.id}&download=1`;
+                    const directUrl = asset.file_url?.startsWith('data:') ? viewUrl : asset.file_url;
+
+                    return (
+                      <div key={asset.id} className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#E2E8F0] flex flex-col justify-between space-y-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-800">
+                              {asset.asset_category?.replace(/_/g, ' ') || 'ASSET'}
                             </span>
+                            {asset.file_size_bytes && (
+                              <span className="text-[10px] font-mono text-[#64748B]">
+                                {formatBytes(asset.file_size_bytes)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Thumbnail or Icon */}
+                          {isCorrupted ? (
+                            <div className="h-32 rounded-xl border border-dashed border-amber-300 bg-amber-50/70 p-3 flex flex-col items-center justify-center text-center">
+                              <AlertTriangle className="w-7 h-7 text-amber-600 mb-1" />
+                              <span className="text-[11px] font-bold text-amber-900">Corrupted Upload</span>
+                              <span className="text-[9px] text-amber-700 mt-0.5 leading-tight">Truncated reference from earlier bug. Please delete and re-upload.</span>
+                            </div>
+                          ) : isImageFile(asset.file_name, asset.mime_type) ? (
+                            <div className="h-32 rounded-xl overflow-hidden border border-[#E2E8F0] bg-white flex items-center justify-center p-2">
+                              <img
+                                src={directUrl}
+                                alt={asset.file_name}
+                                className="max-h-full max-w-full object-contain"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="h-28 rounded-xl border border-dashed border-[#CBD5E1] bg-white flex flex-col items-center justify-center text-[#64748B]">
+                              <FileText className="w-8 h-8 opacity-40 mb-1" />
+                              <span className="text-[10px] font-mono uppercase">{asset.mime_type?.split('/')[1] || 'FILE'}</span>
+                            </div>
                           )}
+
+                          <div>
+                            <p className="font-bold text-xs text-[#131B2E] truncate" title={asset.file_name}>
+                              {asset.file_name}
+                            </p>
+                            <p className="text-[10px] text-[#64748B]">
+                              Uploaded {new Date(asset.uploaded_at).toLocaleDateString('en-IN')}
+                            </p>
+                          </div>
                         </div>
 
-                        {/* Thumbnail or Icon */}
-                        {isImageFile(asset.file_name, asset.mime_type) ? (
-                          <div className="h-32 rounded-xl overflow-hidden border border-[#E2E8F0] bg-white flex items-center justify-center p-2">
-                            <img
-                              src={asset.file_url}
-                              alt={asset.file_name}
-                              className="max-h-full max-w-full object-contain"
-                              onError={(e) => {
-                                (e.currentTarget as HTMLElement).style.display = 'none';
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="h-28 rounded-xl border border-dashed border-[#CBD5E1] bg-white flex flex-col items-center justify-center text-[#64748B]">
-                            <FileText className="w-8 h-8 opacity-40 mb-1" />
-                            <span className="text-[10px] font-mono uppercase">{asset.mime_type?.split('/')[1] || 'FILE'}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0] text-xs">
+                          {isCorrupted ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100/70 px-2 py-0.5 rounded">
+                              <AlertTriangle className="w-3 h-3 text-amber-600" />
+                              <span>Needs Re-upload</span>
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-2.5">
+                              <a
+                                href={viewUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 font-bold text-[#4338CA] hover:underline"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span>Open</span>
+                              </a>
 
-                        <div>
-                          <p className="font-bold text-xs text-[#131B2E] truncate" title={asset.file_name}>
-                            {asset.file_name}
-                          </p>
-                          <p className="text-[10px] text-[#64748B]">
-                            Uploaded {new Date(asset.uploaded_at).toLocaleDateString('en-IN')}
-                          </p>
+                              <a
+                                href={downloadUrl}
+                                className="inline-flex items-center gap-1 font-bold text-[#64748B] hover:text-[#131B2E] transition-colors"
+                                title="Download file"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                                <span>Save</span>
+                              </a>
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAsset(asset.id)}
+                            disabled={deletingAssetId === asset.id}
+                            className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete asset"
+                          >
+                            <Trash2 className={`w-4 h-4 ${deletingAssetId === asset.id ? 'animate-spin' : ''}`} />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0] text-xs">
-                        <a
-                          href={asset.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 font-bold text-[#4338CA] hover:underline"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Open / View</span>
-                        </a>
-
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAsset(asset.id)}
-                          disabled={deletingAssetId === asset.id}
-                          className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                          title="Delete asset"
-                        >
-                          <Trash2 className={`w-4 h-4 ${deletingAssetId === asset.id ? 'animate-spin' : ''}`} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}
@@ -1448,7 +1749,122 @@ export default function BusinessProjectDetailView({
             </div>
           </div>
         )}
-      </main>
+      </div>
+
+      {/* =================================================================== */}
+      {/* REQUEST MISSING INFORMATION MODAL */}
+      {/* =================================================================== */}
+      {showMissingModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl space-y-5 animate-scaleUp">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-rose-600" />
+                <h3 className="text-base font-extrabold text-slate-900">Request Missing Information</h3>
+              </div>
+              <button
+                onClick={() => setShowMissingModal(false)}
+                className="text-slate-400 hover:text-slate-600 text-sm font-bold p-1 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Select which items are incomplete. The client will see these highlighted directly inside their intake workspace without losing any progress already saved.
+            </p>
+
+            {/* Checklist */}
+            <div className="space-y-2">
+              <span className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block">Common Missing Requirements</span>
+              {[
+                'Company / School Logo (Vector, SVG, or High-Res PNG)',
+                'Product / Campus / Infrastructure Photos',
+                'Written Page Copy & Descriptions (About, Services, Offerings)',
+                'Domain Name Registrar & DNS Access Credentials',
+                'Brand Colors, Typography & Style Guidelines',
+                'School Prospectus / Affiliation & Mandatory Disclosures',
+              ].map((item) => {
+                const isSelected = selectedMissingItems.includes(item);
+                return (
+                  <label
+                    key={item}
+                    className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-xs cursor-pointer transition-colors ${
+                      isSelected
+                        ? 'bg-rose-50 border-rose-300 text-rose-900 font-semibold'
+                        : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => {
+                        setSelectedMissingItems((prev) =>
+                          isSelected ? prev.filter((i) => i !== item) : [...prev, item]
+                        );
+                      }}
+                      className="rounded text-rose-600 focus:ring-rose-500 h-4 w-4"
+                    />
+                    <span>{item}</span>
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Custom missing item */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                Additional Missing Item (Optional)
+              </label>
+              <input
+                type="text"
+                value={customMissingItem}
+                onChange={(e) => setCustomMissingItem(e.target.value)}
+                placeholder="e.g. GST Registration Certificate, Staff directory..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-rose-500"
+              />
+            </div>
+
+            {/* Admin notes */}
+            <div>
+              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-1">
+                Instructions / Note for Client
+              </label>
+              <textarea
+                rows={3}
+                value={missingNotes}
+                onChange={(e) => setMissingNotes(e.target.value)}
+                placeholder="Explain clearly what needs to be uploaded or clarified..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-rose-500"
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setShowMissingModal(false)}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleRequestMissingInfo}
+                disabled={isSendingMissing}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {isSendingMissing ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5" />
+                )}
+                <span>Dispatch Request</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

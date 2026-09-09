@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { getSupabaseServerClient } from './supabase';
+import { getSchoolsServerClient } from './schoolsDb';
 import { validateBusinessRequirementsPayload } from './businessValidation';
 import type {
   BusinessProject,
@@ -13,6 +14,11 @@ import type {
   ProjectNote,
   Client,
   Lead,
+  DirectProjectInput,
+  IntakeStatus,
+  AcquisitionSource,
+  MissingRequirementItem,
+  IntakeResponseSource,
 } from './types';
 
 /**
@@ -29,6 +35,15 @@ export function generateProjectNumber(): string {
   const year = new Date().getFullYear();
   const randomNum = Math.floor(1000 + Math.random() * 9000);
   return `BUS-${year}-${randomNum}`;
+}
+
+/**
+ * Generate human-readable school project number (e.g. SCH-2026-0142)
+ */
+export function generateSchoolProjectNumber(): string {
+  const year = new Date().getFullYear();
+  const randomNum = Math.floor(1000 + Math.random() * 9000);
+  return `SCH-${year}-${randomNum}`;
 }
 
 /**
@@ -160,11 +175,28 @@ export async function createBusinessProjectFromLead(
       lead.service ||
       'Website & Software Development';
 
+    const isSchoolLead = Boolean(
+      lead.lead_domain === 'SCHOOL' ||
+      lead.commercial_product_id?.toLowerCase().includes('school') ||
+      lead.service?.toLowerCase().includes('school') ||
+      lead.project_type?.toLowerCase().includes('school') ||
+      lead.description?.toLowerCase().includes('school name:') ||
+      (lead.organization && /school|vidyalaya|academy|institution|college|convent|gurukul/i.test(lead.organization))
+    );
+
+    if (isSchoolLead) {
+      return {
+        success: false,
+        error: 'School inquiries cannot be converted into Business Projects. Please use "Start School Onboarding" to initiate a dedicated School Project.',
+      };
+    }
+
     const { data: project, error: projectErr } = await supabase
       .from('projects')
       .insert([
         {
           project_number: projectNumber,
+          domain: 'BUSINESS',
           lead_id: lead.id,
           client_id: clientId,
           project_type: 'BUSINESS',
@@ -173,6 +205,8 @@ export async function createBusinessProjectFromLead(
           project_status: 'REQUIREMENTS_PENDING',
           assigned_team: overrides?.assignedTeam || 'Engineering Team',
           metadata: {
+            domain: 'BUSINESS',
+            source: 'LEAD_CONVERSION',
             leadSource: lead.source,
             initialBudget: lead.budget,
             initialTimeline: lead.timeline,
@@ -200,7 +234,15 @@ export async function createBusinessProjectFromLead(
             email: lead.email,
             phone: lead.phone,
             whatsapp: lead.phone,
+            category: 'Retail / Commercial Business',
           },
+          ...(lead.budget
+            ? {
+                section_i_budget_timeline: {
+                  targetBudgetRange: lead.budget,
+                },
+              }
+            : {}),
         },
         section_a_profile: {
           displayName: projectName,
@@ -208,6 +250,7 @@ export async function createBusinessProjectFromLead(
           email: lead.email,
           phone: lead.phone,
           whatsapp: lead.phone,
+          category: 'Retail / Commercial Business',
         },
         last_saved_step: 1,
       },
@@ -246,6 +289,357 @@ export async function createBusinessProjectFromLead(
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[CREATE BUSINESS PROJECT EXCEPTION]', msg);
     return { success: false, error: msg };
+  }
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * 1B. Direct Project Creation (FLOW B - Manually Acquired, No Lead Duplication)
+ * -----------------------------------------------------------------------------
+ */
+
+export async function createDirectProject(
+  input: DirectProjectInput
+): Promise<{
+  success: boolean;
+  project?: BusinessProject;
+  token?: string;
+  onboardingUrl?: string;
+  intakeStatus?: IntakeStatus;
+  error?: string;
+}> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) {
+    return { success: false, error: 'Database is not configured in environment.' };
+  }
+
+  try {
+    // 1. Authoritative Validation of Essential Fields
+    if (!input.organizationName?.trim()) {
+      return { success: false, error: 'Organization / School Name is required.' };
+    }
+    if (!input.primaryContactName?.trim()) {
+      return { success: false, error: 'Primary contact name is required.' };
+    }
+    const emailClean = (input.email || '').trim().toLowerCase();
+    if (!emailClean || !emailClean.includes('@')) {
+      return { success: false, error: 'A valid contact email address is required.' };
+    }
+    const phoneClean = (input.phone || '').trim();
+    if (!phoneClean || phoneClean.replace(/\D/g, '').length < 10) {
+      return { success: false, error: 'A valid 10-digit contact phone number is required.' };
+    }
+    if (!input.projectName?.trim()) {
+      return { success: false, error: 'Project name is required.' };
+    }
+
+    const orgClean = input.organizationName.trim();
+    const contactClean = input.primaryContactName.trim();
+
+    if (input.projectType === 'SCHOOL') {
+      return {
+        success: false,
+        error: 'School projects cannot be created directly through Business Projects. Please use the School Projects module to initiate School Onboarding.',
+      };
+    }
+
+    // 2. Client Record Linking / Creation
+    let clientId: string | null = null;
+    let clientRecord: Client | null = null;
+
+    const { data: existingClient } = await supabase
+      .from('clients')
+      .select('*')
+      .eq('email', emailClean)
+      .maybeSingle();
+
+    if (existingClient) {
+      clientId = existingClient.id;
+      clientRecord = existingClient as Client;
+      // Update any newly discovered organization info
+      await supabase
+        .from('clients')
+        .update({
+          organization: existingClient.organization || orgClean,
+          whatsapp: existingClient.whatsapp || phoneClean,
+          designation: input.designation || existingClient.designation || null,
+          acquisition_source: existingClient.acquisition_source || input.acquisitionSource,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingClient.id);
+    } else {
+      const { data: newClient, error: clientErr } = await supabase
+        .from('clients')
+        .insert([
+          {
+            name: contactClean,
+            organization: orgClean,
+            email: emailClean,
+            phone: phoneClean,
+            whatsapp: phoneClean,
+            city: orgClean.toLowerCase().includes('motihari') ? 'Motihari' : null,
+            designation: input.designation || null,
+            acquisition_source: input.acquisitionSource,
+            notes: input.notes
+              ? `Direct Intake: ${input.notes}`
+              : `Direct project created via ${input.acquisitionSource}`,
+          },
+        ])
+        .select()
+        .single();
+
+      if (clientErr || !newClient) {
+        return { success: false, error: clientErr?.message || 'Failed to create client record.' };
+      }
+      clientId = newClient.id;
+      clientRecord = newClient as Client;
+    }
+
+    // 3. Project Number Generation
+    const projectNumber = generateProjectNumber();
+
+    // 4. Determine Initial Status & Intake State
+    const isSendIntake = input.initialAction === 'SEND_INTAKE';
+    const initialStatus: BusinessProjectStatus = isSendIntake ? 'REQUIREMENTS_PENDING' : 'NEW_PROJECT';
+    const initialIntakeStatus: IntakeStatus = isSendIntake ? 'INVITATION_SENT' : 'NOT_STARTED';
+
+    const projectMetadata: Record<string, unknown> = {
+      domain: 'BUSINESS',
+      acquisitionSource: input.acquisitionSource,
+      initialBudget: input.estimatedBudget || null,
+      estimatedBudget: input.estimatedBudget || null,
+      notes: input.notes || null,
+      designation: input.designation || null,
+      createdVia: 'DIRECT_INTAKE',
+      intakeStatus: initialIntakeStatus,
+      intakeProgressPercent: 15,
+      completedOnBehalf: !isSendIntake,
+      lastIntakeModifiedBy: 'ADMIN_ENTERED',
+      lastIntakeSavedAt: new Date().toISOString(),
+    };
+
+    // 5. Create Project Record (lead_id: null strictly — no artificial inbound lead!)
+    const { data: project, error: projectErr } = await supabase
+      .from('projects')
+      .insert([
+        {
+          project_number: projectNumber,
+          domain: 'BUSINESS',
+          lead_id: null,
+          client_id: clientId,
+          project_type: 'BUSINESS',
+          project_name: input.projectName.trim(),
+          service_type: input.serviceType.trim(),
+          project_status: initialStatus,
+          assigned_team: 'Engineering Team',
+          metadata: projectMetadata,
+        },
+      ])
+      .select()
+      .single();
+
+    if (projectErr || !project) {
+      console.error('[DIRECT PROJECT CREATE ERROR]', projectErr);
+      return { success: false, error: projectErr?.message || 'Failed to create direct project.' };
+    }
+
+    // 6. Initialize Draft Requirements Record
+    await supabase.from('business_requirements').insert([
+      {
+        project_id: project.id,
+        form_version: 1,
+        requirements_data: {
+          section_a_profile: {
+            displayName: orgClean,
+            primaryContactName: contactClean,
+            email: emailClean,
+            phone: phoneClean,
+            whatsapp: phoneClean,
+            locations: clientRecord?.city || 'Motihari, Bihar',
+            category: 'Retail / Commercial Business',
+          },
+          ...(input.estimatedBudget
+            ? {
+                section_i_budget_timeline: {
+                  targetBudgetRange: input.estimatedBudget,
+                },
+              }
+            : {}),
+        },
+        section_a_profile: {
+          displayName: orgClean,
+          primaryContactName: contactClean,
+          email: emailClean,
+          phone: phoneClean,
+          whatsapp: phoneClean,
+          locations: clientRecord?.city || 'Motihari, Bihar',
+          category: 'Retail / Commercial Business',
+        },
+        last_saved_step: 1,
+      },
+    ]);
+
+    // 7. Generate Secure Onboarding Token
+    const tokenResult = await generateBusinessOnboardingToken(project.id);
+    const tokenString = tokenResult.rawToken || '';
+
+    // 8. Record Audit Trail Activity
+    await recordProjectActivity({
+      projectId: project.id,
+      activityType: 'DIRECT_PROJECT_CREATED',
+      actorType: 'ADMIN',
+      actorName: 'Admin',
+      description: `Direct business project ${project.project_number} (${project.project_name}) created via ${input.acquisitionSource}. No inbound lead generated.`,
+      metadata: {
+        acquisitionSource: input.acquisitionSource,
+        projectNumber: project.project_number,
+        initialAction: input.initialAction,
+        domain: 'BUSINESS',
+      },
+    });
+
+    if (isSendIntake) {
+      await recordProjectActivity({
+        projectId: project.id,
+        activityType: 'INTAKE_LINK_SENT',
+        actorType: 'ADMIN',
+        actorName: 'Admin',
+        description: `Client intake link generated and queued for sending to ${emailClean}.`,
+        metadata: { tokenCode: tokenResult.tokenCode },
+      });
+    }
+
+    return {
+      success: true,
+      project: {
+        ...(project as BusinessProject),
+        client: clientRecord,
+      },
+      token: tokenString,
+      onboardingUrl: `/business-requirements/${tokenString}`,
+      intakeStatus: initialIntakeStatus,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error('[CREATE DIRECT PROJECT EXCEPTION]', msg);
+    return { success: false, error: msg };
+  }
+}
+
+/**
+ * Calculate client intake progress percentage and step checklist
+ */
+export function calculateIntakeProgress(
+  draft?: Partial<BusinessRequirementsData> | null,
+  _legacyFlag = false
+): {
+  percentage: number;
+  checklist: Array<{ label: string; step: number; completed: boolean }>;
+} {
+  if (!draft) {
+    return {
+      percentage: 0,
+      checklist: [
+        { label: 'Organization Profile', step: 1, completed: false },
+        { label: 'Contact Information', step: 1, completed: false },
+        { label: 'Project Goals & Audience', step: 2, completed: false },
+        { label: 'Website Pages & Structure', step: 4, completed: false },
+        { label: 'Brand & Content Assets', step: 5, completed: false },
+        { label: 'Review & Submit', step: 10, completed: false },
+      ],
+    };
+  }
+
+  const a = draft.section_a_profile;
+  const b = draft.section_b_goals_audience || draft.section_b_project_type;
+  const d = draft.section_d_structure || draft.section_e_website_reqs;
+  const e = draft.section_e_assets || draft.section_h_content_assets;
+  const j = draft.section_j_agreement;
+
+  const hasOrg = Boolean(a?.displayName && a.displayName.trim().length > 1);
+  const hasContact = Boolean(a?.primaryContactName && a?.email && a?.phone);
+  const hasGoals = Boolean(b && ('primaryType' in b ? Boolean(b.primaryType) : true));
+  const hasStructure = Boolean(
+    d &&
+      (('requiredPages' in d && Array.isArray(d.requiredPages) && d.requiredPages.length > 0) ||
+        ('solutionType' in d && Boolean(d.solutionType)))
+  );
+  const hasAssets = Boolean(
+    e &&
+      (('hasLogo' in e && e.hasLogo && e.hasLogo !== 'NO') ||
+        ('uploadedAssets' in e && Array.isArray(e.uploadedAssets) && e.uploadedAssets.length > 0) ||
+        ('uploadedAssetUrls' in e && Array.isArray(e.uploadedAssetUrls) && e.uploadedAssetUrls.length > 0))
+  );
+  const hasSubmit = Boolean(j?.confirmedAccurate);
+
+  const items = [
+    { label: 'Organization Profile', step: 1, completed: hasOrg },
+    { label: 'Contact Information', step: 1, completed: hasContact },
+    { label: 'Project Goals & Audience', step: 2, completed: hasGoals },
+    { label: 'Website Pages & Structure', step: 4, completed: hasStructure },
+    { label: 'Brand & Content Assets', step: 5, completed: hasAssets },
+    { label: 'Review & Submit', step: 10, completed: hasSubmit },
+  ];
+
+  const completedCount = items.filter((i) => i.completed).length;
+  const percentage = Math.round((completedCount / items.length) * 100);
+
+  return { percentage, checklist: items };
+}
+
+/**
+ * Admin Action: Request missing information / changes from client
+ */
+export async function requestMissingInformation(params: {
+  projectId: string;
+  missingItems: MissingRequirementItem[];
+  notes?: string;
+  adminName?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  const supabase = getSupabaseServerClient();
+  if (!supabase) return { success: false, error: 'Database unconfigured' };
+
+  try {
+    const { data: project } = await supabase
+      .from('projects')
+      .select('metadata, project_name, client_id, project_number')
+      .eq('id', params.projectId)
+      .single();
+
+    const currentMeta = (project?.metadata || {}) as Record<string, unknown>;
+    const updatedMeta = {
+      ...currentMeta,
+      intakeStatus: 'CHANGES_REQUESTED',
+      missingRequirements: params.missingItems,
+      missingRequirementsNotes: params.notes || '',
+      missingRequestedAt: new Date().toISOString(),
+      missingRequestedBy: params.adminName || 'Admin',
+    };
+
+    const nowIso = new Date().toISOString();
+    await supabase
+      .from('projects')
+      .update({
+        project_status: 'CLARIFICATION_REQUESTED',
+        metadata: updatedMeta,
+        updated_at: nowIso,
+      })
+      .eq('id', params.projectId);
+
+    const itemsSummary = params.missingItems.map((m) => m.title).join(', ');
+
+    await recordProjectActivity({
+      projectId: params.projectId,
+      activityType: 'MISSING_INFORMATION_REQUESTED',
+      actorType: 'ADMIN',
+      actorName: params.adminName || 'Admin',
+      description: `Missing information requested: ${itemsSummary}.${params.notes ? ` Notes: "${params.notes}"` : ''}`,
+      metadata: { missingItems: params.missingItems, notes: params.notes },
+    });
+
+    return { success: true };
+  } catch (err: unknown) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
 
@@ -301,18 +695,32 @@ export async function verifyBusinessOnboardingToken(rawToken: string): Promise<{
   const supabase = getSupabaseServerClient();
   if (!supabase) return { success: false, isValid: false, error: 'Database unconfigured' };
 
-  if (!rawToken || rawToken.trim().length < 16) {
+  if (!rawToken || rawToken.trim() === '') {
     return { success: false, isValid: false, error: 'Invalid or missing project token.' };
   }
 
   try {
-    const tokenHashed = hashToken(rawToken);
+    const cleanToken = rawToken.trim();
+    const tokenHashed = hashToken(cleanToken);
 
-    const { data: tokenRow, error: tokenErr } = await supabase
+    let { data: tokenRow, error: tokenErr } = await supabase
       .from('business_onboarding_tokens')
       .select('*')
       .eq('token_hash', tokenHashed)
       .maybeSingle();
+
+    // Fallback: If passed a token_code (e.g. REQ-2026-0142) or raw token lookup
+    if (!tokenRow && (cleanToken.startsWith('REQ-') || cleanToken.startsWith('ONB-') || cleanToken.length < 32)) {
+      const { data: codeRow } = await supabase
+        .from('business_onboarding_tokens')
+        .select('*')
+        .eq('token_code', cleanToken)
+        .maybeSingle();
+      if (codeRow) {
+        tokenRow = codeRow;
+        tokenErr = null;
+      }
+    }
 
     if (tokenErr || !tokenRow) {
       return { success: false, isValid: false, error: 'Invalid or expired onboarding link.' };
@@ -344,6 +752,14 @@ export async function verifyBusinessOnboardingToken(rawToken: string): Promise<{
 
     if (projErr || !project) {
       return { success: false, isValid: false, error: 'Associated project could not be found.' };
+    }
+
+    if (project.project_type === 'SCHOOL' || project.domain === 'SCHOOL') {
+      return {
+        success: false,
+        isValid: false,
+        error: 'This onboarding link belongs to a School Project. Please access your dedicated School Onboarding portal.',
+      };
     }
 
     // Fetch Client if present
@@ -491,6 +907,8 @@ export async function saveDraftBusinessRequirements(params: {
   sectionKey: string;
   sectionData: Record<string, unknown>;
   currentStep: number;
+  actorType?: 'CLIENT' | 'ADMIN';
+  adminName?: string;
 }): Promise<{ success: boolean; error?: string }> {
   const verified = await verifyBusinessOnboardingToken(params.rawToken);
   if (!verified.isValid || !verified.project) {
@@ -542,6 +960,36 @@ export async function saveDraftBusinessRequirements(params: {
       .upsert(updatePayload, { onConflict: 'project_id' });
 
     if (error) throw error;
+
+    // Update project metadata with current intake progress & status
+    const progress = calculateIntakeProgress(
+      mergedData as Partial<BusinessRequirementsData>,
+      verified.project.project_type === 'SCHOOL'
+    );
+    const currentMeta = (verified.project.metadata || {}) as Record<string, unknown>;
+    const prevIntakeStatus = (currentMeta.intakeStatus as string) || 'NOT_STARTED';
+    const nextIntakeStatus =
+      prevIntakeStatus === 'NOT_STARTED' || prevIntakeStatus === 'INVITATION_SENT'
+        ? 'IN_PROGRESS'
+        : prevIntakeStatus;
+
+    await supabase
+      .from('projects')
+      .update({
+        metadata: {
+          ...currentMeta,
+          intakeStatus: nextIntakeStatus,
+          intakeProgressPercent: progress.percentage,
+          lastIntakeModifiedBy: params.actorType === 'ADMIN' ? 'ADMIN_ENTERED' : 'CLIENT_PROVIDED',
+          lastIntakeSavedAt: new Date().toISOString(),
+          ...(params.actorType === 'ADMIN'
+            ? { completedOnBehalf: true, completedByAdminName: params.adminName || 'Admin' }
+            : {}),
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', verified.project.id);
+
     return { success: true };
   } catch (err: unknown) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
@@ -559,6 +1007,8 @@ export async function submitFinalBusinessRequirements(params: {
   payload: BusinessRequirementsData;
   contactName: string;
   contactEmail: string;
+  actorType?: 'CLIENT' | 'ADMIN';
+  adminName?: string;
 }): Promise<{
   success: boolean;
   submissionId?: string;
@@ -628,6 +1078,8 @@ export async function submitFinalBusinessRequirements(params: {
             submitted_by_email: params.contactEmail.trim().toLowerCase(),
             client_confirmation: true,
             full_payload: params.payload,
+            submission_source: params.actorType === 'ADMIN' ? 'ADMIN_ENTERED' : 'CLIENT_PROVIDED',
+            admin_proxy_name: params.adminName || null,
           },
           review_status: 'SUBMITTED',
         },
@@ -646,11 +1098,22 @@ export async function submitFinalBusinessRequirements(params: {
       .eq('project_id', projectId)
       .is('submission_id', null);
 
-    // 6. Update project status to REQUIREMENTS_SUBMITTED
+    // 6. Update project status and intake metadata
+    const currentMeta = (verified.project.metadata || {}) as Record<string, unknown>;
     await supabase
       .from('projects')
       .update({
         project_status: 'REQUIREMENTS_SUBMITTED',
+        metadata: {
+          ...currentMeta,
+          intakeStatus: 'SUBMITTED',
+          intakeProgressPercent: 100,
+          intakeSubmittedAt: new Date().toISOString(),
+          lastIntakeModifiedBy: params.actorType === 'ADMIN' ? 'ADMIN_ENTERED' : 'CLIENT_PROVIDED',
+          ...(params.actorType === 'ADMIN'
+            ? { completedOnBehalf: true, completedByAdminName: params.adminName || 'Admin' }
+            : {}),
+        },
         updated_at: new Date().toISOString(),
       })
       .eq('id', projectId);
@@ -666,13 +1129,16 @@ export async function submitFinalBusinessRequirements(params: {
       .eq('project_id', projectId);
 
     // 8. Audit Trail
+    const actorType = params.actorType || 'CLIENT';
+    const actorLabel = params.actorType === 'ADMIN' ? `${params.adminName || 'Admin'} (on behalf of ${params.contactName})` : params.contactName;
+
     await recordProjectActivity({
       projectId,
       activityType: 'REQUIREMENTS_SUBMITTED',
-      actorType: 'CLIENT',
-      actorName: params.contactName,
-      description: `Requirements v${nextVersion} submitted by ${params.contactName} (${params.contactEmail}). Immutable snapshot captured for engineering review.`,
-      metadata: { submissionId: submission.id, version: nextVersion },
+      actorType,
+      actorName: actorLabel,
+      description: `Requirements v${nextVersion} submitted by ${actorLabel}. Immutable snapshot captured for engineering review.`,
+      metadata: { submissionId: submission.id, version: nextVersion, submissionSource: params.actorType === 'ADMIN' ? 'ADMIN_ENTERED' : 'CLIENT_PROVIDED' },
     });
 
     return {
@@ -728,9 +1194,14 @@ export async function getBusinessProjects(
     const { data, count, error } = await query;
     if (error) throw error;
 
+    const mappedProjects = (data || []).map((p: any) => ({
+      ...p,
+      domain: 'BUSINESS' as const,
+    })) as BusinessProject[];
+
     return {
       success: true,
-      projects: (data || []) as BusinessProject[],
+      projects: mappedProjects,
       total: count || 0,
     };
   } catch (err: unknown) {
@@ -743,6 +1214,11 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
   success: boolean;
   project?: BusinessProject;
   client?: Client;
+  draftRequirements?: BusinessRequirementsData;
+  intakeProgress?: {
+    percentage: number;
+    checklist: Array<{ label: string; step: number; completed: boolean }>;
+  };
   latestSubmission?: BusinessRequirementSubmission;
   submissions?: BusinessRequirementSubmission[];
   designReviews?: DesignReview[];
@@ -764,6 +1240,13 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
 
     if (pErr || !project) {
       return { success: false, error: 'Project not found.' };
+    }
+
+    if (project.project_type === 'SCHOOL' || project.domain === 'SCHOOL') {
+      return {
+        success: false,
+        error: 'Invalid project domain: School projects cannot be viewed under Business Projects.',
+      };
     }
 
     // Submissions
@@ -856,10 +1339,25 @@ export async function getBusinessProjectDetails(projectId: string): Promise<{
       .limit(1)
       .maybeSingle();
 
+    // Fetch working draft requirements & calculate progress
+    const { data: reqsRow } = await supabase
+      .from('business_requirements')
+      .select('*')
+      .eq('project_id', projectId)
+      .maybeSingle();
+
+    const draftRequirements = (reqsRow?.requirements_data || {}) as BusinessRequirementsData;
+    const intakeProgress = calculateIntakeProgress(
+      draftRequirements,
+      project.project_type === 'SCHOOL'
+    );
+
     return {
       success: true,
       project: project as BusinessProject,
       client: (project.client as Client) || undefined,
+      draftRequirements,
+      intakeProgress,
       latestSubmission: submissions && submissions.length > 0 ? submissions[0] : undefined,
       submissions,
       designReviews,

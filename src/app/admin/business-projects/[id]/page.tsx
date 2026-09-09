@@ -38,6 +38,11 @@ export default async function AdminBusinessProjectDetailPage({ params }: PagePro
     notFound();
   }
 
+  // Route-level domain protection: Reject cross-domain school projects
+  if (details.project.project_type === 'SCHOOL' || (details.project as any).domain === 'SCHOOL') {
+    notFound();
+  }
+
   return (
     <BusinessProjectDetailView
       project={details.project}
@@ -49,6 +54,8 @@ export default async function AdminBusinessProjectDetailPage({ params }: PagePro
       notes={details.notes || []}
       assets={details.assets || []}
       initialOnboardingUrl={details.onboardingUrl}
+      draftRequirements={details.draftRequirements}
+      intakeProgress={details.intakeProgress}
     />
   );
 }

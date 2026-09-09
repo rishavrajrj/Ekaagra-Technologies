@@ -29,6 +29,18 @@ export interface SchoolExtensionRecommendation {
 
 export const SCHOOL_RECOMMENDED_EXTENSIONS: SchoolExtensionRecommendation[] = [
   {
+    extension: '.edu.in',
+    label: '.edu.in (Premier School India)',
+    badge: 'Premier Academic',
+    reason: 'Premier recognized institutional domain for accredited Indian schools and boards.',
+  },
+  {
+    extension: '.ac.in',
+    label: '.ac.in (Academic India)',
+    badge: 'Accredited Academic',
+    reason: 'Reserved academic domain for recognized schools and collegiate institutions in India.',
+  },
+  {
     extension: '.in',
     label: '.in (India)',
     badge: 'Good for India',
@@ -51,12 +63,6 @@ export const SCHOOL_RECOMMENDED_EXTENSIONS: SchoolExtensionRecommendation[] = [
     label: '.school (Dedicated)',
     badge: 'Modern Educational',
     reason: 'Modern specialized extension immediately communicating a school campus.',
-  },
-  {
-    extension: '.ac.in',
-    label: '.ac.in (Academic India)',
-    badge: 'Accredited Academic',
-    reason: 'Reserved academic domain for recognized schools and collegiate institutions in India.',
   },
 ];
 

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { verifyBusinessOnboardingToken } from '@/lib/businessProjectsDb';
 import BusinessRequirementsForm from '@/components/forms/BusinessRequirementsForm';
 import { ShieldAlert, RefreshCw, Mail, Phone } from 'lucide-react';
@@ -10,6 +10,7 @@ export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{ token: string }>;
+  searchParams?: Promise<{ mode?: string }>;
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -30,14 +31,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function BusinessRequirementsPage({ params }: PageProps) {
+export default async function BusinessRequirementsPage({ params, searchParams }: PageProps) {
   const { token } = await params;
+  const resolvedSearchParams = searchParams ? await searchParams : undefined;
+  const isAdminMode = resolvedSearchParams?.mode === 'admin';
 
   if (!token || token.trim() === '') {
     notFound();
   }
 
   const verification = await verifyBusinessOnboardingToken(token);
+
+  // If token belongs to a school project, redirect directly to the dedicated school portal
+  if (
+    !verification.isValid &&
+    verification.error &&
+    verification.error.toLowerCase().includes('school')
+  ) {
+    redirect('/school-onboarding');
+  }
 
   // If token is invalid, expired, or revoked, show a clean, secure error card
   if (!verification.isValid || !verification.project) {
@@ -90,6 +102,11 @@ export default async function BusinessRequirementsPage({ params }: PageProps) {
           </Link>
 
           <div className="flex items-center gap-2">
+            {isAdminMode && (
+              <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-purple-100 text-purple-900 border border-purple-300 font-extrabold flex items-center gap-1">
+                👑 Admin On-Behalf Mode
+              </span>
+            )}
             <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold hidden sm:inline">
               🔒 Encrypted Project Workspace
             </span>
@@ -105,6 +122,7 @@ export default async function BusinessRequirementsPage({ params }: PageProps) {
           client={verification.client}
           initialDraft={verification.draftRequirements}
           initialStep={verification.currentStep || 1}
+          isAdminMode={isAdminMode}
         />
       </main>
     </div>

@@ -95,10 +95,13 @@ export async function startSchoolOnboarding(
   const schoolsDb = getSchoolsServerClient();
 
   if (!ekaagraDb) {
-    return { success: false, error: 'Ekaagra corporate database is not configured.' };
+    return { success: false, error: 'Ekaagra corporate database is not configured (missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).' };
   }
   if (!schoolsDb) {
-    return { success: false, error: 'Schools platform database is not configured.' };
+    return {
+      success: false,
+      error: 'Schools platform database is not configured. Please ensure SCHOOLS_SUPABASE_URL and SCHOOLS_SUPABASE_SERVICE_ROLE_KEY are configured in your hosting environment variables (e.g. Vercel).',
+    };
   }
 
   const { data: lead, error: leadError } = await ekaagraDb
@@ -153,7 +156,7 @@ export async function startSchoolOnboarding(
       expiresAt: existingInv?.expires_at,
       schoolName: existingProject.school_name,
       productName: matchedPlan?.name || existingProject.product_id,
-      onboardingUrl: `/schools/onboarding/portal?project=${existingProject.project_number}`,
+      onboardingUrl: `/school-onboarding/${existingInv?.invitation_code || existingProject.project_number}`,
     };
   }
 
@@ -192,6 +195,8 @@ export async function startSchoolOnboarding(
     .insert([
       {
         project_number: projectNumber,
+        domain: 'SCHOOL',
+        source: 'SCHOOL_ONBOARDING',
         lead_reference: lead.id,
         source_system: 'EKAAGRA_WEBSITE',
         school_name: parsed.schoolName,
@@ -209,6 +214,8 @@ export async function startSchoolOnboarding(
         domain_requirement: parsed.domainRequirement || null,
         commercial_summary: commercialSummary,
         metadata: {
+          domain: 'SCHOOL',
+          source: 'SCHOOL_ONBOARDING',
           originalLeadSource: lead.source,
           originalLeadType: lead.type,
           originalSubmittedAt: lead.created_at,
@@ -236,16 +243,16 @@ export async function startSchoolOnboarding(
   ]);
 
   const auditNumber = `AUD-SCH-${currentYear}-${String(nextSeq).padStart(6, '0')}`;
-  await schoolsDb.from('school_project_audit_events').insert([
+  await schoolsDb.from('school_project_activity').insert([
     {
       school_project_id: newProject.id,
-      audit_number: auditNumber,
-      action: 'project_created',
       actor_name: actor.name,
       actor_role: actor.role,
-      previous_status: 'NONE',
+      action: 'PROJECT_CREATED',
       new_status: 'onboarding_invited',
       details: {
+        domain: 'SCHOOL',
+        source: 'SCHOOL_ONBOARDING',
         lead_reference: lead.id,
         school_name: parsed.schoolName,
         product_id: parsed.productId,
@@ -262,11 +269,12 @@ export async function startSchoolOnboarding(
       handoff_at: new Date().toISOString(),
       status: 'PROJECT_CONFIRMED',
       commercial_product_id: parsed.productId,
+      lead_domain: 'SCHOOL',
     })
     .eq('id', lead.id);
 
   const matchedPlan = schoolPlans.find((p) => p.id === parsed.productId);
-  const onboardingUrl = `/schools/onboarding/${rawSecretToken}`;
+  const onboardingUrl = `/school-onboarding/${invitationCode}`;
 
   return {
     success: true,
@@ -291,24 +299,98 @@ export async function verifyOnboardingToken(token: string): Promise<{
 }> {
   const schoolsDb = getSchoolsServerClient();
   if (!schoolsDb) {
-    return { valid: false, error: 'Schools platform database is not configured.' };
+    return { valid: false, error: 'Schools platform database is not configured. Please ensure SCHOOLS_SUPABASE_URL and SCHOOLS_SUPABASE_SERVICE_ROLE_KEY are configured in environment variables.' };
   }
 
-  const tokenHash = hashToken(token);
+  if (!token || typeof token !== 'string' || !token.trim()) {
+    return { valid: false, error: 'Invalid or missing onboarding token.' };
+  }
 
-  let { data: invitation } = await schoolsDb
+  const cleanToken = token.trim();
+  const tokenHash = hashToken(cleanToken);
+
+  let invitation: SchoolOnboardingInvitation | null = null;
+
+  // 1. Try matching token_hash with SHA-256 hash of provided token (standard raw secret token flow)
+  const { data: byHash } = await schoolsDb
     .from('school_onboarding_invitations')
     .select('*')
     .eq('token_hash', tokenHash)
     .maybeSingle();
+  invitation = byHash;
 
+  // 2. Try matching token_hash directly (in case raw token_hash was passed)
   if (!invitation) {
     const { data: byRaw } = await schoolsDb
       .from('school_onboarding_invitations')
       .select('*')
-      .eq('token_hash', token)
+      .eq('token_hash', cleanToken)
       .maybeSingle();
     invitation = byRaw;
+  }
+
+  // 3. Try matching invitation_code (e.g. ONB-2026-0001, onb-2026-0001)
+  if (!invitation) {
+    const { data: byCode } = await schoolsDb
+      .from('school_onboarding_invitations')
+      .select('*')
+      .ilike('invitation_code', cleanToken)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    invitation = byCode;
+  }
+
+  // 4. Try matching project_number (e.g. SCH-2026-0001) or project ID (UUID)
+  let projectRow: SchoolProject | null = null;
+  if (!invitation) {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanToken);
+    let projQuery = schoolsDb.from('school_projects').select('*');
+    if (isUuid) {
+      projQuery = projQuery.eq('id', cleanToken);
+    } else {
+      projQuery = projQuery.ilike('project_number', cleanToken);
+    }
+    const { data: matchedProject } = await projQuery.maybeSingle();
+
+    if (matchedProject) {
+      projectRow = matchedProject as SchoolProject;
+      const { data: byProj } = await schoolsDb
+        .from('school_onboarding_invitations')
+        .select('*')
+        .eq('school_project_id', matchedProject.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (byProj) {
+        invitation = byProj;
+      } else {
+        // Auto-generate active invitation for this project if none exists yet
+        const currentYear = new Date().getFullYear();
+        const codeSuffix = matchedProject.project_number ? matchedProject.project_number.replace(/^[^\d]*-?/, '') : '0001';
+        const newInvitationCode = `ONB-${currentYear}-${codeSuffix}`;
+        const rawSecret = crypto.randomBytes(32).toString('hex');
+        const generatedHash = hashToken(rawSecret);
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+        const { data: newInv } = await schoolsDb
+          .from('school_onboarding_invitations')
+          .insert([
+            {
+              school_project_id: matchedProject.id,
+              invitation_code: newInvitationCode,
+              token_hash: generatedHash,
+              expires_at: expiresAt,
+              is_revoked: false,
+            },
+          ])
+          .select('*')
+          .single();
+
+        invitation = newInv;
+      }
+    }
   }
 
   if (!invitation) {
@@ -323,14 +405,17 @@ export async function verifyOnboardingToken(token: string): Promise<{
     return { valid: false, error: 'This onboarding invitation link has expired. Please contact support.' };
   }
 
-  const { data: project, error: projError } = await schoolsDb
-    .from('school_projects')
-    .select('*')
-    .eq('id', invitation.school_project_id)
-    .single();
+  if (!projectRow) {
+    const { data: project, error: projError } = await schoolsDb
+      .from('school_projects')
+      .select('*')
+      .eq('id', invitation.school_project_id)
+      .single();
 
-  if (projError || !project) {
-    return { valid: false, error: 'Associated school project not found.' };
+    if (projError || !project) {
+      return { valid: false, error: 'Associated school project not found.' };
+    }
+    projectRow = project as SchoolProject;
   }
 
   await schoolsDb
@@ -343,7 +428,7 @@ export async function verifyOnboardingToken(token: string): Promise<{
 
   return {
     valid: true,
-    project: project as SchoolProject,
+    project: projectRow,
     invitation: invitation as SchoolOnboardingInvitation,
   };
 }

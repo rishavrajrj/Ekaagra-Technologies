@@ -410,10 +410,20 @@ export default function WebsiteQuoteBuilder() {
     };
 
     // Human-readable formatted description for email / notifications
+    const hostingDuration =
+      activePlan.price === 0 || activePlan.id === 'free-launch' || activePlan.duration === '3 months'
+        ? '3-month hosting'
+        : '1-yr hosting';
+    const pageScopeText = `${activePlan.pages} ${activePlan.pages === '1' ? 'page' : 'pages'}`;
+    const domainScopeText =
+      activePlan.price === 0 || activePlan.id === 'free-launch'
+        ? 'domain allowance: ₹0/yr (Ekaagra hosted subdomain)'
+        : `domain allowance: ₹${activeAnnualAllowance}/yr`;
+
     const formattedDescription = [
       `=== WEBSITE QUOTE REQUEST ===`,
       `PLAN: ${activePlan.name} (${activePlan.priceDisplay})`,
-      `Plan Scope: ${activePlan.pages} pages, 1-yr hosting, maintenance included, domain allowance: ₹${activeAnnualAllowance}/yr`,
+      `Plan Scope: ${pageScopeText}, ${hostingDuration}, maintenance included, ${domainScopeText}`,
       ``,
       `INCLUDED PAGES:`,
       includedPagesList.map((p) => `• ${p}`).join('\n'),
@@ -633,6 +643,14 @@ export default function WebsiteQuoteBuilder() {
             <span className="text-[#64748B] font-medium">Selected Website Plan:</span>
             <strong className="text-[#131B2E] font-bold">
               {submittedQuote.plan.name} ({submittedQuote.plan.priceDisplay})
+            </strong>
+          </div>
+          <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
+            <span className="text-[#64748B] font-medium">Plan Duration / Hosting:</span>
+            <strong className="text-[#131B2E]">
+              {submittedQuote.plan.price === 0 || submittedQuote.plan.id === 'free-launch' || submittedQuote.plan.duration === '3 months'
+                ? '3-Month Hosting (Included)'
+                : `${submittedQuote.plan.duration} Hosting`}
             </strong>
           </div>
           <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
@@ -924,8 +942,9 @@ export default function WebsiteQuoteBuilder() {
                         <button
                           type="button"
                           onClick={() => handleRemovePage(page.id)}
-                          className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
+                          className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                           title="Remove Page"
+                          aria-label={`Remove ${page.name} page`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -951,23 +970,32 @@ export default function WebsiteQuoteBuilder() {
                       onClick={() => {
                         if (!alreadyAdded) {
                           handleAddPage(sug.name, sug.tierId, sug.tierName, sug.price);
+                        } else {
+                          const existing = additionalPages.find((p) => p.name === sug.name);
+                          if (existing) {
+                            handleRemovePage(existing.id);
+                          }
                         }
                       }}
+                      title={alreadyAdded ? `Remove ${sug.name}` : `Add ${sug.name}`}
+                      aria-label={alreadyAdded ? `Remove ${sug.name} page` : `Add ${sug.name} page`}
                       className={`flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
                         alreadyAdded
-                          ? 'bg-emerald-50/60 border-emerald-300 text-emerald-950'
+                          ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 hover:bg-rose-50/70 hover:border-rose-300 group'
                           : 'bg-white border-[#E2E8F0] hover:border-[#4338CA]/40 hover:bg-[#FAF7F2]'
                       }`}
                     >
                       <div>
                         <span className="text-xs font-bold text-[#131B2E] block">{sug.name}</span>
-                        <span className="text-[10px] text-[#64748B]">{sug.tierName}</span>
+                        <span className="text-[10px] text-[#64748B]">
+                          {alreadyAdded ? 'Added • Click to remove' : sug.tierName}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-extrabold text-[#4338CA]">₹{sug.price}</span>
                         <span
-                          className={`w-5 h-5 rounded-full flex items-center justify-center text-xs ${
-                            alreadyAdded ? 'bg-emerald-600 text-white' : 'bg-[#FAF7F2] text-[#4338CA]'
+                          className={`w-5 h-5 rounded-full flex items-center justify-center text-xs transition-colors ${
+                            alreadyAdded ? 'bg-emerald-600 text-white group-hover:bg-rose-600' : 'bg-[#FAF7F2] text-[#4338CA]'
                           }`}
                         >
                           {alreadyAdded ? '✓' : '+'}
@@ -1580,7 +1608,14 @@ export default function WebsiteQuoteBuilder() {
                     {activePlan.name} ({activePlan.priceDisplay})
                   </strong>
                   <p className="text-[11px] text-[#64748B]">
-                    Includes {activePlan.pages} pages, 1-year hosting, maintenance, and ₹{activeAnnualAllowance}/yr domain allowance.
+                    Includes {activePlan.pages} {activePlan.pages === '1' ? 'page' : 'pages'},{' '}
+                    {activePlan.price === 0 || activePlan.id === 'free-launch' || activePlan.duration === '3 months'
+                      ? '3-month hosting'
+                      : '1-year hosting'}
+                    , maintenance included, and{' '}
+                    {activePlan.price === 0 || activePlan.id === 'free-launch'
+                      ? 'Ekaagra hosted subdomain (₹0 domain allowance).'
+                      : `₹${activeAnnualAllowance}/yr domain allowance.`}
                   </p>
                 </div>
                 <button
@@ -1848,7 +1883,7 @@ export default function WebsiteQuoteBuilder() {
             </div>
             <div className="flex items-center justify-between text-[#64748B]">
               <span>Plan Allowance:</span>
-              <span>₹{activeAnnualAllowance}/yr</span>
+              <span>{activePlan.id === 'free-launch' || activePlan.price === 0 ? '₹0 (Hosted Subdomain)' : `₹${activeAnnualAllowance}/yr`}</span>
             </div>
             <div className="flex items-center justify-between text-[#64748B]">
               <span>Domain Upgrade:</span>

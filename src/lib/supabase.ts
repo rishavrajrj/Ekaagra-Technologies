@@ -65,6 +65,15 @@ export async function createLead(
   }
 
   try {
+    const isSchool = Boolean(
+      leadInput.commercial_product_id?.toLowerCase().includes('school') ||
+      leadInput.service?.toLowerCase().includes('school') ||
+      leadInput.project_type?.toLowerCase().includes('school') ||
+      leadInput.description?.toLowerCase().includes('school name:') ||
+      (leadInput.organization && /school|vidyalaya|academy|institution|college|convent|gurukul/i.test(leadInput.organization))
+    );
+    const leadDomain = leadInput.lead_domain || (isSchool ? 'SCHOOL' : 'BUSINESS');
+
     const { data, error } = await supabase
       .from('leads')
       .insert([
@@ -72,6 +81,7 @@ export async function createLead(
           source: leadInput.source,
           type: leadInput.type,
           status: leadInput.status || 'NEW',
+          lead_domain: leadDomain,
           name: leadInput.name,
           organization: leadInput.organization || null,
           phone: leadInput.phone,
@@ -131,6 +141,15 @@ export async function getLeads(
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
 
+    // Domain filter (safely filter by lead_domain or fallback to service/metadata)
+    if (filter.domain && filter.domain !== 'ALL') {
+      try {
+        query = query.eq('lead_domain', filter.domain);
+      } catch {
+        // Safe fallback
+      }
+    }
+
     // Status filter
     if (filter.status && filter.status !== 'ALL') {
       query = query.eq('status', filter.status);
@@ -155,16 +174,60 @@ export async function getLeads(
     // Pagination
     query = query.range(from, to);
 
-    const { data, count, error } = await query;
-
-    if (error) {
+    let { data, count, error } = await query;
+    if (error && error.message?.includes('column leads.lead_domain does not exist')) {
+      let fallbackQuery = supabase
+        .from('leads')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false });
+      if (filter.status && filter.status !== 'ALL') {
+        fallbackQuery = fallbackQuery.eq('status', filter.status);
+      }
+      if (filter.type && filter.type !== 'ALL') {
+        fallbackQuery = fallbackQuery.eq('type', filter.type);
+      }
+      if (filter.source && filter.source !== 'ALL') {
+        fallbackQuery = fallbackQuery.eq('source', filter.source);
+      }
+      if (filter.query && filter.query.trim() !== '') {
+        const q = filter.query.trim();
+        fallbackQuery = fallbackQuery.or(
+          `name.ilike.%${q}%,organization.ilike.%${q}%,email.ilike.%${q}%,phone.ilike.%${q}%`
+        );
+      }
+      fallbackQuery = fallbackQuery.range(from, to);
+      const fbRes = await fallbackQuery;
+      if (fbRes.error) return { success: false, leads: [], total: 0, error: fbRes.error.message };
+      data = fbRes.data;
+      count = fbRes.count;
+    } else if (error) {
       console.error('[SUPABASE ERROR] Failed to fetch leads:', error.message);
       return { success: false, leads: [], total: 0, error: error.message };
     }
 
+    let enrichedLeads = ((data as Lead[]) || []).map((l: any) => {
+      const isSchool = Boolean(
+        l.lead_domain === 'SCHOOL' ||
+        l.type === 'SCHOOL' ||
+        l.commercial_product_id?.toLowerCase().includes('school') ||
+        l.service?.toLowerCase().includes('school') ||
+        l.project_type?.toLowerCase().includes('school') ||
+        l.description?.toLowerCase().includes('school name:') ||
+        (l.organization && /school|vidyalaya|academy|institution|college|convent/i.test(l.organization))
+      );
+      return {
+        ...l,
+        lead_domain: (l.lead_domain || (isSchool ? 'SCHOOL' : 'BUSINESS')) as 'BUSINESS' | 'SCHOOL',
+      };
+    });
+
+    if (filter.domain && filter.domain !== 'ALL') {
+      enrichedLeads = enrichedLeads.filter((l) => l.lead_domain === filter.domain);
+    }
+
     return {
       success: true,
-      leads: (data || []) as Lead[],
+      leads: enrichedLeads,
       total: count || 0,
     };
   } catch (err: unknown) {
@@ -198,20 +261,46 @@ export async function getLeadStats(): Promise<{
   }
 
   try {
-    const { data, error } = await supabase.from('leads').select('status');
+    let { data, error } = await supabase.from('leads').select('status, lead_domain, type, service, organization');
 
-    if (error) {
+    if (error && error.message?.includes('column leads.lead_domain does not exist')) {
+      const fb = await supabase.from('leads').select('status, type, service, organization');
+      if (fb.error) {
+        return { success: false, stats: defaultStats, error: fb.error.message };
+      }
+      data = fb.data as any;
+      error = null;
+    } else if (error) {
       return { success: false, stats: defaultStats, error: error.message };
     }
 
+    const rows = (data || []) as any[];
+
     const stats: LeadStats = {
-      total: data.length,
-      new: data.filter((l) => l.status === 'NEW').length,
-      contacted: data.filter((l) => l.status === 'CONTACTED').length,
-      qualified: data.filter((l) => l.status === 'QUALIFIED').length,
-      proposalSent: data.filter((l) => l.status === 'PROPOSAL_SENT').length,
-      converted: data.filter((l) => l.status === 'CONVERTED').length,
-      lost: data.filter((l) => l.status === 'LOST').length,
+      total: rows.length,
+      new: rows.filter((l) => l.status === 'NEW').length,
+      contacted: rows.filter((l) => l.status === 'CONTACTED').length,
+      qualified: rows.filter((l) => l.status === 'QUALIFIED').length,
+      proposalSent: rows.filter((l) => l.status === 'PROPOSAL_SENT').length,
+      converted: rows.filter((l) => l.status === 'CONVERTED').length,
+      lost: rows.filter((l) => l.status === 'LOST').length,
+      businessCount: rows.filter((l) => {
+        const isSchool = Boolean(
+          l.lead_domain === 'SCHOOL' ||
+          l.type === 'SCHOOL' ||
+          l.service?.toLowerCase().includes('school') ||
+          (l.organization && /school|vidyalaya|academy|institution|college|convent/i.test(l.organization))
+        );
+        return !isSchool;
+      }).length,
+      schoolCount: rows.filter((l) => {
+        return Boolean(
+          l.lead_domain === 'SCHOOL' ||
+          l.type === 'SCHOOL' ||
+          l.service?.toLowerCase().includes('school') ||
+          (l.organization && /school|vidyalaya|academy|institution|college|convent/i.test(l.organization))
+        );
+      }).length,
     };
 
     return { success: true, stats };
@@ -315,11 +404,23 @@ export async function createOrderRecord(
   }
 
   try {
+    const isSchool = Boolean(
+      orderInput.service_type?.toLowerCase().includes('school') ||
+      orderInput.plan_id?.toLowerCase().includes('school') ||
+      (orderInput.metadata as any)?.domain === 'SCHOOL'
+    );
+    const domain = orderInput.domain || (isSchool ? 'SCHOOL' : 'BUSINESS');
+    const projectNumber = orderInput.project_number || (orderInput.metadata as any)?.projectNumber || null;
+    const projectId = orderInput.project_id || (orderInput.metadata as any)?.projectId || null;
+
     const { data, error } = await supabase
       .from('orders')
       .insert([
         {
           lead_id: orderInput.lead_id || null,
+          project_id: projectId,
+          project_number: projectNumber,
+          domain: domain,
           order_number: orderInput.order_number,
           customer_name: orderInput.customer_name,
           customer_email: orderInput.customer_email,
@@ -332,7 +433,12 @@ export async function createOrderRecord(
           gateway_order_id: orderInput.gateway_order_id || null,
           gateway_payment_id: orderInput.gateway_payment_id || null,
           gateway_signature: orderInput.gateway_signature || null,
-          metadata: orderInput.metadata || null,
+          metadata: {
+            ...(orderInput.metadata || {}),
+            domain,
+            projectNumber,
+            projectId,
+          },
           paid_at: orderInput.paid_at || null,
         },
       ])
@@ -566,6 +672,10 @@ export async function getOrders(
   try {
     let query = supabase.from('orders').select('*', { count: 'exact' });
 
+    if (filter.domain && filter.domain !== 'ALL') {
+      query = query.eq('domain', filter.domain);
+    }
+
     if (filter.status && filter.status !== 'ALL') {
       query = query.eq('payment_status', filter.status);
     }
@@ -588,12 +698,48 @@ export async function getOrders(
     const { data, count, error } = await query;
 
     if (error) {
+      // Fallback if domain column is not yet present on orders table in database
+      if (error.message?.includes('column orders.domain does not exist')) {
+        let fallbackQuery = supabase.from('orders').select('*', { count: 'exact' });
+        if (filter.status && filter.status !== 'ALL') {
+          fallbackQuery = fallbackQuery.eq('payment_status', filter.status);
+        }
+        if (filter.query && filter.query.trim() !== '') {
+          const q = filter.query.trim();
+          fallbackQuery = fallbackQuery.or(
+            `order_number.ilike.%${q}%,customer_name.ilike.%${q}%,customer_email.ilike.%${q}%,customer_phone.ilike.%${q}%,service_type.ilike.%${q}%`
+          );
+        }
+        fallbackQuery = fallbackQuery.order('created_at', { ascending: false }).range(from, to);
+        const fbRes = await fallbackQuery;
+        if (fbRes.error) return { success: false, orders: [], total: 0, error: fbRes.error.message };
+        
+        let mappedOrders = (fbRes.data || []).map((o: any) => ({
+          ...o,
+          domain: o.domain || (o.service_type?.toLowerCase().includes('school') ? 'SCHOOL' : 'BUSINESS'),
+        })) as Order[];
+
+        if (filter.domain && filter.domain !== 'ALL') {
+          mappedOrders = mappedOrders.filter((o) => o.domain === filter.domain);
+        }
+
+        return {
+          success: true,
+          orders: mappedOrders,
+          total: mappedOrders.length,
+        };
+      }
       return { success: false, orders: [], total: 0, error: error.message };
     }
 
+    const enrichedOrders = (data || []).map((o: any) => ({
+      ...o,
+      domain: o.domain || (o.service_type?.toLowerCase().includes('school') ? 'SCHOOL' : 'BUSINESS'),
+    })) as Order[];
+
     return {
       success: true,
-      orders: (data as Order[]) || [],
+      orders: enrichedOrders,
       total: count || 0,
     };
   } catch (err: unknown) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition, useCallback } from 'react';
-import type { Lead, LeadFilter, LeadStats, LeadStatus, LeadType, LeadSource } from '@/lib/types';
+import type { Lead, LeadFilter, LeadStats, LeadStatus, LeadType, LeadSource, ProjectDomain } from '@/lib/types';
 import Link from 'next/link';
 import {
   fetchLeadsAction,
@@ -99,6 +99,7 @@ export default function LeadsDashboard({
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
 
   const [query, setQuery] = useState('');
+  const [domainFilter, setDomainFilter] = useState<ProjectDomain | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'ALL'>('ALL');
   const [typeFilter, setTypeFilter] = useState<LeadType | 'ALL'>('ALL');
   const [sourceFilter, setSourceFilter] = useState<LeadSource | 'ALL'>('ALL');
@@ -116,6 +117,7 @@ export default function LeadsDashboard({
       startTransition(async () => {
         const filter: LeadFilter = {
           query,
+          domain: domainFilter,
           status: statusFilter,
           type: typeFilter,
           source: sourceFilter,
@@ -137,14 +139,14 @@ export default function LeadsDashboard({
         }
       });
     },
-    [query, statusFilter, typeFilter, sourceFilter, page]
+    [query, domainFilter, statusFilter, typeFilter, sourceFilter, page]
   );
 
   // Trigger search on filter changes
   useEffect(() => {
     setPage(1);
     loadLeads(1);
-  }, [statusFilter, typeFilter, sourceFilter, query, loadLeads]);
+  }, [domainFilter, statusFilter, typeFilter, sourceFilter, query, loadLeads]);
 
   // Sync draft notes when a lead is selected
   useEffect(() => {
@@ -271,90 +273,99 @@ export default function LeadsDashboard({
   const totalPages = Math.ceil(total / pageSize) || 1;
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#131B2E] flex flex-col">
-      {/* --- Top Navbar ---------------------------------------------- */}
-      <header className="bg-white border-b border-[#E2E8F0] sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Logo size="sm" />
-            <span className="hidden sm:inline-block w-px h-5 bg-[#E2E8F0]" />
-            <div className="flex items-center gap-2">
-              <span className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-[#131B2E]">
-                Lead Central
-              </span>
-              <span className="hidden md:inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full text-[10px] font-bold border border-emerald-200">
-                <ShieldCheck className="w-3 h-3" />
-                Live Hub
-              </span>
-            </div>
+    <div className="eka-content-container space-y-5 sm:space-y-6 min-w-0">
+      {/* --- Page Header & Actions ------------------------------------ */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              Inbound Leads & Enquiries
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+              {total} Total
+            </span>
           </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/business-projects"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4338CA]/10 hover:bg-[#4338CA]/20 text-[#4338CA] text-xs font-bold rounded-lg border border-[#4338CA]/20 transition-colors"
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>Business Projects</span>
-            </Link>
-
-            <Link
-              href="/admin/school-projects"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-[#4338CA] text-xs font-bold rounded-lg border border-indigo-200 transition-colors"
-            >
-              <School className="w-3.5 h-3.5" />
-              <span>School Projects</span>
-            </Link>
-
-            <Link
-              href="/admin/orders"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200 transition-colors"
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              <span>Orders &amp; Payments</span>
-            </Link>
-
-            <button
-              onClick={() => loadLeads()}
-              disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FAF7F2] hover:bg-[#E2E8F0] text-xs font-bold rounded-lg border border-[#E2E8F0] transition-colors cursor-pointer"
-              title="Refresh leads"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
-
-            <form action={adminLogoutAction}>
-              <button
-                type="submit"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-bold rounded-lg border border-red-200 transition-colors cursor-pointer"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Sign Out</span>
-              </button>
-            </form>
-          </div>
+          <p className="text-xs text-slate-500 mt-1">
+            Qualify incoming quotes, add internal notes, and bridge to School or Business onboarding.
+          </p>
         </div>
-      </header>
 
-      {/* --- Main Content --------------------------------------------- */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => loadLeads()}
+            disabled={isLoading}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 shadow-xs transition-colors cursor-pointer"
+            title="Refresh leads"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-indigo-600' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {/* --- Database Notice --- */}
         {!isDbConfigured && (
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3 text-xs sm:text-sm text-amber-900">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-3.5 text-xs text-amber-900 shadow-xs">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
             <div>
-              <strong>Supabase Environment Notice:</strong> <code>SUPABASE_URL</code> and{' '}
+              <span className="font-bold">Database Persistence Warning:</span> <code>SUPABASE_URL</code> and{' '}
               <code>SUPABASE_SERVICE_ROLE_KEY</code> are not configured yet. Add them to your{' '}
               <code>.env.local</code> / Vercel dashboard to enable persistence and live lead viewing.
             </div>
           </div>
         )}
 
+        {/* --- Domain Filter Tabs --- */}
+        <div className="flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/80 rounded-2xl w-fit border border-slate-200/80 dark:border-slate-750">
+          <button
+            type="button"
+            onClick={() => setDomainFilter('ALL')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              domainFilter === 'ALL'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            All Leads ({stats.total})
+          </button>
+          <button
+            type="button"
+            onClick={() => setDomainFilter('BUSINESS')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              domainFilter === 'BUSINESS'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            <span>Business Leads</span>
+            {stats.businessCount !== undefined && (
+              <span className="opacity-80 text-[10px]">({stats.businessCount})</span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setDomainFilter('SCHOOL')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              domainFilter === 'SCHOOL'
+                ? 'bg-violet-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <School className="w-3.5 h-3.5" />
+            <span>School Leads</span>
+            {stats.schoolCount !== undefined && (
+              <span className="opacity-80 text-[10px]">({stats.schoolCount})</span>
+            )}
+          </button>
+        </div>
+
         {/* --- Metric Ribbon ------------------------------------------ */}
-        <section className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+        <section className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-2.5 sm:gap-3">
           <button
             onClick={() => setStatusFilter('ALL')}
-            className={`p-4 rounded-2xl border text-left transition-all cursor-pointer ${
+            className={`p-3 sm:p-4 rounded-2xl border text-left transition-all cursor-pointer ${
               statusFilter === 'ALL'
                 ? 'bg-[#4338CA] text-white border-[#4338CA] shadow-md shadow-[#4338CA]/20'
                 : 'bg-white text-[#131B2E] border-[#E2E8F0] hover:border-[#4338CA]/40'
@@ -438,20 +449,20 @@ export default function LeadsDashboard({
         </section>
 
         {/* --- Search & Filter Toolbar -------------------------------- */}
-        <section className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full md:w-80">
+        <section className="bg-white p-3.5 sm:p-4 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="relative w-full sm:w-80">
             <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search name, org, email, phone..."
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-2 text-xs text-[#131B2E] placeholder-[#94A3B8] focus:outline-none focus:border-[#4338CA]"
+              className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-2.5 text-xs text-[#131B2E] placeholder-[#94A3B8] focus:outline-none focus:border-[#4338CA]"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5 shrink-0">
               <Filter className="w-3.5 h-3.5 text-[#64748B]" />
               <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B]">Filters:</span>
             </div>
@@ -459,7 +470,7 @@ export default function LeadsDashboard({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as LeadStatus | 'ALL')}
-              className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+              className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-[#131B2E] focus:outline-none focus:border-[#4338CA] flex-1 sm:flex-initial min-h-[38px]"
             >
               <option value="ALL">All Statuses</option>
               {STATUS_OPTIONS.map((s) => (
@@ -472,7 +483,7 @@ export default function LeadsDashboard({
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as LeadType | 'ALL')}
-              className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-[#131B2E] focus:outline-none focus:border-[#4338CA]"
+              className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3 py-2 text-xs font-semibold text-[#131B2E] focus:outline-none focus:border-[#4338CA] flex-1 sm:flex-initial min-h-[38px]"
             >
               <option value="ALL">All Types</option>
               <option value="CONTACT">Contact Form</option>
@@ -482,110 +493,254 @@ export default function LeadsDashboard({
           </div>
         </section>
 
-        {/* --- Leads Table -------------------------------------------- */}
+        {/* --- Leads Table & Mobile Cards -------------------------------------------- */}
         <section className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-[#FAF7F2] border-b border-[#E2E8F0] text-[10px] font-extrabold uppercase tracking-wider text-[#64748B]">
-                  <th className="py-3.5 px-4 sm:px-6">Client / Business</th>
-                  <th className="py-3.5 px-4">Type</th>
-                  <th className="py-3.5 px-4">Service / Scope</th>
-                  <th className="py-3.5 px-4">Budget</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4">Received</th>
-                  <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E2E8F0] text-xs">
-                {leads.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-12 text-center text-[#94A3B8]">
-                      <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                      <p className="font-semibold">No lead records found.</p>
-                      <p className="text-[11px] mt-0.5">
-                        New submissions from your website forms will appear here in real-time.
-                      </p>
-                    </td>
-                  </tr>
-                ) : (
-                  leads.map((lead) => {
-                    const statusTheme = STATUS_COLORS[lead.status] || STATUS_COLORS.NEW;
-                    const dateFormatted = new Date(lead.created_at).toLocaleDateString('en-IN', {
-                      day: 'numeric',
-                      month: 'short',
-                      year: 'numeric',
-                    });
+          {leads.length === 0 ? (
+            <div className="py-12 text-center text-[#94A3B8] p-6">
+              <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
+              <p className="font-semibold text-sm text-[#131B2E]">No lead records found.</p>
+              <p className="text-[11px] mt-0.5">
+                New submissions from your website forms will appear here in real-time.
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table View (>= 768px) */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#FAF7F2] border-b border-[#E2E8F0] text-[10px] font-extrabold uppercase tracking-wider text-[#64748B]">
+                      <th className="py-3.5 px-4 sm:px-6">Client / Business</th>
+                      <th className="py-3.5 px-4">Domain</th>
+                      <th className="py-3.5 px-4">Type</th>
+                      <th className="py-3.5 px-4">Service / Scope</th>
+                      <th className="py-3.5 px-4">Budget</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      <th className="py-3.5 px-4">Received</th>
+                      <th className="py-3.5 px-4 sm:px-6 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#E2E8F0] text-xs">
+                    {leads.map((lead) => {
+                      const isSchool =
+                        lead.lead_domain === 'SCHOOL' ||
+                        Boolean(lead.service?.toLowerCase().includes('school')) ||
+                        Boolean(lead.project_type?.toLowerCase().includes('school'));
+                      const statusTheme = STATUS_COLORS[lead.status] || STATUS_COLORS.NEW;
+                      const dateFormatted = new Date(lead.created_at).toLocaleDateString('en-IN', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      });
 
-                    return (
-                      <tr
-                        key={lead.id}
-                        onClick={() => setSelectedLead(lead)}
-                        className="hover:bg-[#FAF7F2]/80 transition-colors cursor-pointer group"
-                      >
-                        <td className="py-3.5 px-4 sm:px-6">
-                          <div className="font-extrabold text-[#131B2E] group-hover:text-[#4338CA] transition-colors">
-                            {lead.name}
-                          </div>
-                          {lead.organization && (
-                            <div className="text-[11px] text-[#64748B] flex items-center gap-1 mt-0.5">
-                              <Building className="w-3 h-3 shrink-0" />
-                              <span className="truncate max-w-[180px]">{lead.organization}</span>
+                      return (
+                        <tr
+                          key={lead.id}
+                          onClick={() => setSelectedLead(lead)}
+                          className="hover:bg-[#FAF7F2]/80 dark:hover:bg-white/[0.04] transition-colors cursor-pointer group"
+                        >
+                          <td className="py-3.5 px-4 sm:px-6">
+                            <div className="font-extrabold text-[#131B2E] group-hover:text-[#4338CA] transition-colors">
+                              {lead.name}
                             </div>
-                          )}
-                        </td>
+                            {lead.organization && (
+                              <div className="text-[11px] text-[#64748B] flex items-center gap-1 mt-0.5">
+                                <Building className="w-3 h-3 shrink-0" />
+                                <span className="truncate max-w-[180px]">{lead.organization}</span>
+                              </div>
+                            )}
+                          </td>
 
-                        <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                              lead.type === 'QUOTE'
-                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                                : 'bg-orange-50 text-orange-700 border border-orange-200'
-                            }`}
-                          >
+                          <td className="py-3.5 px-4">
+                            {isSchool ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider bg-violet-50 text-violet-700 border border-violet-200">
+                                <School className="w-3 h-3" />
+                                <span>School</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                <Briefcase className="w-3 h-3" />
+                                <span>Business</span>
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`inline-block px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                                lead.type === 'QUOTE'
+                                  ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                  : 'bg-orange-50 text-orange-700 border border-orange-200'
+                              }`}
+                            >
+                              {lead.type}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-[#334155] font-medium max-w-[200px] truncate">
+                            {lead.service || lead.project_type || 'General Project'}
+                          </td>
+
+                          <td className="py-3.5 px-4 text-emerald-700 font-bold">
+                            {lead.budget || '—'}
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${statusTheme.bg} ${statusTheme.text} ${statusTheme.border}`}
+                            >
+                              {lead.status.replace('_', ' ')}
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-[#64748B] text-[11px] whitespace-nowrap">
+                            {dateFormatted}
+                          </td>
+
+                          <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedLead(lead);
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#FAF7F2] group-hover:bg-[#4338CA] group-hover:text-white text-[#131B2E] text-[11px] font-bold rounded-lg border border-[#E2E8F0] transition-all cursor-pointer"
+                            >
+                              <span>Inspect</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View (< 768px) */}
+              <div className="md:hidden divide-y divide-[#E2E8F0]">
+                {leads.map((lead) => {
+                  const isSchool =
+                    lead.lead_domain === 'SCHOOL' ||
+                    Boolean(lead.service?.toLowerCase().includes('school')) ||
+                    Boolean(lead.project_type?.toLowerCase().includes('school'));
+                  const statusTheme = STATUS_COLORS[lead.status] || STATUS_COLORS.NEW;
+                  const dateFormatted = new Date(lead.created_at).toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  });
+                  const waUrl = getWhatsAppChatUrl(
+                    `Hello ${lead.name}, this is Ekaagra Technologies regarding your ${lead.type} enquiry.`,
+                    lead.phone
+                  );
+
+                  return (
+                    <div
+                      key={lead.id}
+                      onClick={() => setSelectedLead(lead)}
+                      className="p-4 space-y-3 hover:bg-[#FAF7F2]/60 dark:hover:bg-white/[0.04] transition-colors cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            {isSchool ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase tracking-wider bg-violet-50 text-violet-700 border border-violet-200">
+                                <School className="w-2.5 h-2.5" />
+                                <span>School</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[8px] font-extrabold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                <Briefcase className="w-2.5 h-2.5" />
+                                <span>Business</span>
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-extrabold text-sm text-[#131B2E] truncate">
+                            {lead.name}
+                          </h4>
+                          {lead.organization && (
+                            <p className="text-xs text-[#64748B] flex items-center gap-1 mt-0.5 truncate">
+                              <Building className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{lead.organization}</span>
+                            </p>
+                          )}
+                        </div>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider border shrink-0 ${statusTheme.bg} ${statusTheme.text} ${statusTheme.border}`}
+                        >
+                          {lead.status.replace('_', ' ')}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E2E8F0]">
+                        <div>
+                          <span className="text-[10px] text-[#64748B] font-bold uppercase block">Service / Scope</span>
+                          <span className="font-medium text-[#131B2E] truncate block">
+                            {lead.service || lead.project_type || 'General'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-[#64748B] font-bold uppercase block">Budget</span>
+                          <span className="font-bold text-emerald-700 block truncate">
+                            {lead.budget || '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-[#64748B] font-bold uppercase block">Type</span>
+                          <span className="font-semibold text-indigo-700 block">
                             {lead.type}
                           </span>
-                        </td>
-
-                        <td className="py-3.5 px-4 text-[#334155] font-medium max-w-[200px] truncate">
-                          {lead.service || lead.project_type || 'General Project'}
-                        </td>
-
-                        <td className="py-3.5 px-4 text-emerald-700 font-bold">
-                          {lead.budget || '—'}
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border ${statusTheme.bg} ${statusTheme.text} ${statusTheme.border}`}
-                          >
-                            {lead.status.replace('_', ' ')}
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-[#64748B] font-bold uppercase block">Received</span>
+                          <span className="text-[#64748B] block font-mono text-[11px]">
+                            {dateFormatted}
                           </span>
-                        </td>
+                        </div>
+                      </div>
 
-                        <td className="py-3.5 px-4 text-[#64748B] text-[11px] whitespace-nowrap">
-                          {dateFormatted}
-                        </td>
-
-                        <td className="py-3.5 px-4 sm:px-6 text-right whitespace-nowrap">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLead(lead);
-                            }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#FAF7F2] group-hover:bg-[#4338CA] group-hover:text-white text-[#131B2E] text-[11px] font-bold rounded-lg border border-[#E2E8F0] transition-all"
+                      {/* Touch-Friendly Action Row */}
+                      <div className="flex items-center gap-2 pt-1 flex-wrap">
+                        {lead.phone && (
+                          <a
+                            href={waUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 transition-colors"
                           >
-                            <span>Inspect</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                            <MessageCircle className="w-3.5 h-3.5" />
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+                        {lead.phone && (
+                          <a
+                            href={`tel:${lead.phone}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-[#131B2E] text-xs font-bold rounded-xl border border-slate-200 transition-colors"
+                          >
+                            <Phone className="w-3.5 h-3.5" />
+                            <span>Call</span>
+                          </a>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLead(lead);
+                          }}
+                          className="flex-1 min-h-[44px] inline-flex items-center justify-center gap-1.5 px-3 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                        >
+                          <span>Inspect</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           {/* Pagination */}
           {total > pageSize && (
@@ -625,7 +780,7 @@ export default function LeadsDashboard({
             </div>
           )}
         </section>
-      </main>
+      </div>
 
       {/* --- Slide-Over / Modal Detail Drawer ------------------------- */}
       {selectedLead && (
@@ -739,182 +894,215 @@ export default function LeadsDashboard({
                 </div>
               </div>
 
-              {/* Business Client Project Creation Card */}
-              <div className="p-4 bg-emerald-50/70 rounded-2xl border border-emerald-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-950 flex items-center gap-1.5">
-                    <Briefcase className="w-4 h-4 text-emerald-700" />
-                    Business Project Workflow
-                  </span>
-                  {selectedLead.status === 'PROJECT_CONFIRMED' || businessResult ? (
-                    <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 border border-emerald-300">
-                      CONFIRMED
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                      Ready to Create
-                    </span>
-                  )}
-                </div>
+              {(() => {
+                const isSchoolLead =
+                  selectedLead.lead_domain === 'SCHOOL' ||
+                  Boolean(
+                    selectedLead.school_project_reference ||
+                    selectedLead.service?.toLowerCase().includes('school') ||
+                    selectedLead.project_type?.toLowerCase().includes('school') ||
+                    selectedLead.description?.toLowerCase().includes('school name:') ||
+                    (selectedLead.organization && /school|vidyalaya|academy|institution|college|convent/i.test(selectedLead.organization))
+                  );
 
-                <div className="space-y-2">
-                  <p className="text-xs text-emerald-900">
-                    Confirm this client project and generate their secure <strong>/business-requirements/[token]</strong> onboarding link.
-                  </p>
+                if (isSchoolLead) {
+                  return (
+                    /* School Platform Onboarding Bridge Card */
+                    <div className="p-4 rounded-2xl border border-violet-300 bg-violet-50/90 ring-1 ring-violet-200 shadow-xs space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-violet-900 flex items-center gap-1.5">
+                            <School className="w-4 h-4 text-violet-700" />
+                            School Platform Onboarding
+                          </span>
+                          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-violet-200 text-violet-900 border border-violet-300">
+                            School Domain
+                          </span>
+                        </div>
+                        {selectedLead.school_project_reference ? (
+                          <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            {selectedLead.school_project_reference}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                            Not Started
+                          </span>
+                        )}
+                      </div>
 
-                  {businessError && (
-                    <div className="p-2.5 rounded-xl bg-rose-50 text-rose-800 text-xs font-bold border border-rose-200">
-                      {businessError}
+                      {selectedLead.school_project_reference ? (
+                        <div className="space-y-2">
+                          <p className="text-xs text-violet-950">
+                            Project has been established in the Schools Platform database.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Link
+                              href={`/admin/school-projects?query=${selectedLead.school_project_reference}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 bg-violet-700 hover:bg-violet-800 text-white font-bold rounded-xl text-xs transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Open in School Projects Hub</span>
+                            </Link>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-xs text-violet-900">
+                            Confirm this school and generate an authenticated onboarding workspace for the school representative.
+                          </p>
+                          {onboardingError && (
+                            <div className="p-2.5 rounded-xl bg-rose-50 text-rose-800 text-xs font-semibold border border-rose-200 space-y-1">
+                              <div>{onboardingError}</div>
+                              {onboardingError.toLowerCase().includes('schools platform database is not configured') && (
+                                <div className="text-[11px] text-rose-700 font-normal leading-relaxed pt-1 border-t border-rose-200/60">
+                                  <strong>How to solve:</strong> Add <code className="font-mono bg-rose-100 px-1 py-0.5 rounded text-[10px]">SCHOOLS_SUPABASE_URL</code> and <code className="font-mono bg-rose-100 px-1 py-0.5 rounded text-[10px]">SCHOOLS_SUPABASE_SERVICE_ROLE_KEY</code> to your production deployment environment variables (e.g. Vercel Project Settings) and redeploy.
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <button
+                            onClick={handleStartSchoolOnboarding}
+                            disabled={isOnboardingLoading}
+                            className="w-full py-2.5 px-4 bg-violet-700 hover:bg-violet-800 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
+                          >
+                            <Sparkles className="w-4 h-4 text-amber-300" />
+                            <span>{isOnboardingLoading ? 'Creating School Project...' : 'Start School Onboarding'}</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {onboardingResult && (
+                        <div className="p-3 bg-white rounded-xl border border-violet-200 space-y-2 text-xs">
+                          <div className="flex items-center justify-between text-emerald-700 font-bold">
+                            <span>✓ {onboardingResult.status === 'ALREADY_CREATED' ? 'Existing Project Retrieved' : 'School Project Created'}</span>
+                            <span className="font-mono">{onboardingResult.projectNumber}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={
+                                typeof window !== 'undefined'
+                                  ? `${window.location.origin}${onboardingResult.onboardingUrl}`
+                                  : onboardingResult.onboardingUrl
+                              }
+                              className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono select-all"
+                            />
+                            <button
+                              onClick={() => {
+                                const url = `${window.location.origin}${onboardingResult.onboardingUrl}`;
+                                navigator.clipboard.writeText(url);
+                                setCopiedOnboardingLink(true);
+                                setTimeout(() => setCopiedOnboardingLink(false), 2000);
+                              }}
+                              className="px-2.5 py-1.5 bg-violet-700 text-white font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
+                            >
+                              {copiedOnboardingLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedOnboardingLink ? 'Copied' : 'Copy'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  );
+                }
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={handleStartBusinessProject}
-                      disabled={isBusinessLoading}
-                      className="flex-1 py-2.5 px-4 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4 text-amber-300" />
-                      <span>{isBusinessLoading ? 'Creating Business Project...' : 'Confirm & Create Business Project'}</span>
-                    </button>
-
-                    <Link
-                      href="/admin/business-projects"
-                      className="px-3 py-2.5 bg-white hover:bg-slate-50 text-[#131B2E] border border-emerald-200 font-bold rounded-xl text-xs flex items-center gap-1 transition-colors"
-                    >
-                      <Eye className="w-3.5 h-3.5 text-emerald-700" />
-                      <span>Projects</span>
-                    </Link>
-                  </div>
-                </div>
-
-                {businessResult && (
-                  <div className="p-3 bg-white rounded-xl border border-emerald-200 space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-emerald-800 font-bold">
-                      <span>✓ {businessResult.status === 'ALREADY_EXISTS' ? 'Active Project Retrieved' : 'Business Project Created!'}</span>
-                      <span className="font-mono text-[#4338CA]">{businessResult.projectNumber}</span>
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Secure Client Onboarding Link:</span>
+                return (
+                  /* Business Client Project Creation Card */
+                  <div className="p-4 rounded-2xl border border-indigo-300 bg-indigo-50/90 ring-1 ring-indigo-200 shadow-xs space-y-3">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          readOnly
-                          value={
-                            typeof window !== 'undefined'
-                              ? `${window.location.origin}${businessResult.onboardingUrl}`
-                              : businessResult.onboardingUrl
-                          }
-                          className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono select-all"
-                        />
+                        <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-950 flex items-center gap-1.5">
+                          <Briefcase className="w-4 h-4 text-indigo-700" />
+                          Business Project Workflow
+                        </span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-200 text-indigo-900 border border-indigo-300">
+                          Business Domain
+                        </span>
+                      </div>
+                      {selectedLead.status === 'PROJECT_CONFIRMED' || businessResult ? (
+                        <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-200 text-emerald-900 border border-emerald-300">
+                          CONFIRMED
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                          Ready to Create
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-xs text-indigo-900">
+                        Confirm this business client project and generate their secure <strong>/business-requirements/[token]</strong> onboarding link.
+                      </p>
+
+                      {businessError && (
+                        <div className="p-2.5 rounded-xl bg-rose-50 text-rose-800 text-xs font-bold border border-rose-200">
+                          {businessError}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => {
-                            const url = `${window.location.origin}${businessResult.onboardingUrl}`;
-                            navigator.clipboard.writeText(url);
-                            setCopiedBusinessLink(true);
-                            setTimeout(() => setCopiedBusinessLink(false), 2000);
-                          }}
-                          className="px-2.5 py-1.5 bg-emerald-700 text-white font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
+                          onClick={handleStartBusinessProject}
+                          disabled={isBusinessLoading}
+                          className="flex-1 py-2.5 px-4 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
                         >
-                          {copiedBusinessLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                          <span>{copiedBusinessLink ? 'Copied' : 'Copy'}</span>
+                          <Sparkles className="w-4 h-4 text-amber-300" />
+                          <span>{isBusinessLoading ? 'Creating Business Project...' : 'Confirm & Create Business Project'}</span>
                         </button>
+
+                        <Link
+                          href="/admin/business-projects"
+                          className="px-3 py-2.5 bg-white hover:bg-slate-50 text-[#131B2E] border border-indigo-200 font-bold rounded-xl text-xs flex items-center gap-1 transition-colors"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-indigo-700" />
+                          <span>Projects</span>
+                        </Link>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
 
-              {/* School Platform Onboarding Bridge Card */}
-              <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-900 flex items-center gap-1.5">
-                    <School className="w-4 h-4 text-[#4338CA]" />
-                    School Platform Onboarding
-                  </span>
-                  {selectedLead.school_project_reference ? (
-                    <span className="font-mono text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      {selectedLead.school_project_reference}
-                    </span>
-                  ) : (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                      Not Started
-                    </span>
-                  )}
-                </div>
+                    {businessResult && (
+                      <div className="p-3 bg-white rounded-xl border border-indigo-200 space-y-2 text-xs">
+                        <div className="flex items-center justify-between text-emerald-800 font-bold">
+                          <span>✓ {businessResult.status === 'ALREADY_EXISTS' ? 'Active Project Retrieved' : 'Business Project Created!'}</span>
+                          <span className="font-mono text-indigo-700">{businessResult.projectNumber}</span>
+                        </div>
 
-                {selectedLead.school_project_reference ? (
-                  <div className="space-y-2">
-                    <p className="text-xs text-indigo-950">
-                      Project has been established in the Schools Platform database.
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href={`/admin/school-projects?query=${selectedLead.school_project_reference}`}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold rounded-xl text-xs transition-colors"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>Open in School Projects Hub</span>
-                      </Link>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-xs text-indigo-900">
-                      Confirm this project and generate an authenticated onboarding workspace for the school representative.
-                    </p>
-                    {onboardingError && (
-                      <div className="p-2.5 rounded-xl bg-rose-50 text-rose-800 text-xs font-bold border border-rose-200">
-                        {onboardingError}
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-[#64748B]">Secure Client Onboarding Link:</span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={
+                                typeof window !== 'undefined'
+                                  ? `${window.location.origin}${businessResult.onboardingUrl}`
+                                  : businessResult.onboardingUrl
+                              }
+                              className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono select-all"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = `${window.location.origin}${businessResult.onboardingUrl}`;
+                                navigator.clipboard.writeText(url);
+                                setCopiedBusinessLink(true);
+                                setTimeout(() => setCopiedBusinessLink(false), 2000);
+                              }}
+                              className="px-2.5 py-1.5 bg-indigo-600 text-white font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
+                            >
+                              {copiedBusinessLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              <span>{copiedBusinessLink ? 'Copied' : 'Copy'}</span>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )}
-                    <button
-                      onClick={handleStartSchoolOnboarding}
-                      disabled={isOnboardingLoading}
-                      className="w-full py-2.5 px-4 bg-[#4338CA] hover:bg-[#3730A3] disabled:opacity-50 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
-                    >
-                      <Sparkles className="w-4 h-4 text-amber-300" />
-                      <span>{isOnboardingLoading ? 'Creating School Project...' : 'Start School Onboarding'}</span>
-                    </button>
                   </div>
-                )}
-
-                {onboardingResult && (
-                  <div className="p-3 bg-white rounded-xl border border-indigo-200 space-y-2 text-xs">
-                    <div className="flex items-center justify-between text-emerald-700 font-bold">
-                      <span>✓ {onboardingResult.status === 'ALREADY_CREATED' ? 'Existing Project Retrieved' : 'School Project Created'}</span>
-                      <span className="font-mono">{onboardingResult.projectNumber}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        readOnly
-                        value={
-                          typeof window !== 'undefined'
-                            ? `${window.location.origin}${onboardingResult.onboardingUrl}`
-                            : onboardingResult.onboardingUrl
-                        }
-                        className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono select-all"
-                      />
-                      <button
-                        onClick={() => {
-                          const url = `${window.location.origin}${onboardingResult.onboardingUrl}`;
-                          navigator.clipboard.writeText(url);
-                          setCopiedOnboardingLink(true);
-                          setTimeout(() => setCopiedOnboardingLink(false), 2000);
-                        }}
-                        className="px-2.5 py-1.5 bg-[#4338CA] text-white font-bold rounded-lg text-xs flex items-center gap-1 cursor-pointer"
-                      >
-                        {copiedOnboardingLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                        <span>{copiedOnboardingLink ? 'Copied' : 'Copy'}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                );
+              })()}
 
               {/* Contact Information */}
               <div className="space-y-3">

@@ -6,25 +6,36 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "test": "npx tsx src/lib/__tests__/institutionalIdNumbering.test.ts && npx tsx src/lib/__tests__/attendanceUtils.test.ts && npx tsx src/lib/__tests__/campusStatisticsUtils.test.ts && npx tsx src/lib/__tests__/libraryUtils.test.ts && npx tsx src/lib/__tests__/communicationUtils.test.ts && npx tsx src/lib/__tests__/hostelUtils.test.ts && npx tsx src/lib/__tests__/mobileAppRequirements.test.ts && npx tsx src/lib/__tests__/integrationsUtils.test.ts && npx tsx src/lib/__tests__/portalRequirementsUtils.test.ts && npx tsx src/lib/__tests__/mediaAssetsUtils.test.ts && npx tsx src/lib/__tests__/studentInformationUtils.test.ts && npx tsx src/lib/__tests__/fieldScopeRegistry.test.ts && npx tsx src/lib/__tests__/schoolAccommodation.test.ts && npx tsx src/lib/__tests__/campusAcademicScope.test.ts && npx tsx src/lib/__tests__/schoolTypeAndCampusConsistency.test.ts && npx tsx src/lib/__tests__/campusAcademicLevelReconciliation.test.ts && npx tsx src/lib/__tests__/campusScopeArchitecture.test.ts"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^2.1.1",
     "@supabase/supabase-js": "^2.112.4",
+    "@types/leaflet": "^1.9.22",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.31.0",
     "next": "16.3.0",
     "nodemailer": "^9.0.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "resend": "^6.24.0"
+    "react-leaflet": "^5.0.0",
+    "resend": "^6.24.0",
+    "sharp": "^0.35.4",
+    "three": "^0.186.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/google.maps": "^3.66.2",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.185.4",
+    "puppeteer-core": "^25.10.0",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

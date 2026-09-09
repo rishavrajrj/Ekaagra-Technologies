@@ -1,0 +1,58 @@
+﻿# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-US"
+tone_instructions: "Be concise, constructive, and direct. Focus on regressions, security vulnerabilities, edge cases, and performance. Do not nitpick stylistic choices unless they violate strict TypeScript standards."
+early_access: false
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: false
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - "main"
+
+  path_filters:
+    - "!node_modules/**"
+    - "!.next/**"
+    - "!public/images/**"
+    - "!public/uploads/**"
+    - "!.agent/**"
+    - "!.agents/**"
+    - "!.planning/**"
+    - "!package-lock.json"
+    - "!*.tsbuildinfo"
+
+  tools:
+    shellcheck:
+      enabled: true
+    markdownlint:
+      enabled: false
+
+chat:
+  auto_reply: true
+
+instructions: |
+  This repository is Ekaagra Technologies, an education technology platform built with:
+  - Next.js 16 (App Router) & React 19
+  - TypeScript 5 (Strict Mode)
+  - Tailwind CSS v4
+  - Supabase (PostgreSQL & Storage)
+
+  When reviewing pull requests, strictly prioritize:
+  1. Next.js 16 Breaking Changes:
+     - Verify asynchronous handling of params, searchParams, and headers/cookies.
+     - Ensure correct separation between Server and Client Components ('use client').
+  2. Strict TypeScript Safety:
+     - Flag any usage of 'any' or unsafe type assertions ('as unknown as X').
+     - Check for unhandled null or undefined states.
+  3. Domain Logic & Business Invariants:
+     - Protect the multi-campus academic structure, school intake calculations, and pricing logic in src/lib/.
+     - Ensure existing unit test suites in src/lib/__tests__/ are updated if public interfaces change.
+  4. Database & Secret Security:
+     - Ensure no sensitive credentials, service keys, or secrets are committed.
+     - Verify Supabase RLS and server-side authorization checks on server actions.

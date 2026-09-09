@@ -37,7 +37,7 @@ export async function executePlatformHandoff(
 ): Promise<PlatformHandoffResult> {
   const schoolsDb = getSchoolsServerClient();
   if (!schoolsDb) {
-    return { success: false, error: 'Schools platform database is not configured.' };
+    return { success: false, error: 'Schools platform database is not configured. Please ensure SCHOOLS_SUPABASE_URL and SCHOOLS_SUPABASE_SERVICE_ROLE_KEY are configured in environment variables.' };
   }
 
   const { data: project, error: projError } = await schoolsDb
@@ -110,6 +110,7 @@ export async function executePlatformHandoff(
           leadReference: project.lead_reference,
           handedOffBy: actor.name,
           handedOffByEmail: actor.email,
+          deliveryPlan: snapshotData.projectDelivery || null,
         },
       },
     ])

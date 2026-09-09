@@ -1,13 +1,8 @@
 import type { Metadata } from 'next';
 import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 import './globals.css';
-import Navbar from '@/components/layout/Navbar';
-import Footer from '@/components/layout/Footer';
 import { ShowcaseProvider } from '@/components/showcase/ShowcaseProvider';
-import ShowcaseMode from '@/components/showcase/ShowcaseMode';
-import ScrollProgress from '@/components/motion/ScrollProgress';
-import BackToTop from '@/components/motion/BackToTop';
-import PricingOfferPopup from '@/components/ui/PricingOfferPopup';
+import SiteShell from '@/components/layout/SiteShell';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 
@@ -100,13 +95,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#131B2E] antialiased font-sans selection:bg-[#4338CA] selection:text-white">
         <ShowcaseProvider>
-          <ScrollProgress />
-          <Navbar />
-          <main className="flex-1 pt-18">{children}</main>
-          <Footer />
-          <BackToTop />
-          <ShowcaseMode />
-          <PricingOfferPopup />
+          <SiteShell>{children}</SiteShell>
         </ShowcaseProvider>
         <Analytics />
         <SpeedInsights />

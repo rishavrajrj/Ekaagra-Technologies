@@ -57,11 +57,12 @@ import {
 } from '@/lib/domain/schoolDomain';
 import { submitSchoolQuoteForm } from '@/app/actions';
 import { trackSchoolEvent } from '@/lib/analytics';
+import SchoolDomainSelector from '@/components/schools/SchoolDomainSelector';
 
 const SCHOOL_TYPES = [
-  'K-12 School',
-  'Secondary / High School',
-  'Primary / Middle School',
+  'K-12 School (Kindergarten to 12th Grade)',
+  'Secondary / High School (Up to 10th)',
+  'Primary / Middle School (Up to 8th)',
   'Play School / Kindergarten',
   'Coaching / Tuition Academy',
   'Collegiate Institute',
@@ -137,7 +138,7 @@ export default function SchoolQuoteConfigurator({
   // STEP 6: School Information
   const [schoolInfo, setSchoolInfo] = useState<SchoolQuoteSchoolDetails>({
     schoolName: '',
-    schoolType: 'K-12 School',
+    schoolType: 'K-12 School (Kindergarten to 12th Grade)',
     board: 'CBSE (Central Board of Secondary Education)',
     city: '',
     state: 'Bihar',
@@ -196,7 +197,8 @@ export default function SchoolQuoteConfigurator({
   useEffect(() => {
     if (selectedDomain) {
       const annualAllowance = schoolDomainAllowances[selectedProductId] ?? 300;
-      const termAllowance = annualAllowance * selectedDomain.period;
+      const domainPeriod = selectedDomain.period ?? 1;
+      const termAllowance = annualAllowance * domainPeriod;
       const cost = selectedDomain.estimatedINR || 0;
       setSelectedDomain((prev) =>
         prev
@@ -580,19 +582,21 @@ export default function SchoolQuoteConfigurator({
   ];
 
   return (
-    <div id="school-configurator" className="py-12 sm:py-16 bg-[#FAF7F2] text-[#131B2E]">
-      <div className="site-container">
+    <div id="school-configurator" className="py-12 sm:py-16 bg-[#FAF7F2] text-[#131B2E] bg-warm-grid relative overflow-hidden">
+      <div className="absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#F97360]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="site-container relative z-10">
         {/* Section Heading */}
         <div className="text-center max-w-3xl mx-auto space-y-3 mb-10">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
             <GraduationCap className="w-3.5 h-3.5 text-[#4338CA]" />
-            STEP-BY-STEP SCHOOL SOLUTION CONFIGURATOR
+            STEP-BY-STEP SCHOOL PLAN CONFIGURATOR
           </span>
           <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
-            Configure Your School&apos;s Solution &amp; Transparent Pricing
+            Build Your School Plan
           </h2>
           <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
-            Choose your product, calibrate capacity, select campus add-ons, and check your official school domain.
+            Choose your product, select your student capacity, add optional modules, and get a transparent estimate.
           </p>
         </div>
 
@@ -680,7 +684,7 @@ export default function SchoolQuoteConfigurator({
                         className={`relative rounded-2xl p-5 border-2 transition-all cursor-pointer flex flex-col justify-between ${
                           isSelected
                             ? 'border-[#4338CA] bg-[#FAF7F2] shadow-md shadow-[#4338CA]/10'
-                            : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1] hover:bg-slate-50/50'
+                            : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1] hover:bg-[#FAF7F2]'
                         }`}
                       >
                         {plan.badge && (
@@ -912,7 +916,7 @@ export default function SchoolQuoteConfigurator({
                           checked={isChecked}
                           onChange={() => {}}
                           aria-label={addon.name}
-                          className="w-4 h-4 rounded mt-1 text-[#4338CA] focus:ring-[#4338CA] border-slate-300"
+                          className="w-4 h-4 rounded mt-1 text-[#4338CA] focus:ring-[#4338CA] border-[#CBD5E1]"
                         />
                         <div className="flex-1 space-y-0.5">
                           <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -976,436 +980,44 @@ export default function SchoolQuoteConfigurator({
                   </p>
                 </div>
 
-                {/* 1. SELECTED DOMAIN CARD (If user already made a selection and is not actively editing) */}
-                {selectedDomain && !isChangingDomain && !skipDomainSelection && (
-                  <div className="p-5 rounded-2xl bg-white border-2 border-[#4338CA] shadow-md shadow-[#4338CA]/10 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-extrabold uppercase tracking-widest text-[#4338CA] flex items-center gap-1.5">
-                        <Globe className="w-4 h-4 text-[#4338CA]" />
-                        SELECTED DOMAIN
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setIsChangingDomain(true);
-                          setDomainSearchInput(selectedDomain.domain);
-                        }}
-                        className="inline-flex items-center gap-1 text-xs font-bold text-[#4338CA] hover:text-[#3730A3] hover:underline"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Change Domain</span>
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                      <div>
-                        <h4 className="text-xl font-mono font-extrabold text-[#131B2E]">
-                          {selectedDomain.domain}
-                        </h4>
-                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                          {selectedDomain.domainStatus === 'available' ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                              <Check className="w-3 h-3" />
-                              Available
-                            </span>
-                          ) : selectedDomain.domainChoice === 'existing' ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-200">
-                              <Check className="w-3 h-3" />
-                              Existing Institutional Domain
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
-                              <Clock className="w-3 h-3 text-amber-600" />
-                              Availability verification required
-                            </span>
-                          )}
-
-                          {selectedDomain.recommendationBadge && (
-                            <span className="text-[10px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full">
-                              {selectedDomain.recommendationBadge}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="text-left sm:text-right">
-                        {selectedDomain.isPriceVerified && typeof selectedDomain.estimatedINR === 'number' && selectedDomain.estimatedINR > 0 ? (
-                          selectedDomain.isIncluded ? (
-                            <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block">
-                              ✓ Included in Plan Allowance
-                            </span>
-                          ) : (
-                            <div>
-                              <span className="text-xs font-bold text-[#4338CA] block">
-                                +₹{selectedDomain.upgradeAmount.toLocaleString('en-IN')} Upgrade
-                              </span>
-                              <span className="text-[10px] text-[#64748B] block">
-                                Domain Price: ₹{selectedDomain.estimatedINR.toLocaleString('en-IN')}/year
-                              </span>
-                            </div>
-                          )
-                        ) : selectedDomain.domainChoice === 'existing' ? (
-                          <span className="text-xs font-semibold text-slate-600">
-                            Zero domain charges applicable
-                          </span>
-                        ) : (
-                          <div>
-                            <span className="text-xs font-bold text-[#4338CA] block">
-                              Plan Allowance: ₹{calculatedPricing.annualDomainAllowance}/year included
-                            </span>
-                            <span className="text-[10px] text-[#64748B] block">
-                              Pricing verified during registration
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 2. DOMAIN SEARCH & NORMALIZATION BOX */}
-                {(!selectedDomain || isChangingDomain) && !skipDomainSelection && (
-                  <form onSubmit={handleDomainSearch} className="space-y-3">
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <div className="relative flex-1">
-                        <Search className="w-4 h-4 text-[#94A3B8] absolute left-3.5 top-1/2 -translate-y-1/2" />
-                        <input
-                          id={domainInputId}
-                          type="text"
-                          value={domainSearchInput}
-                          onChange={(e) => {
-                            setDomainSearchInput(e.target.value);
-                            setDomainSearchError(null);
-                          }}
-                          placeholder="Enter your school name or preferred domain"
-                          className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-3 text-xs text-[#131B2E] placeholder-[#94A3B8] focus:outline-none focus:border-[#4338CA]"
-                        />
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={domainSearchPhase === 'SEARCHING_DIRECT' || domainSearchPhase === 'SEARCHING_SUGGESTIONS'}
-                        className="px-6 py-3 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
-                      >
-                        {domainSearchPhase === 'SEARCHING_DIRECT' || domainSearchPhase === 'SEARCHING_SUGGESTIONS' ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Checking...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Search className="w-4 h-4" />
-                            <span>Check Domain</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-[#64748B] px-1">
-                      <span>e.g. <em>Sparknest Academy</em>, <em>sparknestacademy.in</em>, or <em>myschool.com</em></span>
-                      {isChangingDomain && selectedDomain && (
-                        <button
-                          type="button"
-                          onClick={() => setIsChangingDomain(false)}
-                          className="text-xs font-bold text-[#4338CA] hover:underline"
-                        >
-                          Keep Current ({selectedDomain.domain})
-                        </button>
-                      )}
-                    </div>
-
-                    {domainSearchError && (
-                      <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                        <span>{domainSearchError}</span>
-                      </div>
-                    )}
-                  </form>
-                )}
-
-                {/* 3. DOMAIN RESULTS / RECOMMENDED DOMAINS */}
-                {(!selectedDomain || isChangingDomain) &&
-                  !skipDomainSelection &&
-                  domainCheckResponse &&
-                  domainCheckResponse.results.length > 0 && (
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">
-                          Recommended Domains
-                        </span>
-                        <span className="text-[11px] text-[#64748B]">
-                          Choose your institution’s preferred web address
-                        </span>
-                      </div>
-
-                      <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                        {domainCheckResponse.results.map((quote) => {
-                          const isSelected = selectedDomain?.domain === quote.domain;
-                          const annualAllowance = calculatedPricing.annualDomainAllowance;
-                          const period = quote.period || 1;
-                          const termAllowance = annualAllowance * period;
-                          const cost = quote.registrationPrice || quote.effectiveAnnualPrice || 0;
-                          const isLiveAvailable = quote.availability === 'AVAILABLE';
-                          const isUnavailable = quote.availability === 'UNAVAILABLE';
-                          const upgrade = Math.max(0, cost - termAllowance);
-                          const isIncluded = cost <= termAllowance;
-
-                          return (
-                            <div
-                              key={quote.domain}
-                              className={`p-4 rounded-2xl border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${
-                                isSelected
-                                  ? 'border-[#4338CA] bg-[#FAF7F2] ring-1 ring-[#4338CA]'
-                                  : isUnavailable
-                                  ? 'border-slate-200 bg-slate-50/70 opacity-80'
-                                  : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1]'
-                              }`}
-                            >
-                              <div className="space-y-1">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="font-mono font-bold text-sm text-[#131B2E]">
-                                    {quote.domain}
-                                  </span>
-                                  {quote.recommendationBadge && (
-                                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                      {quote.recommendationBadge}
-                                    </span>
-                                  )}
-                                </div>
-
-                                {/* Status message */}
-                                {isLiveAvailable ? (
-                                  <div className="flex items-center gap-1.5 text-xs text-emerald-700 font-semibold">
-                                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                    <span>Available</span>
-                                    {cost > 0 && (
-                                      <span className="text-slate-500 font-normal">
-                                        &bull; Domain price: ₹{cost.toLocaleString('en-IN')}/year
-                                      </span>
-                                    )}
-                                  </div>
-                                ) : isUnavailable ? (
-                                  <div className="flex items-center gap-1.5 text-xs text-rose-600 font-semibold">
-                                    <X className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                                    <span>Currently unavailable</span>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-1.5 text-xs text-amber-800">
-                                    <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                    <span>Availability will be verified during registration.</span>
-                                  </div>
-                                )}
-
-                                {quote.recommendationReason && !isUnavailable && (
-                                  <p className="text-[11px] text-[#64748B]">
-                                    {quote.recommendationReason}
-                                  </p>
-                                )}
-                              </div>
-
-                              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 shrink-0">
-                                {isLiveAvailable && cost > 0 ? (
-                                  isIncluded ? (
-                                    <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                                      ✓ Included in Plan
-                                    </span>
-                                  ) : (
-                                    <span className="text-xs font-bold text-[#4338CA]">
-                                      +₹{upgrade.toLocaleString('en-IN')} Upgrade
-                                    </span>
-                                  )
-                                ) : null}
-
-                                {isLiveAvailable ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSelectDomain(quote)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                                      isSelected
-                                        ? 'bg-[#4338CA] text-white shadow-sm'
-                                        : 'bg-[#4338CA]/10 text-[#4338CA] hover:bg-[#4338CA] hover:text-white'
-                                    }`}
-                                  >
-                                    {isSelected ? '✓ Selected' : 'Select Domain'}
-                                  </button>
-                                ) : isUnavailable ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const input = document.getElementById(domainInputId);
-                                      if (input) input.focus();
-                                    }}
-                                    className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-[#64748B] hover:text-[#131B2E] border border-slate-300"
-                                  >
-                                    Try Another Domain
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleSelectDomain(quote)}
-                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                                      isSelected
-                                        ? 'bg-[#4338CA] text-white shadow-sm'
-                                        : 'bg-white border-2 border-[#4338CA] text-[#4338CA] hover:bg-[#4338CA] hover:text-white shadow-sm'
-                                    }`}
-                                  >
-                                    {isSelected ? '✓ Selected Preferred' : 'Select as Preferred Domain'}
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                {/* 4. DOMAIN ALLOWANCE BOX */}
-                <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#E2E8F0] space-y-1.5 text-xs text-[#334155]">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-[#4338CA] shrink-0" />
-                    <span className="font-extrabold uppercase tracking-wider text-[#4338CA]">
-                      DOMAIN ALLOWANCE
-                    </span>
-                  </div>
-                  <p className="font-bold text-[#131B2E]">
-                    ₹{calculatedPricing.annualDomainAllowance}/year domain allowance included in your plan.
-                  </p>
-                  <p className="text-[#64748B] leading-relaxed">
-                    Your plan includes ₹{calculatedPricing.annualDomainAllowance}/year toward your domain. If the domain costs more than ₹{calculatedPricing.annualDomainAllowance}/year, you only pay the difference. The allowance applies only to the eligible annual domain cost and does not reduce the base website plan price.
-                  </p>
-                </div>
-
-                {/* 5. EXISTING DOMAIN OR DECIDE LATER WORKFLOW */}
-                <div className="pt-1 space-y-3">
-                  <label className="flex items-start gap-2.5 text-xs text-[#334155] font-semibold cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={skipDomainSelection}
-                      onChange={(e) => {
-                        const checked = e.target.checked;
-                        setSkipDomainSelection(checked);
-                        if (checked) {
-                          if (existingOrLaterSubchoice === 'later') {
-                            setSelectedDomain(null);
-                          }
-                        } else {
-                          if (selectedDomain?.domainChoice === 'existing') {
-                            setSelectedDomain(null);
-                          }
-                        }
-                      }}
-                      className="w-4 h-4 rounded text-[#4338CA] focus:ring-[#4338CA] border-slate-300 mt-0.5"
-                    />
-                    <span>Our school already owns a domain OR we will decide the domain later.</span>
-                  </label>
-
-                  {skipDomainSelection && (
-                    <div className="p-4 rounded-2xl bg-white border border-[#CBD5E1] space-y-3.5 pl-5 sm:pl-6">
-                      <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">
-                        Domain option:
-                      </span>
-
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2 text-xs text-[#334155] font-medium cursor-pointer">
-                          <input
-                            type="radio"
-                            name="existingOrLater"
-                            checked={existingOrLaterSubchoice === 'existing'}
-                            onChange={() => {
-                              setExistingOrLaterSubchoice('existing');
-                              if (existingDomainInput.trim()) {
-                                handleSaveExistingDomain(existingDomainInput);
-                              }
-                            }}
-                            className="text-[#4338CA] focus:ring-[#4338CA]"
-                          />
-                          <span>We already own a domain</span>
-                        </label>
-
-                        <label className="flex items-center gap-2 text-xs text-[#334155] font-medium cursor-pointer">
-                          <input
-                            type="radio"
-                            name="existingOrLater"
-                            checked={existingOrLaterSubchoice === 'later'}
-                            onChange={() => {
-                              setExistingOrLaterSubchoice('later');
-                              handleDecideLater();
-                            }}
-                            className="text-[#4338CA] focus:ring-[#4338CA]"
-                          />
-                          <span>We will decide the domain later</span>
-                        </label>
-                      </div>
-
-                      {/* If "We already own a domain" */}
-                      {existingOrLaterSubchoice === 'existing' && (
-                        <div className="space-y-2 pt-1 border-t border-slate-100">
-                          <label className="text-xs font-bold text-[#131B2E] block">
-                            Enter your existing domain
-                          </label>
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <input
-                              type="text"
-                              value={existingDomainInput}
-                              onChange={(e) => {
-                                setExistingDomainInput(e.target.value);
-                                setExistingDomainError(null);
-                              }}
-                              placeholder="e.g. www.myschool.com or myschool.in"
-                              className="flex-1 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl px-3.5 py-2.5 text-xs text-[#131B2E] placeholder-[#94A3B8] focus:outline-none focus:border-[#4338CA]"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleSaveExistingDomain(existingDomainInput)}
-                              className="px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold rounded-xl transition-all shadow-sm shrink-0"
-                            >
-                              Confirm Existing Domain
-                            </button>
-                          </div>
-
-                          {existingDomainError && (
-                            <p className="text-xs text-rose-600 font-medium flex items-center gap-1">
-                              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                              <span>{existingDomainError}</span>
-                            </p>
-                          )}
-
-                          {selectedDomain && selectedDomain.domainChoice === 'existing' && (
-                            <p className="text-xs text-emerald-700 font-semibold flex items-center gap-1 pt-1">
-                              <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                              <span>Confirmed: {selectedDomain.domain} (We will connect DNS during onboarding)</span>
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* If "We will decide later" */}
-                      {existingOrLaterSubchoice === 'later' && (
-                        <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-[#64748B] space-y-1">
-                          <p className="font-bold text-[#131B2E] flex items-center gap-1.5">
-                            <Clock className="w-3.5 h-3.5 text-[#4338CA]" />
-                            <span>Domain selection can be completed later.</span>
-                          </p>
-                          <p className="leading-relaxed">
-                            You can continue configuring your school website, and our team will coordinate domain setup during onboarding.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* 6. REWRITTEN REGISTRATION VERIFICATION NOTICE */}
-                <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200 text-xs text-amber-900 space-y-1">
-                  <p className="font-bold flex items-center gap-1.5 text-amber-950">
-                    <Clock className="w-4 h-4 text-amber-700 shrink-0" />
-                    <span>Domain verification</span>
-                  </p>
-                  <p className="leading-relaxed">
-                    Your preferred domain will be verified during our registration process. You can select a preferred domain now, or continue without choosing one.
-                  </p>
-                </div>
+                <SchoolDomainSelector
+                  productId={selectedProductId}
+                  annualAllowance={calculatedPricing.annualDomainAllowance}
+                  initialSchoolName={schoolInfo.schoolName}
+                  selectedDomain={selectedDomain}
+                  skipDomainSelection={skipDomainSelection}
+                  existingOrLaterSubchoice={existingOrLaterSubchoice}
+                  existingDomainInput={existingDomainInput}
+                  onSelectDomain={handleSelectDomain}
+                  onClearSelectedDomain={() => setSelectedDomain(null)}
+                  onSkipDomainSelectionChange={(skip) => {
+                    setSkipDomainSelection(skip);
+                    if (skip) {
+                      if (existingOrLaterSubchoice === 'later') {
+                        setSelectedDomain(null);
+                      }
+                    } else {
+                      if (selectedDomain?.domainChoice === 'existing') {
+                        setSelectedDomain(null);
+                      }
+                    }
+                  }}
+                  onExistingOrLaterSubchoiceChange={(subchoice) => {
+                    setExistingOrLaterSubchoice(subchoice);
+                    if (subchoice === 'later') {
+                      handleDecideLater();
+                    } else if (existingDomainInput.trim()) {
+                      handleSaveExistingDomain(existingDomainInput);
+                    }
+                  }}
+                  onExistingDomainInputChange={(val) => {
+                    setExistingDomainInput(val);
+                  }}
+                  onConfirmExistingDomain={(domain) => {
+                    handleSaveExistingDomain(domain);
+                  }}
+                  onDecideLater={handleDecideLater}
+                />
 
                 {/* Navigation Buttons */}
                 <div className="flex items-center justify-between pt-4 border-t border-[#E2E8F0]">
@@ -2251,6 +1863,32 @@ export default function SchoolQuoteConfigurator({
             </div>
           </div>
         </div>
+
+        {/* Mobile Sticky Bottom Summary Bar (Visible on < lg, when not completed) */}
+        {currentStep < 8 && !submissionSuccess && (
+          <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E2E8F0] px-4 py-3 shadow-2xl flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block truncate">
+                {calculatedPricing.productName}
+              </span>
+              <span className="text-sm font-extrabold font-mono text-[#4338CA] block">
+                {calculatedPricing.totalEstimatedYearOne !== null
+                  ? `₹${calculatedPricing.totalEstimatedYearOne.toLocaleString('en-IN')}`
+                  : 'Custom Quote'}
+                <span className="text-[10px] font-sans font-normal text-[#64748B] ml-1">Yr 1</span>
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={goToNextStep}
+              className="shrink-0 px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20 flex items-center gap-1.5"
+            >
+              <span>Next Step</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

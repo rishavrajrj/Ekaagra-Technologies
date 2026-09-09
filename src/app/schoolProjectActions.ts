@@ -3,7 +3,8 @@
 import { verifyAdminSession } from '@/lib/adminAuth';
 import { getSchoolsServerClient } from '@/lib/schoolsDb';
 import { startSchoolOnboarding, verifyOnboardingToken } from '@/lib/schoolHandoff';
-import { calculateIntakeCompleteness } from '@/lib/schoolIntake';
+import { calculateIntakeCompleteness, deriveSlugFromSchoolName } from '@/lib/schoolIntake';
+import { calculateExpeditedDeliveryFee } from '@/lib/schoolPricing';
 import { executePlatformHandoff, mapCommercialProductToStep41Plan } from '@/lib/schoolHandoffToPlatform';
 import { populateSchoolDatabaseEntities } from '@/lib/schoolDatabaseProvisioning';
 import type {
@@ -13,7 +14,20 @@ import type {
   UniversalIntakeData,
   SchoolProjectCustomField,
   SchoolProjectCustomRequirement,
+  WebsiteApprovalRecord,
 } from '@/lib/types';
+import {
+  approveWebsiteSpecification,
+  type ApproverInfo,
+} from '@/lib/websiteSpecificationContract';
+
+import crypto from 'crypto';
+import { hashToken } from '@/lib/schoolHandoff';
+import {
+  generateDeskMessage,
+  type DeskMessageGenerationRequest,
+  type DeskMessageGenerationResult,
+} from '@/lib/schoolDeskMessageGenerator';
 
 export async function startSchoolOnboardingAction(leadId: string) {
   const isAdmin = await verifyAdminSession();
@@ -31,6 +45,98 @@ export async function startSchoolOnboardingAction(leadId: string) {
   } catch (err: any) {
     console.error('[ACTION ERROR] startSchoolOnboardingAction:', err);
     return { success: false, error: err.message || 'Internal server error during onboarding initiation.' };
+  }
+}
+
+export async function createDirectSchoolProjectAction(input: {
+  schoolName: string;
+  primaryContactName: string;
+  primaryContactEmail: string;
+  primaryContactPhone: string;
+  primaryContactDesignation?: string;
+  productId: 'school-website' | 'school-website-cms' | 'school-erp' | 'school-complete';
+  city?: string;
+  state?: string;
+}) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) {
+    return { success: false, error: 'Unauthorized: Admin session required.' };
+  }
+
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) {
+    return { success: false, error: 'Schools DB not configured.' };
+  }
+
+  try {
+    const currentYear = new Date().getFullYear();
+    const { count: projectCount } = await schoolsDb
+      .from('school_projects')
+      .select('*', { count: 'exact', head: true });
+
+    const nextSeq = (projectCount || 0) + 1;
+    const projectNumber = `SCH-${currentYear}-${String(nextSeq).padStart(4, '0')}`;
+    const invitationCode = `ONB-${currentYear}-${String(nextSeq).padStart(4, '0')}`;
+
+    const rawSecretToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = hashToken(rawSecretToken);
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: newProject, error: projectCreateError } = await schoolsDb
+      .from('school_projects')
+      .insert([
+        {
+          project_number: projectNumber,
+          domain: 'SCHOOL',
+          source: 'ADMIN_SCHOOL_INTAKE',
+          lead_reference: `ADMIN-${Date.now()}`,
+          source_system: 'EKAAGRA_ADMIN_INTAKE',
+          school_name: input.schoolName.trim(),
+          product_id: input.productId,
+          status: 'onboarding_invited',
+          media_status: 'not_started',
+          completeness_percentage: 0,
+          primary_contact_name: input.primaryContactName.trim(),
+          primary_contact_email: input.primaryContactEmail.trim(),
+          primary_contact_phone: input.primaryContactPhone.trim(),
+          primary_contact_designation: input.primaryContactDesignation || 'School Principal',
+          city: input.city || 'Motihari',
+          state: input.state || 'Bihar',
+          commercial_summary: {
+            createdVia: 'ADMIN_DIRECT_INTAKE',
+          },
+          metadata: {
+            domain: 'SCHOOL',
+            source: 'ADMIN_SCHOOL_INTAKE',
+            createdVia: 'ADMIN_DIRECT_INTAKE',
+          },
+        },
+      ])
+      .select()
+      .single();
+
+    if (projectCreateError || !newProject) {
+      return { success: false, error: projectCreateError?.message || 'Failed to create school project.' };
+    }
+
+    await schoolsDb.from('school_onboarding_invitations').insert([
+      {
+        school_project_id: newProject.id,
+        invitation_code: invitationCode,
+        token_hash: tokenHash,
+        expires_at: expiresAt,
+        is_revoked: false,
+      },
+    ]);
+
+    return {
+      success: true,
+      project: newProject as SchoolProject,
+      invitationCode,
+      onboardingUrl: `/school-onboarding/${invitationCode}`,
+    };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Error creating school project' };
   }
 }
 
@@ -219,6 +325,33 @@ export async function saveSchoolIntakeDraftAction(
   const projectId = verification.project.id;
 
   try {
+    // Ensure internal tenant slug is cleanly populated without requiring administrator intervention
+    if (payload.schoolProfile) {
+      if (!payload.schoolProfile.slug && (payload.schoolProfile.schoolName || verification.project.school_name)) {
+        payload.schoolProfile.slug = deriveSlugFromSchoolName(payload.schoolProfile.schoolName || verification.project.school_name);
+      }
+      if (!payload.schoolProfile.platformSubdomain && payload.schoolProfile.slug) {
+        payload.schoolProfile.platformSubdomain = `${payload.schoolProfile.slug}.ekaagraschools.in`;
+      }
+      if (!payload.schoolProfile.preferredPublicUrl && payload.schoolProfile.slug) {
+        payload.schoolProfile.preferredPublicUrl = `https://${payload.schoolProfile.slug}.edu.in`;
+      }
+    }
+
+    // Authoritative Server-Side Delivery Price Validation (Zero Client Trust)
+    if (payload.projectDelivery) {
+      const isUrgent = payload.projectDelivery.deliveryPriority === 'urgent';
+      const canonicalFee = calculateExpeditedDeliveryFee(verification.project.product_id as any);
+      payload.projectDelivery.expeditedFeeINR = isUrgent ? canonicalFee : 0;
+      payload.projectDelivery.isUrgentRequested = isUrgent;
+      if (!isUrgent) {
+        payload.projectDelivery.urgentConfirmed = false;
+        if (payload.projectDelivery.paymentStatus !== 'paid') {
+          payload.projectDelivery.paymentStatus = 'not_requested';
+        }
+      }
+    }
+
     const completeness = calculateIntakeCompleteness(verification.project.product_id, payload);
 
     await schoolsDb
@@ -289,6 +422,33 @@ export async function submitSchoolIntakeAction(
   const projectId = verification.project.id;
 
   try {
+    // Ensure internal tenant slug is cleanly populated without requiring administrator intervention
+    if (payload.schoolProfile) {
+      if (!payload.schoolProfile.slug && (payload.schoolProfile.schoolName || verification.project.school_name)) {
+        payload.schoolProfile.slug = deriveSlugFromSchoolName(payload.schoolProfile.schoolName || verification.project.school_name);
+      }
+      if (!payload.schoolProfile.platformSubdomain && payload.schoolProfile.slug) {
+        payload.schoolProfile.platformSubdomain = `${payload.schoolProfile.slug}.ekaagraschools.in`;
+      }
+      if (!payload.schoolProfile.preferredPublicUrl && payload.schoolProfile.slug) {
+        payload.schoolProfile.preferredPublicUrl = `https://${payload.schoolProfile.slug}.edu.in`;
+      }
+    }
+
+    // Authoritative Server-Side Delivery Price Validation (Zero Client Trust)
+    if (payload.projectDelivery) {
+      const isUrgent = payload.projectDelivery.deliveryPriority === 'urgent';
+      const canonicalFee = calculateExpeditedDeliveryFee(verification.project.product_id as any);
+      payload.projectDelivery.expeditedFeeINR = isUrgent ? canonicalFee : 0;
+      payload.projectDelivery.isUrgentRequested = isUrgent;
+      if (!isUrgent) {
+        payload.projectDelivery.urgentConfirmed = false;
+        if (payload.projectDelivery.paymentStatus !== 'paid') {
+          payload.projectDelivery.paymentStatus = 'not_requested';
+        }
+      }
+    }
+
     const completeness = calculateIntakeCompleteness(verification.project.product_id, payload);
 
     await schoolsDb
@@ -610,3 +770,307 @@ export async function updateMediaStatusAction(projectId: string, mediaStatus: Sc
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Intelligent Role-Aware Desk Message Generation Action for Section 3
+ * Verifies session security, sanitizes user inputs (Zero Client Trust),
+ * and generates role-tailored first-person desk messages.
+ */
+export async function generateDeskMessageAction(
+  token: string,
+  payload: DeskMessageGenerationRequest
+): Promise<DeskMessageGenerationResult> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return {
+      success: false,
+      message: '',
+      effectiveDesignation: '',
+      roleFamily: 'custom',
+      wordCount: 0,
+      source: 'generated',
+      requestId: payload.requestId,
+      error: verification.error || 'Invalid or expired onboarding session.',
+    };
+  }
+
+  try {
+    // Sanitization of input fields (Zero Client Trust)
+    const sanitizedRequest: DeskMessageGenerationRequest = {
+      personId: String(payload.personId || '').slice(0, 100),
+      fullName: String(payload.fullName || '').slice(0, 150).replace(/[<>{}]/g, ''),
+      officialDesignation: String(payload.officialDesignation || '').slice(0, 100).replace(/[<>{}]/g, ''),
+      otherDesignation: String(payload.otherDesignation || '').slice(0, 100).replace(/[<>{}]/g, ''),
+      academicQualifications: String(payload.academicQualifications || '').slice(0, 200).replace(/[<>{}]/g, ''),
+      isPrincipal: Boolean(payload.isPrincipal),
+      schoolContext: {
+        schoolName: String(payload.schoolContext?.schoolName || verification.project.school_name || '').slice(0, 150).replace(/[<>{}]/g, ''),
+        brandTone: String(payload.schoolContext?.brandTone || '').slice(0, 60),
+        city: String(payload.schoolContext?.city || '').slice(0, 100),
+        state: String(payload.schoolContext?.state || '').slice(0, 100),
+        mottoOrTagline: String(payload.schoolContext?.mottoOrTagline || '').slice(0, 200).replace(/[<>{}]/g, ''),
+      },
+      requestId: payload.requestId,
+    };
+
+    return await generateDeskMessage(sanitizedRequest);
+  } catch (err: any) {
+    console.error('[ACTION ERROR] generateDeskMessageAction:', err);
+    return {
+      success: false,
+      message: '',
+      effectiveDesignation: '',
+      roleFamily: 'custom',
+      wordCount: 0,
+      source: 'generated',
+      requestId: payload.requestId,
+      error: err.message || 'Failed to generate desk message.',
+    };
+  }
+}
+
+export async function updateProjectProductAction(
+  token: string,
+  productId: 'school-website' | 'school-website-cms' | 'school-erp' | 'school-complete'
+) {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, error: verification.error || 'Invalid session' };
+  }
+
+  const validProducts = ['school-website', 'school-website-cms', 'school-erp', 'school-complete'];
+  if (!validProducts.includes(productId)) {
+    return { success: false, error: 'Invalid product selected' };
+  }
+
+  const schoolsDb = getSchoolsServerClient()!;
+  try {
+    const { error } = await schoolsDb
+      .from('school_projects')
+      .update({
+        product_id: productId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', verification.project.id);
+
+    if (error) throw error;
+    return { success: true, productId };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] updateProjectProductAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function approveWebsiteSpecificationAction(
+  token: string,
+  approver: ApproverInfo,
+  notes?: string,
+  clientIntakeData?: Partial<UniversalIntakeData>
+): Promise<{
+  success: boolean;
+  approvalRecord?: WebsiteApprovalRecord;
+  isNewVersion?: boolean;
+  message?: string;
+  error?: string;
+}> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, error: verification.error || 'Invalid onboarding session.' };
+  }
+
+  const schoolsDb = getSchoolsServerClient()!;
+  const projectId = verification.project.id;
+
+  try {
+    // 1. Fetch current submission
+    const { data: existingSub, error: subFetchErr } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('*')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .maybeSingle();
+
+    if (subFetchErr) throw subFetchErr;
+
+    const currentPayload: UniversalIntakeData = existingSub?.intake_payload || (clientIntakeData as UniversalIntakeData);
+    if (!currentPayload) {
+      return { success: false, error: 'No onboarding intake submission found to approve.' };
+    }
+
+    // Merge client-supplied verified draft if available
+    const effectiveIntake: UniversalIntakeData = clientIntakeData
+      ? { ...currentPayload, ...clientIntakeData }
+      : currentPayload;
+
+    // 2. Concurrency check: check if already approved with identical snapshot
+    const currentApproval = existingSub?.intake_payload?.websiteRequirements?.currentApproval;
+    const approvalRes = approveWebsiteSpecification(effectiveIntake, approver, notes);
+
+    if (!approvalRes.success || !approvalRes.approvalRecord) {
+      return {
+        success: false,
+        error: approvalRes.message || 'Server approval preconditions not met.',
+      };
+    }
+
+    // Idempotent: existing approval has identical snapshot hash
+    if (!approvalRes.isNewVersion && currentApproval && currentApproval.status === 'approved') {
+      return {
+        success: true,
+        approvalRecord: currentApproval,
+        isNewVersion: false,
+        message: 'Specification already approved with identical content. Existing approval retained.',
+      };
+    }
+
+    // 3. New legitimate version: archive previous into history
+    const prevHistory = existingSub?.intake_payload?.websiteRequirements?.approvalHistory || [];
+    const updatedHistory = currentApproval
+      ? [{ ...currentApproval, status: 'superseded' as const }, ...prevHistory]
+      : prevHistory;
+
+    const updatedWebReq = {
+      ...(effectiveIntake.websiteRequirements || {}),
+      currentApproval: approvalRes.approvalRecord,
+      approvalHistory: updatedHistory,
+      websiteApproved: true,
+      websiteApprovedAt: approvalRes.approvalRecord.approvedAt,
+      websiteApprovedBy: approvalRes.approvalRecord.approvedBy.name,
+      websiteApprovalNotes: approvalRes.approvalRecord.notes,
+    };
+
+    const finalPayload: UniversalIntakeData = {
+      ...effectiveIntake,
+      websiteRequirements: updatedWebReq,
+    };
+
+    // 4. Atomically persist to database
+    if (existingSub) {
+      await schoolsDb
+        .from('school_intake_submissions')
+        .update({
+          intake_payload: finalPayload,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existingSub.id);
+    } else {
+      await schoolsDb.from('school_intake_submissions').insert([
+        {
+          school_project_id: projectId,
+          version_number: 1,
+          is_current: true,
+          submitted_by_name: approver.name,
+          submitted_by_email: approver.email,
+          intake_payload: finalPayload,
+          completeness_percentage: 100,
+          status: 'draft',
+        },
+      ]);
+    }
+
+    // 5. Audit event
+    const currentYear = new Date().getFullYear();
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: projectId,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: 'website_specification_approved',
+        actor_name: approver.name,
+        actor_role: approver.role || 'administrator',
+        previous_status: verification.project.status,
+        new_status: verification.project.status,
+        details: {
+          specificationVersion: approvalRes.approvalRecord.specificationVersion,
+          specificationHash: approvalRes.approvalRecord.specificationHash,
+          approverEmail: approver.email,
+          approvedAt: approvalRes.approvalRecord.approvedAt,
+        },
+      },
+    ]);
+
+    return {
+      success: true,
+      approvalRecord: approvalRes.approvalRecord,
+      isNewVersion: true,
+      message: approvalRes.message,
+    };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] approveWebsiteSpecificationAction:', err);
+    return { success: false, error: err.message || 'Internal server error during website specification approval.' };
+  }
+}
+
+export async function reopenWebsiteSpecificationAction(
+  token: string,
+  reason: string = 'Reopened for administrative edits'
+): Promise<{ success: boolean; error?: string }> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, error: verification.error || 'Invalid session' };
+  }
+
+  const schoolsDb = getSchoolsServerClient()!;
+  const projectId = verification.project.id;
+
+  try {
+    const { data: existingSub } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('*')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .maybeSingle();
+
+    if (!existingSub || !existingSub.intake_payload) {
+      return { success: false, error: 'No active intake submission found.' };
+    }
+
+    const payload: UniversalIntakeData = existingSub.intake_payload;
+    const currentApproval = payload.websiteRequirements?.currentApproval;
+    const prevHistory = payload.websiteRequirements?.approvalHistory || [];
+
+    let updatedHistory = prevHistory;
+    if (currentApproval) {
+      const supersededRecord = {
+        ...currentApproval,
+        status: 'superseded' as const,
+        invalidationReason: reason,
+        invalidatedAt: new Date().toISOString(),
+      };
+      updatedHistory = [supersededRecord, ...prevHistory];
+    }
+
+    const updatedWebReq = {
+      ...(payload.websiteRequirements || {}),
+      currentApproval: currentApproval
+        ? {
+            ...currentApproval,
+            status: 'superseded' as const,
+            invalidationReason: reason,
+            invalidatedAt: new Date().toISOString(),
+          }
+        : undefined,
+      approvalHistory: updatedHistory,
+      websiteApproved: false,
+      websiteApprovedAt: undefined,
+      websiteApprovedBy: undefined,
+    };
+
+    await schoolsDb
+      .from('school_intake_submissions')
+      .update({
+        intake_payload: {
+          ...payload,
+          websiteRequirements: updatedWebReq,
+        },
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', existingSub.id);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] reopenWebsiteSpecificationAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+

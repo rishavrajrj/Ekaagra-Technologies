@@ -33,6 +33,9 @@ export async function fetchOrderStatsAction(): Promise<{ success: boolean; stats
  */
 export async function createCustomPaymentLinkAction(params: {
   leadId?: string;
+  projectId?: string;
+  projectNumber?: string;
+  domain?: 'BUSINESS' | 'SCHOOL';
   customerName: string;
   customerEmail: string;
   customerPhone: string;
@@ -64,6 +67,7 @@ export async function createCustomPaymentLinkAction(params: {
   }
 
   const orderNumber = generateOrderNumber();
+  const domain = params.domain || (params.serviceType.toLowerCase().includes('school') ? 'SCHOOL' : 'BUSINESS');
 
   let gatewayOrderId: string | undefined;
 
@@ -75,6 +79,8 @@ export async function createCustomPaymentLinkAction(params: {
       receipt: orderNumber,
       notes: {
         orderNumber,
+        domain,
+        projectNumber: params.projectNumber || '',
         customerName: params.customerName.trim(),
         customerEmail: params.customerEmail.trim(),
         customerPhone: params.customerPhone.trim(),
@@ -94,6 +100,9 @@ export async function createCustomPaymentLinkAction(params: {
   if (isSupabaseConfigured()) {
     const dbRes = await createOrderRecord({
       lead_id: params.leadId || null,
+      project_id: params.projectId || null,
+      project_number: params.projectNumber || null,
+      domain,
       order_number: orderNumber,
       customer_name: params.customerName.trim(),
       customer_email: params.customerEmail.trim(),
@@ -105,6 +114,9 @@ export async function createCustomPaymentLinkAction(params: {
       gateway_name: 'RAZORPAY',
       gateway_order_id: gatewayOrderId,
       metadata: {
+        domain,
+        projectNumber: params.projectNumber,
+        projectId: params.projectId,
         planName: params.description,
         planPrice: verified.finalAmountINR,
         notes: params.description,
