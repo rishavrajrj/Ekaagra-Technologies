@@ -251,7 +251,7 @@ export const SECTION_SCOPE_REGISTRY: Record<IntakeSectionKey, SectionScopeDefini
   assetChecklist: {
     sectionKey: 'assetChecklist',
     scope: 'MIXED',
-    title: 'Content & Asset Provisioning Checklist',
+    title: 'Content, Assets & Documents Provisioning',
     description: 'Official school crest/certificates (school-wide) vs campus infrastructure photos (campus-specific).',
     supportsInheritance: true,
     supportsNotApplicable: false,
@@ -279,7 +279,7 @@ export const SECTION_SCOPE_REGISTRY: Record<IntakeSectionKey, SectionScopeDefini
   websiteRequirements: {
     sectionKey: 'websiteRequirements',
     scope: 'SCHOOL_LEVEL',
-    title: 'Final Website Verification & Specification',
+    title: 'Final Website Review & Submission',
     description: 'Overall school website specification reviewing all campus and school content.',
     supportsInheritance: false,
     supportsNotApplicable: false,

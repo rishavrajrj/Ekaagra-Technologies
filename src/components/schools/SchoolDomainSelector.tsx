@@ -195,7 +195,6 @@ export default function SchoolDomainSelector({
       const normalizedRes = normalizeDomainInput(query);
       setDomainSearchError(null);
       setIsSearching(true);
-      setIsChangingDomain(false);
 
       trackSchoolEvent('school_domain_search', normalizedRes.normalized);
 
@@ -207,6 +206,7 @@ export default function SchoolDomainSelector({
             domain: normalizedRes.normalized,
             selectedPlanId: productId,
             businessCategory: 'school',
+            annualAllowance: allowance,
           }),
         });
 
@@ -219,10 +219,36 @@ export default function SchoolDomainSelector({
       } catch (err: unknown) {
         console.warn('Live domain check fallback engaged:', err);
         // Fallback: Generate candidates so user can select preferred domain without obstruction
-        const fallbackQuotes: DomainExtensionQuote[] = normalizedRes.suggestedDomains.map((candidateDomain) => {
+        const fallbackQuotes: DomainExtensionQuote[] = [];
+        if (normalizedRes.isSpecificDomain) {
+          const ext =
+            normalizedRes.explicitTld ||
+            normalizedRes.normalized.slice(normalizedRes.normalized.indexOf('.'));
+          fallbackQuotes.push({
+            domain: normalizedRes.normalized,
+            extension: ext,
+            availability: 'PRECHECK_REQUIRED',
+            sourceCurrency: 'INR',
+            period: 1,
+            registrationPeriod: '1 year',
+            hasFxConversion: false,
+            currency: 'INR',
+            premium: false,
+            isRequestedDomain: true,
+            planAllowance: allowance,
+            termAllowance: allowance,
+            included: true,
+            upgradeAmount: 0,
+            recommendationBadge: 'Requested Domain',
+            recommendationReason: 'Availability will be verified during domain registration.',
+          });
+        }
+
+        for (const candidateDomain of normalizedRes.suggestedDomains) {
+          if (candidateDomain.toLowerCase() === normalizedRes.normalized.toLowerCase()) continue;
           const ext = candidateDomain.slice(candidateDomain.indexOf('.'));
           const rec = SCHOOL_RECOMMENDED_EXTENSIONS.find((r) => r.extension === ext);
-          return {
+          fallbackQuotes.push({
             domain: candidateDomain,
             extension: ext,
             availability: 'PRECHECK_REQUIRED',
@@ -232,14 +258,15 @@ export default function SchoolDomainSelector({
             hasFxConversion: false,
             currency: 'INR',
             premium: false,
+            isRequestedDomain: false,
             planAllowance: allowance,
             termAllowance: allowance,
             included: true,
             upgradeAmount: 0,
             recommendationBadge: (rec?.badge as any) || 'Good for India',
             recommendationReason: rec?.reason || 'Availability will be verified during domain registration.',
-          };
-        });
+          });
+        }
 
         setDomainCheckResponse({
           query,
@@ -262,6 +289,13 @@ export default function SchoolDomainSelector({
     },
     [domainSearchInput, productId, allowance]
   );
+
+  // Auto-search on initial mount if no selection is made yet but an initial domain or school name is present
+  useEffect(() => {
+    if (!effectiveSelectedDomain && !domainCheckResponse && domainSearchInput.trim().length >= 2) {
+      handleDomainSearch(undefined, domainSearchInput);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle selecting a candidate quote
   const handleSelectQuote = (quote: DomainExtensionQuote) => {
@@ -579,8 +613,25 @@ export default function SchoolDomainSelector({
                 aria-label="Search your preferred domain"
                 aria-invalid={Boolean(domainSearchError)}
                 aria-describedby={domainSearchError ? searchErrorId : undefined}
-                className="w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl pl-9 pr-4 py-3 text-xs text-[#131B2E] placeholder-[#94A3B8] focus:outline-hidden focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 transition"
+                className={`w-full bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl pl-9 ${
+                  domainSearchInput ? 'pr-9' : 'pr-4'
+                } py-3 text-xs text-[#131B2E] placeholder-[#94A3B8] focus:outline-hidden focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 transition`}
               />
+              {domainSearchInput && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDomainSearchInput('');
+                    setDomainSearchError(null);
+                    const input = document.getElementById(domainInputId);
+                    if (input) input.focus();
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-[#94A3B8] hover:text-[#131B2E] rounded-md transition cursor-pointer"
+                  aria-label="Clear search input"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             <button
@@ -609,7 +660,10 @@ export default function SchoolDomainSelector({
             {isChangingDomain && effectiveSelectedDomain && (
               <button
                 type="button"
-                onClick={() => setIsChangingDomain(false)}
+                onClick={() => {
+                  setIsChangingDomain(false);
+                  setDomainSearchInput(effectiveSelectedDomain.domain);
+                }}
                 className="text-xs font-bold text-[#4338CA] hover:underline cursor-pointer"
               >
                 Keep Current ({effectiveSelectedDomain.domain})
@@ -636,6 +690,41 @@ export default function SchoolDomainSelector({
         domainCheckResponse &&
         domainCheckResponse.results.length > 0 && (
           <div className="space-y-3 pt-2">
+            {/* Explicit Requested Domain Feedback Banner */}
+            {domainCheckResponse.requestedDomain && (
+              <div
+                className={`p-3.5 rounded-xl border flex items-center justify-between gap-3 text-xs ${
+                  domainCheckResponse.requestedDomainAvailable === false
+                    ? 'bg-rose-50/90 border-rose-200 text-rose-800'
+                    : domainCheckResponse.requestedDomainAvailable === true
+                    ? 'bg-emerald-50/90 border-emerald-200 text-emerald-800'
+                    : 'bg-indigo-50/90 border-indigo-200 text-indigo-800'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {domainCheckResponse.requestedDomainAvailable === false ? (
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  ) : domainCheckResponse.requestedDomainAvailable === true ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <Globe className="w-4 h-4 text-indigo-600 shrink-0" />
+                  )}
+                  <div>
+                    <span className="font-bold font-mono">
+                      {domainCheckResponse.requestedDomain}
+                    </span>{' '}
+                    <span>
+                      {domainCheckResponse.requestedDomainAvailable === false
+                        ? 'is currently taken or unavailable. Review available alternative recommendations below.'
+                        : domainCheckResponse.requestedDomainAvailable === true
+                        ? 'is verified available! You can select it below or choose an alternative.'
+                        : 'availability will be verified during registration. You can select it as your preferred domain below.'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">
                 RECOMMENDED DOMAINS

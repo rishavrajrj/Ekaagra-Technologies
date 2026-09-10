@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { X, Sparkles, ArrowRight, Check, ShieldCheck } from 'lucide-react';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 
 const STORAGE_KEY = 'ekaagra_launch_offer_seen_v1';
 
@@ -60,17 +62,19 @@ export function PricingOfferPopup() {
   }
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="special-offer-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
-      onClick={handleDismiss}
-    >
+    <ModalPortal isOpen={isOpen}>
       <div
-        className="relative w-full max-w-xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E2E8F0] max-h-[92vh] overflow-y-auto space-y-6"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="special-offer-title"
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
+        onClick={handleDismiss}
       >
+        <div
+          className="relative w-full max-w-xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E2E8F0] max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3.5rem)] overflow-y-auto space-y-6 my-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+
         {/* Close Button */}
         <button
           type="button"
@@ -207,8 +211,10 @@ export function PricingOfferPopup() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </ModalPortal>
   );
 }
+
 
 export default PricingOfferPopup;

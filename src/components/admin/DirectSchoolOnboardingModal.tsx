@@ -3,6 +3,8 @@
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createDirectSchoolProjectAction } from '@/app/schoolProjectActions';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   X,
   Plus,
@@ -108,9 +110,13 @@ export default function DirectSchoolOnboardingModal({
     });
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-auto animate-fadeIn">
+    <ModalPortal isOpen={isOpen}>
+      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
+        <div className="relative w-full max-w-2xl max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-auto animate-fadeIn flex flex-col">
+
         {/* Header */}
         <div className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.02]">
           <div className="flex items-center gap-2.5">
@@ -384,6 +390,8 @@ export default function DirectSchoolOnboardingModal({
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </ModalPortal>
   );
 }
+

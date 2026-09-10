@@ -28,6 +28,11 @@ import {
   type DeskMessageGenerationRequest,
   type DeskMessageGenerationResult,
 } from '@/lib/schoolDeskMessageGenerator';
+import {
+  generateContentRecommendation,
+  type ContentRecommendationRequest,
+  type ContentRecommendationResult,
+} from '@/lib/contentRecommendationService';
 
 export async function startSchoolOnboardingAction(leadId: string) {
   const isAdmin = await verifyAdminSession();
@@ -825,6 +830,121 @@ export async function generateDeskMessageAction(
       source: 'generated',
       requestId: payload.requestId,
       error: err.message || 'Failed to generate desk message.',
+    };
+  }
+}
+
+/**
+ * Intelligent Content Recommendation Action for Section 24
+ * Verifies session security, sanitizes inputs, enforces Rule 26 (minimum data exposure),
+ * and generates fact-based website recommendations or policy templates.
+ */
+export async function generateContentRecommendationAction(
+  token: string,
+  request: ContentRecommendationRequest
+): Promise<ContentRecommendationResult> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return {
+      fieldKey: request.fieldKey,
+      generatedText: '',
+      sourceFields: [],
+      sourceLabels: [],
+      confidence: 'low',
+      requiresReview: false,
+      sourceFingerprint: '',
+      warnings: [verification.error || 'Invalid or expired onboarding session.'],
+    };
+  }
+
+  try {
+    // Sanitization and minimum data exposure (Rule 26: never expose credentials, auth tokens, or private data)
+    const raw = request.intakeData || {};
+    const sanitizedIntake: Partial<UniversalIntakeData> = {
+      schoolProfile: {
+        schoolName: String(raw.schoolProfile?.schoolName || verification.project.school_name || '').slice(0, 150),
+        legalInstitutionName: String(raw.schoolProfile?.legalInstitutionName || '').slice(0, 150),
+        yearOfEstablishment: String(raw.schoolProfile?.yearOfEstablishment || '').slice(0, 10),
+        board: String(raw.schoolProfile?.board || '').slice(0, 50),
+        affiliationNumber: String(raw.schoolProfile?.affiliationNumber || '').slice(0, 50),
+        schoolType: String(raw.schoolProfile?.schoolType || '').slice(0, 100),
+        city: String(raw.schoolProfile?.city || '').slice(0, 100),
+        state: String(raw.schoolProfile?.state || '').slice(0, 100),
+        country: String(raw.schoolProfile?.country || 'India').slice(0, 100),
+        officialPhone: String(raw.schoolProfile?.officialPhone || '').slice(0, 50),
+        officialEmail: String(raw.schoolProfile?.officialEmail || '').slice(0, 100),
+        preferredPublicUrl: String(raw.schoolProfile?.preferredPublicUrl || '').slice(0, 150),
+      } as any,
+      campuses: Array.isArray(raw.campuses)
+        ? (raw.campuses as any[]).slice(0, 10).map((c) => ({
+            id: c.id,
+            name: String(c.name || '').slice(0, 100),
+            address: String(c.address || '').slice(0, 200),
+            city: String(c.city || '').slice(0, 100),
+            state: String(c.state || '').slice(0, 100),
+            pin: String(c.pin || '').slice(0, 10),
+            contactPhone: String(c.contactPhone || '').slice(0, 30),
+            facilities: Array.isArray(c.facilities) ? c.facilities.slice(0, 30) : [],
+            isMainCampus: Boolean(c.isMainCampus),
+          })) as any
+        : [],
+      brandingDesign: {
+        brandTone: String(raw.brandingDesign?.brandTone || '').slice(0, 60),
+        taglineOrMotto: String(raw.brandingDesign?.taglineOrMotto || raw.brandingDesign?.motto || '').slice(0, 200),
+        motto: String(raw.brandingDesign?.motto || '').slice(0, 200),
+        coreValues: Array.isArray(raw.brandingDesign?.coreValues) ? raw.brandingDesign.coreValues.slice(0, 10) : [],
+      } as any,
+      schoolContent: {
+        aboutSchool: (raw.schoolContent?.aboutSchool as any) || '',
+        vision: (raw.schoolContent?.vision as any) || '',
+        mission: (raw.schoolContent?.mission as any) || '',
+        coreValues: Array.isArray(raw.schoolContent?.coreValues) ? raw.schoolContent.coreValues.slice(0, 10) : [],
+        educationalPhilosophy: (raw.schoolContent?.educationalPhilosophy as any) || '',
+        teachingMethodology: (raw.schoolContent?.teachingMethodology as any) || '',
+        awardsAndAchievements: Array.isArray(raw.schoolContent?.awardsAndAchievements)
+          ? raw.schoolContent.awardsAndAchievements.slice(0, 15)
+          : [],
+      } as any,
+      leadership: {
+        principalName: String(raw.leadership?.principalName || '').slice(0, 100),
+        principalDesignation: String(raw.leadership?.principalDesignation || 'Principal').slice(0, 60),
+        principalQualification: String(raw.leadership?.principalQualification || '').slice(0, 100),
+        principalMessage: String(raw.leadership?.principalMessage || '').slice(0, 1500),
+        managementMembers: Array.isArray(raw.leadership?.managementMembers)
+          ? raw.leadership.managementMembers.slice(0, 5).map((m) => ({
+              name: String(m.name || '').slice(0, 100),
+              designation: String(m.designation || '').slice(0, 60),
+            }))
+          : [],
+      } as any,
+      facilitiesConfig: raw.facilitiesConfig ? { ...raw.facilitiesConfig } : undefined,
+      institutionStructure: raw.institutionStructure ? { ...raw.institutionStructure } : undefined,
+      staffFaculty: raw.staffFaculty ? { ...raw.staffFaculty } : undefined,
+      admissions: raw.admissions ? { ...raw.admissions } : undefined,
+      attendanceConfig: raw.attendanceConfig ? { ...raw.attendanceConfig } : undefined,
+      transportConfig: raw.transportConfig ? { ...raw.transportConfig } : undefined,
+      hostelConfig: raw.hostelConfig ? { ...raw.hostelConfig } : undefined,
+      legalPolicies: raw.legalPolicies ? { ...raw.legalPolicies } : undefined,
+    };
+
+    return generateContentRecommendation({
+      fieldKey: request.fieldKey,
+      intakeData: sanitizedIntake,
+      tone: request.tone,
+      length: request.length,
+      variationSeed: request.variationSeed,
+    });
+  } catch (err: any) {
+    console.error('[ACTION ERROR] generateContentRecommendationAction:', err);
+    return {
+      fieldKey: request.fieldKey,
+      generatedText: '',
+      sourceFields: [],
+      sourceLabels: [],
+      confidence: 'low',
+      requiresReview: false,
+      sourceFingerprint: '',
+      warnings: [err.message || 'Failed to generate recommendation.'],
     };
   }
 }

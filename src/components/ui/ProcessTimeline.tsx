@@ -96,11 +96,11 @@ export default function ProcessTimeline({ showLink = true }: ProcessTimelineProp
   ];
 
   return (
-    <div className="relative flex flex-col gap-4 sm:gap-5">
+    <div className="relative flex flex-col gap-3 sm:gap-4">
       {/* Desktop Horizontal Line with Traveling Light Beam */}
       <div 
         aria-hidden="true" 
-        className="hidden lg:block absolute top-8 left-[6%] right-[6%] h-[2px] overflow-hidden z-0"
+        className="hidden lg:block absolute top-7 left-[6%] right-[6%] h-[2px] overflow-hidden z-0"
         style={{
           background: 'linear-gradient(to right, rgb(186, 230, 253), rgb(165, 180, 252), rgb(192, 132, 250), rgb(253, 230, 138), rgba(249, 115, 96, 0.3), rgb(134, 239, 172))'
         }}
@@ -109,27 +109,27 @@ export default function ProcessTimeline({ showLink = true }: ProcessTimelineProp
       </div>
 
       {/* Steps Grid with Staggered Entrance */}
-      <StaggerReveal staggerInterval={65} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5 relative z-10 items-stretch">
+      <StaggerReveal staggerInterval={65} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3 relative z-10 items-stretch">
         {steps.map((step) => {
           return (
             <div
               key={step.number}
-              className={`card-popup-sm group rounded-xl p-3.5 sm:p-4 flex flex-col justify-between border min-w-0 h-full bg-white transition-all duration-300 ${
+              className={`card-popup-sm group rounded-xl p-3 sm:p-3.5 flex flex-col justify-between border min-w-0 h-full bg-white transition-all duration-300 ${
                 step.theme.border
               } ${step.theme.shadowHover} ${
-                step.highlighted ? '' : 'shadow-sm'
+                step.highlighted ? '' : 'shadow-xs'
               }`}
             >
-              <div className="space-y-2.5 min-w-0">
+              <div className="space-y-2 min-w-0">
                 {/* Step indicator circle */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold font-mono transition-all duration-300 shadow-sm shrink-0 ${step.theme.numberBg}`}
+                    className={`w-7 h-7 sm:w-7.5 sm:h-7.5 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-bold font-mono transition-all duration-300 shadow-xs shrink-0 ${step.theme.numberBg}`}
                   >
                     {step.number}
                   </span>
                   <span
-                    className={`text-[8.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border ${step.theme.badge}`}
+                    className={`text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full shrink-0 border ${step.theme.badge}`}
                   >
                     {step.badge}
                   </span>
@@ -137,18 +137,18 @@ export default function ProcessTimeline({ showLink = true }: ProcessTimelineProp
 
                 <div className="min-w-0">
                   <h3
-                    className={`text-sm sm:text-base font-extrabold text-[#131B2E] tracking-tight transition-colors ${step.theme.titleHover}`}
+                    className={`text-xs sm:text-sm font-extrabold text-[#131B2E] tracking-tight transition-colors ${step.theme.titleHover}`}
                   >
                     {step.title}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-[#64748B] mt-1 leading-relaxed font-normal">
+                  <p className="text-[10.5px] sm:text-[11px] text-[#64748B] mt-0.5 leading-relaxed font-normal line-clamp-3">
                     {step.description}
                   </p>
                 </div>
               </div>
 
               {step.highlighted && (
-                <div className="mt-2.5 pt-2 border-t border-[#F97360]/20 flex items-center gap-1.5 text-[9.5px] font-bold text-[#EA580C]">
+                <div className="mt-2 pt-1.5 border-t border-[#F97360]/20 flex items-center gap-1 text-[9px] font-bold text-[#EA580C]">
                   <CheckCircle2 className="w-3 h-3 shrink-0" />
                   <span>Zero surprises before launch</span>
                 </div>
@@ -160,7 +160,7 @@ export default function ProcessTimeline({ showLink = true }: ProcessTimelineProp
 
       {/* Editorial Process Link Row */}
       {showLink && (
-        <div className="pt-2 text-center">
+        <div className="pt-0.5 text-center">
           <Link
             href="/process"
             className="inline-flex items-center gap-2 text-xs font-bold text-[#4338CA] hover:text-[#3730A3] hover:underline uppercase tracking-wider"

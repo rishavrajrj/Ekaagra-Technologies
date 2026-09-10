@@ -913,6 +913,25 @@ export interface CampusCategoryDefinition {
   emptyStateText: string;
 }
 
+export interface SharedMediaAsset {
+  id: string;
+  url: string;
+  thumbnailUrl?: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+  width?: number | null;
+  height?: number | null;
+  hash?: string;
+  categories: string[];
+  source: 'campus' | 'facilities' | 'leadership' | 'other';
+  usedIn: string[];
+  caption?: string;
+  uploadedAt?: string;
+  storageKey?: string;
+  isHero?: boolean;
+}
+
 export interface CampusImageData {
   id: string;
   schoolId?: string;
@@ -929,6 +948,8 @@ export interface CampusImageData {
   displayOrder?: number;
   createdAt?: string;
   reusedFromId?: string;
+  sharedAssetId?: string;
+  sourceSection?: string;
   checksumSha256?: string;
   /** Primary gallery category (e.g. 'classrooms', 'campus_buildings') */
   category?: CampusImageCategory;
@@ -2731,6 +2752,8 @@ export interface TransportVehicle {
   assignedRouteIds?: string[];
   isActive?: boolean;
   notes?: string;
+  imageUrl?: string;
+  photoUrl?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -2953,6 +2976,13 @@ export interface TransportData {
   parentCommunication?: TransportParentCommunicationConfig;
   safetyCompliance?: TransportSafetyConfig;
 
+  // Website-facing transport content
+  description?: string;
+  shortDescription?: string;
+  areasServed?: string[];
+  safetyFeatures?: string[];
+  customSafetyFeatures?: string[];
+
   // Individual Fleet & Operations Registries
   vehicles?: TransportVehicle[];
   staffMembers?: TransportStaffMember[];
@@ -2966,6 +2996,10 @@ export interface TransportData {
   // Branch-specific configurations
   outsourced?: TransportOutsourcedConfig;
   planned?: TransportPlannedConfig;
+
+  // School Transport Fleet Photography (Genuine WebP Optimized)
+  images?: CampusImageData[];
+  fleetPhotos?: CampusImageData[];
 
   // ─────────────────────────────────────────────────────────────
   // BACKWARD-COMPATIBILITY MIRRORS & LEGACY FIELDS
@@ -2995,7 +3029,75 @@ export interface FacilityItem {
 
 export type StatCountSource = 'manual' | 'erp';
 
+export interface WebsiteFacilityConfig {
+  id: string;
+  available: boolean;
+  count?: number;
+  capacity?: number;
+  description?: string;
+  features?: string[];
+  photos?: CampusImageData[];
+  computersCount?: number;
+  types?: string[];
+  bookCount?: number;
+  digitalLibrary?: boolean;
+  sports?: string[];
+  bedsCount?: number;
+  cctvCount?: number;
+  is24x7Monitored?: boolean;
+  hostelType?: 'boys' | 'girls' | 'both';
+  boysCapacity?: number;
+  girlsCapacity?: number;
+  roomCount?: number;
+  roomOccupancy?: number;
+  customName?: string;
+
+  // Specific website showcase fields
+  interactiveTechnology?: string;
+  airConditioned?: boolean;
+  audioSystem?: boolean;
+  internetConnectivity?: string;
+  operatingSystems?: string[];
+  lanWifi?: boolean;
+  majorEquipment?: string;
+  practicalLearningFeatures?: string[];
+  newspapersJournals?: boolean;
+  digitalResources?: string[];
+  readingArea?: string;
+  sportsAreasCount?: number;
+  fieldsCourts?: string[];
+  indoorSports?: string[];
+  outdoorSports?: string[];
+  hallType?: string;
+  stageAvailable?: boolean;
+  soundSystem?: boolean;
+  projectorDisplay?: boolean;
+  firstAidAvailable?: boolean;
+  doctorAvailable?: boolean;
+  nurseAvailable?: boolean;
+  emergencyEquipment?: string[];
+  dedicatedRoom?: boolean;
+  diningArea?: boolean;
+  kitchenFacility?: boolean;
+  drinkingWater?: boolean;
+  hygieneFeatures?: string[];
+  mealServiceType?: string;
+  cctvCoverage?: string[];
+  securityStaff?: boolean;
+  visitorManagement?: boolean;
+  wardenAvailable?: boolean;
+  cctvSecured?: boolean;
+  studyRoom?: boolean;
+  diningMess?: boolean;
+  recreationFacilities?: string[];
+  category?: string;
+  extraItems?: WebsiteFacilityConfig[];
+}
+
 export interface FacilitiesData {
+  // Website-first structured facilities catalog
+  facilities?: Record<string, WebsiteFacilityConfig>;
+
   // Essential Institutional Campus Statistics (Manually entered or optional ERP sync)
   classroomsCount?: number;
   classroomsCountSource?: StatCountSource;
@@ -3052,6 +3154,8 @@ export interface FacilitiesData {
   biometricAttendanceHardware?: boolean;
   availableFacilities?: FacilityItem[];
   customFacilities?: FacilityItem[];
+  images?: CampusImageData[];
+  facilityPhotos?: CampusImageData[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -3381,6 +3485,7 @@ export interface LibraryData {
   studentBorrowLimit?: number;
   staffBorrowLimit?: number;
   categories?: string[];
+  images?: CampusImageData[];
 }
 
 // ─── Hostel & Residential Boarding Models (Section 15) ─────────────────────
@@ -3596,6 +3701,7 @@ export interface HostelData {
   capacityGirls?: number;
   rulesNotes?: string;
   monthlyFee?: number;
+  images?: CampusImageData[];
 }
 
 // ─── SECTION 16: INSTITUTIONAL COMMUNICATION CONFIGURATION ───────────────────
@@ -4499,7 +4605,8 @@ export type AssetChecklistStatus =
   | 'will_provide_later'
   | 'provided'
   | 'not_applicable'
-  | 'blocked_for_publication';
+  | 'blocked_for_publication'
+  | 'recommended_available';
 
 export type AssetChecklistRequirement =
   | 'required'
@@ -4577,6 +4684,17 @@ export interface AssetChecklistItem {
   optimizedSize?: number;
   /** Format the image was optimized to (e.g. 'webp') */
   optimizedFormat?: string;
+
+  /** AI Content Recommendation fields */
+  contentSource?: 'ai_recommended' | 'ai_recommended_edited' | 'school_provided' | 'template';
+  recommendedDraft?: string;
+  recommendedAt?: string;
+  sourceFingerprint?: string;
+  isOutdated?: boolean;
+  requiresReview?: boolean;
+  recommendationSources?: string[];
+  recommendedTone?: string;
+  recommendedLength?: 'short' | 'standard' | 'detailed';
 }
 
 export interface AssetChecklistData {
@@ -5174,6 +5292,8 @@ export interface UniversalIntakeData {
   };
   portalRequirements?: PortalRequirementsData;
   mediaAssets?: MediaAssetsData;
+  /** Centralized shared media registry across the school onboarding flow */
+  mediaRegistry?: SharedMediaAsset[];
   additionalRequirements?: {
     specialCustomWorkflows?: string;
     customReportsRequired?: string;

@@ -55,9 +55,15 @@ import {
   Code,
   CheckCheck,
   Loader2,
+  UploadCloud,
+  Camera,
+  Image as ImageIcon,
+  Star,
+  RotateCw,
 } from 'lucide-react';
 import type {
   UniversalIntakeData,
+  CampusImageData,
   TransportData,
   TransportStatus,
   TransportServiceModel,
@@ -146,7 +152,10 @@ import {
   createDefaultRouteStop,
   createDefaultAttendanceConfig,
   getTransportSeedData,
+  TRANSPORT_PHOTO_TAGS,
+  WEBSITE_TRANSPORT_SAFETY_FEATURES,
 } from '@/lib/transportUtils';
+import { formatBytes, formatOptimizationStats } from '@/lib/imageUtils';
 import { extractCanonicalStaff, extractCanonicalStudents } from '@/lib/campusStatisticsUtils';
 import LeafletRouteBuilder from './maps/LeafletRouteBuilder';
 import PublicTransportRouteMap from './maps/PublicTransportRouteMap';
@@ -166,6 +175,8 @@ interface TransportFleetSectionProps {
   updateSectionDirect?: (section: keyof UniversalIntakeData, data: any) => void;
   project?: any;
   onNavigateToSection?: (sectionKey: any) => void;
+  token?: string;
+  isWebsiteOnly?: boolean;
 }
 
 export default function TransportFleetSection({
@@ -173,11 +184,20 @@ export default function TransportFleetSection({
   updateSectionField,
   updateSectionDirect,
   project,
+  onNavigateToSection,
+  token,
+  isWebsiteOnly: isWebsiteOnlyProp,
 }: TransportFleetSectionProps) {
   const formId = useId();
   const config: TransportData = normalizeTransportData(intakeData.transportConfig);
   const status: TransportStatus = config.status || 'not_decided';
-  const isWebsiteOnly = project?.product_id === 'school-website' || project?.product_id === 'school-website-cms';
+  const isWebsiteOnly =
+    isWebsiteOnlyProp !== undefined
+      ? isWebsiteOnlyProp
+      : project?.product_id === 'school-website' ||
+        project?.product_id === 'school-website-cms' ||
+        project?.plan === 'school-website' ||
+        project?.plan === 'school-website-cms';
 
   // Extract School Campus Coordinates as transit origin hub
   const campusCoordinates = useMemo<Coordinates | null>(() => {
@@ -380,7 +400,7 @@ export default function TransportFleetSection({
   // Currently expanded live route map preview (route.id or null)
   const [previewRouteId, setPreviewRouteId] = useState<string | null>(null);
 
-  // 10 Expandable / Collapsible Cards State (Default: all expanded)
+  // 10-12 Expandable / Collapsible Cards State (Default: all expanded)
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({
     1: true,
     2: true,
@@ -392,6 +412,8 @@ export default function TransportFleetSection({
     8: true,
     9: true,
     10: true,
+    11: true,
+    12: true,
   });
 
   const toggleCard = (cardNum: number) => {
@@ -399,11 +421,11 @@ export default function TransportFleetSection({
   };
 
   const expandAllCards = () => {
-    setOpenCards({ 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true });
+    setOpenCards({ 1: true, 2: true, 3: true, 4: true, 5: true, 6: true, 7: true, 8: true, 9: true, 10: true, 11: true, 12: true });
   };
 
   const collapseAllCards = () => {
-    setOpenCards({ 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false, 8: false, 9: false, 10: false });
+    setOpenCards({ 1: false, 2: false, 3: false, 4: false, 5: false, 6: false, 7: false, 8: false, 9: false, 10: false, 11: false, 12: false });
   };
 
   // Modals / Editors state
@@ -444,6 +466,79 @@ export default function TransportFleetSection({
   const [fleetInputStr, setFleetInputStr] = useState<string | null>(null);
   const [isFleetInputFocused, setIsFleetInputFocused] = useState(false);
 
+  // Website Transport Safety & Amenities custom feature input
+  const [customSafetyInput, setCustomSafetyInput] = useState('');
+
+  const handleToggleSafetyFeature = (key: string) => {
+    const current = config.safetyFeatures || [];
+    const next = current.includes(key) ? current.filter((k) => k !== key) : [...current, key];
+    updateConfig((prev) => ({
+      ...prev,
+      safetyFeatures: next,
+    }));
+  };
+
+  const handleAddCustomSafetyFeature = () => {
+    const trimmed = customSafetyInput.trim();
+    if (!trimmed) return;
+    const current = config.customSafetyFeatures || [];
+    if (!current.includes(trimmed)) {
+      updateConfig((prev) => ({
+        ...prev,
+        customSafetyFeatures: [...current, trimmed],
+      }));
+    }
+    setCustomSafetyInput('');
+  };
+
+  const handleRemoveCustomSafetyFeature = (feat: string) => {
+    updateConfig((prev) => ({
+      ...prev,
+      customSafetyFeatures: (prev.customSafetyFeatures || []).filter((f) => f !== feat),
+    }));
+  };
+
+  // School Transport Photography state
+  interface TransportUploadTask {
+    id: string;
+    file: File;
+    status: 'uploading' | 'optimizing' | 'validating' | 'done' | 'error';
+    message: string;
+    errorMessage?: string;
+    originalSize?: number;
+    optimizedSize?: number;
+    percentage?: number;
+  }
+
+  const [uploadTasks, setUploadTasks] = useState<Record<string, TransportUploadTask>>({});
+  const [isDraggingPhotos, setIsDraggingPhotos] = useState(false);
+  const transportFileInputRef = React.useRef<HTMLInputElement>(null);
+  const replaceTransportInputRef = React.useRef<HTMLInputElement>(null);
+  const vehiclePhotoFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [replacingPhotoId, setReplacingPhotoId] = useState<string | null>(null);
+  const [activeVehicleIdForPhoto, setActiveVehicleIdForPhoto] = useState<string | null>(null);
+  const [showVehicleGalleryPicker, setShowVehicleGalleryPicker] = useState(false);
+
+  // Unify photos from config.images / config.fleetPhotos and campus images with category 'transport'
+  const transportPhotos: CampusImageData[] = useMemo(() => {
+    const fromConfig: CampusImageData[] = config.images || config.fleetPhotos || [];
+    const mainCampus = (intakeData.campuses || []).find((c) => c.isMainCampus) || (intakeData.campuses || [])[0];
+    const fromCampus: CampusImageData[] = (mainCampus?.images || []).filter(
+      (img) => img.category === 'transport' || img.imageCategory === 'transport'
+    );
+
+    const map = new Map<string, CampusImageData>();
+    fromCampus.forEach((img) => {
+      const key = img.id || img.storageKey || img.url;
+      if (key) map.set(key, img);
+    });
+    fromConfig.forEach((img) => {
+      const key = img.id || img.storageKey || img.url;
+      if (key) map.set(key, img);
+    });
+    return Array.from(map.values());
+  }, [config.images, config.fleetPhotos, intakeData.campuses]);
+
   // Section score & live validation
   const score = getTransportSectionScore(config, project?.product_id);
   const validation = validateTransportData(config, project?.product_id);
@@ -471,6 +566,332 @@ export default function TransportFleetSection({
         updateSectionField('transportConfig', key, (normalized as any)[key]);
       });
     }
+  };
+
+  // Helper to persist transport photos and synchronize with main campus images under category 'transport'
+  const handleSaveTransportPhotos = (newPhotos: CampusImageData[]) => {
+    updateConfig((prev) => ({
+      ...prev,
+      images: newPhotos,
+      fleetPhotos: newPhotos,
+    }));
+
+    const campuses = intakeData.campuses || [];
+    if (campuses.length > 0) {
+      const mainIdx = campuses.findIndex((c) => c.isMainCampus);
+      const targetIdx = mainIdx >= 0 ? mainIdx : 0;
+      const targetCampus = campuses[targetIdx];
+
+      const nonTransportImages = (targetCampus.images || []).filter(
+        (img) => img.category !== 'transport' && img.imageCategory !== 'transport'
+      );
+      const updatedCampusImages = [...nonTransportImages, ...newPhotos];
+
+      const updatedCampuses = campuses.map((c, idx) => {
+        if (idx === targetIdx) {
+          return { ...c, images: updatedCampusImages };
+        }
+        return c;
+      });
+
+      if (updateSectionDirect) {
+        updateSectionDirect('campuses', updatedCampuses);
+      } else {
+        updateSectionField('campuses', `${targetIdx}` as any, updatedCampuses[targetIdx]);
+      }
+    }
+  };
+
+  const readFileAsDataUrl = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const uploadSingleTransportFile = async (
+    file: File,
+    preferredTag: string = 'School Bus Exterior'
+  ): Promise<CampusImageData> => {
+    const taskId = `${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+
+    setUploadTasks((prev) => ({
+      ...prev,
+      [taskId]: {
+        id: taskId,
+        file,
+        status: 'uploading',
+        message: 'Uploading original file securely...',
+        originalSize: file.size,
+      },
+    }));
+
+    const timerOpt = setTimeout(() => {
+      setUploadTasks((prev) => {
+        if (!prev[taskId] || prev[taskId].status === 'error' || prev[taskId].status === 'done') return prev;
+        return {
+          ...prev,
+          [taskId]: {
+            ...prev[taskId],
+            status: 'optimizing',
+            message: 'Server optimizing with Sharp & converting to WebP...',
+          },
+        };
+      });
+    }, 450);
+
+    const timerVal = setTimeout(() => {
+      setUploadTasks((prev) => {
+        if (!prev[taskId] || prev[taskId].status === 'error' || prev[taskId].status === 'done') return prev;
+        return {
+          ...prev,
+          [taskId]: {
+            ...prev[taskId],
+            status: 'validating',
+            message: 'Validating WebP decode and dimensions...',
+          },
+        };
+      });
+    }, 950);
+
+    try {
+      const campuses = intakeData.campuses || [];
+      const main = campuses.find((c) => c.isMainCampus) || campuses[0];
+      const mainId = main?.id || 'main-campus';
+
+      const formData = new FormData();
+      formData.append('token', token || 'demo');
+      formData.append('file', file);
+      formData.append('itemId', 'transport_fleet');
+      formData.append('itemType', 'image');
+      formData.append('campusId', mainId);
+
+      const res = await fetch('/api/school-assets/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      clearTimeout(timerOpt);
+      clearTimeout(timerVal);
+
+      let asset: any = null;
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.asset) {
+          asset = json.asset;
+        }
+      }
+
+      if (asset) {
+        const stats = formatOptimizationStats(asset.originalSize || asset.size, asset.optimizedSize || asset.size);
+        setUploadTasks((prev) => ({
+          ...prev,
+          [taskId]: {
+            ...prev[taskId],
+            status: 'done',
+            message: '✓ WebP Optimized',
+            originalSize: asset.originalSize || asset.size,
+            optimizedSize: asset.optimizedSize || asset.size,
+            percentage: stats ? stats.percentage : undefined,
+          },
+        }));
+
+        setTimeout(() => {
+          setUploadTasks((prev) => {
+            const next = { ...prev };
+            delete next[taskId];
+            return next;
+          });
+        }, 4000);
+
+        const newPhoto: CampusImageData = {
+          id: asset.id || `tr-img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          campusId: mainId,
+          storageKey: asset.storageKey || '',
+          fileName: asset.name || file.name.replace(/\.[^.]+$/, '.webp'),
+          url: asset.url,
+          mimeType: asset.type || 'image/webp',
+          width: asset.width ?? null,
+          height: asset.height ?? null,
+          originalSize: asset.originalSize || asset.size || file.size,
+          optimizedSize: asset.optimizedSize || asset.size || file.size,
+          optimizedFormat: asset.optimizedFormat || 'webp',
+          displayOrder: transportPhotos.length,
+          createdAt: asset.uploadedAt || new Date().toISOString(),
+          checksumSha256: asset.checksumSha256,
+          category: 'transport',
+          imageCategory: 'transport',
+          imageType: preferredTag,
+          customImageType: null,
+          isPrimary: transportPhotos.length === 0,
+          caption: 'Safe and comfortable GPS-tracked school transportation fleet',
+        };
+
+        return newPhoto;
+      } else {
+        const dataUrl = await readFileAsDataUrl(file);
+        setUploadTasks((prev) => ({
+          ...prev,
+          [taskId]: {
+            ...prev[taskId],
+            status: 'done',
+            message: '✓ Loaded (Local Preview)',
+            originalSize: file.size,
+            optimizedSize: file.size,
+          },
+        }));
+
+        setTimeout(() => {
+          setUploadTasks((prev) => {
+            const next = { ...prev };
+            delete next[taskId];
+            return next;
+          });
+        }, 3000);
+
+        const newPhoto: CampusImageData = {
+          id: `tr-img-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          campusId: mainId,
+          storageKey: `local_${Date.now()}`,
+          fileName: file.name,
+          url: dataUrl,
+          mimeType: file.type || 'image/jpeg',
+          width: null,
+          height: null,
+          originalSize: file.size,
+          optimizedSize: file.size,
+          optimizedFormat: 'webp',
+          displayOrder: transportPhotos.length,
+          createdAt: new Date().toISOString(),
+          category: 'transport',
+          imageCategory: 'transport',
+          imageType: preferredTag,
+          customImageType: null,
+          isPrimary: transportPhotos.length === 0,
+          caption: 'Safe and comfortable GPS-tracked school transportation fleet',
+        };
+
+        return newPhoto;
+      }
+    } catch (err: any) {
+      clearTimeout(timerOpt);
+      clearTimeout(timerVal);
+      setUploadTasks((prev) => ({
+        ...prev,
+        [taskId]: {
+          ...prev[taskId],
+          status: 'error',
+          message: 'Optimization failed',
+          errorMessage: err.message || 'Image upload failed.',
+        },
+      }));
+      throw err;
+    }
+  };
+
+  const handleMultipleFilesUpload = async (files: FileList | File[]) => {
+    const fileArr = Array.from(files);
+    if (fileArr.length === 0) return;
+
+    const validFiles = fileArr.filter((f) => {
+      const isImg = f.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|avif|heic|gif)$/i.test(f.name);
+      return isImg && f.size <= 15 * 1024 * 1024;
+    });
+
+    if (validFiles.length === 0) return;
+
+    try {
+      const uploadedPhotos: CampusImageData[] = [];
+      for (const file of validFiles) {
+        try {
+          const photo = await uploadSingleTransportFile(file);
+          uploadedPhotos.push(photo);
+        } catch (e) {
+          console.error('Failed to upload file:', file.name, e);
+        }
+      }
+
+      if (uploadedPhotos.length > 0) {
+        const nextList = [...transportPhotos, ...uploadedPhotos];
+        handleSaveTransportPhotos(nextList);
+      }
+    } catch (err) {
+      console.error('Batch upload error:', err);
+    }
+  };
+
+  const handleReplacePhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !replacingPhotoId) return;
+
+    try {
+      const existing = transportPhotos.find((p) => p.id === replacingPhotoId);
+      const preferredTag = existing?.imageType || 'School Bus Exterior';
+      const newPhoto = await uploadSingleTransportFile(file, preferredTag);
+
+      const nextList = transportPhotos.map((p) =>
+        p.id === replacingPhotoId ? { ...newPhoto, id: replacingPhotoId, isPrimary: p.isPrimary } : p
+      );
+      handleSaveTransportPhotos(nextList);
+    } catch (err) {
+      console.error('Replace photo error:', err);
+    } finally {
+      setReplacingPhotoId(null);
+      if (replaceTransportInputRef.current) {
+        replaceTransportInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleDeletePhoto = (photoId: string) => {
+    const nextList = transportPhotos.filter((p) => p.id !== photoId);
+    const hadPrimary = transportPhotos.find((p) => p.id === photoId)?.isPrimary;
+    if (hadPrimary && nextList.length > 0) {
+      nextList[0].isPrimary = true;
+    }
+    handleSaveTransportPhotos(nextList);
+  };
+
+  const handleSetPrimaryPhoto = (photoId: string) => {
+    const nextList = transportPhotos.map((p) => ({
+      ...p,
+      isPrimary: p.id === photoId,
+    }));
+    handleSaveTransportPhotos(nextList);
+  };
+
+  const handleUpdatePhotoMeta = (
+    photoId: string,
+    updates: Partial<{ caption: string; imageType: string }>
+  ) => {
+    const nextList = transportPhotos.map((p) => (p.id === photoId ? { ...p, ...updates } : p));
+    handleSaveTransportPhotos(nextList);
+  };
+
+  const handleMovePhoto = (photoId: string, direction: 'left' | 'right') => {
+    const index = transportPhotos.findIndex((p) => p.id === photoId);
+    if (index < 0) return;
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= transportPhotos.length) return;
+
+    const nextList = [...transportPhotos];
+    const [moved] = nextList.splice(index, 1);
+    nextList.splice(targetIndex, 0, moved);
+    handleSaveTransportPhotos(nextList);
+  };
+
+  const handleAssignPhotoToVehicle = (photoUrl: string, vehicleId: string) => {
+    updateConfig((prev) => ({
+      ...prev,
+      vehicles: (prev.vehicles || []).map((v) => {
+        if (v.id === vehicleId) {
+          return { ...v, imageUrl: photoUrl, photoUrl: photoUrl };
+        }
+        return v;
+      }),
+    }));
   };
 
   // Status Switcher
@@ -874,17 +1295,20 @@ export default function TransportFleetSection({
     <div className="space-y-6 text-xs text-[#131B2E]">
       {/* ─── SECTION HEADER & GLOBAL ACTION TOOLBAR ──────────────────────────── */}
       {isWebsiteOnly ? (
-        // Website-only: reduced header with section counter and heading only
+        // Website-only: streamlined header for public school website
         <div className="pb-3 border-b border-[#E2E8F0]">
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]">
               <Bus className="w-3.5 h-3.5" />
-              Section 12 of 29 • School Transport & Fleet Management
+              Section 12 of 29 • School Transport
             </span>
           </div>
-          <h2 className="text-sm font-bold text-[#131B2E] mt-2 flex items-center gap-2">
-            School Transport & Bus Attendance System
+          <h2 className="text-base font-bold text-[#131B2E] mt-1.5 flex items-center gap-2">
+            School Transport
           </h2>
+          <p className="text-[#64748B] text-xs mt-0.5">
+            Showcase the school’s transportation facilities, fleet, routes, coverage areas, and safety features.
+          </p>
         </div>
       ) : (
         // Full header for non-website-only products
@@ -910,54 +1334,58 @@ export default function TransportFleetSection({
               )}
             </div>
             <h2 className="text-base font-bold text-[#131B2E] mt-1.5 flex items-center gap-2">
-              School Transport & Bus Attendance System
+              {isWebsiteOnly ? 'School Transport' : 'School Transport & Bus Attendance System'}
             </h2>
             <p className="text-[#64748B] text-xs mt-0.5">
-              End-to-end operational transport management: vehicles, ordered route stops, staff allocation, student assignments, multi-mode attendance, and real-time parent alerts.
+              {isWebsiteOnly
+                ? 'Showcase the school’s transportation facilities, fleet, routes, coverage areas, and safety features.'
+                : 'End-to-end operational transport management: vehicles, ordered route stops, staff allocation, student assignments, multi-mode attendance, and real-time parent alerts.'}
             </p>
           </div>
 
           {/* Global Toolbar */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {status === 'yes' && (
-              <div className="inline-flex p-1 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('config')}
-                  className={'px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ' + (
-                    activeTab === 'config'
-                      ? 'bg-white text-[#4338CA] shadow-2xs'
-                      : 'text-[#64748B] hover:text-[#131B2E]'
-                  )}
-                >
-                  <Sliders className="w-3.5 h-3.5" />
-                  10-Card Operational Setup
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('attendance')}
-                  className={'px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ' + (
-                    activeTab === 'attendance'
-                      ? 'bg-white text-[#4338CA] shadow-2xs'
-                      : 'text-[#64748B] hover:text-[#131B2E]'
-                  )}
-                >
-                  <Smartphone className="w-3.5 h-3.5" />
-                  Tablet Live Console
-                </button>
-              </div>
-            )}
+          {!isWebsiteOnly && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {status === 'yes' && (
+                <div className="inline-flex p-1 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('config')}
+                    className={'px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ' + (
+                      activeTab === 'config'
+                        ? 'bg-white text-[#4338CA] shadow-2xs'
+                        : 'text-[#64748B] hover:text-[#131B2E]'
+                    )}
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    10-Card Operational Setup
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('attendance')}
+                    className={'px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ' + (
+                      activeTab === 'attendance'
+                        ? 'bg-white text-[#4338CA] shadow-2xs'
+                        : 'text-[#64748B] hover:text-[#131B2E]'
+                    )}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Tablet Live Console
+                  </button>
+                </div>
+              )}
 
-            <button
-              type="button"
-              onClick={handleLoadDemoData}
-              title="Load complete DPS Motihari 4-vehicle operational dataset"
-              className="px-2.5 py-1.5 rounded-xl border border-[#CBD5E1] bg-white text-[#4338CA] hover:bg-[#FAF7F2] font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Load DPS Motihari Fleet</span>
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={handleLoadDemoData}
+                title="Load complete DPS Motihari 4-vehicle operational dataset"
+                className="px-2.5 py-1.5 rounded-xl border border-[#CBD5E1] bg-white text-[#4338CA] hover:bg-[#FAF7F2] font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Load DPS Motihari Fleet</span>
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -1245,8 +1673,8 @@ export default function TransportFleetSection({
         </div>
       )}
 
-      {/* ─── STANDALONE TABLET ATTENDANCE CONSOLE (FULL-WIDTH TAB) ──────────── */}
-      {status === 'yes' && activeTab === 'attendance' && (
+      {/* ─── STANDALONE TABLET ATTENDANCE CONSOLE (FULL-WIDTH TAB - ERP ONLY) ──── */}
+      {!isWebsiteOnly && status === 'yes' && activeTab === 'attendance' && (
         <div className="p-5 bg-white border border-[#E2E8F0] rounded-2xl space-y-6 shadow-2xs animate-in fade-in">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
             <div className="flex items-center gap-2.5">
@@ -1297,13 +1725,13 @@ export default function TransportFleetSection({
         </div>
       )}
 
-      {/* ─── 10 EXPANDABLE / COLLAPSIBLE OPERATIONAL CARDS ────────────────────── */}
-      {status === 'yes' && activeTab === 'config' && (
+      {/* ─── EXPANDABLE / COLLAPSIBLE CARDS ─────────────────────────────────── */}
+      {status === 'yes' && (isWebsiteOnly || activeTab === 'config') && (
         <div className="space-y-4 animate-in fade-in duration-200">
           {/* Global Card Expand/Collapse Toggle Toolbar */}
           <div className="flex items-center justify-between px-1">
             <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
-              Operational Fleet Architecture • 10 Modules
+              {isWebsiteOnly ? 'School Transport Showcase • 5 Sections' : 'Operational Fleet Architecture • 10 Modules'}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -1338,67 +1766,154 @@ export default function TransportFleetSection({
                 </span>
                 <div>
                   <h3 className="font-bold text-sm text-[#131B2E] flex items-center gap-2">
-                    Transport Overview & Service Model
+                    {isWebsiteOnly ? 'Transport Availability & Overview' : 'Transport Overview & Service Model'}
                   </h3>
-                  <p className="text-[11px] text-[#64748B]">Institutional transit operating model</p>
+                  <p className="text-[11px] text-[#64748B]">
+                    {isWebsiteOnly
+                      ? 'Transport service availability, vehicle count, localities served & website description'
+                      : 'Institutional transit operating model'}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]">
-                  {SERVICE_MODEL_OPTIONS.find((m) => m.value === (config.serviceModel || 'school_owned'))?.label || 'School-Owned'}
+                  {isWebsiteOnly
+                    ? `${config.fleet?.totalVehicles !== undefined ? config.fleet.totalVehicles : (currentVehicles.length || 1)} Buses/Vans in Fleet`
+                    : SERVICE_MODEL_OPTIONS.find((m) => m.value === (config.serviceModel || 'school_owned'))?.label || 'School-Owned'}
                 </span>
                 {openCards[1] ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
               </div>
             </div>
 
             {openCards[1] && (
-              <div className="p-5 space-y-4">
-                <div>
-                  <label className="block font-bold text-[#334155] mb-1.5">
-                    Select Operating Service Model *
-                  </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {SERVICE_MODEL_OPTIONS.map((mo) => {
-                      const isSelected = (config.serviceModel || 'school_owned') === mo.value;
-                      return (
-                        <label
-                          key={mo.value}
-                          className={'p-3.5 rounded-xl border cursor-pointer transition flex flex-col justify-between ' + (
-                            isSelected
-                              ? 'border-[#4338CA] bg-[#F5F3FF] shadow-2xs ring-2 ring-[#4338CA]/15'
-                              : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1] hover:bg-[#FAF7F2]/60'
-                          )}
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="font-bold text-xs text-[#131B2E]">{mo.label}</span>
-                              <input
-                                type="radio"
-                                name="serviceModel"
-                                checked={isSelected}
-                                onChange={() =>
-                                  updateConfig((prev) => ({
-                                    ...prev,
-                                    serviceModel: mo.value as TransportServiceModel,
-                                  }))
-                                }
-                                className="text-[#4338CA] focus:ring-[#4338CA]"
-                              />
-                            </div>
-                            <p className="text-[11px] text-[#64748B] leading-relaxed">{mo.description}</p>
-                          </div>
-                        </label>
-                      );
-                    })}
+              isWebsiteOnly ? (
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block font-bold text-[#334155] mb-1">
+                        Number of Buses / Transport Vehicles *
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={config.fleet?.totalVehicles !== undefined ? config.fleet.totalVehicles : (currentVehicles.length || '')}
+                        onChange={(e) => {
+                          const raw = e.target.value;
+                          const parsed = raw === '' ? undefined : Math.max(0, parseInt(raw, 10) || 0);
+                          updateConfig((prev) => ({
+                            ...prev,
+                            fleet: {
+                              ...prev.fleet,
+                              totalVehicles: parsed,
+                            },
+                            busesCount: parsed,
+                            vehiclesCount: parsed,
+                          }));
+                        }}
+                        placeholder="e.g. 4"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs font-semibold"
+                      />
+                      <p className="text-[11px] text-[#64748B] mt-1">
+                        Total buses, vans, or shuttles operated for student commute.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block font-bold text-[#334155] mb-1">
+                        Areas &amp; Localities Served
+                      </label>
+                      <input
+                        type="text"
+                        value={Array.isArray(config.areasServed) ? config.areasServed.join(', ') : (config.areasServed || '')}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const splitAreas = val.split(',').map((s) => s.trim()).filter(Boolean);
+                          updateConfig((prev) => ({
+                            ...prev,
+                            areasServed: splitAreas,
+                          }));
+                        }}
+                        placeholder="e.g. Piprakothi, Turkaulia, Chiraia, Sugauli, Banjaria, Motihari"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                      />
+                      <p className="text-[11px] text-[#64748B] mt-1">
+                        Separate neighborhoods or towns with commas. Highlighted on your school transport webpage.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#334155] mb-1">
+                      Short Transport Description
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={config.description || config.shortDescription || ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateConfig((prev) => ({
+                          ...prev,
+                          description: val,
+                          shortDescription: val,
+                        }));
+                      }}
+                      placeholder="e.g. Dedicated school bus service offering safe, convenient, and supervised transit across all major neighborhoods with GPS tracking and trained staff."
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs leading-relaxed"
+                    />
+                    <p className="text-[11px] text-[#64748B] mt-1">
+                      Overview statement displayed in the Transportation section on the public school website.
+                    </p>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="p-5 space-y-4">
+                  <div>
+                    <label className="block font-bold text-[#334155] mb-1.5">
+                      Select Operating Service Model *
+                    </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {SERVICE_MODEL_OPTIONS.map((mo) => {
+                        const isSelected = (config.serviceModel || 'school_owned') === mo.value;
+                        return (
+                          <label
+                            key={mo.value}
+                            className={'p-3.5 rounded-xl border cursor-pointer transition flex flex-col justify-between ' + (
+                              isSelected
+                                ? 'border-[#4338CA] bg-[#F5F3FF] shadow-2xs ring-2 ring-[#4338CA]/15'
+                                : 'border-[#E2E8F0] bg-white hover:border-[#CBD5E1] hover:bg-[#FAF7F2]/60'
+                            )}
+                          >
+                            <div>
+                              <div className="flex items-center justify-between mb-1.5">
+                                <span className="font-bold text-xs text-[#131B2E]">{mo.label}</span>
+                                <input
+                                  type="radio"
+                                  name="serviceModel"
+                                  checked={isSelected}
+                                  onChange={() =>
+                                    updateConfig((prev) => ({
+                                      ...prev,
+                                      serviceModel: mo.value as TransportServiceModel,
+                                    }))
+                                  }
+                                  className="text-[#4338CA] focus:ring-[#4338CA]"
+                                />
+                              </div>
+                              <p className="text-[11px] text-[#64748B] leading-relaxed">{mo.description}</p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )
             )}
           </div>
 
           {/* ════════════════════════════════════════════════════════════════════
-             CARD 2: FLEET CONFIGURATION & CAPACITY
+             CARD 2: FLEET (WEBSITE SHOWCASE VS ERP CONFIGURATION)
              ════════════════════════════════════════════════════════════════════ */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-2xs overflow-hidden transition-all duration-200">
             <div
@@ -1410,19 +1925,41 @@ export default function TransportFleetSection({
                   2
                 </span>
                 <div>
-                  <h3 className="font-bold text-sm text-[#131B2E]">Fleet Configuration & Capacity</h3>
-                  <p className="text-[11px] text-[#64748B]">Total vehicles, seating totals, and vehicle type breakdown</p>
+                  <h3 className="font-bold text-sm text-[#131B2E]">
+                    {isWebsiteOnly ? 'School Fleet & Vehicles' : 'Fleet Configuration & Capacity'}
+                  </h3>
+                  <p className="text-[11px] text-[#64748B]">
+                    {isWebsiteOnly
+                      ? 'Showcase buses, vans, seating capacity, and vehicle photographs on the website'
+                      : 'Total vehicles, seating totals, and vehicle type breakdown'}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
-                  {config.fleet?.totalVehicles !== undefined
+                  {isWebsiteOnly
+                    ? `${currentVehicles.length} Vehicle${currentVehicles.length === 1 ? '' : 's'} Listed`
+                    : config.fleet?.totalVehicles !== undefined
                     ? `${config.fleet.totalVehicles} Target Vehicle${config.fleet.totalVehicles === 1 ? '' : 's'}`
-                    : `${currentVehicles.length} Registered Vehicles`}{' '}
-                  • {config.fleet?.approximateStudentCapacity ?? currentVehicles.reduce((a, v) => a + (v.capacity || 0), 0)} Seats
+                    : `${currentVehicles.length} Registered Vehicles`}
+                  {!isWebsiteOnly && ` • ${config.fleet?.approximateStudentCapacity ?? currentVehicles.reduce((a, v) => a + (v.capacity || 0), 0)} Seats`}
                 </span>
-                {currentVehicles.length > 0 && (
+                {isWebsiteOnly && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingVehicle(createDefaultVehicle(undefined, currentVehicles.length + 1));
+                      setVehicleModalOpen(true);
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-[#4338CA] text-white font-bold text-[11px] hover:bg-[#3730A3] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Add Vehicle</span>
+                  </button>
+                )}
+                {!isWebsiteOnly && currentVehicles.length > 0 && (
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[#475569] border border-[#CBD5E1]">
                     {currentVehicles.length} Registered
                   </span>
@@ -1432,8 +1969,116 @@ export default function TransportFleetSection({
             </div>
 
             {openCards[2] && (
-              <div className="p-5 space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              isWebsiteOnly ? (
+                <div className="p-5 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-100">
+                    <div>
+                      <span className="font-bold text-xs text-[#131B2E] block">Public Fleet Showcase</span>
+                      <p className="text-[11px] text-[#64748B]">
+                        Add each bus or van with vehicle type, seating capacity, and photograph to showcase on your school website.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingVehicle(createDefaultVehicle(undefined, currentVehicles.length + 1));
+                        setVehicleModalOpen(true);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-[#4338CA] text-white font-bold text-xs hover:bg-[#3730A3] transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Add Vehicle</span>
+                    </button>
+                  </div>
+
+                  {currentVehicles.length === 0 ? (
+                    <div className="text-center py-8 px-4 border border-dashed border-[#CBD5E1] rounded-2xl bg-[#FAF7F2]/60 space-y-2">
+                      <div className="w-10 h-10 rounded-full bg-indigo-50 text-[#4338CA] flex items-center justify-center mx-auto">
+                        <Bus className="w-5 h-5" />
+                      </div>
+                      <p className="font-bold text-xs text-[#131B2E]">No fleet vehicles added yet</p>
+                      <p className="text-[11px] text-[#64748B] max-w-sm mx-auto">
+                        Add your school buses or vans to display vehicle details, seating capacities, and photos on the public website.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingVehicle(createDefaultVehicle(undefined, 1));
+                          setVehicleModalOpen(true);
+                        }}
+                        className="mt-2 px-3 py-1.5 rounded-xl bg-[#4338CA] text-white font-bold text-xs hover:bg-[#3730A3] transition cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add First Bus / Vehicle</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {currentVehicles.map((veh, vIdx) => {
+                        const typeLabel = VEHICLE_TYPE_CATALOG.find((vt) => vt.key === veh.vehicleType)?.label || veh.vehicleType || 'School Bus';
+                        const photo = veh.photoUrl || veh.imageUrl;
+                        return (
+                          <div
+                            key={veh.id || vIdx}
+                            className="p-3.5 rounded-2xl border border-[#E2E8F0] bg-white hover:border-[#CBD5E1] transition flex flex-col justify-between shadow-2xs space-y-3"
+                          >
+                            <div className="space-y-2">
+                              {photo ? (
+                                <div className="w-full h-32 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img src={photo} alt={veh.displayName} className="w-full h-full object-cover" />
+                                </div>
+                              ) : (
+                                <div className="w-full h-24 rounded-xl bg-[#FAF7F2] border border-dashed border-[#CBD5E1] flex flex-col items-center justify-center text-[#64748B]">
+                                  <Bus className="w-6 h-6 text-[#94A3B8] mb-1" />
+                                  <span className="text-[10px]">No photo uploaded</span>
+                                </div>
+                              )}
+
+                              <div>
+                                <h5 className="font-bold text-xs text-[#131B2E] flex items-center justify-between">
+                                  <span>{veh.displayName || `Bus #${vIdx + 1}`}</span>
+                                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]">
+                                    {veh.capacity || 40} Seats
+                                  </span>
+                                </h5>
+                                <span className="text-[10px] text-[#64748B] block mt-0.5">{typeLabel}</span>
+                                {veh.notes && (
+                                  <p className="text-[11px] text-[#475569] mt-1.5 line-clamp-2 leading-relaxed bg-[#FAF7F2] p-2 rounded-lg border border-[#E2E8F0]">
+                                    {veh.notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-100 flex items-center justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingVehicle(veh);
+                                  setVehicleModalOpen(true);
+                                }}
+                                className="px-2.5 py-1 text-xs font-semibold text-[#4338CA] hover:bg-[#EEF2FF] rounded-lg transition cursor-pointer"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteVehicle(veh.id)}
+                                className="px-2.5 py-1 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-5 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block font-bold text-[#334155] mb-1">
                       Total Buses / Vans in Fleet *
@@ -1601,8 +2246,9 @@ export default function TransportFleetSection({
                   </div>
                 )}
               </div>
-            )}
-          </div>
+            )
+          )}
+        </div>
 
           {/* ════════════════════════════════════════════════════════════════════
              CARD 3: FLEET VEHICLES (INDIVIDUAL VEHICLE REGISTRY) - ERP ONLY
@@ -1789,9 +2435,13 @@ export default function TransportFleetSection({
                   {isWebsiteOnly ? 3 : 4}
                 </span>
                 <div>
-                  <h3 className="font-bold text-sm text-[#131B2E]">Routes &amp; Pickup Points</h3>
+                  <h3 className="font-bold text-sm text-[#131B2E]">
+                    {isWebsiteOnly ? 'Routes & Coverage Areas' : 'Routes & Pickup Points'}
+                  </h3>
                   <p className="text-[11px] text-[#64748B]">
-                    Add the areas and pickup points covered by your school transport.
+                    {isWebsiteOnly
+                      ? 'Showcase the bus routes, coverage localities, and major pickup stops for parents.'
+                      : 'Add the areas and pickup points covered by your school transport.'}
                   </p>
                 </div>
               </div>
@@ -3074,53 +3724,473 @@ export default function TransportFleetSection({
           )}
 
           {/* ════════════════════════════════════════════════════════════════════
-             CARD 10: DYNAMIC CONFIGURATION SUMMARY
+             CARD 4 (WEBSITE MODE): TRANSPORT SAFETY & AMENITIES
+             ════════════════════════════════════════════════════════════════════ */}
+          {isWebsiteOnly && (
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-2xs overflow-hidden transition-all duration-200">
+              <div
+                onClick={() => toggleCard(12)}
+                className="p-4 bg-white flex items-center justify-between cursor-pointer select-none hover:bg-[#FAF7F2]/50 border-b border-[#E2E8F0]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-6 h-6 rounded-lg bg-[#EEF2FF] text-[#4338CA] flex items-center justify-center font-bold text-xs">
+                    4
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-sm text-[#131B2E]">Transport Safety &amp; Amenities</h3>
+                    <p className="text-[11px] text-[#64748B]">
+                      Highlight student safety standards, speed monitoring, GPS tracking, CCTV, first aid, and verified staff for prospective parents.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                    {(config.safetyFeatures?.length || 0) + (config.customSafetyFeatures?.length || 0)} Active Features
+                  </span>
+                  {openCards[12] ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
+                </div>
+              </div>
+
+              {openCards[12] && (
+                <div className="p-5 space-y-5">
+                  <div>
+                    <h4 className="font-bold text-xs text-[#131B2E] mb-1">Standard Safety Standards</h4>
+                    <p className="text-[11px] text-[#64748B] mb-3">
+                      Select all safety features that apply to your school transport fleet. These will be highlighted on your official website.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {WEBSITE_TRANSPORT_SAFETY_FEATURES.map((feature) => {
+                        const isChecked = (config.safetyFeatures || []).includes(feature.key);
+                        return (
+                          <label
+                            key={feature.key}
+                            className={`p-3 rounded-xl border flex items-start gap-2.5 cursor-pointer transition-all ${
+                              isChecked
+                                ? 'bg-indigo-50/70 border-indigo-300 ring-1 ring-indigo-200'
+                                : 'bg-[#FAF7F2] border-[#E2E8F0] hover:bg-white'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleToggleSafetyFeature(feature.key)}
+                              className="w-4 h-4 mt-0.5 rounded text-[#4338CA] focus:ring-[#4338CA] cursor-pointer shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs font-bold text-[#131B2E] block leading-tight">
+                                {feature.label}
+                              </span>
+                              <span className="text-[10px] text-[#64748B] block mt-0.5 leading-snug">
+                                {feature.description}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Custom Safety Features */}
+                  <div className="pt-4 border-t border-[#E2E8F0] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-bold text-xs text-[#131B2E]">Additional Safety Features &amp; Protocols</h4>
+                        <p className="text-[11px] text-[#64748B]">
+                          Add any custom safety policies, female attendant guarantees, breathalyzer checks, or parent portal alerts.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={customSafetyInput}
+                        onChange={(e) => setCustomSafetyInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddCustomSafetyFeature();
+                          }
+                        }}
+                        placeholder="e.g. Lady Attendant on every junior wing bus, Breathalyzer test every morning"
+                        className="flex-1 px-3 py-2 rounded-xl border border-[#CBD5E1] bg-white text-xs text-[#131B2E] placeholder:text-[#94A3B8] focus:outline-hidden focus:ring-2 focus:ring-[#4338CA]/20 focus:border-[#4338CA]"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomSafetyFeature}
+                        className="px-3.5 py-2 rounded-xl bg-[#4338CA] text-white font-bold text-xs hover:bg-[#3730A3] transition cursor-pointer flex items-center gap-1 shrink-0 shadow-2xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Feature</span>
+                      </button>
+                    </div>
+
+                    {config.customSafetyFeatures && config.customSafetyFeatures.length > 0 && (
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {config.customSafetyFeatures.map((feat, idx) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold"
+                          >
+                            <Shield className="w-3 h-3 text-emerald-600" />
+                            <span>{feat}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomSafetyFeature(feat)}
+                              className="text-emerald-500 hover:text-emerald-800 cursor-pointer ml-1 text-sm font-bold"
+                              title="Remove"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════════
+             CARD 10: DYNAMIC CONFIGURATION SUMMARY (ERP ONLY)
+             ════════════════════════════════════════════════════════════════════ */}
+          {!isWebsiteOnly && (
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-2xs overflow-hidden transition-all duration-200">
+              <div
+                onClick={() => toggleCard(10)}
+                className="p-4 bg-white flex items-center justify-between cursor-pointer select-none hover:bg-[#FAF7F2]/50 border-b border-[#E2E8F0]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-6 h-6 rounded-lg bg-[#EEF2FF] text-[#4338CA] flex items-center justify-center font-bold text-xs">
+                    10
+                  </span>
+                  <div>
+                    <h3 className="font-bold text-sm text-[#131B2E]">Dynamic Configuration Summary</h3>
+                    <p className="text-[11px] text-[#64748B]">Real-time derived metrics across all operational entities</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                    Live Synchronized
+                  </span>
+                  {openCards[10] ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
+                </div>
+              </div>
+
+              {openCards[10] && (
+                <div className="p-5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+                    {summaryItems.map((item, idx) => (
+                      <div key={idx} className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E2E8F0] shadow-2xs">
+                        <span className="text-[10px] text-[#64748B] block uppercase tracking-wider font-semibold">
+                          {item.label}
+                        </span>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-xs font-bold text-[#131B2E] truncate">{item.value}</span>
+                          {item.badge && (
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#EEF2FF] text-[#4338CA]">
+                              {item.badge}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════════
+             CARD 11: TRANSPORT FLEET PHOTOGRAPHY & BUS SHOWCASE
              ════════════════════════════════════════════════════════════════════ */}
           <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-2xs overflow-hidden transition-all duration-200">
             <div
-              onClick={() => toggleCard(10)}
+              onClick={() => toggleCard(11)}
               className="p-4 bg-white flex items-center justify-between cursor-pointer select-none hover:bg-[#FAF7F2]/50 border-b border-[#E2E8F0]"
             >
               <div className="flex items-center gap-3">
-                <span className="w-6 h-6 rounded-lg bg-[#EEF2FF] text-[#4338CA] flex items-center justify-center font-bold text-xs">
-                  {isWebsiteOnly ? 4 : 10}
+                <span className="w-6 h-6 rounded-lg bg-[#FEF3C7] text-[#92400E] flex items-center justify-center font-bold text-xs">
+                  {isWebsiteOnly ? 5 : 11}
                 </span>
                 <div>
-                  <h3 className="font-bold text-sm text-[#131B2E]">Dynamic Configuration Summary</h3>
-                  <p className="text-[11px] text-[#64748B]">Real-time derived metrics across all operational entities</p>
+                  <h3 className="font-bold text-sm text-[#131B2E]">Transport Fleet Photography & Bus Showcase</h3>
+                  <p className="text-[11px] text-[#64748B]">Upload photos of buses, vans, safety features & fleet lineup for website gallery</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
-                  Live Synchronized
+                <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#92400E] border border-[#FCD34D]">
+                  {transportPhotos.length} Photo{transportPhotos.length !== 1 ? 's' : ''}
                 </span>
-                {openCards[10] ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
+                {openCards[11] ? <ChevronUp className="w-4 h-4 text-[#64748B]" /> : <ChevronDown className="w-4 h-4 text-[#64748B]" />}
               </div>
             </div>
 
-            {openCards[10] && (
-              <div className="p-5">
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
-                  {summaryItems.map((item, idx) => (
-                    <div key={idx} className="bg-[#FAF7F2] p-2.5 rounded-xl border border-[#E2E8F0] shadow-2xs">
-                      <span className="text-[10px] text-[#64748B] block uppercase tracking-wider font-semibold">
-                        {item.label}
-                      </span>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs font-bold text-[#131B2E] truncate">{item.value}</span>
-                        {item.badge && (
-                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-md bg-[#EEF2FF] text-[#4338CA]">
-                            {item.badge}
+            {openCards[11] && (
+              <div className="p-5 space-y-4">
+                {/* Upload Zone */}
+                <div
+                  className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all duration-200 ${
+                    isDraggingPhotos
+                      ? 'border-[#4338CA] bg-[#EEF2FF] scale-[1.01]'
+                      : 'border-[#CBD5E1] bg-[#FAF7F2] hover:border-[#4338CA]/40'
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingPhotos(true); }}
+                  onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDraggingPhotos(false); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingPhotos(false);
+                    if (e.dataTransfer.files?.length) handleMultipleFilesUpload(e.dataTransfer.files);
+                  }}
+                >
+                  <UploadCloud className="w-8 h-8 mx-auto text-[#4338CA] mb-2" />
+                  <p className="text-xs font-bold text-[#131B2E]">Drag & Drop Transport Photos Here</p>
+                  <p className="text-[11px] text-[#64748B] mt-1">or click below to browse — JPG, PNG, WebP, AVIF up to 15 MB each</p>
+                  <button
+                    type="button"
+                    onClick={() => transportFileInputRef.current?.click()}
+                    className="mt-3 px-4 py-2 rounded-xl bg-[#4338CA] text-white text-xs font-bold hover:bg-[#3730A3] transition cursor-pointer shadow-xs"
+                  >
+                    <Camera className="w-3.5 h-3.5 inline mr-1.5" />
+                    Select Transport Photos
+                  </button>
+                  <p className="text-[10px] text-[#94A3B8] mt-2">
+                    All images are automatically optimized to WebP format via Sharp for faster loading
+                  </p>
+                </div>
+
+                {/* Upload Progress Tasks */}
+                {Object.values(uploadTasks).length > 0 && (
+                  <div className="space-y-2">
+                    {Object.values(uploadTasks).map((task) => (
+                      <div
+                        key={task.id}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-xl border text-xs ${
+                          task.status === 'error'
+                            ? 'bg-red-50 border-red-200 text-red-700'
+                            : task.status === 'done'
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                            : 'bg-[#EEF2FF] border-[#C7D2FE] text-[#4338CA]'
+                        }`}
+                      >
+                        {task.status === 'done' ? (
+                          <CheckCircle2 className="w-4 h-4 shrink-0" />
+                        ) : task.status === 'error' ? (
+                          <AlertCircle className="w-4 h-4 shrink-0" />
+                        ) : (
+                          <Loader2 className="w-4 h-4 shrink-0 animate-spin" />
+                        )}
+                        <span className="font-semibold truncate flex-1">{task.file.name}</span>
+                        <span className="text-[10px] shrink-0">{task.message}</span>
+                        {task.status === 'done' && task.originalSize && task.optimizedSize && task.optimizedSize < task.originalSize && (
+                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md">
+                            {formatBytes(task.originalSize)} → {formatBytes(task.optimizedSize)}
+                            {task.percentage ? ` (−${task.percentage}%)` : ''}
                           </span>
                         )}
                       </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Photo Gallery Grid */}
+                {transportPhotos.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-bold text-xs text-[#131B2E]">
+                        <ImageIcon className="w-3.5 h-3.5 inline mr-1 text-[#4338CA]" />
+                        Fleet Gallery ({transportPhotos.length} photo{transportPhotos.length !== 1 ? 's' : ''})
+                      </h4>
                     </div>
-                  ))}
-                </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                      {transportPhotos.map((photo, idx) => (
+                        <div
+                          key={photo.id}
+                          className="group relative bg-white rounded-xl border border-[#E2E8F0] overflow-hidden shadow-2xs hover:shadow-md transition-all"
+                        >
+                          {/* Image */}
+                          <div className="aspect-[4/3] bg-slate-100 overflow-hidden">
+                            <img
+                              src={photo.url}
+                              alt={photo.caption || photo.fileName || 'Transport photo'}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                          </div>
+
+                          {/* Primary Badge */}
+                          {photo.isPrimary && (
+                            <div className="absolute top-1.5 left-1.5 bg-[#4338CA] text-white text-[9px] font-bold px-1.5 py-0.5 rounded-md flex items-center gap-0.5 shadow-xs">
+                              <Star className="w-2.5 h-2.5" /> Hero
+                            </div>
+                          )}
+
+                          {/* Optimization Badge */}
+                          {photo.optimizedSize && photo.originalSize && photo.optimizedSize < photo.originalSize && (
+                            <div className="absolute top-1.5 right-1.5 bg-emerald-600 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-md shadow-xs">
+                              WebP −{Math.round((1 - photo.optimizedSize / photo.originalSize) * 100)}%
+                            </div>
+                          )}
+
+                          {/* Hover Actions */}
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                            <div className="flex flex-wrap gap-1 w-full">
+                              {!photo.isPrimary && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetPrimaryPhoto(photo.id)}
+                                  className="px-1.5 py-1 rounded-md bg-white/90 text-[9px] font-bold text-[#4338CA] hover:bg-white transition cursor-pointer"
+                                  title="Set as hero image"
+                                >
+                                  <Star className="w-2.5 h-2.5 inline mr-0.5" /> Hero
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReplacingPhotoId(photo.id);
+                                  replaceTransportInputRef.current?.click();
+                                }}
+                                className="px-1.5 py-1 rounded-md bg-white/90 text-[9px] font-bold text-[#334155] hover:bg-white transition cursor-pointer"
+                                title="Replace this photo"
+                              >
+                                <RotateCw className="w-2.5 h-2.5 inline mr-0.5" /> Replace
+                              </button>
+                              {idx > 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMovePhoto(photo.id, 'left')}
+                                  className="px-1.5 py-1 rounded-md bg-white/90 text-[9px] font-bold text-[#334155] hover:bg-white transition cursor-pointer"
+                                  title="Move left"
+                                >
+                                  ◀
+                                </button>
+                              )}
+                              {idx < transportPhotos.length - 1 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMovePhoto(photo.id, 'right')}
+                                  className="px-1.5 py-1 rounded-md bg-white/90 text-[9px] font-bold text-[#334155] hover:bg-white transition cursor-pointer"
+                                  title="Move right"
+                                >
+                                  ▶
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePhoto(photo.id)}
+                                className="px-1.5 py-1 rounded-md bg-red-500/90 text-[9px] font-bold text-white hover:bg-red-600 transition cursor-pointer ml-auto"
+                                title="Delete photo"
+                              >
+                                <Trash2 className="w-2.5 h-2.5 inline mr-0.5" /> Delete
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Info Bar */}
+                          <div className="p-2 space-y-1">
+                            <select
+                              value={photo.imageType || 'School Bus Exterior'}
+                              onChange={(e) => handleUpdatePhotoMeta(photo.id, { imageType: e.target.value })}
+                              className="w-full text-[10px] font-semibold rounded-lg border border-[#E2E8F0] bg-[#FAF7F2] px-1.5 py-1 text-[#334155] cursor-pointer"
+                            >
+                              {TRANSPORT_PHOTO_TAGS.map((tag) => (
+                                <option key={tag.value} value={tag.label}>
+                                  {tag.label}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              type="text"
+                              value={photo.caption || ''}
+                              onChange={(e) => handleUpdatePhotoMeta(photo.id, { caption: e.target.value })}
+                              placeholder="Add caption..."
+                              className="w-full text-[10px] rounded-lg border border-[#E2E8F0] bg-white px-1.5 py-1 text-[#334155] placeholder:text-[#94A3B8]"
+                            />
+                            {photo.optimizedSize && (
+                              <span className="text-[9px] text-[#94A3B8] block">{formatBytes(photo.optimizedSize)} • WebP</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Assign Photos to Vehicles */}
+                {transportPhotos.length > 0 && (config.vehicles || []).length > 0 && (
+                  <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 space-y-2">
+                    <h4 className="font-bold text-xs text-[#131B2E]">Assign Photo to Vehicle</h4>
+                    <p className="text-[10px] text-[#64748B]">Select a photo URL and assign it as the display image for a specific vehicle.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {(config.vehicles || []).map((veh) => (
+                        <div key={veh.id} className="flex items-center gap-2 bg-white rounded-lg border border-[#E2E8F0] p-2">
+                          {veh.imageUrl ? (
+                            <img src={veh.imageUrl} alt={veh.displayName} className="w-10 h-10 rounded-lg object-cover border border-[#E2E8F0]" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                              <Camera className="w-4 h-4 text-[#94A3B8]" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <span className="text-[10px] font-bold text-[#131B2E] block truncate">{veh.displayName}</span>
+                            <span className="text-[9px] text-[#64748B]">{veh.registrationNumber}</span>
+                          </div>
+                          <select
+                            value={veh.imageUrl || ''}
+                            onChange={(e) => {
+                              if (e.target.value) handleAssignPhotoToVehicle(e.target.value, veh.id);
+                            }}
+                            className="text-[9px] rounded-lg border border-[#CBD5E1] bg-white px-1.5 py-1 max-w-[120px] cursor-pointer"
+                          >
+                            <option value="">No photo</option>
+                            {transportPhotos.map((p) => (
+                              <option key={p.id} value={p.url}>
+                                {p.imageType || p.fileName || 'Photo'}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {transportPhotos.length === 0 && Object.values(uploadTasks).length === 0 && (
+                  <div className="text-center py-4">
+                    <Camera className="w-6 h-6 mx-auto text-[#94A3B8] mb-1" />
+                    <p className="text-[11px] text-[#64748B]">No transport photos uploaded yet. Drag photos above or click &quot;Select Transport Photos&quot; to begin.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
+
+          {/* Hidden file inputs for transport photo upload */}
+          <input
+            ref={transportFileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files?.length) handleMultipleFilesUpload(e.target.files);
+              e.target.value = '';
+            }}
+          />
+          <input
+            ref={replaceTransportInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleReplacePhoto}
+          />
         </div>
       )}
 
@@ -3130,7 +4200,11 @@ export default function TransportFleetSection({
           <div className="bg-white rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
               <h4 className="font-bold text-sm text-[#131B2E]">
-                {editingVehicle.registrationNumber ? `Edit Vehicle: ${editingVehicle.displayName}` : 'Register New Fleet Vehicle'}
+                {editingVehicle.displayName
+                  ? `Edit Vehicle: ${editingVehicle.displayName}`
+                  : isWebsiteOnly
+                    ? 'Add Fleet Vehicle for Website Showcase'
+                    : 'Register New Fleet Vehicle'}
               </h4>
               <button
                 type="button"
@@ -3141,7 +4215,122 @@ export default function TransportFleetSection({
               </button>
             </div>
 
-            <div className="space-y-3 text-xs">
+            {isWebsiteOnly ? (
+              <div className="space-y-4 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-[#334155] mb-1">Vehicle Display Name *</label>
+                    <input
+                      type="text"
+                      value={editingVehicle.displayName}
+                      onChange={(e) => setEditingVehicle({ ...editingVehicle, displayName: e.target.value })}
+                      placeholder="e.g. Senior Wing Bus #1"
+                      className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] font-medium"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#334155] mb-1">Vehicle Type</label>
+                    <select
+                      value={editingVehicle.vehicleType}
+                      onChange={(e) =>
+                        setEditingVehicle({ ...editingVehicle, vehicleType: e.target.value as VehicleTypeKey })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] bg-white font-medium"
+                    >
+                      {VEHICLE_TYPE_CATALOG.map((vt) => (
+                        <option key={vt.key} value={vt.key}>
+                          {vt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-bold text-[#334155] mb-1">Seating Capacity *</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editingVehicle.capacity}
+                      onChange={(e) =>
+                        setEditingVehicle({ ...editingVehicle, capacity: Math.max(1, parseInt(e.target.value, 10) || 1) })
+                      }
+                      className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] font-semibold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-[#334155] mb-1">Make &amp; Model (Optional)</label>
+                    <input
+                      type="text"
+                      value={editingVehicle.makeModel || ''}
+                      onChange={(e) => setEditingVehicle({ ...editingVehicle, makeModel: e.target.value })}
+                      placeholder="e.g. Tata Marcopolo 407 / Force Traveller"
+                      className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#334155] mb-1">Vehicle Photo URL</label>
+                  <input
+                    type="url"
+                    value={editingVehicle.imageUrl || editingVehicle.photoUrl || ''}
+                    onChange={(e) =>
+                      setEditingVehicle({
+                        ...editingVehicle,
+                        imageUrl: e.target.value,
+                        photoUrl: e.target.value,
+                      })
+                    }
+                    placeholder="https://... or select an uploaded photo below"
+                    className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] text-xs"
+                  />
+                  {transportPhotos.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      <span className="text-[10px] font-bold text-[#64748B] block">Select from uploaded photos:</span>
+                      <div className="flex gap-2 overflow-x-auto py-1">
+                        {transportPhotos.map((p) => {
+                          const isSelected = (editingVehicle.imageUrl || editingVehicle.photoUrl) === p.url;
+                          return (
+                            <button
+                              key={p.id}
+                              type="button"
+                              onClick={() =>
+                                setEditingVehicle({
+                                  ...editingVehicle,
+                                  imageUrl: p.url,
+                                  photoUrl: p.url,
+                                })
+                              }
+                              className={`relative rounded-xl overflow-hidden border-2 shrink-0 cursor-pointer transition ${
+                                isSelected ? 'border-[#4338CA] ring-2 ring-[#4338CA]/20' : 'border-transparent hover:border-slate-300'
+                              }`}
+                            >
+                              <img src={p.url} alt="" className="w-14 h-10 object-cover" />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#334155] mb-1">Public Description / Key Highlights</label>
+                  <textarea
+                    rows={2}
+                    value={editingVehicle.notes || ''}
+                    onChange={(e) => setEditingVehicle({ ...editingVehicle, notes: e.target.value })}
+                    placeholder="e.g. Air-conditioned 40-seater Tata bus with GPS & CCTV covering North Motihari stops."
+                    className="w-full px-3 py-2 rounded-xl border border-[#CBD5E1] text-xs resize-none"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-[#334155] mb-1">Vehicle Display Name *</label>
@@ -3647,7 +4836,8 @@ export default function TransportFleetSection({
                   </div>
                 </div>
               </div>
-            </div>
+              </div>
+            )}
 
             <div className="pt-3 border-t border-[#E2E8F0] flex items-center justify-end gap-2">
               <button
@@ -3660,6 +4850,20 @@ export default function TransportFleetSection({
               <button
                 type="button"
                 onClick={() => {
+                  if (isWebsiteOnly) {
+                    if (!editingVehicle.displayName?.trim()) {
+                      alert('Please enter a vehicle display name.');
+                      return;
+                    }
+                    const finalReg =
+                      editingVehicle.registrationNumber?.trim() ||
+                      `VEH-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+                    handleSaveVehicle({
+                      ...editingVehicle,
+                      registrationNumber: finalReg,
+                    });
+                    return;
+                  }
                   if (!editingVehicle.registrationNumber || !editingVehicle.displayName) {
                     alert('Please enter vehicle display name and registration plate number.');
                     return;

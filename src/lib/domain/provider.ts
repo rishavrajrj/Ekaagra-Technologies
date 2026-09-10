@@ -6,6 +6,7 @@ import type {
   RecommendationCategory,
 } from './types';
 import { planDomainAllowances, domainExtensionOptions } from '@/lib/data';
+import { schoolDomainAllowances, schoolPlans, type SchoolProductId } from '@/lib/schoolPricing';
 
 interface CacheEntry {
   response: DomainCheckResponse;
@@ -105,13 +106,13 @@ const TLD_METADATA: TldMetadata[] = [
   {
     extension: '.school',
     categoryAffinity: { general: 4, school: 10, business: 2, tech: 3 },
-    defaultBadge: 'Best Overall',
+    defaultBadge: 'Premium Option',
     defaultReason: 'Modern dedicated extension clearly identifying your school campus.',
   },
   {
     extension: '.edu.in',
     categoryAffinity: { general: 2, school: 10, business: 1, tech: 1 },
-    defaultBadge: 'Best Overall',
+    defaultBadge: 'Good for India',
     defaultReason: 'Premier government-recognized institutional domain for accredited Indian schools.',
   },
   {
@@ -237,7 +238,17 @@ export class GoDaddyDomainProvider implements IDomainProvider {
     const { cleanLabel, explicitTld, requestedDomain } = this.sanitizeInput(rawInput);
     const planId = request.selectedPlanId || 'starter';
     const category = (request.businessCategory || 'general').toLowerCase();
-    const annualAllowance = planDomainAllowances[planId] ?? (planId === 'free-launch' ? 0 : 300);
+    let annualAllowance = request.annualAllowance;
+    if (annualAllowance === undefined || annualAllowance === null) {
+      if (category === 'school' || planId.startsWith('school-')) {
+        annualAllowance =
+          schoolDomainAllowances[planId as SchoolProductId] ??
+          schoolPlans.find((p) => p.id === planId)?.domainAllowance ??
+          (planId === 'school-website' ? 300 : 750);
+      } else {
+        annualAllowance = planDomainAllowances[planId] ?? (planId === 'free-launch' ? 0 : 300);
+      }
+    }
 
     if (!cleanLabel || cleanLabel.length < 2) {
       return {
@@ -259,7 +270,7 @@ export class GoDaddyDomainProvider implements IDomainProvider {
     }
 
     // Check 5-minute memory cache
-    const cacheKey = `${cleanLabel}:${requestedDomain || 'keyword'}:${planId}:${category}`;
+    const cacheKey = `${cleanLabel}:${requestedDomain || 'keyword'}:${planId}:${category}:${annualAllowance}`;
     const cached = responseCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
       return cached.response;
@@ -632,8 +643,34 @@ export class GoDaddyDomainProvider implements IDomainProvider {
         } as DomainExtensionQuote & { _score: number });
       }
 
-      // If zero available domains after direct AND suggestions:
-      if (quotes.length === 0) {
+      // Capture unavailable requested domain if user searched for an explicit domain that is taken
+      let requestedUnavailableQuote: DomainExtensionQuote | null = null;
+      if (requestedDomain && requestedDomainAvailable === false) {
+        const reqDomainLower = requestedDomain.toLowerCase();
+        const extMatch = reqDomainLower.match(/\.[a-z0-9.-]+$/);
+        const ext = extMatch ? extMatch[0] : '';
+        requestedUnavailableQuote = {
+          domain: reqDomainLower,
+          extension: ext,
+          availability: 'UNAVAILABLE',
+          sourceCurrency: 'INR',
+          period: 1,
+          registrationPeriod: '1 year',
+          hasFxConversion: false,
+          currency: 'INR',
+          premium: false,
+          isRequestedDomain: true,
+          planAllowance: annualAllowance,
+          termAllowance: annualAllowance,
+          included: false,
+          upgradeAmount: 0,
+          recommendationBadge: 'Requested Domain',
+          recommendationReason: 'This domain is currently registered or unavailable.',
+        };
+      }
+
+      // If zero available domains after direct AND suggestions and no unavailable requested domain:
+      if (quotes.length === 0 && !requestedUnavailableQuote) {
         return {
           query: rawInput,
           sanitizedName: cleanLabel,
@@ -656,8 +693,22 @@ export class GoDaddyDomainProvider implements IDomainProvider {
       // Rank recommendations
       quotes.sort((a, b) => ((b as any)._score || 0) - ((a as any)._score || 0));
 
-      const topRec = quotes[0];
-      if (topRec) {
+      // CRITICAL: If the exact requested domain is available, PIN IT TO POSITION 0 (top of the list)
+      if (requestedDomain) {
+        const reqIndex = quotes.findIndex((q) => q.isRequestedDomain);
+        if (reqIndex > 0) {
+          const [reqQuote] = quotes.splice(reqIndex, 1);
+          quotes.unshift(reqQuote);
+        }
+      }
+
+      // If requested domain was unavailable, prepend it to results so user sees their queried domain status
+      if (requestedUnavailableQuote) {
+        quotes.unshift(requestedUnavailableQuote);
+      }
+
+      const topRec = quotes.find((q) => q.availability === 'AVAILABLE') || quotes[0] || null;
+      if (topRec && topRec.availability === 'AVAILABLE') {
         if (topRec.isRequestedDomain) {
           topRec.recommendationBadge = 'Requested Domain';
           topRec.recommendationReason = 'Your exact requested domain is verified available.';

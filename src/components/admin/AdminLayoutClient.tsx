@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { adminLogoutAction } from '@/app/actions';
 import Logo from '@/components/ui/Logo';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   LayoutDashboard,
   Users,
@@ -456,18 +458,19 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       </div>
 
       {/* --- Admin Profile Safe Modal / Bottom Sheet --- */}
-      {profileModalOpen && (
+      <ModalPortal isOpen={profileModalOpen}>
         <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/70 backdrop-blur-xs transition-opacity"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs transition-opacity"
           onClick={() => setProfileModalOpen(false)}
         >
           <div
-            className="w-full sm:max-w-md bg-[#111C30] border border-slate-800 rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl text-slate-200 space-y-5 animate-in fade-in slide-in-from-bottom duration-200"
+            className="w-full sm:max-w-md max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto bg-[#111C30] border border-slate-800 rounded-3xl sm:rounded-2xl p-6 shadow-2xl text-slate-200 space-y-5 animate-in fade-in duration-200 my-auto"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
             aria-label="Admin Profile"
           >
+
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm shadow-md shadow-indigo-600/30">
@@ -529,7 +532,8 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }
+

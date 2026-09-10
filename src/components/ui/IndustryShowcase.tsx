@@ -185,24 +185,24 @@ export default function IndustryShowcase() {
 
   return (
     <section
-      className="relative py-10 sm:py-12 lg:py-16 bg-[#FAF7F2] border-b border-[#E2E8F0] overflow-hidden"
+      className="home-viewport-section bg-[#FAF7F2] border-b border-[#E2E8F0] py-4 sm:py-6 lg:py-6"
       id="industries"
     >
       {/* Background glow accent */}
       <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-[#4338CA]/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="site-container relative z-10 w-full space-y-6 sm:space-y-8">
+      <div className="site-container relative z-10 w-full space-y-4 sm:space-y-5 lg:space-y-5 my-auto">
         {/* Section Header */}
         <Reveal>
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 border border-[#4338CA]/20 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 border border-[#4338CA]/20 text-[#4338CA] rounded-full text-[10.5px] sm:text-[11px] font-bold uppercase tracking-widest">
               <Sparkles className="w-3 h-3 text-[#F97360]" />
               WHERE WE BUILD
             </span>
             <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Tailored around the people you serve.
             </h2>
-            <p className="section-supporting-subtitle mx-auto">
+            <p className="section-supporting-subtitle mx-auto text-xs sm:text-sm">
               Every industry has distinct operational challenges. We build digital experiences designed around your specific audience and workflow.
             </p>
           </div>
@@ -210,7 +210,7 @@ export default function IndustryShowcase() {
 
         {/* Industry Selector Tabs (6-Card Grid) */}
         <Reveal delay={100}>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5">
             {industrySectors.map((sector) => {
               const Icon = sector.icon;
               const isSelected = selectedId === sector.id;
@@ -219,33 +219,33 @@ export default function IndustryShowcase() {
                   key={sector.id}
                   type="button"
                   onClick={() => setSelectedId(sector.id)}
-                  className={`p-2.5 sm:p-3.5 rounded-xl text-left transition-all duration-300 flex flex-col justify-between border cursor-pointer min-w-0 ${
+                  className={`p-2 sm:p-2.5 lg:p-3 rounded-xl text-left transition-all duration-300 flex flex-col justify-between border cursor-pointer min-w-0 ${
                     isSelected
                       ? 'bg-[#4338CA] text-white border-[#4338CA] shadow-md shadow-[#4338CA]/25 scale-[1.02]'
-                      : 'bg-white text-[#131B2E] border-[#E2E8F0] hover:border-[#4338CA]/40 hover:shadow-sm'
+                      : 'bg-white text-[#131B2E] border-[#E2E8F0] hover:border-[#4338CA]/40 hover:shadow-xs'
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1.5">
                     <div
-                      className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center transition-transform ${
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-lg flex items-center justify-center transition-transform ${
                         isSelected
                           ? 'bg-white/20 text-white scale-105'
                           : 'bg-[#4338CA]/10 text-[#4338CA]'
                       }`}
                     >
-                      <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <Icon className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                     </div>
                   </div>
 
                   <div className="min-w-0">
                     <span
-                      className={`text-[8.5px] sm:text-[9px] font-bold uppercase tracking-wider block mb-0.5 truncate ${
+                      className={`text-[8px] sm:text-[8.5px] font-bold uppercase tracking-wider block mb-0.5 truncate ${
                         isSelected ? 'text-[#F4C95D]' : 'text-[#64748B]'
                       }`}
                     >
                       {sector.badge}
                     </span>
-                    <h3 className="text-[11px] sm:text-xs font-bold tracking-tight leading-snug line-clamp-2">
+                    <h3 className="text-[10.5px] sm:text-xs font-bold tracking-tight leading-snug line-clamp-1">
                       {sector.name}
                     </h3>
                   </div>
@@ -258,28 +258,28 @@ export default function IndustryShowcase() {
         {/* Detail Showcase Card with Smooth Crossfade */}
         <div
           key={activeSector.id}
-          className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 lg:p-7 shadow-lg grid lg:grid-cols-12 gap-5 lg:gap-6 items-center transition-all duration-300 animate-fade-in"
+          className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 lg:p-5 shadow-md grid lg:grid-cols-12 gap-4 lg:gap-6 items-center transition-all duration-300 animate-fade-in"
         >
           {/* Left Column: Context & Positioning */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="space-y-2">
+          <div className="lg:col-span-5 space-y-3">
+            <div className="space-y-1.5">
               <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[10px] font-bold uppercase tracking-wider">
                 <ActiveIcon className="w-3 h-3 text-[#F97360]" />
                 <span>{activeSector.highlight}</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-[#131B2E] tracking-tight leading-snug">
+              <h3 className="text-lg sm:text-xl lg:text-[1.35rem] font-extrabold text-[#131B2E] tracking-tight leading-snug">
                 {activeSector.tagline}
               </h3>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed font-normal">
+              <p className="text-xs text-[#64748B] leading-relaxed font-normal">
                 {activeSector.description}
               </p>
             </div>
 
-            <div className="pt-1">
+            <div className="pt-0.5">
               <MagneticButton maxDistance={6}>
                 <Link
                   href="/get-quote"
-                  className="premium-shimmer-btn inline-flex items-center gap-2 px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/25 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                  className="premium-shimmer-btn inline-flex items-center gap-2 px-4 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/25 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
                 >
                   <span>Discuss Your Project</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -289,23 +289,23 @@ export default function IndustryShowcase() {
           </div>
 
           {/* Right Column: 3 Concrete Industry Outcomes */}
-          <div className="lg:col-span-7 grid gap-2.5 sm:gap-3">
-            <div className="text-[10px] font-mono font-bold text-[#64748B] uppercase tracking-widest">
+          <div className="lg:col-span-7 grid gap-2 sm:gap-2.5">
+            <div className="text-[9.5px] font-mono font-bold text-[#64748B] uppercase tracking-widest">
               Key Industry Outcomes:
             </div>
             {activeSector.outcomes.map((outcome, idx) => (
               <div
                 key={idx}
-                className="card-popup-sm p-3.5 sm:p-4 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl flex items-start gap-3"
+                className="card-popup-sm p-2.5 sm:p-3 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl flex items-start gap-2.5"
               >
-                <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                <div className="w-6 h-6 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                 </div>
-                <div>
-                  <h4 className="text-xs sm:text-sm font-bold text-[#131B2E]">
+                <div className="min-w-0">
+                  <h4 className="text-xs sm:text-[13px] font-bold text-[#131B2E]">
                     {outcome.title}
                   </h4>
-                  <p className="text-xs text-[#64748B] mt-0.5 leading-relaxed">
+                  <p className="text-[11px] sm:text-xs text-[#64748B] mt-0.5 leading-relaxed">
                     {outcome.detail}
                   </p>
                 </div>

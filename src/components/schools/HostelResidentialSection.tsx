@@ -27,7 +27,20 @@ import {
   UserX,
   FileText,
   DoorOpen,
+  Camera,
 } from 'lucide-react';
+import SectionPhotoGallery, { type SectionPhotoTag } from './SectionPhotoGallery';
+
+const HOSTEL_PHOTO_TAGS: readonly SectionPhotoTag[] = [
+  { value: 'building_exterior', label: 'Hostel Building & Exterior', description: 'Front view, entrance gate, campus surroundings of hostel block' },
+  { value: 'dormitory_room', label: 'Dormitory & Student Bedroom', description: 'Student beds, study desks, wardrobes, and ventilation' },
+  { value: 'mess_dining', label: 'Mess & Dining Hall', description: 'Hygienic kitchen, dining tables, and meal service area' },
+  { value: 'study_hall', label: 'Hostel Study & Reading Room', description: 'Quiet evening study hall and library space inside hostel' },
+  { value: 'common_room', label: 'Recreation & Common Room', description: 'Indoor games, TV room, and leisure recreation lounge' },
+  { value: 'washroom_facility', label: 'Washroom & Hygiene Facilities', description: 'Sanitized bathrooms, laundry, and hot water facilities' },
+  { value: 'warden_security', label: 'Warden Office & Security Checkpoint', description: 'Warden station, biometric check-in, and 24/7 guard desk' },
+  { value: 'other', label: 'Other Hostel Space', description: 'Other residential infrastructure and amenities' },
+] as const;
 import type {
   UniversalIntakeData,
   HostelData,
@@ -51,6 +64,8 @@ import {
   getHostelSectionScore,
   assignStudentToHostel,
   transferStudentRoom,
+  removeHostelBuilding,
+  removeHostelRoom,
   RESIDENTIAL_MODEL_OPTIONS,
   GENDER_ACCOMMODATION_OPTIONS,
   STUDENT_ELIGIBILITY_OPTIONS,
@@ -68,6 +83,7 @@ interface HostelResidentialSectionProps {
   stepNumber?: number;
   totalSteps?: number;
   project?: SchoolProject | null;
+  token?: string;
 }
 
 export default function HostelResidentialSection({
@@ -80,6 +96,7 @@ export default function HostelResidentialSection({
   stepNumber = 15,
   totalSteps = 29,
   project,
+  token,
 }: HostelResidentialSectionProps) {
   const formId = useId();
   const isWebsiteOnly = project?.product_id === 'school-website' || project?.product_id === 'school-website-cms';
@@ -128,16 +145,30 @@ export default function HostelResidentialSection({
   );
 
   // Modal / UI State
-  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'rooms' | 'residents' | 'policies'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'buildings' | 'rooms' | 'residents' | 'policies' | 'photos'>('overview');
   const [showAddBuildingModal, setShowAddBuildingModal] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<HostelBuilding | null>(null);
   const [showAddRoomModal, setShowAddRoomModal] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<HostelRoom | null>(null);
   const [selectedBuildingIdForRooms, setSelectedBuildingIdForRooms] = useState<string>('');
   const [showAssignStudentModal, setShowAssignStudentModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [transferringStudentId, setTransferringStudentId] = useState<string>('');
   const [studentSearchQuery, setStudentSearchQuery] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+  const [buildingToDelete, setBuildingToDelete] = useState<HostelBuilding | null>(null);
+
+  const buildingDeleteActiveCount = useMemo(() => {
+    if (!buildingToDelete) return 0;
+    return (config.residentAssignments || []).filter(
+      (a) => a.buildingId === buildingToDelete.id && a.status === 'active_resident'
+    ).length;
+  }, [buildingToDelete, config.residentAssignments]);
+
+  const buildingDeleteRoomsCount = useMemo(() => {
+    if (!buildingToDelete) return 0;
+    return (config.rooms || []).filter((r) => r.buildingId === buildingToDelete.id).length;
+  }, [buildingToDelete, config.rooms]);
 
   // New building form state
   const [bldgForm, setBldgForm] = useState({
@@ -304,6 +335,7 @@ export default function HostelResidentialSection({
           ? [
               { id: 'overview', label: '1. Overview & Models', icon: Building2 },
               { id: 'policies', label: '2. Mess & Safety Highlights', icon: ShieldCheck },
+              { id: 'photos', label: `3. Photos (${(config.images || []).length})`, icon: Camera },
             ]
           : [
               { id: 'overview', label: '1. Overview & Models', icon: Building2 },
@@ -311,6 +343,7 @@ export default function HostelResidentialSection({
               { id: 'rooms', label: `3. Rooms (${(config.rooms || []).length})`, icon: DoorOpen },
               { id: 'residents', label: `4. Residents (${capacityMetrics.occupiedBeds})`, icon: Users },
               { id: 'policies', label: '5. Curfew, Mess & Safety', icon: ShieldCheck },
+              { id: 'photos', label: `6. Photography (${(config.images || []).length})`, icon: Camera },
             ]
         ).map((tab) => {
           const Icon = tab.icon;
@@ -432,6 +465,32 @@ export default function HostelResidentialSection({
               </div>
             </div>
           </div>
+
+          {/* Hostel & Residential Photography Showcase */}
+          <SectionPhotoGallery
+            sectionKey="hostelConfig"
+            category="campus_buildings"
+            title="Hostel & Residential Facilities Showcase"
+            subtitle="Upload photos of hostel blocks, student dorms, dining mess, study halls & recreational areas"
+            cardIndex="Photos"
+            badgeLabel="Hostel Gallery"
+            badgeColorClass="bg-[#FEF3C7] text-[#92400E] border-[#FCD34D]"
+            tags={HOSTEL_PHOTO_TAGS}
+            defaultTag="Hostel Building & Exterior"
+            defaultCaption="Secure, comfortable, and well-managed residential hostel boarding facilities"
+            token={token}
+            intakeData={intakeData}
+            sectionImages={config.images || []}
+            updateSectionField={updateSectionField}
+            updateSectionDirect={updateSectionDirect}
+            campusImageFilter={(img) =>
+              img.category === 'campus_buildings' ||
+              img.category === 'other' ||
+              img.imageCategory === 'campus_buildings' ||
+              (Boolean(img.imageType) && img.imageType!.toLowerCase().includes('hostel')) ||
+              (Boolean(img.caption) && img.caption!.toLowerCase().includes('hostel'))
+            }
+          />
         </div>
       )}
 
@@ -563,6 +622,7 @@ export default function HostelResidentialSection({
                           setShowAddBuildingModal(true);
                         }}
                         className="p-1 text-slate-500 hover:text-[#131B2E] rounded transition"
+                        title="Edit building"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -575,10 +635,18 @@ export default function HostelResidentialSection({
                           );
                           commitHostel({ ...config, buildings: updated });
                         }}
-                        className="p-1 text-slate-500 hover:text-red-600 rounded transition"
+                        className="p-1 text-slate-500 hover:text-amber-600 rounded transition"
                         title={bldg.status === 'active' ? 'Deactivate building' : 'Activate building'}
                       >
                         <UserX className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setBuildingToDelete(bldg)}
+                        className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition"
+                        title="Remove building"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -601,6 +669,7 @@ export default function HostelResidentialSection({
               type="button"
               disabled={(config.buildings || []).length === 0}
               onClick={() => {
+                setEditingRoom(null);
                 const targetBldg = selectedBuildingIdForRooms || config.buildings?.[0]?.id || '';
                 setRoomForm({
                   buildingId: targetBldg,
@@ -638,7 +707,8 @@ export default function HostelResidentialSection({
                     <th className="py-2.5 px-3 text-center">Capacity</th>
                     <th className="py-2.5 px-3 text-center">Occupied</th>
                     <th className="py-2.5 px-3 text-center">Available</th>
-                    <th className="py-2.5 px-3 text-right">Status</th>
+                    <th className="py-2.5 px-3 text-center">Status</th>
+                    <th className="py-2.5 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E2E8F0] text-xs">
@@ -655,7 +725,25 @@ export default function HostelResidentialSection({
                           {bldg ? bldg.name : 'Unknown Block'}
                         </td>
                         <td className="py-2.5 px-3 font-mono font-bold text-[#4338CA]">
-                          {room.roomNumber}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingRoom(room);
+                              setRoomForm({
+                                buildingId: room.buildingId,
+                                roomNumber: room.roomNumber,
+                                floor: Number(room.floor) || 1,
+                                category: room.category,
+                                capacity: room.capacity,
+                                genderCategory: room.genderCategory || 'any',
+                              });
+                              setShowAddRoomModal(true);
+                            }}
+                            className="hover:underline cursor-pointer"
+                            title="Edit room details"
+                          >
+                            {room.roomNumber}
+                          </button>
                         </td>
                         <td className="py-2.5 px-3 text-[#64748B] capitalize">
                           {room.category.replace('_', ' ')} (Floor {room.floor})
@@ -663,7 +751,7 @@ export default function HostelResidentialSection({
                         <td className="py-2.5 px-3 text-center font-bold text-[#131B2E]">{room.capacity}</td>
                         <td className="py-2.5 px-3 text-center font-bold text-[#4338CA]">{occupied}</td>
                         <td className="py-2.5 px-3 text-center font-bold text-emerald-600">{available}</td>
-                        <td className="py-2.5 px-3 text-right">
+                        <td className="py-2.5 px-3 text-center">
                           <span
                             className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase ${
                               room.status === 'active'
@@ -673,6 +761,50 @@ export default function HostelResidentialSection({
                           >
                             {room.status}
                           </span>
+                        </td>
+                        <td className="py-2.5 px-3 text-right space-x-1 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setEditingRoom(room);
+                              setRoomForm({
+                                buildingId: room.buildingId,
+                                roomNumber: room.roomNumber,
+                                floor: Number(room.floor) || 1,
+                                category: room.category,
+                                capacity: room.capacity,
+                                genderCategory: room.genderCategory || 'any',
+                              });
+                              setShowAddRoomModal(true);
+                            }}
+                            className="p-1 text-slate-500 hover:text-[#131B2E] hover:bg-slate-100 rounded transition"
+                            title="Edit room"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (occupied > 0) {
+                                setActionError(`Cannot remove Room ${room.roomNumber} because it currently has ${occupied} active resident(s).`);
+                                return;
+                              }
+                              const res = removeHostelRoom(config, room.id);
+                              if (!res.success) {
+                                setActionError(res.error || 'Failed to remove room.');
+                              } else {
+                                commitHostel(res.data);
+                              }
+                            }}
+                            className={`p-1 rounded transition ${
+                              occupied > 0
+                                ? 'text-slate-300 cursor-not-allowed'
+                                : 'text-slate-400 hover:text-red-600 hover:bg-red-50'
+                            }`}
+                            title={occupied > 0 ? `Cannot remove occupied room (${occupied} active residents)` : 'Remove room'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </td>
                       </tr>
                     );
@@ -992,6 +1124,36 @@ export default function HostelResidentialSection({
         </div>
       )}
 
+      {/* TAB 6 / PHOTOS: HOSTEL & RESIDENTIAL PHOTOGRAPHY SHOWCASE */}
+      {activeTab === 'photos' && (
+        <div className="space-y-4">
+          <SectionPhotoGallery
+            sectionKey="hostelConfig"
+            category="campus_buildings"
+            title="Hostel & Residential Facilities Showcase"
+            subtitle="Upload photos of hostel blocks, student dorms, dining mess, study halls & recreational areas"
+            cardIndex="Photos"
+            badgeLabel="Hostel Gallery"
+            badgeColorClass="bg-[#FEF3C7] text-[#92400E] border-[#FCD34D]"
+            tags={HOSTEL_PHOTO_TAGS}
+            defaultTag="Hostel Building & Exterior"
+            defaultCaption="Secure, comfortable, and well-managed residential hostel boarding facilities"
+            token={token}
+            intakeData={intakeData}
+            sectionImages={config.images || []}
+            updateSectionField={updateSectionField}
+            updateSectionDirect={updateSectionDirect}
+            campusImageFilter={(img) =>
+              img.category === 'campus_buildings' ||
+              img.category === 'other' ||
+              img.imageCategory === 'campus_buildings' ||
+              (Boolean(img.imageType) && img.imageType!.toLowerCase().includes('hostel')) ||
+              (Boolean(img.caption) && img.caption!.toLowerCase().includes('hostel'))
+            }
+          />
+        </div>
+      )}
+
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {/* MODAL: ADD / EDIT BUILDING */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
@@ -1091,14 +1253,31 @@ export default function HostelResidentialSection({
               </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-2 pt-3 border-t border-[#E2E8F0]">
-              <button
-                type="button"
-                onClick={() => setShowAddBuildingModal(false)}
-                className="px-3 py-1.5 rounded-xl border border-[#CBD5E1] text-[#64748B] font-bold"
-              >
-                Cancel
-              </button>
+            <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
+              {editingBuilding ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const toDel = editingBuilding;
+                    setShowAddBuildingModal(false);
+                    setBuildingToDelete(toDel);
+                  }}
+                  className="px-2.5 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl font-bold flex items-center space-x-1.5 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Remove Building</span>
+                </button>
+              ) : (
+                <div />
+              )}
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBuildingModal(false)}
+                  className="px-3 py-1.5 rounded-xl border border-[#CBD5E1] text-[#64748B] font-bold"
+                >
+                  Cancel
+                </button>
               <button
                 type="button"
                 onClick={() => {
@@ -1131,6 +1310,7 @@ export default function HostelResidentialSection({
               >
                 {editingBuilding ? 'Update Building' : 'Save Building'}
               </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1143,10 +1323,15 @@ export default function HostelResidentialSection({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-xl border border-[#E2E8F0]">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
-              <h4 className="font-bold text-sm text-[#131B2E]">Add Room to Hostel</h4>
+              <h4 className="font-bold text-sm text-[#131B2E]">
+                {editingRoom ? 'Edit Hostel Room' : 'Add Room to Hostel'}
+              </h4>
               <button
                 type="button"
-                onClick={() => setShowAddRoomModal(false)}
+                onClick={() => {
+                  setShowAddRoomModal(false);
+                  setEditingRoom(null);
+                }}
                 className="text-slate-400 hover:text-slate-600 font-bold"
               >
                 ✕
@@ -1228,41 +1413,96 @@ export default function HostelResidentialSection({
               </div>
             </div>
 
-            <div className="flex items-center justify-end space-x-2 pt-3 border-t border-[#E2E8F0]">
-              <button
-                type="button"
-                onClick={() => setShowAddRoomModal(false)}
-                className="px-3 py-1.5 rounded-xl border border-[#CBD5E1] text-[#64748B] font-bold"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!roomForm.roomNumber.trim()) {
-                    setActionError('Room number is required.');
-                    return;
-                  }
+            <div className="flex items-center justify-between pt-3 border-t border-[#E2E8F0]">
+              {editingRoom ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const roomToDel = editingRoom;
+                    const occupied = (config.residentAssignments || []).filter(
+                      (a) => a.roomId === roomToDel.id && a.status === 'active_resident'
+                    ).length;
+                    if (occupied > 0) {
+                      setActionError(`Cannot remove Room ${roomToDel.roomNumber} because it currently has ${occupied} active resident(s).`);
+                      return;
+                    }
+                    setShowAddRoomModal(false);
+                    setEditingRoom(null);
+                    const res = removeHostelRoom(config, roomToDel.id);
+                    if (!res.success) {
+                      setActionError(res.error || 'Failed to remove room.');
+                    } else {
+                      commitHostel(res.data);
+                    }
+                  }}
+                  className="px-2.5 py-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl font-bold flex items-center space-x-1.5 transition cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Remove Room</span>
+                </button>
+              ) : (
+                <div />
+              )}
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddRoomModal(false);
+                    setEditingRoom(null);
+                  }}
+                  className="px-3 py-1.5 rounded-xl border border-[#CBD5E1] text-[#64748B] font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!roomForm.roomNumber.trim()) {
+                      setActionError('Room number is required.');
+                      return;
+                    }
 
-                  const newRoom: HostelRoom = {
-                    id: `room-${Date.now()}`,
-                    buildingId: roomForm.buildingId,
-                    roomNumber: roomForm.roomNumber.trim(),
-                    floor: roomForm.floor,
-                    category: roomForm.category,
-                    capacity: roomForm.capacity,
-                    genderCategory: roomForm.genderCategory,
-                    status: 'active',
-                  };
+                    if (editingRoom) {
+                      const occupied = (config.residentAssignments || []).filter(
+                        (a) => a.roomId === editingRoom.id && a.status === 'active_resident'
+                      ).length;
+                      if (roomForm.capacity < occupied) {
+                        setActionError(`Cannot reduce room capacity below ${occupied} active resident(s) currently occupying this room.`);
+                        return;
+                      }
+                    }
 
-                  const updatedRooms = [...(config.rooms || []), newRoom];
-                  commitHostel({ ...config, rooms: updatedRooms });
-                  setShowAddRoomModal(false);
-                }}
-                className="px-4 py-1.5 rounded-xl bg-[#4338CA] text-white font-bold hover:bg-[#3730A3] transition shadow-xs"
-              >
-                Add Room
-              </button>
+                    const newRoom: HostelRoom = {
+                      id: editingRoom?.id || `room-${Date.now()}`,
+                      buildingId: roomForm.buildingId,
+                      roomNumber: roomForm.roomNumber.trim(),
+                      floor: roomForm.floor,
+                      category: roomForm.category,
+                      capacity: roomForm.capacity,
+                      genderCategory: roomForm.genderCategory,
+                      status: editingRoom?.status || 'active',
+                      notes: editingRoom?.notes || '',
+                    };
+
+                    const updatedRooms = editingRoom
+                      ? (config.rooms || []).map((r) => (r.id === editingRoom.id ? newRoom : r))
+                      : [...(config.rooms || []), newRoom];
+
+                    const newCapacity = updatedRooms.reduce((sum, r) => sum + (Number(r.capacity) || 0), 0);
+
+                    commitHostel({
+                      ...config,
+                      rooms: updatedRooms,
+                      totalCapacity: newCapacity,
+                    });
+                    setShowAddRoomModal(false);
+                    setEditingRoom(null);
+                  }}
+                  className="px-4 py-1.5 rounded-xl bg-[#4338CA] text-white font-bold hover:bg-[#3730A3] transition shadow-xs"
+                >
+                  {editingRoom ? 'Update Room' : 'Add Room'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1520,6 +1760,101 @@ export default function HostelResidentialSection({
               >
                 Confirm Transfer
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL: REMOVE BUILDING CONFIRMATION */}
+      {/* ───────────────────────────────────────────────────────────────────────────── */}
+      {buildingToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl border border-[#E2E8F0]">
+            <div className="flex items-start space-x-3">
+              <div
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  buildingDeleteActiveCount > 0 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-600'
+                }`}
+              >
+                {buildingDeleteActiveCount > 0 ? (
+                  <AlertTriangle className="w-5 h-5" />
+                ) : (
+                  <Trash2 className="w-5 h-5" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-sm text-[#131B2E]">
+                  {buildingDeleteActiveCount > 0 ? 'Cannot Remove Building' : 'Remove Hostel Building?'}
+                </h4>
+                <p className="text-xs text-[#64748B] mt-1 leading-relaxed">
+                  {buildingDeleteActiveCount > 0 ? (
+                    <>
+                      <strong className="text-[#131B2E]">{buildingToDelete.name}</strong> currently has{' '}
+                      <strong className="text-amber-700">{buildingDeleteActiveCount} active resident{buildingDeleteActiveCount === 1 ? '' : 's'}</strong> assigned.
+                      Please transfer or check out these residents in the Residents tab before removing this building.
+                    </>
+                  ) : (
+                    <>
+                      Are you sure you want to remove <strong className="text-[#131B2E]">{buildingToDelete.name}</strong> ({buildingToDelete.code})?
+                      {buildingDeleteRoomsCount > 0 && (
+                        <span className="block mt-1 text-slate-500">
+                          This will also remove all {buildingDeleteRoomsCount} room{buildingDeleteRoomsCount === 1 ? '' : 's'} configured in this block. This action cannot be undone.
+                        </span>
+                      )}
+                    </>
+                  )}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-3 border-t border-[#E2E8F0]">
+              {buildingDeleteActiveCount > 0 ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setBuildingToDelete(null)}
+                    className="px-3 py-1.5 rounded-xl border border-[#CBD5E1] text-[#64748B] font-bold text-xs"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBuildingToDelete(null);
+                      setActiveTab('residents');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-[#4338CA] text-white font-bold text-xs hover:bg-[#3730A3] transition shadow-xs"
+                  >
+                    Go to Residents Tab
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setBuildingToDelete(null)}
+                    className="px-3 py-1.5 rounded-xl border border-[#CBD5E1] text-[#64748B] font-bold text-xs"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const res = removeHostelBuilding(config, buildingToDelete.id);
+                      if (!res.success) {
+                        setActionError(res.error || 'Failed to remove building.');
+                      } else {
+                        commitHostel(res.data);
+                      }
+                      setBuildingToDelete(null);
+                    }}
+                    className="px-4 py-1.5 rounded-xl bg-red-600 text-white font-bold text-xs hover:bg-red-700 transition shadow-xs"
+                  >
+                    Remove Building
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -21,6 +21,7 @@ import type {
   AcademicStructureData,
   StudentCustomFieldDefinition,
 } from '@/lib/types';
+import ModalPortal from '@/components/ui/ModalPortal';
 import {
   STUDENT_FIELD_CATEGORIES,
   getAllStudentCategories,
@@ -276,10 +277,17 @@ export default function StudentFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-2xs overflow-y-auto animate-fadeIn">
-      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/60">
+    <ModalPortal isOpen={isOpen}>
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-2xs animate-fadeIn"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white border border-slate-200 rounded-2xl w-full max-w-3xl max-h-[85vh] sm:max-h-[88vh] flex flex-col shadow-2xl overflow-hidden my-auto relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/60 shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-700">
               <User className="w-5 h-5" />
@@ -374,5 +382,6 @@ export default function StudentFormModal({
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 }

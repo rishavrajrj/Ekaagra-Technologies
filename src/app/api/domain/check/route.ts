@@ -28,11 +28,14 @@ export async function GET(req: Request) {
   const domain = searchParams.get('domain') || '';
   const planId = searchParams.get('planId') || undefined;
   const category = searchParams.get('category') || undefined;
+  const allowanceParam = searchParams.get('allowance');
+  const allowance = allowanceParam ? parseInt(allowanceParam, 10) : undefined;
 
   const response = await domainProvider.checkDomain({
     domain,
     selectedPlanId: planId,
     businessCategory: category,
+    annualAllowance: typeof allowance === 'number' && !isNaN(allowance) ? allowance : undefined,
   });
 
   return NextResponse.json(response);

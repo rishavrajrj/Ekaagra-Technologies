@@ -25,6 +25,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import type { StaffMember, StaffCustomField } from '@/lib/types';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 export interface StaffDetailModalProps {
   member: StaffMember | null;
@@ -54,8 +55,15 @@ export default function StaffDetailModal({
   const hasCustomEntries = Object.keys(customValues).length > 0 || customFields.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+    <ModalPortal isOpen={isOpen}>
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-3xl max-h-[85vh] sm:max-h-[88vh] flex flex-col overflow-hidden my-auto relative"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Top Header Card with Cover Background */}
         <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 text-white p-6 relative">
           <button
@@ -509,5 +517,6 @@ export default function StaffDetailModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

@@ -42,24 +42,24 @@ export default function BeforeAfterSection() {
   return (
     <section
       id="transformation"
-      className="relative py-10 sm:py-12 lg:py-16 bg-[#F5F0E8] border-b border-[#E2E8F0] overflow-hidden"
+      className="home-viewport-section bg-[#F5F0E8] border-b border-[#E2E8F0] py-4 sm:py-6 lg:py-6"
     >
       {/* Background ambient accents */}
       <div className="absolute top-1/2 left-0 w-80 h-80 bg-[#F97360]/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="site-container relative z-10 w-full space-y-6 sm:space-y-8">
+      <div className="site-container relative z-10 w-full space-y-4 sm:space-y-5 lg:space-y-5 my-auto">
         {/* Section Heading */}
         <Reveal>
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#F97360]/10 border border-[#F97360]/20 text-[#F97360] rounded-full text-[11px] font-bold uppercase tracking-widest">
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#F97360]/10 border border-[#F97360]/20 text-[#F97360] rounded-full text-[10.5px] sm:text-[11px] font-bold uppercase tracking-widest">
               <Sparkles className="w-3 h-3" />
               THE TRANSFORMATION
             </span>
             <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Your website should work harder for your business.
             </h2>
-            <p className="section-supporting-subtitle mx-auto">
+            <p className="section-supporting-subtitle mx-auto text-xs sm:text-sm">
               See the difference intentional design and custom craftsmanship make for customer trust and lead conversion.
             </p>
           </div>
@@ -67,17 +67,17 @@ export default function BeforeAfterSection() {
 
         {/* Comparison Grid */}
         <Reveal delay={120}>
-          <div className="grid md:grid-cols-2 gap-4 sm:gap-6 items-stretch">
+          <div className="grid md:grid-cols-2 gap-3.5 sm:gap-5 items-stretch">
             {/* Before Column (Red/Generic Template) */}
-            <div className="bg-white/95 border border-red-200 rounded-2xl p-4 sm:p-6 shadow-md space-y-3 relative overflow-hidden flex flex-col justify-between">
-              <div className="space-y-3">
+            <div className="bg-white/95 border border-red-200 rounded-2xl p-4 sm:p-5 lg:p-5 shadow-sm space-y-3 relative overflow-hidden flex flex-col justify-between">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between border-b border-red-100 pb-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center font-bold shrink-0">
                       <XCircle className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-red-500 block">
+                      <span className="text-[8.5px] sm:text-[9px] font-mono font-bold uppercase tracking-widest text-red-500 block">
                         Common Pitfall
                       </span>
                       <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">
@@ -109,26 +109,26 @@ export default function BeforeAfterSection() {
                 </div>
               </div>
 
-              <div className="p-2.5 bg-red-50 border border-red-100 rounded-xl text-[11px] text-red-700 font-medium">
+              <div className="p-2 sm:p-2.5 bg-red-50 border border-red-100 rounded-xl text-[10.5px] sm:text-[11px] text-red-700 font-medium">
                 Result: Lost enquiries, unmemorable first impression, and missed revenue.
               </div>
             </div>
 
             {/* After Column (Ekaagra Standard) */}
-            <div className="card-popup bg-white border-2 border-[#4338CA] rounded-2xl p-4 sm:p-6 shadow-lg space-y-3 relative overflow-hidden flex flex-col justify-between">
+            <div className="card-popup bg-white border-2 border-[#4338CA] rounded-2xl p-4 sm:p-5 lg:p-5 shadow-md space-y-3 relative overflow-hidden flex flex-col justify-between">
               {/* Top highlight ribbon */}
-              <div className="absolute top-0 right-0 bg-[#4338CA] text-white text-[9px] font-extrabold uppercase tracking-widest px-3 py-0.5 rounded-bl-lg shadow-sm">
+              <div className="absolute top-0 right-0 bg-[#4338CA] text-white text-[8.5px] sm:text-[9px] font-extrabold uppercase tracking-widest px-2.5 sm:px-3 py-0.5 rounded-bl-lg shadow-xs">
                 Ekaagra Standard
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0">
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold shrink-0">
                       <CheckCircle2 className="w-4 h-4" />
                     </div>
                     <div>
-                      <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-emerald-600 block">
+                      <span className="text-[8.5px] sm:text-[9px] font-mono font-bold uppercase tracking-widest text-emerald-600 block">
                         Custom Craftsmanship
                       </span>
                       <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">
@@ -136,7 +136,7 @@ export default function BeforeAfterSection() {
                       </h3>
                     </div>
                   </div>
-                  <span className="text-[9px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200 mr-20 sm:mr-0 shrink-0">
+                  <span className="text-[9px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-600 rounded-full border border-emerald-200 mr-16 sm:mr-0 shrink-0">
                     High Converting
                   </span>
                 </div>

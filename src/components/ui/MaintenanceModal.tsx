@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { ShieldCheck, X, Check, AlertCircle, Info } from 'lucide-react';
 import { maintenanceCoverage } from '@/lib/data';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 interface MaintenanceModalProps {
   isOpen: boolean;
@@ -11,35 +12,31 @@ interface MaintenanceModalProps {
 
 export function MaintenanceModal({ isOpen, onClose }: MaintenanceModalProps) {
   useEffect(() => {
+    if (!isOpen) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="maintenance-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
-      onClick={onClose}
-    >
+    <ModalPortal isOpen={isOpen}>
       <div
-        className="relative w-full max-w-2xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E2E8F0] max-h-[90vh] overflow-y-auto space-y-6"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="maintenance-modal-title"
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6 bg-black/60 backdrop-blur-sm animate-fadeIn"
+        onClick={onClose}
       >
+        <div
+          className="relative w-full max-w-2xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#E2E8F0] max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3.5rem)] overflow-y-auto space-y-6 my-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+
         {/* Close Button */}
         <button
           type="button"
@@ -116,9 +113,11 @@ export function MaintenanceModal({ isOpen, onClose }: MaintenanceModalProps) {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </ModalPortal>
   );
 }
+
 
 export function MaintenanceTriggerButton({ onOpen }: { onOpen: () => void }) {
   return (

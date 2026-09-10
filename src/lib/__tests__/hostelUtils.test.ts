@@ -27,6 +27,8 @@ import {
   assignStudentToHostel,
   transferStudentRoom,
   recordHostelAttendance,
+  removeHostelBuilding,
+  removeHostelRoom,
   getHostelSummary,
 } from '../hostelUtils';
 import {
@@ -517,6 +519,86 @@ runTest('Summary pill generation reflects correct states for Day and Boarding sc
   );
   assert.strictEqual(boardingSummary.isApplicable, true);
   assert.strictEqual(boardingSummary.pillLabel, '1/120 Beds');
+});
+
+// ─── TEST 11: SAFE BUILDING & ROOM REMOVAL ───────────────────────────────────
+
+console.log('\n--- Scenario 11: Safe Building & Room Removal ---');
+
+runTest('removeHostelBuilding removes building and cascades to associated rooms and beds', () => {
+  const config: HostelData = normalizeHostelData({
+    enabled: true,
+    buildings: [
+      { id: 'b1', name: 'Block A', code: 'BA', genderCategory: 'boys', capacity: 10, status: 'active' },
+      { id: 'b2', name: 'Block B', code: 'BB', genderCategory: 'girls', capacity: 20, status: 'active' },
+    ],
+    rooms: [
+      { id: 'r1', buildingId: 'b1', roomNumber: '101', floor: 1, category: 'single', capacity: 1, genderCategory: 'boys', status: 'active' },
+      { id: 'r2', buildingId: 'b2', roomNumber: '201', floor: 2, category: 'double', capacity: 2, genderCategory: 'girls', status: 'active' },
+    ],
+    beds: [
+      { id: 'bed1', buildingId: 'b1', roomId: 'r1', bedIdentifier: 'Bed-1', status: 'available' },
+      { id: 'bed2', buildingId: 'b2', roomId: 'r2', bedIdentifier: 'Bed-2', status: 'available' },
+    ],
+  });
+
+  const res = removeHostelBuilding(config, 'b1');
+  assert.strictEqual(res.success, true);
+  assert.strictEqual(res.data.buildings?.length, 1);
+  assert.strictEqual(res.data.buildings?.[0].id, 'b2');
+  assert.strictEqual(res.data.rooms?.length, 1);
+  assert.strictEqual(res.data.rooms?.[0].id, 'r2');
+  assert.strictEqual(res.data.beds?.length, 1);
+  assert.strictEqual(res.data.beds?.[0].id, 'bed2');
+  assert.strictEqual(res.data.totalCapacity, 2);
+});
+
+runTest('removeHostelBuilding blocks removal when active residents are assigned', () => {
+  const config: HostelData = normalizeHostelData({
+    enabled: true,
+    buildings: [
+      { id: 'b1', name: 'Block A', code: 'BA', genderCategory: 'boys', capacity: 10, status: 'active' },
+    ],
+    rooms: [
+      { id: 'r1', buildingId: 'b1', roomNumber: '101', floor: 1, category: 'single', capacity: 1, genderCategory: 'boys', status: 'active' },
+    ],
+    residentAssignments: [
+      { id: 'a1', studentId: 'st-1', buildingId: 'b1', roomId: 'r1', status: 'active_resident', startDate: '2026-08-01' },
+    ],
+  });
+
+  const res = removeHostelBuilding(config, 'b1');
+  assert.strictEqual(res.success, false);
+  assert.ok(res.error?.includes('active resident'));
+  assert.strictEqual(res.data.buildings?.length, 1);
+});
+
+runTest('removeHostelRoom removes empty room and recalculates capacity, but blocks occupied room', () => {
+  const config: HostelData = normalizeHostelData({
+    enabled: true,
+    buildings: [
+      { id: 'b1', name: 'Block A', code: 'BA', genderCategory: 'boys', capacity: 10, status: 'active' },
+    ],
+    rooms: [
+      { id: 'r1', buildingId: 'b1', roomNumber: '101', floor: 1, category: 'double', capacity: 2, genderCategory: 'boys', status: 'active' },
+      { id: 'r2', buildingId: 'b1', roomNumber: '102', floor: 1, category: 'four_bed', capacity: 4, genderCategory: 'boys', status: 'active' },
+    ],
+    residentAssignments: [
+      { id: 'a1', studentId: 'st-1', buildingId: 'b1', roomId: 'r1', status: 'active_resident', startDate: '2026-08-01' },
+    ],
+  });
+
+  // Trying to remove occupied room r1 should fail
+  const failRes = removeHostelRoom(config, 'r1');
+  assert.strictEqual(failRes.success, false);
+  assert.ok(failRes.error?.includes('active resident'));
+
+  // Removing empty room r2 should succeed
+  const okRes = removeHostelRoom(config, 'r2');
+  assert.strictEqual(okRes.success, true);
+  assert.strictEqual(okRes.data.rooms?.length, 1);
+  assert.strictEqual(okRes.data.rooms?.[0].id, 'r1');
+  assert.strictEqual(okRes.data.totalCapacity, 2);
 });
 
 console.log('================================================================');

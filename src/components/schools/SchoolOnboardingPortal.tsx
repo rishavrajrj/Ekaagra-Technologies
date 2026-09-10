@@ -81,13 +81,27 @@ import StudentInformationSection from './StudentInformationSection';
 import TransportFleetSection from './TransportFleetSection';
 import LibraryManagementSection from './LibraryManagementSection';
 import HostelResidentialSection from './HostelResidentialSection';
+import CampusFacilitiesSection from './CampusFacilitiesSection';
 import CommunicationPreferencesSection from './CommunicationPreferencesSection';
 import { normalizeCommunicationData } from '@/lib/communicationUtils';
 import MobileApplicationRequirementsSection from './MobileApplicationRequirementsSection';
 import PortalRequirementsSection from './PortalRequirementsSection';
 import MediaAssetsSection from './MediaAssetsSection';
 import CampusStatisticsSection from './CampusStatisticsSection';
+import SectionPhotoGallery, { type SectionPhotoTag } from './SectionPhotoGallery';
 import { syncDerivedStatisticsToFacilities } from '@/lib/campusStatisticsUtils';
+
+const FACILITIES_PHOTO_TAGS: readonly SectionPhotoTag[] = [
+  { value: 'smart_classroom', label: 'Smart Classroom', description: 'Digital boards & interactive multimedia classrooms' },
+  { value: 'science_lab', label: 'Composite Science Lab', description: 'Physics, Chemistry & Biology laboratory spaces' },
+  { value: 'computer_lab', label: 'Computer Laboratory', description: 'Modern IT lab with desktop workstations' },
+  { value: 'sports_field', label: 'Sports Ground & Courts', description: 'Playground, football turf, basketball/badminton courts' },
+  { value: 'auditorium', label: 'Auditorium & Stage', description: 'Multipurpose auditorium and cultural stage' },
+  { value: 'cafeteria', label: 'Cafeteria & Dining Hall', description: 'Student mess and hygienic dining infrastructure' },
+  { value: 'medical_room', label: 'Infirmary & First Aid Bay', description: 'Medical room and emergency health bay' },
+  { value: 'campus_overview', label: 'Campus Architecture & Gate', description: 'Main building facade, gates, and campus grounds' },
+  { value: 'other', label: 'Other Infrastructure', description: 'Other campus facilities and amenities' },
+] as const;
 import { extractCoordinatesFromUrl } from '@/lib/publicTransportUtils';
 import {
   COMMUNICATION_STYLE_CONFIGS,
@@ -126,6 +140,7 @@ import {
   normalizeInstitutionalIdConfig,
 } from '@/lib/institutionalIdNumbering';
 import { WebsiteRequirementsSection } from './WebsiteRequirementsSection';
+import UniversalVerificationPage from './UniversalVerificationPage';
 import AttendanceTimetableSection from './AttendanceTimetableSection';
 import {
   INTAKE_SECTIONS,
@@ -135,6 +150,7 @@ import {
   type SectionCompletionStatus,
   createInitialIntakeData,
   calculateIntakeCompleteness,
+  getApplicableSections,
   deriveSlugFromSchoolName,
   isSectionApplicable,
   getBoardIdentityConfig,
@@ -931,12 +947,20 @@ export default function SchoolOnboardingPortal({ token }: Props) {
     setIsSubmitting(false);
   };
 
-  // Applicable sections based on selected product scope
+  // Applicable sections based on selected product scope and dynamic intake answers
   const applicableSections = useMemo(() => {
-    return INTAKE_SECTIONS.filter((s) => (s.applicableProducts as string[]).includes(selectedProductId));
-  }, [selectedProductId]);
+    return getApplicableSections(selectedProductId, intakeData || undefined);
+  }, [selectedProductId, intakeData]);
 
-  const currentSection = applicableSections[currentStepIndex] || applicableSections[0];
+  // Keep currentStepIndex in bounds if sections dynamically change
+  useEffect(() => {
+    if (applicableSections.length > 0 && currentStepIndex >= applicableSections.length) {
+      setCurrentStepIndex(applicableSections.length - 1);
+    }
+  }, [applicableSections.length, currentStepIndex]);
+
+  const safeStepIndex = Math.min(currentStepIndex, Math.max(0, applicableSections.length - 1));
+  const currentSection = applicableSections[safeStepIndex] || applicableSections[0];
 
   // Authoritative resolution of campus-scoped section data
   const campusSectionResolution = useMemo(() => {
@@ -1486,8 +1510,8 @@ export default function SchoolOnboardingPortal({ token }: Props) {
         </div>
       </aside>
 
-      {/* DESKTOP FIXED SIDEBAR */}
-      <aside className="hidden lg:flex fixed inset-y-0 left-0 w-72 xl:w-80 bg-white border-r border-[#E2E8F0] flex-col z-30 shadow-xs">
+      {/* DESKTOP STICKY SIDEBAR */}
+      <aside className="hidden lg:flex sticky top-0 h-[100dvh] w-72 xl:w-80 shrink-0 self-start bg-white border-r border-[#E2E8F0] flex-col z-30 shadow-xs">
         <div className="p-4 border-b border-[#E2E8F0] space-y-3 shrink-0">
           <div className="flex items-center justify-between">
             <Logo />
@@ -1547,7 +1571,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
       </aside>
 
       {/* RIGHT CONTENT COLUMN */}
-      <div className="lg:pl-72 xl:pl-80 flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col flex-1 min-w-0">
         {/* Executive Header Bar */}
         <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-[#E2E8F0] shadow-xs">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-2 sm:py-2.5 min-h-[64px] sm:min-h-[72px] flex items-center justify-between gap-3 sm:gap-4">
@@ -1813,9 +1837,15 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     </span>
                   )}
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-[#131B2E] tracking-tight mt-2 scroll-mt-24 sm:scroll-mt-28">{currentSection.title}</h2>
+                <h2 className="text-2xl sm:text-3xl font-black text-[#131B2E] tracking-tight mt-2 scroll-mt-24 sm:scroll-mt-28">
+                  {currentSection.key === 'transportConfig' && (selectedProductId === 'school-website' || selectedProductId === 'school-website-cms')
+                    ? 'School Transport'
+                    : currentSection.title}
+                </h2>
                 <p className="text-xs sm:text-sm text-[#64748B] mt-1 leading-relaxed">
-                  {currentSection.key === 'schoolContent'
+                  {currentSection.key === 'transportConfig' && (selectedProductId === 'school-website' || selectedProductId === 'school-website-cms')
+                    ? "Showcase the school's transportation facilities, fleet, routes, coverage areas, and safety features."
+                    : currentSection.key === 'schoolContent'
                     ? "Review your school's story, mission, and philosophy prepared from your verified information."
                     : currentSection.key === 'assetChecklist'
                     ? "Provide the content, images, certificates, documents and other materials Ekaagra needs to prepare your school's website."
@@ -3009,6 +3039,10 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                           isSingleCampus={(intakeData.campuses || []).length === 1}
                           token={token}
                           allCampuses={intakeData.campuses || []}
+                          mediaRegistry={intakeData.mediaRegistry}
+                          onUpdateMediaRegistry={(updatedReg) => {
+                            updateSectionDirect('mediaRegistry', updatedReg);
+                          }}
                           onUpdateImages={(campusIdx, updatedImages) => {
                             updateCampusField(campusIdx, { images: updatedImages });
                           }}
@@ -3945,12 +3979,13 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               </div>
             )}
 
-            {/* SECTION 27: FINAL WEBSITE VERIFICATION & SPECIFICATION */}
+            {/* SECTION 27: FINAL WEBSITE REVIEW & SUBMISSION (UNIVERSAL VERIFICATION) */}
             {currentSection.key === 'websiteRequirements' && (
-              <WebsiteRequirementsSection
+              <UniversalVerificationPage
                 token={token}
                 intakeData={intakeData}
                 updateSectionField={updateSectionField}
+                updateSectionDirect={updateSectionDirect}
                 onNavigateToBranding={() => {
                   const brandSecIdx = INTAKE_SECTIONS.findIndex((s) => s.key === 'brandingDesign');
                   if (brandSecIdx !== -1) setCurrentStepIndex(brandSecIdx);
@@ -4066,6 +4101,8 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 updateSectionDirect={updateSectionDirect}
                 project={effectiveProject || project}
                 onNavigateToSection={navigateToSectionKey}
+                token={token}
+                isWebsiteOnly={selectedProductId === 'school-website' || selectedProductId === 'school-website-cms'}
               />
             )}
 
@@ -4078,6 +4115,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 onNavigateToSection={navigateToSectionKey}
                 stepNumber={currentStepIndex + 1}
                 totalSteps={applicableSections.length}
+                token={token}
               />
             )}
 
@@ -4572,8 +4610,18 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 )}
 
                 {currentSection.key === 'facilitiesConfig' && campusSectionResolution?.mode !== 'not_applicable' && (
-                  <div className="space-y-6 text-xs">
-                    {/* Sub-Card 1: Dynamic Campus Statistics (Institutional Records Engine) */}
+                  (selectedProductId === 'school-website' || selectedProductId === 'school-website-cms') ? (
+                    <CampusFacilitiesSection
+                      intakeData={displayIntakeData}
+                      updateSectionField={updateSectionField}
+                      updateSectionDirect={updateSectionDirect}
+                      token={token}
+                      onNavigateToSection={navigateToSectionKey}
+                      isReadOnly={campusSectionResolution?.isReadOnly}
+                    />
+                  ) : (
+                    <div className="space-y-6 text-xs">
+                      {/* Sub-Card 1: Dynamic Campus Statistics (Institutional Records Engine) */}
                     <CampusStatisticsSection
                       intakeData={displayIntakeData}
                       updateSectionField={updateSectionField}
@@ -4646,7 +4694,31 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       </div>
                     </div>
 
-                    {/* Sub-Card 3: About this information */}
+                    {/* Sub-Card 3: Campus Amenities & Facilities Photography Showcase */}
+                    <SectionPhotoGallery
+                      sectionKey="facilitiesConfig"
+                      category="campus_buildings"
+                      title="Campus Amenities & Facilities Photography"
+                      subtitle="Upload photos of labs, sports fields, cafeteria, auditorium, smart classrooms & infrastructure"
+                      cardIndex={3}
+                      badgeLabel="Website Highlights"
+                      badgeColorClass="bg-[#EEF2FF] text-[#4338CA] border-[#C7D2FE]"
+                      tags={FACILITIES_PHOTO_TAGS}
+                      defaultTag="Smart Classroom"
+                      defaultCaption="Modern educational infrastructure and campus learning facilities"
+                      token={token}
+                      intakeData={displayIntakeData}
+                      sectionImages={displayIntakeData.facilitiesConfig?.images || displayIntakeData.facilitiesConfig?.facilityPhotos || []}
+                      updateSectionField={updateSectionField}
+                      updateSectionDirect={updateSectionDirect}
+                      campusImageFilter={(img) =>
+                        ['campus_buildings', 'laboratories', 'sports_playground', 'cafeteria', 'classrooms', 'other'].includes(
+                          img.category || img.imageCategory || ''
+                        )
+                      }
+                    />
+
+                    {/* Sub-Card 4: About this information */}
                     <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 flex items-start space-x-3 text-xs text-[#64748B] shadow-2xs">
                       <Info className="w-4 h-4 text-[#4338CA] shrink-0 mt-0.5" />
                       <div>
@@ -4657,7 +4729,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       </div>
                     </div>
                   </div>
-                )}
+                ))}
 
                 {currentSection.key === 'libraryConfig' && campusSectionResolution?.mode !== 'not_applicable' && (
                   <LibraryManagementSection
@@ -4666,6 +4738,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     updateSectionDirect={updateSectionDirect}
                     project={effectiveProject || project}
                     onNavigateToSection={navigateToSectionKey}
+                    token={token}
                   />
                 )}
 

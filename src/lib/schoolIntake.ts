@@ -56,6 +56,7 @@ import {
   getCampusDisplayName,
   getMainCampus,
 } from './campusScopeRegistry';
+import { getFacilitiesSectionScore } from './facilitiesUtils';
 
 export { isHostelApplicable };
 
@@ -892,9 +893,9 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     key: 'assetChecklist',
     chapter: 'chapter_assets_legal',
     stepNumber: 24,
-    title: 'Content & Asset Provisioning Checklist',
-    shortTitle: 'Asset Checklist',
-    description: 'Structured checklist of photos, affiliation certificates, prospectuses & mandatory disclosures.',
+    title: 'Content, Assets & Documents Provisioning',
+    shortTitle: 'Assets & Documents',
+    description: 'Structured repository of photos, affiliation certificates, prospectuses & mandatory disclosures.',
     applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
     isMandatory: true,
   },
@@ -924,9 +925,9 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     key: 'websiteRequirements',
     chapter: 'chapter_review_signoff',
     stepNumber: 27,
-    title: 'Final Website Verification & Specification',
-    shortTitle: 'Website Verification',
-    description: "Review and verify how your school's information, content, actual assets, and statutory documents will appear across the final website before sign-off.",
+    title: 'Final Website Review & Submission',
+    shortTitle: 'Final Website Review & Submission',
+    description: "Universal final review, verification, asset management, compliance, preview, download, and submission command center.",
     applicableProducts: ['school-website', 'school-website-cms', 'school-complete'],
     isMandatory: true,
   },
@@ -937,7 +938,7 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     title: 'Administrator Provisioning & Final Sign-Off',
     shortTitle: 'Provisioning & Sign-Off',
     description: 'Super Administrator identity, invitation recipients, final completeness check & submission declaration.',
-    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
+    applicableProducts: ['school-erp'],
     isMandatory: true,
   },
 
@@ -968,8 +969,8 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     stepNumber: 31,
     title: 'Media Assets & Content Kit',
     shortTitle: 'Media Kit',
-    description: 'Institutional media and content kit readiness: logos, photos, prospectus, video & usage rights.',
-    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
+    description: 'Legacy media assets - absorbed into Final Website Review & Submission',
+    applicableProducts: ['school-erp'],
     isMandatory: false,
   },
   {
@@ -1715,13 +1716,46 @@ export const PHASE2_PRIORITY_CATALOG: PhasePriorityItemConfig[] = [
   },
 ];
 
-export function getApplicableSections(productId: string): SectionMetadata[] {
-  return INTAKE_SECTIONS.filter((section) =>
-    (section.applicableProducts as string[]).includes(productId)
-  );
+export function getApplicableSections(
+  productId: string,
+  data?: Partial<UniversalIntakeData>
+): SectionMetadata[] {
+  return INTAKE_SECTIONS.filter((section) => {
+    if (!(section.applicableProducts as string[]).includes(productId)) {
+      return false;
+    }
+    const isWebsiteMode = productId === 'school-website' || productId === 'school-website-cms';
+    if (isWebsiteMode) {
+      // In website onboarding, Library and Hostel are consolidated inside Campus Facilities
+      if (section.key === 'libraryConfig' || section.key === 'hostelConfig') {
+        return false;
+      }
+      // If transport is explicitly marked as not operated, omit from active website navigation
+      if (section.key === 'transportConfig' && data?.transportConfig?.status === 'no') {
+        return false;
+      }
+    } else {
+      // For ERP / Complete products
+      if (section.key === 'hostelConfig' && data && !isHostelApplicable(data.schoolProfile)) {
+        return false;
+      }
+      if (section.key === 'transportConfig' && data?.transportConfig?.status === 'no') {
+        return false;
+      }
+    }
+    return true;
+  });
 }
 
-export function isSectionApplicable(sectionKey: IntakeSectionKey, productId: string): boolean {
+export function isSectionApplicable(
+  sectionKey: IntakeSectionKey,
+  productId: string,
+  data?: Partial<UniversalIntakeData>
+): boolean {
+  if (data !== undefined) {
+    const applicable = getApplicableSections(productId, data);
+    return applicable.some((s) => s.key === sectionKey);
+  }
   const section = INTAKE_SECTIONS.find((s) => s.key === sectionKey);
   if (!section) return false;
   return (section.applicableProducts as string[]).includes(productId);
@@ -2023,7 +2057,7 @@ export function createInitialIntakeData(params: {
         {
           id: 'cp-1',
           title: 'CBSE Mandatory Disclosures',
-          slug: 'mandatory-disclosure',
+          slug: 'mandatory-disclosures',
           purpose: 'Statutory SARAS / OASIS compliance disclosure documents',
           language: 'English',
           isPublic: true,
@@ -2598,6 +2632,9 @@ export function createInitialIntakeData(params: {
 
   // Prepopulate intelligent Section 28 Media Assets & Content Kit
   initialIntake.mediaAssets = normalizeMediaAssetsData(null, initialIntake);
+
+  // Initialize centralized media registry
+  initialIntake.mediaRegistry = [];
 
   return initialIntake;
 }
@@ -3237,7 +3274,11 @@ export function calculateIntakeCompleteness(
   }
 
   // 14. Transport (Conditional)
-  if (isSectionApplicable('transportConfig', productId)) {
+  if (data.transportConfig?.status === 'no') {
+    sectionScores['transportConfig'] = { total: 0, filled: 0 };
+    sectionStatuses['transportConfig'] = 'not_applicable';
+    sectionPercentages['transportConfig'] = 100;
+  } else if (isSectionApplicable('transportConfig', productId)) {
     if (!isMultiCampus) {
       const score = getTransportSectionScore(data.transportConfig, productId);
       sectionScores['transportConfig'] = { total: score.total, filled: score.filled };
@@ -3269,13 +3310,50 @@ export function calculateIntakeCompleteness(
     }
   }
 
-  // 15. Facilities & Campus Operations (Optional statistics & amenities - never blocks completion)
+  // 15. Campus Facilities (Structured Website Content Engine)
   if (isSectionApplicable('facilitiesConfig', productId)) {
-    sectionScores['facilitiesConfig'] = { total: 1, filled: 1 };
+    if (!isMultiCampus) {
+      const facScore = getFacilitiesSectionScore(data.facilitiesConfig, data);
+      sectionScores['facilitiesConfig'] = { total: facScore.total, filled: facScore.filled };
+      sectionPercentages['facilitiesConfig'] = facScore.percentage;
+      sectionStatuses['facilitiesConfig'] = facScore.isComplete ? 'complete' : facScore.filled > 0 ? 'partially_configured' : 'incomplete';
+      if (facScore.missingFields.length > 0) {
+        missingFields.push(...facScore.missingFields);
+      }
+    } else {
+      let total = 0;
+      let filled = 0;
+      let allNotApplicable = true;
+      for (const camp of campuses) {
+        const resolved = resolveCampusSectionData(data, 'facilitiesConfig', camp.id);
+        if (resolved.mode === 'not_applicable') continue;
+        allNotApplicable = false;
+        const facScore = getFacilitiesSectionScore(resolved.data, data);
+        total += facScore.total;
+        filled += facScore.filled;
+        if (facScore.missingFields.length > 0) {
+          missingFields.push(...facScore.missingFields.map((mf) => `${getCampusDisplayName(camp)}: ${mf}`));
+        }
+      }
+      if (allNotApplicable) {
+        sectionScores['facilitiesConfig'] = { total: 0, filled: 0 };
+        sectionStatuses['facilitiesConfig'] = 'not_applicable';
+        sectionPercentages['facilitiesConfig'] = 100;
+      } else {
+        sectionScores['facilitiesConfig'] = { total: Math.max(1, total), filled };
+        sectionPercentages['facilitiesConfig'] = Math.round((filled / Math.max(1, total)) * 100);
+        sectionStatuses['facilitiesConfig'] = filled === total ? 'complete' : filled > 0 ? 'partially_configured' : 'incomplete';
+      }
+    }
   }
 
-  // 16. Library (Conditional)
-  if (isSectionApplicable('libraryConfig', productId)) {
+  // 16. Library (Consolidated into Facilities for Website products; standalone for ERP)
+  const isWebsiteProduct = productId === 'school-website' || productId === 'school-website-cms';
+  if (isWebsiteProduct) {
+    sectionScores['libraryConfig'] = { total: 0, filled: 0 };
+    sectionStatuses['libraryConfig'] = 'not_applicable';
+    sectionPercentages['libraryConfig'] = 100;
+  } else if (isSectionApplicable('libraryConfig', productId)) {
     if (!isMultiCampus) {
       const libScore = getLibrarySectionScore(data.libraryConfig, productId);
       sectionScores['libraryConfig'] = { total: libScore.total, filled: libScore.filled };
@@ -3307,8 +3385,12 @@ export function calculateIntakeCompleteness(
     }
   }
 
-  // 17. Hostel (Conditional on Residential)
-  if (isSectionApplicable('hostelConfig', productId)) {
+  // 17. Hostel (Consolidated into Facilities for Website products; standalone for ERP)
+  if (isWebsiteProduct) {
+    sectionScores['hostelConfig'] = { total: 0, filled: 0 };
+    sectionStatuses['hostelConfig'] = 'not_applicable';
+    sectionPercentages['hostelConfig'] = 100;
+  } else if (isSectionApplicable('hostelConfig', productId)) {
     const isApplicable = isHostelApplicable(data.schoolProfile);
     if (!isApplicable) {
       sectionScores['hostelConfig'] = { total: 0, filled: 0 };

@@ -215,7 +215,7 @@ export default function AnimatedPageHero({
                     {phrases.map((phrase, i) => (
                       <div
                         key={i}
-                        className="col-start-1 row-start-1 fluid-hero-headline font-extrabold tracking-tight leading-[1.14] text-center lg:text-left w-full pb-1 lg:text-[2.2rem] xl:text-[2.6rem] 2xl:text-[3.1rem]"
+                        className="col-start-1 row-start-1 fluid-hero-headline font-extrabold tracking-tight leading-[1.14] text-center lg:text-left w-full pb-1 lg:text-[2.6rem] xl:text-[3.1rem] 2xl:text-[3.6rem]"
                       >
                         <span className="inline text-[#131B2E]">{prefix}</span>{' '}
                         <span className="inline px-0.5 whitespace-normal break-words">
@@ -227,7 +227,7 @@ export default function AnimatedPageHero({
                   </div>
 
                   {/* Active typing H1 occupying the exact same space without jumping */}
-                  <h1 className="col-start-1 row-start-1 self-start fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight leading-[1.14] text-center lg:text-left w-full pb-1 overflow-visible lg:text-[2.2rem] xl:text-[2.6rem] 2xl:text-[3.1rem]">
+                  <h1 className="col-start-1 row-start-1 self-start fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight leading-[1.14] text-center lg:text-left w-full pb-1 overflow-visible lg:text-[2.6rem] xl:text-[3.1rem] 2xl:text-[3.6rem]">
                     <span className="inline text-[#131B2E]">{prefix}</span>{' '}
                     <span className="relative inline text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C] animate-gradient-shift px-0.5 whitespace-normal break-words">
                       <span>{currentText || '\u00A0'}</span>
@@ -249,7 +249,7 @@ export default function AnimatedPageHero({
                     {phrases.map((phrase, i) => (
                       <div
                         key={i}
-                        className="col-start-1 row-start-1 fluid-hero-headline font-extrabold tracking-tight leading-[1.14] text-center lg:text-left w-full pb-1 lg:text-[2.2rem] xl:text-[2.6rem] 2xl:text-[3.1rem]"
+                        className="col-start-1 row-start-1 fluid-hero-headline font-extrabold tracking-tight leading-[1.14] text-center lg:text-left w-full pb-1 lg:text-[2.6rem] xl:text-[3.1rem] 2xl:text-[3.6rem]"
                       >
                         <span className="block text-[#131B2E] mb-1.5 sm:mb-2">{prefix}</span>
                         <span className="inline-block px-1 whitespace-normal break-words">
@@ -260,7 +260,7 @@ export default function AnimatedPageHero({
                     ))}
                   </div>
 
-                  <h1 className="col-start-1 row-start-1 self-start fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight leading-[1.14] text-center lg:text-left w-full pb-1 overflow-visible lg:text-[2.2rem] xl:text-[2.6rem] 2xl:text-[3.1rem]">
+                  <h1 className="col-start-1 row-start-1 self-start fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight leading-[1.14] text-center lg:text-left w-full pb-1 overflow-visible lg:text-[2.6rem] xl:text-[3.1rem] 2xl:text-[3.6rem]">
                     <span className="block text-[#131B2E] mb-1.5 sm:mb-2">
                       {prefix}
                     </span>

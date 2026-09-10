@@ -7,14 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "test": "npx tsx src/lib/__tests__/institutionalIdNumbering.test.ts && npx tsx src/lib/__tests__/attendanceUtils.test.ts && npx tsx src/lib/__tests__/campusStatisticsUtils.test.ts && npx tsx src/lib/__tests__/libraryUtils.test.ts && npx tsx src/lib/__tests__/communicationUtils.test.ts && npx tsx src/lib/__tests__/hostelUtils.test.ts && npx tsx src/lib/__tests__/mobileAppRequirements.test.ts && npx tsx src/lib/__tests__/integrationsUtils.test.ts && npx tsx src/lib/__tests__/portalRequirementsUtils.test.ts && npx tsx src/lib/__tests__/mediaAssetsUtils.test.ts && npx tsx src/lib/__tests__/studentInformationUtils.test.ts && npx tsx src/lib/__tests__/fieldScopeRegistry.test.ts && npx tsx src/lib/__tests__/schoolAccommodation.test.ts && npx tsx src/lib/__tests__/campusAcademicScope.test.ts && npx tsx src/lib/__tests__/schoolTypeAndCampusConsistency.test.ts && npx tsx src/lib/__tests__/campusAcademicLevelReconciliation.test.ts && npx tsx src/lib/__tests__/campusScopeArchitecture.test.ts && npx tsx src/lib/__tests__/businessPricing.test.ts"
+    "test": "npx tsx src/lib/__tests__/mediaRegistryUtils.test.ts && npx tsx src/lib/__tests__/facilitiesUtils.test.ts && npx tsx src/lib/__tests__/institutionalIdNumbering.test.ts && npx tsx src/lib/__tests__/attendanceUtils.test.ts && npx tsx src/lib/__tests__/campusStatisticsUtils.test.ts && npx tsx src/lib/__tests__/libraryUtils.test.ts && npx tsx src/lib/__tests__/communicationUtils.test.ts && npx tsx src/lib/__tests__/hostelUtils.test.ts && npx tsx src/lib/__tests__/mobileAppRequirements.test.ts && npx tsx src/lib/__tests__/integrationsUtils.test.ts && npx tsx src/lib/__tests__/portalRequirementsUtils.test.ts && npx tsx src/lib/__tests__/mediaAssetsUtils.test.ts && npx tsx src/lib/__tests__/studentInformationUtils.test.ts && npx tsx src/lib/__tests__/fieldScopeRegistry.test.ts && npx tsx src/lib/__tests__/schoolAccommodation.test.ts && npx tsx src/lib/__tests__/campusAcademicScope.test.ts && npx tsx src/lib/__tests__/schoolTypeAndCampusConsistency.test.ts && npx tsx src/lib/__tests__/campusAcademicLevelReconciliation.test.ts && npx tsx src/lib/__tests__/campusScopeArchitecture.test.ts && npx tsx src/lib/__tests__/businessPricing.test.ts && npx tsx src/lib/__tests__/contentRecommendationService.test.ts && npx tsx src/lib/__tests__/publicationBlockerEngine.test.ts"
   },
   "dependencies": {
     "@googlemaps/js-api-loader": "^2.1.1",
     "@supabase/supabase-js": "^2.112.4",
+    "@types/jszip": "^3.4.0",
     "@types/leaflet": "^1.9.22",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "jszip": "^3.10.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.31.0",
     "next": "16.3.0",

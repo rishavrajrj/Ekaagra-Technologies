@@ -8,6 +8,7 @@ import type {
 } from './types';
 import { resolveContentBlockText } from './types';
 import { toWebpFileName } from './imageUtils';
+import { calculateContentSourceFingerprint } from './contentRecommendationService';
 import crypto from 'crypto';
 
 export const ASSET_UPLOAD_LIMITS = {
@@ -851,7 +852,24 @@ export function syncAssetChecklistWithIntake(
       originalSize: existing?.originalSize,
       optimizedSize: existing?.optimizedSize,
       optimizedFormat: existing?.optimizedFormat,
+      contentSource: existing?.contentSource,
+      recommendedDraft: existing?.recommendedDraft,
+      recommendedAt: existing?.recommendedAt,
+      sourceFingerprint: existing?.sourceFingerprint,
+      isOutdated: existing?.isOutdated,
+      requiresReview: existing?.requiresReview,
+      recommendationSources: existing?.recommendationSources,
+      recommendedTone: existing?.recommendedTone,
+      recommendedLength: existing?.recommendedLength,
     };
+
+    // Check if source facts changed for existing recommendations
+    if (item.sourceFingerprint && item.type === 'text') {
+      const currentFingerprint = calculateContentSourceFingerprint(item.id, intakeData);
+      if (currentFingerprint && currentFingerprint !== item.sourceFingerprint) {
+        item.isOutdated = true;
+      }
+    }
 
     // Evaluate conditional applicability
     const isApplicable = isConditionalItemApplicable(canonical, intakeData);
@@ -860,8 +878,8 @@ export function syncAssetChecklistWithIntake(
       return item;
     }
 
-    // If item was manually overridden or explicitly marked as not_applicable / will_provide_later, preserve user choice
-    if (existing && (existing.isManualOverride || existing.status === 'not_applicable' || existing.status === 'will_provide_later' || existing.status === 'pending')) {
+    // If item was manually overridden or explicitly marked as not_applicable / will_provide_later / recommended_available, preserve user choice
+    if (existing && (existing.isManualOverride || existing.status === 'not_applicable' || existing.status === 'will_provide_later' || existing.status === 'pending' || existing.status === 'recommended_available')) {
       return item;
     }
 
@@ -1059,7 +1077,7 @@ export function syncAssetChecklistWithIntake(
     }
 
     // Direct items check: if item has a fileUrl, textContent, or galleryUrls, ensure status is provided
-    if (item.status !== 'not_applicable' && item.status !== 'will_provide_later' && item.status !== 'pending') {
+    if (item.status !== 'not_applicable' && item.status !== 'will_provide_later' && item.status !== 'pending' && item.status !== 'recommended_available') {
       if (item.type === 'gallery' && item.galleryUrls && item.galleryUrls.length > 0) {
         item.status = 'provided';
       } else if (item.type === 'text' && item.textContent && item.textContent.trim().length > 0) {
@@ -1067,6 +1085,8 @@ export function syncAssetChecklistWithIntake(
       } else if ((item.type === 'image' || item.type === 'document') && item.fileUrl && item.fileUrl.trim().length > 0) {
         item.status = 'provided';
       }
+    } else if (item.status === 'recommended_available' && item.type === 'text' && item.textContent && item.textContent.trim().length > 0) {
+      item.status = 'provided';
     }
 
     // Canonical normalization for existing image records

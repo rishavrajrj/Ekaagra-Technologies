@@ -484,6 +484,7 @@ export function normalizeHostelData(
     capacityGirls: buildings.filter((b) => b.genderCategory === 'girls').reduce((s, b) => s + b.capacity, 0),
     rulesNotes: data.rulesNotes || '',
     monthlyFee: Number(data.monthlyFee) || Number(data.hostelFeeMonthly) || 0,
+    images: Array.isArray(data.images) ? data.images : [],
   };
 }
 
@@ -952,6 +953,120 @@ export function recordHostelAttendance(
       attendanceRecords: updatedRecords,
     },
   };
+}
+
+/**
+ * Safely removes a hostel building and its associated rooms/beds,
+ * while preventing removal if active student residents are currently assigned.
+ */
+export function removeHostelBuilding(
+  current: HostelData,
+  buildingId: string
+): { success: boolean; data: HostelData; error?: string } {
+  const norm = normalizeHostelData(current, { residentialStatus: 'residential' });
+
+  const building = (norm.buildings || []).find((b) => b.id === buildingId);
+  if (!building) {
+    return { success: false, data: norm, error: 'Hostel building not found.' };
+  }
+
+  // Guard: prevent deletion if active residents are assigned
+  const activeResidents = (norm.residentAssignments || []).filter(
+    (a) => a.buildingId === buildingId && a.status === 'active_resident'
+  );
+  if (activeResidents.length > 0) {
+    return {
+      success: false,
+      data: norm,
+      error: `Cannot remove building "${building.name}" because it currently has ${activeResidents.length} active resident(s) assigned. Please transfer or check out residents first.`,
+    };
+  }
+
+  // Remove the building
+  const updatedBuildings = (norm.buildings || []).filter((b) => b.id !== buildingId);
+
+  // Cascade removal of rooms belonging to this building
+  const updatedRooms = (norm.rooms || []).filter((r) => r.buildingId !== buildingId);
+
+  // Cascade removal of beds belonging to this building
+  const updatedBeds = (norm.beds || []).filter((b) => b.buildingId !== buildingId);
+
+  // Remove resident assignments that belonged to this building
+  const updatedAssignments = (norm.residentAssignments || []).filter((a) => a.buildingId !== buildingId);
+
+  // Update total capacity
+  let newTotalCapacity = 0;
+  if (updatedRooms.length > 0) {
+    newTotalCapacity = updatedRooms.reduce((sum, r) => sum + (Number(r.capacity) || 0), 0);
+  } else if (updatedBuildings.length > 0) {
+    newTotalCapacity = updatedBuildings.reduce((sum, b) => sum + (Number(b.capacity) || 0), 0);
+  }
+
+  const updated: HostelData = {
+    ...norm,
+    buildings: updatedBuildings,
+    rooms: updatedRooms,
+    beds: updatedBeds,
+    residentAssignments: updatedAssignments,
+    totalCapacity: newTotalCapacity,
+    hostelsCount: updatedBuildings.length,
+    hostelNames: updatedBuildings.map((b) => b.name),
+    capacityBoys: updatedBuildings.filter((b) => b.genderCategory === 'boys').reduce((s, b) => s + b.capacity, 0),
+    capacityGirls: updatedBuildings.filter((b) => b.genderCategory === 'girls').reduce((s, b) => s + b.capacity, 0),
+    boysHostel: updatedBuildings.some((b) => b.genderCategory === 'boys'),
+    girlsHostel: updatedBuildings.some((b) => b.genderCategory === 'girls'),
+  };
+
+  return { success: true, data: updated };
+}
+
+/**
+ * Safely removes an individual hostel room and its beds,
+ * while preventing removal if active student residents are occupying it.
+ */
+export function removeHostelRoom(
+  current: HostelData,
+  roomId: string
+): { success: boolean; data: HostelData; error?: string } {
+  const norm = normalizeHostelData(current, { residentialStatus: 'residential' });
+
+  const room = (norm.rooms || []).find((r) => r.id === roomId);
+  if (!room) {
+    return { success: false, data: norm, error: 'Hostel room not found.' };
+  }
+
+  // Guard: prevent deletion if active residents are assigned to this room
+  const activeResidents = (norm.residentAssignments || []).filter(
+    (a) => a.roomId === roomId && a.status === 'active_resident'
+  );
+  if (activeResidents.length > 0) {
+    return {
+      success: false,
+      data: norm,
+      error: `Cannot remove Room ${room.roomNumber} because it currently has ${activeResidents.length} active resident(s) assigned. Please transfer or check out residents first.`,
+    };
+  }
+
+  const updatedRooms = (norm.rooms || []).filter((r) => r.id !== roomId);
+  const updatedBeds = (norm.beds || []).filter((b) => b.roomId !== roomId);
+  const updatedAssignments = (norm.residentAssignments || []).filter((a) => a.roomId !== roomId);
+
+  let newTotalCapacity = 0;
+  if (updatedRooms.length > 0) {
+    newTotalCapacity = updatedRooms.reduce((sum, r) => sum + (Number(r.capacity) || 0), 0);
+  } else if ((norm.buildings || []).length > 0) {
+    newTotalCapacity = (norm.buildings || []).reduce((sum, b) => sum + (Number(b.capacity) || 0), 0);
+  }
+
+  const updated: HostelData = {
+    ...norm,
+    rooms: updatedRooms,
+    beds: updatedBeds,
+    residentAssignments: updatedAssignments,
+    totalCapacity: newTotalCapacity,
+  };
+
+  return { success: true, data: updated };
 }
 
 // ─── DYNAMIC SUMMARY FOR PREVIEWS ─────────────────────────────────────────────

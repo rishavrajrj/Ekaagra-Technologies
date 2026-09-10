@@ -14,6 +14,7 @@
  */
 
 import type {
+  CampusImageData,
   TransportData,
   TransportStatus,
   TransportServiceModel,
@@ -117,6 +118,18 @@ export const TRANSPORT_STATUS_OPTIONS: StatusOption[] = [
   },
 ];
 
+export const TRANSPORT_PHOTO_TAGS = [
+  { value: 'bus_exterior', label: 'School Bus Exterior', description: 'Front, profile, or boarding door view of school buses.' },
+  { value: 'fleet_lineup', label: 'Fleet Lineup / Parking Bay', description: 'Multiple buses/vans lined up at the school campus parking bay.' },
+  { value: 'bus_interior', label: 'Bus Interior & Seating', description: 'Clean seating rows, handrails, emergency exits, and wide aisles.' },
+  { value: 'safety_features', label: 'Safety & Security Gear', description: 'CCTV surveillance cameras, speed governors, and first-aid kits.' },
+  { value: 'driver_attendant', label: 'Driver & Attendant with Bus', description: 'Licensed transport crew and female attendants in uniform.' },
+  { value: 'van_minibus', label: 'Commuter Van / Minibus', description: 'Feeder vans and minibuses for narrow residential corridors.' },
+  { value: 'other', label: 'Other Transport Photo', description: 'EV charging stations, transport office, or student boarding.' },
+] as const;
+
+export type TransportPhotoTag = (typeof TRANSPORT_PHOTO_TAGS)[number]['value'];
+
 export const SERVICE_MODEL_OPTIONS: { value: TransportServiceModel; label: string; description: string }[] = [
   { value: 'school_owned', label: 'School-Owned Fleet', description: 'Institution owns and operates all transport vehicles directly.' },
   { value: 'school_managed_outsourced', label: 'School-Managed + Outsourced', description: 'School exercises route and timing control over leased/contracted vehicles.' },
@@ -133,6 +146,17 @@ export const VEHICLE_TYPE_CATALOG: { key: VehicleTypeKey; label: string; default
   { key: 'electric_vehicle', label: 'Electric School Bus / EV Van', defaultCapacity: 30 },
   { key: 'other', label: 'Other Specialized Transit', defaultCapacity: 15 },
 ];
+
+export const WEBSITE_TRANSPORT_SAFETY_FEATURES = [
+  { key: 'gps', label: 'GPS-Enabled Buses', description: 'Live tracking available for route visibility' },
+  { key: 'cctv', label: 'CCTV Surveillance', description: 'In-bus surveillance cameras for student safety' },
+  { key: 'speed_monitoring', label: 'Speed Monitoring / Governors', description: 'Speed limits enforced and telematics monitored' },
+  { key: 'first_aid', label: 'First-Aid Facilities', description: 'Equipped with medical first-aid kits on every vehicle' },
+  { key: 'fire_extinguishers', label: 'Fire Extinguishers', description: 'Certified fire safety equipment installed' },
+  { key: 'emergency_communication', label: 'Emergency Communication', description: 'Direct contact with institutional transport desk' },
+  { key: 'trained_staff', label: 'Trained Transport Staff', description: 'Verified commercial drivers & female attendants' },
+  { key: 'regular_maintenance', label: 'Regular Vehicle Maintenance', description: 'Periodic mechanical safety inspections and fitness audits' },
+] as const;
 
 export const GPS_TRACKING_OPTIONS: { value: GpsTrackingOption; label: string; description: string }[] = [
   { value: 'available', label: 'GPS Hardware Tracking Available', description: 'Vehicles are fitted with active OBD/GPS hardware trackers.' },
@@ -1310,6 +1334,8 @@ export function normalizeTransportData(raw?: Partial<TransportData> | null): Tra
           backupConductorStaffId: v.backupConductorStaffId,
           primaryRouteId: v.primaryRouteId,
           assignedRouteIds: v.assignedRouteIds || (v.primaryRouteId ? [v.primaryRouteId] : []),
+          imageUrl: v.imageUrl || v.photoUrl || '',
+          photoUrl: v.photoUrl || v.imageUrl || '',
           isActive: v.isActive !== undefined ? v.isActive : (v.status !== 'inactive' && v.status !== 'retired'),
         };
       })
@@ -1543,6 +1569,13 @@ export function normalizeTransportData(raw?: Partial<TransportData> | null): Tra
     outsourced,
     planned,
 
+    // Website-facing content
+    description: tr.description || tr.shortDescription || '',
+    shortDescription: tr.shortDescription || tr.description || '',
+    areasServed: Array.isArray(tr.areasServed) ? tr.areasServed : [],
+    safetyFeatures: Array.isArray(tr.safetyFeatures) ? tr.safetyFeatures : [],
+    customSafetyFeatures: Array.isArray(tr.customSafetyFeatures) ? tr.customSafetyFeatures : [],
+
     // Individual Fleet, Routes, Assignments & Attendance Registries
     vehicles,
     staffMembers,
@@ -1552,6 +1585,10 @@ export function normalizeTransportData(raw?: Partial<TransportData> | null): Tra
     attendanceRecords,
     attendanceLogs,
     exceptions,
+
+    // School Transport Fleet Photography (Genuine WebP Optimized)
+    images: Array.isArray(tr.images) ? tr.images : (Array.isArray(tr.fleetPhotos) ? tr.fleetPhotos : []),
+    fleetPhotos: Array.isArray(tr.images) ? tr.images : (Array.isArray(tr.fleetPhotos) ? tr.fleetPhotos : []),
 
     // Legacy sync mirrors
     enabled: isEnabled,

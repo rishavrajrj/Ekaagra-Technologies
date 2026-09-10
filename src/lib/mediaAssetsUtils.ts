@@ -731,6 +731,9 @@ export function normalizeMediaAssetsData(
       } else if (def.id === 'brand_colors' && intakeData?.brandingDesign?.primaryColor) {
         defaultReference = `Primary: ${intakeData.brandingDesign.primaryColor}${intakeData.brandingDesign.secondaryColor ? ', Secondary: ' + intakeData.brandingDesign.secondaryColor : ''}`;
         if (readinessStatus === 'not_started') readinessStatus = 'ready';
+      } else if (def.id === 'principal_photo' && (intakeData?.leadership?.principalPhoto?.url || intakeData?.leadership?.principalPhotoUrl)) {
+        defaultReference = intakeData?.leadership?.principalPhoto?.url || intakeData?.leadership?.principalPhotoUrl || '';
+        if (readinessStatus === 'not_started') readinessStatus = 'ready';
       }
     }
 

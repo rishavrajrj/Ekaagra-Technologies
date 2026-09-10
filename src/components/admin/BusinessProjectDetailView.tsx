@@ -26,6 +26,8 @@ import {
   sendIntakeReminderEmailAction,
 } from '@/app/businessProjectActions';
 import Logo from '@/components/ui/Logo';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   ArrowLeft,
   Briefcase,
@@ -1754,9 +1756,10 @@ export default function BusinessProjectDetailView({
       {/* =================================================================== */}
       {/* REQUEST MISSING INFORMATION MODAL */}
       {/* =================================================================== */}
-      {showMissingModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl space-y-5 animate-scaleUp">
+      <ModalPortal isOpen={showMissingModal}>
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl border border-slate-200 max-w-lg w-full max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto p-6 shadow-2xl space-y-5 animate-scaleUp my-auto">
+
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-rose-600" />
@@ -1864,7 +1867,8 @@ export default function BusinessProjectDetailView({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }
+

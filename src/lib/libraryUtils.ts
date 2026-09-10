@@ -593,6 +593,7 @@ export function normalizeLibraryData(raw?: Partial<LibraryData> | null): Library
     categories: Array.isArray(lib.categories) && lib.categories.length > 0
       ? lib.categories
       : ['Textbooks', 'Reference Books', 'General Knowledge', 'Fiction', 'Periodicals & Magazines'],
+    images: Array.isArray(lib.images) ? lib.images : [],
   };
 }
 

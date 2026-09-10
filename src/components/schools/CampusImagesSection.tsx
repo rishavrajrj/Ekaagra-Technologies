@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   Image as ImageIcon,
   Plus,
@@ -15,7 +17,7 @@ import {
   X,
   Star,
 } from 'lucide-react';
-import type { CampusBranchData, CampusImageData, CampusImageCategory } from '@/lib/types';
+import type { CampusBranchData, CampusImageData, CampusImageCategory, SharedMediaAsset } from '@/lib/types';
 import { formatBytes, formatOptimizationStats } from '@/lib/imageUtils';
 import {
   CAMPUS_GALLERY_CATEGORIES,
@@ -27,6 +29,19 @@ import {
   isCampusImageCategory,
   resolveImageTypeDisplay,
 } from '@/lib/schoolIntake';
+import DuplicatePhotoModal from './DuplicatePhotoModal';
+import SchoolMediaPickerModal from './SchoolMediaPickerModal';
+import {
+  computeFileSha256,
+  findDuplicateAsset,
+  getEffectiveMediaRegistry,
+  registerMediaAsset,
+  attachAssetToSection,
+  detachAssetFromSection,
+  sharedAssetToCampusImage,
+  campusImageToSharedAsset,
+  purgeAssetFromIntake,
+} from '@/lib/mediaRegistryUtils';
 
 interface CampusImagesSectionProps {
   campus: CampusBranchData;
@@ -35,6 +50,8 @@ interface CampusImagesSectionProps {
   token: string;
   onUpdateImages: (campusIndex: number, images: CampusImageData[]) => void;
   allCampuses?: CampusBranchData[];
+  mediaRegistry?: SharedMediaAsset[];
+  onUpdateMediaRegistry?: (registry: SharedMediaAsset[]) => void;
 }
 
 interface UploadTask {
@@ -55,6 +72,8 @@ export default function CampusImagesSection({
   token,
   onUpdateImages,
   allCampuses = [],
+  mediaRegistry,
+  onUpdateMediaRegistry,
 }: CampusImagesSectionProps) {
   // Navigation: 'all' or one of the 10 canonical gallery categories
   const [selectedCategory, setSelectedCategory] = useState<'all' | CampusImageCategory>('all');
@@ -62,11 +81,26 @@ export default function CampusImagesSection({
   const [replacingImageId, setReplacingImageId] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<CampusImageData | null>(null);
   const [heroNotice, setHeroNotice] = useState<string | null>(null);
+  const [duplicateModalInfo, setDuplicateModalInfo] = useState<{
+    asset: SharedMediaAsset;
+    file?: File;
+    isAlreadyInTargetSection: boolean;
+    targetCategory: CampusImageCategory;
+  } | null>(null);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceInputRef = useRef<HTMLInputElement>(null);
 
   const images = campus.images || [];
+
+  // Effective Media Registry for deduplication and reuse
+  const effectiveRegistry = useMemo(() => {
+    if (mediaRegistry && mediaRegistry.length > 0) return mediaRegistry;
+    return getEffectiveMediaRegistry({
+      campuses: allCampuses.length > 0 ? allCampuses : [campus],
+    });
+  }, [mediaRegistry, allCampuses, campus]);
 
   // Helper to determine the effective category for any image (handles legacy & migration)
   const getEffectiveCategory = useCallback((img: CampusImageData): CampusImageCategory => {
@@ -224,7 +258,206 @@ export default function CampusImagesSection({
     }
   };
 
-  // Multi-image selection handler
+  // Reuse existing media asset in campus photos
+  const handleReuseExisting = (asset: SharedMediaAsset, cat: CampusImageCategory) => {
+    const isAlreadyInCampus = images.some(
+      (img) =>
+        img.url === asset.url ||
+        img.id === asset.id ||
+        (asset.hash && img.checksumSha256 === asset.hash)
+    );
+
+    if (!isAlreadyInCampus) {
+      const newImg = sharedAssetToCampusImage(asset, {
+        campusId: campus.id,
+        category: cat,
+        imageCategory: cat,
+        imageType: resolveCategoryLabel(cat),
+        caption: asset.caption || DEFAULT_CATEGORY_CAPTIONS[cat] || '',
+        displayOrder: images.length,
+        isPrimary: images.length === 0,
+        sourceSection: 'campus',
+      });
+      const nextList = [...images, newImg];
+      onUpdateImages(campusIndex, nextList);
+
+      if (onUpdateMediaRegistry) {
+        const { updatedIntakeData } = attachAssetToSection(
+          { mediaRegistry: effectiveRegistry, campuses: allCampuses },
+          asset.id,
+          'campus'
+        );
+        if (updatedIntakeData.mediaRegistry) {
+          onUpdateMediaRegistry(updatedIntakeData.mediaRegistry);
+        }
+      }
+    }
+    setDuplicateModalInfo(null);
+  };
+
+  // Force re-upload / replace existing photo in campus photos
+  const handleForceUploadDuplicate = async (
+    asset: SharedMediaAsset,
+    file: File,
+    cat: CampusImageCategory
+  ) => {
+    setDuplicateModalInfo(null);
+    const replaceTask: UploadTask = {
+      id: `force-replace-${Date.now()}`,
+      file,
+      name: file.name,
+      targetCategory: cat,
+      status: 'uploading',
+      message: `Replacing ${asset.fileName}...`,
+    };
+
+    setUploadTasks((prev) => [...prev, replaceTask]);
+
+    try {
+      const uploadedImg = await uploadSingleFile(file, cat, (update) => {
+        setUploadTasks((current) =>
+          current.map((t) => (t.id === replaceTask.id ? { ...t, ...update } : t))
+        );
+      });
+
+      // 1. Update or append campus images
+      const isExistingInCampus = images.some(
+        (img) =>
+          img.url === asset.url ||
+          img.id === asset.id ||
+          (asset.hash && img.checksumSha256 === asset.hash)
+      );
+
+      let nextList: CampusImageData[];
+      if (isExistingInCampus) {
+        nextList = images.map((img) => {
+          if (
+            img.url === asset.url ||
+            img.id === asset.id ||
+            (asset.hash && img.checksumSha256 === asset.hash)
+          ) {
+            return {
+              ...img,
+              url: uploadedImg.url,
+              storageKey: uploadedImg.storageKey,
+              checksumSha256: uploadedImg.checksumSha256,
+              fileName: uploadedImg.fileName,
+              originalSize: uploadedImg.originalSize,
+              optimizedSize: uploadedImg.optimizedSize,
+              optimizedFormat: uploadedImg.optimizedFormat,
+            };
+          }
+          return img;
+        });
+      } else {
+        uploadedImg.displayOrder = images.length;
+        uploadedImg.isPrimary = images.length === 0;
+        uploadedImg.sourceSection = 'campus';
+        nextList = [...images, uploadedImg];
+      }
+      onUpdateImages(campusIndex, nextList);
+
+      // 2. Update mediaRegistry
+      if (onUpdateMediaRegistry) {
+        const nextReg = effectiveRegistry.map((a) => {
+          if (a.id === asset.id || (asset.hash && a.hash === asset.hash) || a.url === asset.url) {
+            return {
+              ...a,
+              url: uploadedImg.url,
+              thumbnailUrl: uploadedImg.url,
+              storageKey: uploadedImg.storageKey,
+              hash: uploadedImg.checksumSha256,
+              size: uploadedImg.optimizedSize || file.size || a.size || 0,
+              usedIn: Array.from(new Set([...a.usedIn, 'campus'])),
+            };
+          }
+          return a;
+        });
+        onUpdateMediaRegistry(nextReg);
+      }
+
+      setTimeout(() => {
+        setUploadTasks((current) => current.filter((t) => t.id !== replaceTask.id));
+      }, 3000);
+    } catch {
+      // Error is displayed in upload tasks banner
+    }
+  };
+
+  // Multi-image selection from SchoolMediaPickerModal
+  const handleSelectFromPicker = (selectedAssets: SharedMediaAsset[]) => {
+    if (selectedAssets.length === 0) return;
+    const existingKeys = new Set(
+      images.map((im) => im.url.toLowerCase()).concat(images.map((im) => im.id.toLowerCase()))
+    );
+
+    const toAdd: CampusImageData[] = [];
+    let currentReg = effectiveRegistry;
+
+    selectedAssets.forEach((asset) => {
+      if (!existingKeys.has(asset.url.toLowerCase()) && !existingKeys.has(asset.id.toLowerCase())) {
+        const newImg = sharedAssetToCampusImage(asset, {
+          campusId: campus.id,
+          category: effectiveUploadCategory,
+          imageCategory: effectiveUploadCategory,
+          imageType: resolveCategoryLabel(effectiveUploadCategory),
+          caption: asset.caption || DEFAULT_CATEGORY_CAPTIONS[effectiveUploadCategory] || '',
+          displayOrder: images.length + toAdd.length,
+          isPrimary: images.length === 0 && toAdd.length === 0,
+          sourceSection: 'campus',
+        });
+        toAdd.push(newImg);
+        existingKeys.add(asset.url.toLowerCase());
+
+        const { updatedIntakeData } = attachAssetToSection(
+          { mediaRegistry: currentReg, campuses: allCampuses },
+          asset.id,
+          'campus'
+        );
+        if (updatedIntakeData.mediaRegistry) {
+          currentReg = updatedIntakeData.mediaRegistry;
+        }
+      }
+    });
+
+    if (toAdd.length > 0) {
+      onUpdateImages(campusIndex, [...images, ...toAdd]);
+      if (onUpdateMediaRegistry) {
+        onUpdateMediaRegistry(currentReg);
+      }
+    }
+  };
+
+  // Delete photo from media library across campuses and central registry
+  const handleDeleteAssetFromLibrary = async (asset: SharedMediaAsset) => {
+    const { updatedIntakeData, purgedStorageKey } = purgeAssetFromIntake(
+      { mediaRegistry: effectiveRegistry, campuses: allCampuses },
+      asset.id
+    );
+
+    const keyToDelete = purgedStorageKey || asset.storageKey;
+    if (keyToDelete && token) {
+      try {
+        await fetch('/api/school-assets/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, storageKey: keyToDelete }),
+        });
+      } catch {
+        // Non-blocking cleanup
+      }
+    }
+
+    if (updatedIntakeData.campuses) {
+      const currentCampusImages = updatedIntakeData.campuses[campusIndex]?.images || [];
+      onUpdateImages(campusIndex, currentCampusImages);
+    }
+    if (onUpdateMediaRegistry && updatedIntakeData.mediaRegistry) {
+      onUpdateMediaRegistry(updatedIntakeData.mediaRegistry);
+    }
+  };
+
+  // Multi-image selection handler with SHA-256 duplicate interception
   const handleFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = e.target.files;
     if (!fileList || fileList.length === 0) return;
@@ -234,8 +467,39 @@ export default function CampusImagesSection({
 
     const targetCategory = effectiveUploadCategory;
 
-    // Create tasks for all selected files
-    const newTasks: UploadTask[] = filesArray.map((file) => ({
+    // Filter out duplicates using SHA-256
+    const filesToUpload: File[] = [];
+
+    for (const file of filesArray) {
+      const fileHash = await computeFileSha256(file);
+      const existingAsset = findDuplicateAsset(effectiveRegistry, fileHash, {
+        name: file.name,
+        size: file.size,
+      });
+
+      if (existingAsset) {
+        const isAlreadyInCampus = images.some(
+          (img) =>
+            img.url === existingAsset.url ||
+            img.id === existingAsset.id ||
+            (existingAsset.hash && img.checksumSha256 === existingAsset.hash)
+        );
+
+        setDuplicateModalInfo({
+          asset: existingAsset,
+          file,
+          isAlreadyInTargetSection: isAlreadyInCampus,
+          targetCategory,
+        });
+      } else {
+        filesToUpload.push(file);
+      }
+    }
+
+    if (filesToUpload.length === 0) return;
+
+    // Create tasks for non-duplicate files
+    const newTasks: UploadTask[] = filesToUpload.map((file) => ({
       id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       file,
       name: file.name,
@@ -264,8 +528,21 @@ export default function CampusImagesSection({
         }
 
         uploadedImg.displayOrder = workingList.length;
+        uploadedImg.sourceSection = 'campus';
         workingList = [...workingList, uploadedImg];
         onUpdateImages(campusIndex, workingList);
+
+        // Register in central media registry
+        if (onUpdateMediaRegistry) {
+          const sharedAsset = campusImageToSharedAsset(uploadedImg, 'campus', ['campus']);
+          const { updatedIntakeData } = registerMediaAsset(
+            { mediaRegistry: effectiveRegistry, campuses: allCampuses },
+            sharedAsset
+          );
+          if (updatedIntakeData.mediaRegistry) {
+            onUpdateMediaRegistry(updatedIntakeData.mediaRegistry);
+          }
+        }
       } catch {
         // Individual failures remain recorded in uploadTasks
       }
@@ -457,13 +734,19 @@ export default function CampusImagesSection({
 
     onUpdateImages(campusIndex, filtered);
 
-    // Safely delete storage object if not referenced in any campus
+    // Safely delete storage object ONLY if not referenced in any campus AND not referenced in any other section
     const storageKey = target.storageKey;
     if (storageKey) {
-      const isReusedElsewhere = allCampuses.some((c) =>
+      const isReusedElsewhereInCampus = allCampuses.some((c) =>
         c.images?.some((im) => im.id !== imageId && im.storageKey === storageKey)
       );
-      if (!isReusedElsewhere) {
+      const isReusedInOtherSection = effectiveRegistry.some(
+        (a) =>
+          (a.storageKey === storageKey || a.url === target.url || (target.checksumSha256 && a.hash === target.checksumSha256)) &&
+          a.usedIn.some((sec) => sec !== 'campus')
+      );
+
+      if (!isReusedElsewhereInCampus && !isReusedInOtherSection) {
         try {
           await fetch('/api/school-assets/delete', {
             method: 'POST',
@@ -472,6 +755,19 @@ export default function CampusImagesSection({
           });
         } catch {
           // Non-blocking cleanup
+        }
+      }
+
+      // Detach 'campus' reference in central registry
+      if (onUpdateMediaRegistry) {
+        const targetRefId = target.sharedAssetId || target.url || target.id;
+        const updated = detachAssetFromSection(
+          { mediaRegistry: effectiveRegistry, campuses: allCampuses },
+          targetRefId,
+          'campus'
+        );
+        if (updated.mediaRegistry) {
+          onUpdateMediaRegistry(updated.mediaRegistry);
         }
       }
     }
@@ -691,17 +987,28 @@ export default function CampusImagesSection({
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={triggerAddImages}
-          disabled={isUploadingActive}
-          className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-[#4338CA] border border-[#C7D2FE] rounded-xl text-xs font-semibold shadow-2xs transition shrink-0 cursor-pointer disabled:opacity-50"
-        >
-          <Plus className="w-3.5 h-3.5 text-[#4338CA]" />
-          <span>
-            {currentCategoryDef ? currentCategoryDef.addBtnLabel : '+ Add Campus Images'}
-          </span>
-        </button>
+        <div className="flex items-center space-x-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsPickerOpen(true)}
+            className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-[#4338CA] border border-[#C7D2FE] rounded-xl text-xs font-semibold shadow-2xs transition cursor-pointer"
+          >
+            <ImageIcon className="w-3.5 h-3.5 text-[#4338CA]" />
+            <span>Reuse Existing Photos</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={triggerAddImages}
+            disabled={isUploadingActive}
+            className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-[#4338CA] border border-[#C7D2FE] rounded-xl text-xs font-semibold shadow-2xs transition cursor-pointer disabled:opacity-50"
+          >
+            <Plus className="w-3.5 h-3.5 text-[#4338CA]" />
+            <span>
+              {currentCategoryDef ? currentCategoryDef.addBtnLabel : '+ Add Campus Images'}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Multi-Image Upload Progress Queue */}
@@ -1040,17 +1347,18 @@ export default function CampusImagesSection({
       )}
 
       {/* Scoped Fullscreen Lightbox Modal */}
-      {previewImage && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
-          onClick={() => setPreviewImage(null)}
-        >
+      <ModalPortal isOpen={!!previewImage}>
+        {previewImage && (
           <div
-            className="relative max-w-4xl w-full bg-[#131B2E] border border-slate-700 rounded-2xl overflow-hidden shadow-2xl space-y-3 p-4 sm:p-5 text-white"
-            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
+            onClick={() => setPreviewImage(null)}
           >
+            <div
+              className="relative max-w-4xl w-full bg-[#131B2E] border border-slate-700 rounded-2xl overflow-hidden shadow-2xl space-y-3 p-4 sm:p-5 text-white"
+              onClick={(e) => e.stopPropagation()}
+            >
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-slate-700 pb-3">
               <div className="flex items-center space-x-2 min-w-0 flex-wrap gap-y-1">
@@ -1167,6 +1475,8 @@ export default function CampusImagesSection({
           </div>
         </div>
       )}
+    </ModalPortal>
+
 
       {/* Floating Hero Limit Alert / Toast */}
       {heroNotice && (
@@ -1186,6 +1496,42 @@ export default function CampusImagesSection({
           </button>
         </div>
       )}
+
+      {/* Duplicate Photo Warning Modal */}
+      {duplicateModalInfo && (
+        <DuplicatePhotoModal
+          isOpen={Boolean(duplicateModalInfo)}
+          duplicateAsset={duplicateModalInfo.asset}
+          targetSectionTitle="Campus Photos"
+          isAlreadyInTargetSection={duplicateModalInfo.isAlreadyInTargetSection}
+          onReuseExisting={() =>
+            handleReuseExisting(duplicateModalInfo.asset, duplicateModalInfo.targetCategory)
+          }
+          onForceUpload={
+            duplicateModalInfo.file
+              ? () =>
+                  handleForceUploadDuplicate(
+                    duplicateModalInfo.asset,
+                    duplicateModalInfo.file!,
+                    duplicateModalInfo.targetCategory
+                  )
+              : undefined
+          }
+          onCancel={() => setDuplicateModalInfo(null)}
+        />
+      )}
+
+      {/* School Media Picker Modal */}
+      <SchoolMediaPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        sectionKey={effectiveUploadCategory}
+        sectionTitle={`Campus Photos (${resolveCategoryLabel(effectiveUploadCategory)})`}
+        mediaRegistry={effectiveRegistry}
+        alreadySelectedPhotoIdsOrUrls={images.map((im) => im.url).concat(images.map((im) => im.id))}
+        onSelectPhotos={handleSelectFromPicker}
+        onDeleteAsset={handleDeleteAssetFromLibrary}
+      />
     </div>
   );
 }

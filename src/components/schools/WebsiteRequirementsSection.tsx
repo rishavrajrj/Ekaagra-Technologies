@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   ExternalLink,
   ChevronRight,
@@ -2485,13 +2487,16 @@ export function WebsiteRequirementsSection({
 
       {/* 11. Single Item Verification / Edit Modal Dialog */}
       {activeModalItem && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="verification-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-        >
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+        <ModalPortal isOpen={true}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="verification-modal-title"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
+          >
+
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] my-auto">
+
             <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center space-x-2">
                 <ShieldCheck className="w-4 h-4 text-[#4338CA]" />
@@ -2746,17 +2751,22 @@ export function WebsiteRequirementsSection({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
+    )}
+
+
+
 
       {/* 11. Guided Multi-Step Review Modal */}
-      {isGuidedReviewOpen && (
+      <ModalPortal isOpen={isGuidedReviewOpen}>
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="guided-review-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
         >
-          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] my-auto">
+
             {isGuidedReviewComplete ? (
               /* Guided Review Completion Screen (Section 7) */
               <div className="p-6 sm:p-8 text-center space-y-5">
@@ -3073,12 +3083,14 @@ export function WebsiteRequirementsSection({
             ) : null}
           </div>
         </div>
-      )}
+      </ModalPortal>
+
 
       {/* 12. Privacy Policy Modal Dialog */}
-      {isPrivacyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+      <ModalPortal isOpen={isPrivacyModalOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto">
+
             <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center space-x-2">
                 <Sparkles className="w-4 h-4 text-purple-600" />
@@ -3142,17 +3154,19 @@ export function WebsiteRequirementsSection({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
+
 
       {/* 13. Server-Authoritative Specification Sign-Off Modal */}
-      {isSignOffModalOpen && (
+      <ModalPortal isOpen={isSignOffModalOpen}>
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="signoff-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
         >
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto">
+
             <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center space-x-2.5">
                 <div className="w-8 h-8 rounded-lg bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
@@ -3285,17 +3299,18 @@ export function WebsiteRequirementsSection({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
 
       {/* 14. Reopen Specification Confirmation Modal */}
-      {isReopenModalOpen && (
+      <ModalPortal isOpen={isReopenModalOpen}>
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="reopen-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
         >
-          <div className="bg-white rounded-2xl max-w-md w-full flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-md w-full flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)]">
+
             <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center space-x-2.5">
                 <div className="w-8 h-8 rounded-lg bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
@@ -3343,17 +3358,17 @@ export function WebsiteRequirementsSection({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
 
       {/* 15. Approval Version History Modal */}
-      {isHistoryModalOpen && (
+      <ModalPortal isOpen={isHistoryModalOpen}>
         <div
           role="dialog"
           aria-modal="true"
           aria-labelledby="history-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs"
         >
-          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-2xl max-w-lg w-full max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto">
             <div className="p-4 sm:p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center space-x-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#4338CA] text-white flex items-center justify-center shrink-0 shadow-2xs">
@@ -3456,7 +3471,8 @@ export function WebsiteRequirementsSection({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }
+

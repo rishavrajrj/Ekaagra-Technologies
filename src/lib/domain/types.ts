@@ -56,6 +56,7 @@ export interface DomainCheckRequest {
   domain: string;
   selectedPlanId?: 'free-launch' | 'launch-plus' | 'starter' | string;
   businessCategory?: 'general' | 'school' | 'business' | 'tech' | string;
+  annualAllowance?: number;
 }
 
 export type DomainResponseStatus =

@@ -14,6 +14,8 @@ import { createBusinessProjectAction } from '@/app/businessProjectActions';
 import { startSchoolOnboardingAction } from '@/app/schoolProjectActions';
 import { getWhatsAppChatUrl, sanitizePhoneNumber } from '@/lib/whatsapp';
 import Logo from '@/components/ui/Logo';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   Users,
   Search,
@@ -783,18 +785,19 @@ export default function LeadsDashboard({
       </div>
 
       {/* --- Slide-Over / Modal Detail Drawer ------------------------- */}
-      {selectedLead && (
-        <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
-            onClick={() => setSelectedLead(null)}
-          />
+      <ModalPortal isOpen={!!selectedLead}>
+        {selectedLead && (
+          <div className="fixed inset-0 z-[9999] overflow-hidden flex justify-end">
+            {/* Backdrop */}
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity"
+              onClick={() => setSelectedLead(null)}
+            />
 
-          {/* Drawer Panel */}
-          <div className="relative w-full max-w-xl bg-white shadow-2xl z-10 flex flex-col h-full overflow-y-auto animate-slideLeft">
-            {/* Drawer Header */}
-            <div className="p-6 border-b border-[#E2E8F0] flex items-start justify-between bg-[#FAF7F2]">
+            {/* Drawer Panel */}
+            <div className="relative w-full max-w-xl bg-white shadow-2xl z-10 flex flex-col h-full overflow-y-auto animate-slideLeft">
+              {/* Drawer Header */}
+              <div className="p-6 border-b border-[#E2E8F0] flex items-start justify-between bg-[#FAF7F2]">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <span
@@ -1247,6 +1250,8 @@ export default function LeadsDashboard({
           </div>
         </div>
       )}
+    </ModalPortal>
     </div>
   );
 }
+

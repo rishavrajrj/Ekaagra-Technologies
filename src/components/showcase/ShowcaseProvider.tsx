@@ -68,7 +68,7 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
 
     const el = document.getElementById(sectionId);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      window.scrollTo({ top: el.offsetTop, behavior: 'smooth' });
     }
   }, []);
 
@@ -382,15 +382,9 @@ export function ShowcaseProvider({ children }: { children: React.ReactNode }) {
       elapsedBeforePauseRef.current = 0;
       setCurrentStepIndex((prev) => {
         if (prev >= steps.length - 1) {
-          if (SHOWCASE_CONFIG.loop) {
-            scrollToSection(steps[0].sectionId);
-            return 0;
-          }
-          return prev;
+          return SHOWCASE_CONFIG.loop ? 0 : prev;
         }
-        const nextIdx = prev + 1;
-        scrollToSection(steps[nextIdx].sectionId);
-        return nextIdx;
+        return prev + 1;
       });
     }, remainingTime);
 

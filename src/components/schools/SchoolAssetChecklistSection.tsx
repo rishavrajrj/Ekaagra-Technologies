@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Copy,
   AlertCircle,
+  AlertTriangle,
   Clock,
   MinusCircle,
   ExternalLink,
@@ -48,6 +49,7 @@ import {
   evaluatePublicationReadiness,
   validateSchoolAssetFile,
 } from '@/lib/schoolAssetChecklist';
+import ContentRecommendationAssistant from './ContentRecommendationAssistant';
 
 interface SchoolAssetChecklistSectionProps {
   intakeData: UniversalIntakeData;
@@ -1112,6 +1114,8 @@ export default function SchoolAssetChecklistSection({
                     campuses={intakeData.campuses}
                     onReuseCampusImage={handleReuseCampusImage}
                     onBatchReuseCampusImages={handleBatchReuseCampusImages}
+                    intakeData={intakeData}
+                    token={token}
                   />
                 ))}
               </div>
@@ -1159,6 +1163,8 @@ interface ChecklistItemRowProps {
     campusImgs: (CampusImageData & { campusName?: string })[],
     action: 'select_all' | 'clear_all'
   ) => void;
+  intakeData: UniversalIntakeData;
+  token?: string;
 }
 
 function ChecklistItemRow({
@@ -1182,9 +1188,10 @@ function ChecklistItemRow({
   campuses,
   onReuseCampusImage,
   onBatchReuseCampusImages,
+  intakeData,
+  token,
 }: ChecklistItemRowProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isEditingText, setIsEditingText] = useState(false);
   const [localText, setLocalText] = useState(item.textContent || '');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showCampusPicker, setShowCampusPicker] = useState(false);
@@ -1297,7 +1304,19 @@ function ChecklistItemRow({
             {isProvided && (
               <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
-                <span>{item.sourceSection ? 'Already Available' : 'Provided'}</span>
+                <span>{item.sourceSection ? (item.sourceSection.includes('Recommended') ? 'Provided' : 'Already Available') : 'Provided'}</span>
+              </span>
+            )}
+            {item.status === 'recommended_available' && !isProvided && (
+              <span className="text-[10px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-indigo-600 shrink-0" />
+                <span>Recommended Available</span>
+              </span>
+            )}
+            {item.requiresReview && item.contentSource === 'template' && (
+              <span className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-md flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3 text-amber-600 shrink-0" />
+                <span>Needs Review</span>
               </span>
             )}
             {(isPending || item.status === 'will_provide_later') && (
@@ -1312,7 +1331,7 @@ function ChecklistItemRow({
                 <span>Not applicable</span>
               </span>
             )}
-            {!isProvided && !isPending && !isNotApplicable && (
+            {!isProvided && !isPending && !isNotApplicable && item.status !== 'recommended_available' && (
               <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
                 Not provided
               </span>
@@ -1786,68 +1805,15 @@ function ChecklistItemRow({
             </div>
           )}
 
-          {/* D. Text Content Controls */}
+          {/* D. Text Content Controls with Intelligent Recommendation Assistant */}
           {item.type === 'text' && (
-            <div className="w-full space-y-2">
-              {isEditingText || !item.textContent ? (
-                <div className="space-y-1.5">
-                  <textarea
-                    rows={2}
-                    value={localText}
-                    onChange={(e) => setLocalText(e.target.value)}
-                    placeholder={`Enter ${item.title.toLowerCase()}...`}
-                    disabled={isNotApplicable}
-                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-xs text-[#131B2E] placeholder:text-[#94A3B8] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-2 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
-                    aria-label={`Enter text for ${item.title}`}
-                  />
-                  <div className="flex items-center justify-end gap-2">
-                    {isEditingText && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLocalText(item.textContent || '');
-                          setIsEditingText(false);
-                        }}
-                        className="px-2.5 py-1 text-xs text-[#64748B] hover:text-[#131B2E]"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onUpdate({
-                          textContent: localText,
-                          status: localText.trim().length > 0 ? 'provided' : 'not_provided',
-                        });
-                        setIsEditingText(false);
-                      }}
-                      className="px-3 py-1 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-semibold rounded-lg shadow-2xs transition"
-                    >
-                      Save Text
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 text-xs space-y-1.5 max-w-lg">
-                  <p className="text-[#131B2E] whitespace-pre-wrap leading-relaxed">
-                    {item.textContent}
-                  </p>
-                  <div className="flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setLocalText(item.textContent || '');
-                        setIsEditingText(true);
-                      }}
-                      className="text-[11px] font-semibold text-[#4338CA] hover:underline"
-                    >
-                      Edit Text
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ContentRecommendationAssistant
+              item={item}
+              intakeData={intakeData}
+              onUpdate={onUpdate}
+              token={token}
+              isNotApplicable={isNotApplicable}
+            />
           )}
 
           {/* E. Auxiliary Status Switches: Provide Later & Not Applicable */}

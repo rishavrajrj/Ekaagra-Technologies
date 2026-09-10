@@ -557,9 +557,10 @@
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
+
 
 @keyframes fadeUp {
   from {
@@ -1186,6 +1187,8 @@
   .showcase-fullscreen-mode body {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
+    scroll-padding-top: 0px !important;
+    scroll-padding: 0px !important;
   }
 
   .showcase-fullscreen-mode::-webkit-scrollbar,
@@ -1212,11 +1215,35 @@
     flex-direction: column !important;
     justify-content: center !important;
     box-sizing: border-box !important;
+    scroll-margin-top: 0px !important;
+    scroll-margin: 0px !important;
   }
 
-  .showcase-fullscreen-mode section[id] > div {
+  .showcase-fullscreen-mode section[id] > div:not([class*="absolute"]),
+  .showcase-fullscreen-mode section[id] > .site-container {
     margin-top: auto !important;
     margin-bottom: auto !important;
+  }
+
+  /* Responsive tuning for compact vertical viewports in showcase mode */
+  @media (max-height: 850px) {
+    .showcase-fullscreen-mode section[id] {
+      padding-top: 1.25rem !important;
+      padding-bottom: 2rem !important;
+    }
+    .showcase-fullscreen-mode #pricing {
+      padding-top: 0.75rem !important;
+      padding-bottom: 1.5rem !important;
+    }
+    .showcase-fullscreen-mode #pricing .site-container {
+      gap: 0.35rem !important;
+    }
+    .showcase-fullscreen-mode #pricing .card-popup {
+      padding: 0.65rem 0.75rem !important;
+    }
+    .showcase-fullscreen-mode #pricing h2 {
+      font-size: 1.5rem !important;
+    }
   }
 }
 
@@ -1444,4 +1471,19 @@
   background-color: rgba(99, 102, 241, 0.12) !important;
   border-color: rgba(99, 102, 241, 0.25) !important;
   color: #818CF8 !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   HOME PAGE VIEWPORT SECTION STANDARDIZATION
+   Guarantees all home page sections match the hero section height:
+   min-h-[calc(100dvh-var(--eka-header-height,4.5rem))]
+   ═══════════════════════════════════════════════════════════════ */
+.home-viewport-section {
+  min-height: calc(100dvh - var(--eka-header-height, 4.5rem));
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
 }

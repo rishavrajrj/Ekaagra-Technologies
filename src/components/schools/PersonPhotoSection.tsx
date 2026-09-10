@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   User,
   Upload,
@@ -677,16 +679,19 @@ export default function PersonPhotoSection({
 
       {/* Fullscreen Lightbox Modal */}
       {showLightbox && currentPhoto && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
-          onClick={() => setShowLightbox(false)}
-        >
+        <ModalPortal isOpen={true}>
           <div
-            className="relative max-w-3xl w-full bg-[#131B2E] border border-slate-700 rounded-2xl overflow-hidden shadow-2xl space-y-3 p-4 sm:p-5 text-white"
+            role="dialog"
+            aria-modal="true"
+            className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
+            onClick={() => setShowLightbox(false)}
+          >
+
+          <div
+            className="relative max-w-3xl w-full max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto bg-[#131B2E] border border-slate-700 rounded-2xl shadow-2xl space-y-3 p-4 sm:p-5 text-white my-auto"
             onClick={(e) => e.stopPropagation()}
           >
+
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-700 pb-3">
               <div className="flex items-center space-x-2 min-w-0 flex-wrap gap-y-1">
@@ -755,20 +760,24 @@ export default function PersonPhotoSection({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
+    )}
+
+
 
       {/* AI Portrait Suggestion & Guidelines Modal */}
-      {showAiModal && (
+      <ModalPortal isOpen={showAiModal}>
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 z-[9999] bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6"
           onClick={() => setShowAiModal(false)}
         >
           <div
-            className="relative max-w-xl w-full bg-white border border-[#CBD5E1] rounded-2xl shadow-2xl space-y-4 p-5 sm:p-6 text-[#131B2E]"
+            className="relative max-w-xl w-full max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto bg-white border border-[#CBD5E1] rounded-2xl shadow-2xl space-y-4 p-5 sm:p-6 text-[#131B2E] my-auto"
             onClick={(e) => e.stopPropagation()}
           >
+
             {/* Modal Header */}
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
               <div className="flex items-center space-x-2">
@@ -861,7 +870,8 @@ export default function PersonPhotoSection({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }
+

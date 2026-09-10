@@ -21,6 +21,7 @@ import {
   DEFAULT_FACULTY_DEPARTMENTS,
   DEFAULT_FACULTY_DESIGNATIONS,
 } from '@/lib/staffFacultyUtils';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 export interface StaffEditorModalProps {
   token?: string;
@@ -419,8 +420,15 @@ export default function StaffEditorModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-[#E2E8F0] w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden animate-scale-up">
+    <ModalPortal isOpen={isOpen}>
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-3xl shadow-2xl border border-[#E2E8F0] w-full max-w-4xl max-h-[85vh] sm:max-h-[88vh] flex flex-col overflow-hidden animate-scale-up my-auto relative"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Modal Header */}
         <div className="p-5 border-b border-[#E2E8F0] flex items-center justify-between bg-slate-50/50">
           <div>
@@ -1221,5 +1229,6 @@ export default function StaffEditorModal({
         </form>
       </div>
     </div>
+    </ModalPortal>
   );
 }

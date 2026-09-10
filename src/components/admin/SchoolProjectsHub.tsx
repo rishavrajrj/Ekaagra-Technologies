@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   School,
   Search,
@@ -521,12 +523,13 @@ export default function SchoolProjectsHub() {
       </div>
 
       {/* Review Workspace Drawer (Responsive Bottom Sheet on Mobile / Slide-Over on Desktop) */}
-      {selectedProjectId && (
-        <div className="fixed inset-0 z-50 overflow-hidden flex items-end sm:items-stretch justify-end">
+      <ModalPortal isOpen={!!selectedProjectId}>
+        <div className="fixed inset-0 z-[9999] overflow-hidden flex items-end sm:items-stretch justify-end">
           <div
-            className="fixed inset-0 bg-[#131B2E]/60 backdrop-blur-xs transition-opacity"
+            className="absolute inset-0 bg-[#131B2E]/60 backdrop-blur-xs transition-opacity"
             onClick={() => setSelectedProjectId(null)}
           />
+
 
           <div className="relative w-full max-w-2xl bg-white shadow-2xl z-10 flex flex-col h-[90vh] sm:h-full rounded-t-3xl sm:rounded-none overflow-y-auto animate-slideLeft">
             {/* Header */}
@@ -879,7 +882,8 @@ export default function SchoolProjectsHub() {
             )}
           </div>
         </div>
-      )}
+      </ModalPortal>
+
 
       {/* Direct School Onboarding Modal */}
       <DirectSchoolOnboardingModal

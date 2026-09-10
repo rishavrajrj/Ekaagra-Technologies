@@ -95,6 +95,17 @@ import {
   getLibrarySummary,
   getInstitutionCurrency,
 } from '@/lib/libraryUtils';
+import SectionPhotoGallery, { type SectionPhotoTag } from './SectionPhotoGallery';
+
+const LIBRARY_PHOTO_TAGS: readonly SectionPhotoTag[] = [
+  { value: 'reading_hall', label: 'Reading Hall & Study Area', description: 'Main reading hall with study tables and chairs' },
+  { value: 'book_stacks', label: 'Book Stacks & Shelving', description: 'Curated books, reference stacks, and catalog rows' },
+  { value: 'digital_catalog', label: 'Digital Library & E-Resource Station', description: 'Computers for digital library and e-catalog access' },
+  { value: 'circulation_desk', label: 'Circulation & Issue Counter', description: 'Librarian desk, issue/return barcode scanner terminal' },
+  { value: 'periodicals_zone', label: 'Periodicals & Newspaper Zone', description: 'Current affairs, magazines, and journal rack' },
+  { value: 'children_corner', label: "Junior & Children's Reading Corner", description: 'Primary and junior reading zone with illustrated books' },
+  { value: 'other', label: 'Other Library Space', description: 'Other library facilities and quiet learning areas' },
+] as const;
 
 interface LibraryManagementSectionProps {
   intakeData: UniversalIntakeData;
@@ -102,6 +113,7 @@ interface LibraryManagementSectionProps {
   updateSectionDirect?: (section: keyof UniversalIntakeData, data: any) => void;
   project?: any;
   onNavigateToSection?: (sectionKey: any) => void;
+  token?: string;
 }
 
 export default function LibraryManagementSection({
@@ -109,6 +121,7 @@ export default function LibraryManagementSection({
   updateSectionField,
   updateSectionDirect,
   project,
+  token,
 }: LibraryManagementSectionProps) {
   const formId = useId();
   const config: LibraryData = normalizeLibraryData(intakeData.libraryConfig);
@@ -1732,6 +1745,27 @@ export default function LibraryManagementSection({
       )}
     </div>
   )}
+
+      {/* ─── LIBRARY PHOTOGRAPHY & READING SPACES SHOWCASE ──────────────── */}
+      {status !== 'no_library' && (
+        <SectionPhotoGallery
+          sectionKey="libraryConfig"
+          category="library"
+          title="Library Photography & Reading Spaces"
+          subtitle="Upload photos of reading rooms, book stacks, digital media stations & study corners"
+          badgeLabel="Library Gallery"
+          badgeColorClass="bg-[#EEF2FF] text-[#4338CA] border-[#C7D2FE]"
+          tags={LIBRARY_PHOTO_TAGS}
+          defaultTag="Reading Hall & Study Area"
+          defaultCaption="Extensive learning resources and quiet reading space in our library"
+          token={token}
+          intakeData={intakeData}
+          sectionImages={config.images || []}
+          updateSectionField={updateSectionField}
+          updateSectionDirect={updateSectionDirect}
+          campusImageFilter={(img) => img.category === 'library' || img.imageCategory === 'library'}
+        />
+      )}
 
       {/* ─── DYNAMIC CONFIGURATION SUMMARY CARD (PROMPT SECTION 30) ──────── */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 shadow-2xs space-y-3">

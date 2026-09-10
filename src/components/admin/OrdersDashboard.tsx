@@ -6,6 +6,8 @@ import type { Order, OrderFilter, OrderStats, PaymentStatus } from '@/lib/types'
 import { fetchOrdersAction, fetchOrderStatsAction, createCustomPaymentLinkAction } from '@/app/orderActions';
 import { adminLogoutAction } from '@/app/actions';
 import Logo from '@/components/ui/Logo';
+import ModalPortal from '@/components/ui/ModalPortal';
+
 import {
   Search,
   RefreshCw,
@@ -442,9 +444,10 @@ export default function OrdersDashboard({
       </div>
 
       {/* Generate Custom Payment Link Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-t-3xl sm:rounded-3xl border border-[#E2E8F0] max-w-lg w-full max-h-[90dvh] overflow-y-auto p-5 sm:p-8 space-y-6 shadow-2xl animate-fadeIn">
+      <ModalPortal isOpen={isModalOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl border border-[#E2E8F0] max-w-lg w-full max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)] overflow-y-auto p-5 sm:p-8 space-y-6 shadow-2xl animate-fadeIn my-auto">
+
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-4">
               <div>
                 <span className="text-[10px] font-mono font-bold text-[#4338CA] uppercase tracking-wider">
@@ -663,7 +666,8 @@ export default function OrdersDashboard({
             )}
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }
+
