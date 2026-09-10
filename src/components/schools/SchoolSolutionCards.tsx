@@ -33,10 +33,10 @@ export default function SchoolSolutionCards() {
             <Sparkles className="w-3.5 h-3.5 text-[#4338CA]" />
             <span>FOUR PROGRESSIVE SOLUTIONS</span>
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Choose the Right Solution for Your School
           </h2>
-          <p className="text-sm sm:text-base text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             Select the digital infrastructure that matches your institution today. Every tier is modular and can be expanded seamlessly as student enrollment grows.
           </p>
         </div>
@@ -78,14 +78,14 @@ export default function SchoolSolutionCards() {
 
                   {/* 2. Plan Name */}
                   <div className="min-h-[3rem] sm:min-h-[3.25rem] flex items-center">
-                    <h3 className="text-xl font-extrabold text-[#131B2E] tracking-tight leading-snug">
+                    <h3 className="card-headline-title font-extrabold text-[#131B2E] tracking-tight leading-snug">
                       {plan.name}
                     </h3>
                   </div>
 
                   {/* 3. Description */}
                   <div className="min-h-[4.25rem] flex items-start">
-                    <p className="text-xs text-[#64748B] leading-relaxed">
+                    <p className="card-supporting-description leading-relaxed">
                       {plan.bestFor}
                     </p>
                   </div>

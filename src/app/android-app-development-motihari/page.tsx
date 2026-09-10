@@ -88,7 +88,7 @@ export default function AndroidAppDevelopmentMotihariPage() {
             Android App Development in Motihari, Bihar
           </h1>
 
-          <p className="text-base sm:text-lg text-[#64748B] leading-relaxed max-w-2xl mx-auto">
+          <p className="hero-supporting-subtitle mx-auto">
             Give your school or business a direct presence on your customers&apos; smartphones with fast, dependable Android apps published on Google Play.
           </p>
 
@@ -114,7 +114,10 @@ export default function AndroidAppDevelopmentMotihariPage() {
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-white">
         <div className="site-container max-w-5xl space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+              CAPABILITIES
+            </span>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Android Capabilities
             </h2>
           </div>
@@ -151,7 +154,10 @@ export default function AndroidAppDevelopmentMotihariPage() {
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="site-container max-w-4xl space-y-8">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+              QUESTIONS &amp; ANSWERS
+            </span>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Android App FAQs
             </h2>
           </div>
@@ -166,10 +172,10 @@ export default function AndroidAppDevelopmentMotihariPage() {
       {/* CTA */}
       <section className="py-16 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="site-container max-w-3xl space-y-6">
-          <h2 className="text-3xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Launch Your Mobile App
           </h2>
-          <p className="text-sm text-[#64748B] max-w-xl mx-auto">
+          <p className="section-supporting-subtitle mx-auto">
             Discuss your Android app project with Ekaagra Technologies in Motihari and receive a structured roadmap.
           </p>
           <div className="pt-2">

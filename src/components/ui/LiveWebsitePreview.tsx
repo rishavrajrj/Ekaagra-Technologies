@@ -84,6 +84,7 @@ export default function LiveWebsitePreview({
   const [viewMode, setViewMode] = useState<'live' | 'screenshot'>(
     url && autoLoad && !isFrameRestricted ? 'live' : 'screenshot'
   );
+  const [isTouchInteracting, setIsTouchInteracting] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -163,6 +164,7 @@ export default function LiveWebsitePreview({
   useEffect(() => {
     setIsIframeLoaded(false);
     setLoadError(false);
+    setIsTouchInteracting(false);
     if (url && (autoLoad || isActivated) && !isFrameRestricted) {
       setViewMode('live');
     } else {
@@ -172,6 +174,7 @@ export default function LiveWebsitePreview({
 
   const handleDeviceChange = (newDevice: DeviceType) => {
     setDevice(newDevice);
+    setIsTouchInteracting(false);
   };
 
   const handleRefresh = () => {
@@ -201,10 +204,10 @@ export default function LiveWebsitePreview({
     visualFrameWidth = '100%';
     visualFrameHeight = '100%';
   } else if (device === 'tablet') {
-    const tabletPaddingX = 24;
-    const tabletPaddingY = 32;
-    const availableW = Math.max(280, cWidth - tabletPaddingX);
-    const availableH = Math.max(340, cHeight - tabletPaddingY);
+    const tabletPaddingX = 20;
+    const tabletPaddingY = 24;
+    const availableW = Math.max(160, cWidth - tabletPaddingX);
+    const availableH = Math.max(160, cHeight - tabletPaddingY);
 
     const scaleW = availableW / 768;
     const scaleH = availableH / 1024;
@@ -218,10 +221,10 @@ export default function LiveWebsitePreview({
     internalIframeWidth = 768;
     internalIframeHeight = Math.max(1024, Math.round(visualScreenHeight / (scale || 1)));
   } else if (device === 'mobile') {
-    const phonePaddingX = 16;
-    const phonePaddingY = 24;
-    const availableW = Math.max(200, cWidth - phonePaddingX);
-    const availableH = Math.max(300, cHeight - phonePaddingY);
+    const phonePaddingX = 14;
+    const phonePaddingY = 20;
+    const availableW = Math.max(120, cWidth - phonePaddingX);
+    const availableH = Math.max(140, cHeight - phonePaddingY);
 
     const scaleW = availableW / 390;
     const scaleH = availableH / 844;
@@ -356,7 +359,7 @@ export default function LiveWebsitePreview({
                     transform: `scale(${scale})`,
                     transformOrigin: 'top left',
                   }}
-                  className="absolute top-0 left-0"
+                  className={`absolute top-0 left-0 ${isTouchInteracting ? 'pointer-events-auto' : 'pointer-events-none sm:pointer-events-auto'}`}
                 >
                   <iframe
                     key={`${url}-${device}-${reloadKey}`}
@@ -393,7 +396,7 @@ export default function LiveWebsitePreview({
                       transform: `scale(${scale})`,
                       transformOrigin: 'top left',
                     }}
-                    className="absolute top-0 left-0"
+                    className={`absolute top-0 left-0 ${isTouchInteracting ? 'pointer-events-auto' : 'pointer-events-none sm:pointer-events-auto'}`}
                   >
                     <iframe
                       key={`${url}-${device}-${reloadKey}`}
@@ -434,7 +437,7 @@ export default function LiveWebsitePreview({
                       transform: `scale(${scale})`,
                       transformOrigin: 'top left',
                     }}
-                    className="absolute top-0 left-0"
+                    className={`absolute top-0 left-0 ${isTouchInteracting ? 'pointer-events-auto' : 'pointer-events-none sm:pointer-events-auto'}`}
                   >
                     <iframe
                       key={`${url}-${device}-${reloadKey}`}
@@ -456,6 +459,28 @@ export default function LiveWebsitePreview({
                 </div>
               </div>
             )}
+
+            {/* Mobile Touch Protection Overlay & Toggle */}
+            <div className="sm:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
+              {!isTouchInteracting ? (
+                <button
+                  type="button"
+                  onClick={() => setIsTouchInteracting(true)}
+                  className="px-3.5 py-1.5 bg-[#131B2E]/90 hover:bg-[#131B2E] text-white text-[11px] font-bold rounded-full shadow-lg border border-white/20 flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
+                >
+                  <Globe className="w-3.5 h-3.5 text-[#F4C95D]" />
+                  <span>Tap to Interact</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsTouchInteracting(false)}
+                  className="px-3.5 py-1.5 bg-white/95 hover:bg-white text-[#131B2E] text-[11px] font-bold rounded-full shadow-lg border border-[#E2E8F0] flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer"
+                >
+                  <span>Done (Scroll Page)</span>
+                </button>
+              )}
+            </div>
 
             {/* Loading Overlay */}
             {!isIframeLoaded && (

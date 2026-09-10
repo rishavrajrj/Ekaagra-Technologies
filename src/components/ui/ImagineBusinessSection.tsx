@@ -186,10 +186,10 @@ export default function ImagineBusinessSection() {
             <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
             TAILORED FOR YOUR INDUSTRY
           </span>
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Imagine your business here.
           </h2>
-          <p className="text-base sm:text-lg text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             Your industry. Your brand. Your website. See how Ekaagra crafts tailor-made digital experiences for every business sector.
           </p>
         </div>

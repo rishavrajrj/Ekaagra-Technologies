@@ -2451,8 +2451,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-4.5">
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1.5">Campus Name *</label>
+                          <label htmlFor={`campus-${camp.id || idx}-name`} className="block font-medium text-[#64748B] mb-1.5">Campus Name *</label>
                           <input
+                            id={`campus-${camp.id || idx}-name`}
                             type="text"
                             value={camp.name}
                             onChange={(e) => updateCampusField(idx, { name: e.target.value })}
@@ -2460,8 +2461,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                           />
                         </div>
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1.5">Campus Code</label>
+                          <label htmlFor={`campus-${camp.id || idx}-code`} className="block font-medium text-[#64748B] mb-1.5">Campus Code</label>
                           <input
+                            id={`campus-${camp.id || idx}-code`}
                             type="text"
                             value={camp.code || ''}
                             onChange={(e) => updateCampusField(idx, { code: e.target.value })}
@@ -2469,8 +2471,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                           />
                         </div>
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1.5">Coordinator / Head Name</label>
+                          <label htmlFor={`campus-${camp.id || idx}-coordinator`} className="block font-medium text-[#64748B] mb-1.5">Coordinator / Head Name</label>
                           <input
+                            id={`campus-${camp.id || idx}-coordinator`}
                             type="text"
                             value={camp.coordinatorName || camp.principalOrHead || ''}
                             onChange={(e) => updateCampusField(idx, { coordinatorName: e.target.value, principalOrHead: e.target.value })}
@@ -2558,8 +2561,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="block font-medium text-[#64748B] mb-1.5">Campus Postal Address *</label>
+                          <label htmlFor={`campus-${camp.id || idx}-address`} className="block font-medium text-[#64748B] mb-1.5">Campus Postal Address *</label>
                           <input
+                            id={`campus-${camp.id || idx}-address`}
                             type="text"
                             value={camp.address}
                             onChange={(e) => updateCampusField(idx, { address: e.target.value })}
@@ -2569,8 +2573,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </div>
 
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1.5">Landmark / Campus Area</label>
+                          <label htmlFor={`campus-${camp.id || idx}-landmark`} className="block font-medium text-[#64748B] mb-1.5">Landmark / Campus Area</label>
                           <input
+                            id={`campus-${camp.id || idx}-landmark`}
                             type="text"
                             value={camp.landmark || ''}
                             onChange={(e) => updateCampusField(idx, { landmark: e.target.value })}
@@ -2744,8 +2749,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         })()}
 
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1.5">City / Town</label>
+                          <label htmlFor={`campus-${camp.id || idx}-city`} className="block font-medium text-[#64748B] mb-1.5">City / Town</label>
                           <input
+                            id={`campus-${camp.id || idx}-city`}
                             type="text"
                             value={camp.city || ''}
                             onChange={(e) => updateCampusField(idx, { city: e.target.value })}
@@ -2755,8 +2761,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </div>
 
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1.5">Postal PIN</label>
+                          <label htmlFor={`campus-${camp.id || idx}-pin`} className="block font-medium text-[#64748B] mb-1.5">Postal PIN</label>
                           <input
+                            id={`campus-${camp.id || idx}-pin`}
                             type="text"
                             value={camp.pin || ''}
                             onChange={(e) => updateCampusField(idx, { pin: e.target.value })}
@@ -2766,8 +2773,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </div>
 
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1.5">Campus Contact Phone</label>
+                          <label htmlFor={`campus-${camp.id || idx}-phone`} className="block font-medium text-[#64748B] mb-1.5">Campus Contact Phone</label>
                           <input
+                            id={`campus-${camp.id || idx}-phone`}
                             type="tel"
                             value={camp.contactPhone || ''}
                             onChange={(e) => updateCampusField(idx, { contactPhone: e.target.value })}
@@ -2777,8 +2785,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </div>
 
                         <div className="md:col-span-3">
-                          <label className="block font-medium text-[#64748B] mb-1.5">Operating Hours</label>
+                          <label htmlFor={`campus-${camp.id || idx}-operating-hours`} className="block font-medium text-[#64748B] mb-1.5">Operating Hours</label>
                           <input
+                            id={`campus-${camp.id || idx}-operating-hours`}
                             type="text"
                             value={camp.operatingHours || '08:00 AM - 03:00 PM'}
                             onChange={(e) => updateCampusField(idx, { operatingHours: e.target.value })}
@@ -2864,10 +2873,11 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                           {/* 2. Campus Wing / Role Description (Optional) */}
                           <div className="pt-2 sm:pt-2.5">
-                            <label className="block font-semibold text-[#131B2E] mb-1.5 text-xs">
+                            <label htmlFor={`campus-${camp.id || idx}-wing-description`} className="block font-semibold text-[#131B2E] mb-1.5 text-xs">
                               Campus Wing / Role Description <span className="font-normal text-[#64748B]">(Optional)</span>
                             </label>
                             <input
+                              id={`campus-${camp.id || idx}-wing-description`}
                               type="text"
                               value={camp.wingDescription || camp.academicDescription || ''}
                               onChange={(e) => {
@@ -2927,7 +2937,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             {/* Custom Class Quick Adder & Class Range Override */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1.5 sm:pt-2">
                               <div>
-                                <label className="block font-medium text-[#64748B] mb-1.5">
+                                <label htmlFor={`custom-class-input-${idx}`} className="block font-medium text-[#64748B] mb-1.5">
                                   Add Custom Class
                                 </label>
                                 <div className="flex gap-2">
@@ -2974,10 +2984,11 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                               </div>
 
                               <div>
-                                <label className="block font-medium text-[#64748B] mb-1.5">
+                                <label htmlFor={`campus-${camp.id || idx}-class-range`} className="block font-medium text-[#64748B] mb-1.5">
                                   Class Range Display
                                 </label>
                                 <input
+                                  id={`campus-${camp.id || idx}-class-range`}
                                   type="text"
                                   value={camp.classRange || ''}
                                   onChange={(e) => {

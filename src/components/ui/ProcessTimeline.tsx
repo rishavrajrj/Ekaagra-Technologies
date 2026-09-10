@@ -1,7 +1,12 @@
-import { Sparkles, CheckCircle2, Eye, Rocket, Compass, Layout, Code2 } from 'lucide-react';
+import Link from 'next/link';
+import { Sparkles, CheckCircle2, Eye, Rocket, Compass, Layout, Code2, ArrowRight } from 'lucide-react';
 import StaggerReveal from '@/components/motion/StaggerReveal';
 
-export default function ProcessTimeline() {
+interface ProcessTimelineProps {
+  showLink?: boolean;
+}
+
+export default function ProcessTimeline({ showLink = true }: ProcessTimelineProps) {
   const steps = [
     {
       number: '01',
@@ -95,7 +100,10 @@ export default function ProcessTimeline() {
       {/* Desktop Horizontal Line with Traveling Light Beam */}
       <div 
         aria-hidden="true" 
-        className="hidden lg:block absolute top-8 left-[6%] right-[6%] h-[2px] bg-gradient-to-r from-sky-200 via-indigo-200 via-purple-200 via-amber-200 via-[#F97360]/30 to-emerald-200 overflow-hidden z-0"
+        className="hidden lg:block absolute top-8 left-[6%] right-[6%] h-[2px] overflow-hidden z-0"
+        style={{
+          background: 'linear-gradient(to right, rgb(186, 230, 253), rgb(165, 180, 252), rgb(192, 132, 250), rgb(253, 230, 138), rgba(249, 115, 96, 0.3), rgb(134, 239, 172))'
+        }}
       >
         <div className="absolute top-0 bottom-0 w-28 bg-gradient-to-r from-transparent via-[#4338CA] to-transparent animate-traveling-beam" />
       </div>
@@ -129,11 +137,11 @@ export default function ProcessTimeline() {
 
                 <div className="min-w-0">
                   <h3
-                    className={`text-sm sm:text-base font-extrabold text-[#131B2E] tracking-tight transition-colors truncate ${step.theme.titleHover}`}
+                    className={`text-sm sm:text-base font-extrabold text-[#131B2E] tracking-tight transition-colors ${step.theme.titleHover}`}
                   >
                     {step.title}
                   </h3>
-                  <p className="text-[11px] text-[#64748B] mt-1 leading-relaxed">
+                  <p className="text-[11px] sm:text-xs text-[#64748B] mt-1 leading-relaxed font-normal">
                     {step.description}
                   </p>
                 </div>
@@ -150,79 +158,18 @@ export default function ProcessTimeline() {
         })}
       </StaggerReveal>
 
-      {/* Built Around Your Approval Supporting Assurance Panel */}
-      <div className="bg-white/80 border border-[#E2E8F0] rounded-xl p-3 sm:p-3.5 shadow-sm relative z-10">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-4 pb-2 border-b border-[#E2E8F0]/80">
-          <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 bg-[#4338CA]/10 text-[#4338CA] font-bold text-[9px] uppercase tracking-wider rounded-md shrink-0">
-              Client Assurance
-            </span>
-            <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#131B2E]">
-              Built Around Your Approval
-            </h3>
-          </div>
-          <p className="text-[11px] text-[#64748B] leading-relaxed">
-            You stay in control from the first conversation to the final launch — with clear deliverables, review checkpoints, and no surprise decisions.
-          </p>
+      {/* Editorial Process Link Row */}
+      {showLink && (
+        <div className="pt-2 text-center">
+          <Link
+            href="/process"
+            className="inline-flex items-center gap-2 text-xs font-bold text-[#4338CA] hover:text-[#3730A3] hover:underline uppercase tracking-wider"
+          >
+            <span>Explore Detailed 6-Step Development Methodology &amp; Staging Checkpoints</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-4 pt-2.5">
-          <div className="flex items-start gap-2 bg-[#FAF7F2]/60 rounded-lg p-2 border border-[#E2E8F0]/60 min-w-0">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-[#131B2E] block">01 — Clear Deliverables</span>
-              <span className="text-[10.5px] text-[#64748B] leading-relaxed block mt-0.5">
-                Every stage has a defined outcome so you always know what is being worked on.
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 bg-[#FAF7F2]/60 rounded-lg p-2 border border-[#E2E8F0]/60 min-w-0">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#4338CA] shrink-0 mt-0.5" />
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-[#131B2E] block">02 — Your Approval Matters</span>
-              <span className="text-[10.5px] text-[#64748B] leading-relaxed block mt-0.5">
-                Nothing important moves forward without your review and approval.
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-2 bg-[#FAF7F2]/60 rounded-lg p-2 border border-[#E2E8F0]/60 min-w-0">
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#F97360] shrink-0 mt-0.5" />
-            <div className="min-w-0">
-              <span className="text-xs font-bold text-[#131B2E] block">03 — Ready to Launch</span>
-              <span className="text-[10.5px] text-[#64748B] leading-relaxed block mt-0.5">
-                Final testing, deployment, domain, SSL, and post-launch support are handled for you.
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Integrated Workflow Assurance Strip */}
-      <div className="pt-3 border-t border-[#E2E8F0]">
-        <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-2.5 gap-x-4 sm:gap-x-8 text-[11px] sm:text-xs font-bold tracking-wider text-[#475569] uppercase text-center sm:text-left">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#4338CA] shrink-0" />
-            <span>PRIVATE STAGING PREVIEW</span>
-          </div>
-          <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#F97360] shrink-0" />
-            <span>EXPLICIT CLIENT SIGN-OFF</span>
-          </div>
-          <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#F4C95D] shrink-0" />
-            <span>ZERO DOWNTIME DNS CUTOVER</span>
-          </div>
-          <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-            <span>30-DAY COMPLIMENTARY SUPPORT</span>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -198,10 +198,10 @@ export default function BusinessPricingCarousel({
             <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
             TRANSPARENT BUSINESS PRICING
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Year 1 Setup &amp; Development with ~50% Annual Renewal
           </h2>
-          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             Choose the package tailored to your business. Year 1 covers custom architecture and launch; Year 2 onward keeps your website secure, fast, and fully maintained.
           </p>
         </div>

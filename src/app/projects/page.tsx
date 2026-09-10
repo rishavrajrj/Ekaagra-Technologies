@@ -47,10 +47,10 @@ export default function ProjectsPage() {
                   <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
                   FEATURED WORK &amp; CASE STUDIES
                 </span>
-                <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+                <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                   Websites that make businesses look better.
                 </h2>
-                <p className="text-base text-[#64748B] max-w-2xl leading-relaxed">
+                <p className="section-supporting-subtitle">
                   Every project is designed around the people who will use it — and the business goals behind it.
                 </p>
               </div>
@@ -71,10 +71,10 @@ export default function ProjectsPage() {
       <section className="py-24 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <Reveal>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Ready to Build Your Project?
             </h2>
-            <p className="text-base text-[#64748B] max-w-lg mx-auto leading-relaxed mt-2">
+            <p className="section-supporting-subtitle mx-auto mt-3">
               Let us collaborate to build a customized digital solution tailored to your exact business goals.
             </p>
             <div className="pt-6">

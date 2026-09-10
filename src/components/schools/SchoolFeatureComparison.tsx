@@ -25,10 +25,10 @@ export default function SchoolFeatureComparison() {
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
             COMPREHENSIVE MATRIX
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Everything Included
           </h2>
-          <p className="text-sm sm:text-base text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             Side-by-side feature comparison across all four school technology tiers. Verify exactly which portals, engines, and services are deployed.
           </p>
           <p className="text-xs text-[#64748B] sm:hidden">

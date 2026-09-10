@@ -128,7 +128,7 @@ export default function AddressDropdownWithOther({
 
       {/* Manual Custom Input shown when Other is selected */}
       {isOther && (
-        <div className="pt-1 space-y-1.5 animate-in fade-in duration-150 min-w-0 w-full">
+        <div className="pt-1 space-y-1.5 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-150 min-w-0 w-full">
           <label
             htmlFor={customId}
             className="block font-medium text-[#4338CA] text-xs"

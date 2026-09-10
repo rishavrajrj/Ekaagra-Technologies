@@ -41,7 +41,7 @@ export default function RefundPolicyPage() {
           <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             Cancellation &amp; Refund Policy
           </h1>
-          <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto leading-relaxed">
+          <p className="hero-supporting-subtitle mx-auto">
             We value client satisfaction, transparent business practices, and clear expectations. Review our policies on project cancellations, refunds, and adjustments.
           </p>
           <div className="text-xs font-mono text-[#64748B]">Last updated: {lastUpdated}</div>

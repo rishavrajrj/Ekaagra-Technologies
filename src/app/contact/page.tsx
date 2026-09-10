@@ -46,10 +46,10 @@ export default function ContactPage() {
                 <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
                   EKAAGRA DESIGN STUDIO
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+                <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                   Direct Consultation &amp; Inquiry
                 </h2>
-                <p className="text-sm text-[#64748B] leading-relaxed">
+                <p className="section-supporting-subtitle">
                   We review every project proposal promptly within 24 hours. If you are planning a new business website, an institutional school portal, or custom software in Motihari or anywhere in Bihar, we are ready to help.
                 </p>
               </div>

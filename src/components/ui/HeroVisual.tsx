@@ -53,7 +53,7 @@ export default function HeroVisual() {
     <div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      className="relative w-full max-w-2xl lg:max-w-none mx-auto space-y-3.5"
+      className="relative w-full max-w-2xl lg:max-w-none mx-auto flex flex-col justify-between h-full space-y-2 sm:space-y-2.5"
     >
       {/* Ambient background glows */}
       <div className="absolute -top-12 -left-12 w-56 h-56 bg-[#F97360]/20 rounded-full blur-3xl pointer-events-none animate-aurora-glow" />
@@ -63,7 +63,7 @@ export default function HeroVisual() {
       <div
         role="tablist"
         aria-label="Interactive Website Previews"
-        className="bg-white/90 backdrop-blur-md p-1.5 rounded-2xl border border-[#E2E8F0] shadow-md flex items-center justify-between gap-1 overflow-x-auto relative z-20"
+        className="bg-white/90 backdrop-blur-md p-1 sm:p-1.5 rounded-2xl border border-[#E2E8F0] shadow-md flex items-center justify-between gap-1 overflow-x-auto relative z-20 shrink-0"
       >
         {previewProjects.map((proj, index) => {
           const isActive = index === currentIndex;
@@ -78,7 +78,7 @@ export default function HeroVisual() {
               onClick={() => {
                 setCurrentIndex(index);
               }}
-              className={`flex-1 min-w-[72px] xs:min-w-[85px] sm:min-w-[100px] py-1.5 sm:py-2 px-2 sm:px-3 rounded-xl text-[10px] sm:text-[11px] font-bold transition-all duration-300 flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer relative overflow-hidden ${
+              className={`flex-1 min-w-[72px] xs:min-w-[85px] sm:min-w-[100px] py-1 sm:py-1.5 px-2 sm:px-2.5 rounded-xl text-[10px] sm:text-[11px] font-bold transition-all duration-300 flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer relative overflow-hidden ${
                 isActive
                   ? 'bg-[#4338CA] text-white shadow-md shadow-[#4338CA]/20 scale-[1.02]'
                   : 'text-[#64748B] hover:text-[#131B2E] hover:bg-[#FAF7F2]'
@@ -97,10 +97,7 @@ export default function HeroVisual() {
               {isActive && !effectivePaused && (
                 <span
                   key={`${currentIndex}-${effectivePaused}`}
-                  className="absolute bottom-0 left-0 h-[2px] bg-[#F4C95D] rounded-full animate-progress"
-                  style={{
-                    animation: `growWidth ${PROJECT_DURATION}ms linear forwards`,
-                  }}
+                  className="absolute bottom-0 left-0 h-[2px] bg-[#F4C95D] rounded-full animate-progress-fill"
                 />
               )}
             </button>
@@ -109,7 +106,7 @@ export default function HeroVisual() {
       </div>
 
       {/* --- Main Live Browser Preview Window ----------------------- */}
-      <div className="relative z-10 w-full min-w-0" id={`preview-panel-${activeProject.slug}`}>
+      <div className="relative z-10 w-full min-w-0 flex-1 flex flex-col" id={`preview-panel-${activeProject.slug}`}>
         <LiveWebsitePreview
           key={activeProject.slug}
           url={activeProject.liveUrl}
@@ -117,24 +114,12 @@ export default function HeroVisual() {
           fallbackImage={activeProject.image}
           autoLoad={true}
           showDeviceControls={true}
-          heightClass="h-[300px] xs:h-[360px] sm:h-[440px] md:h-[500px] lg:h-[540px]"
+          heightClass="flex-1 min-h-[220px]"
           isFeatured={true}
           isFrameRestricted={activeProject.isFrameRestricted}
-          className="shadow-2xl hover:border-[#4338CA]/40"
+          className="shadow-2xl hover:border-[#4338CA]/40 flex-1 flex flex-col h-full"
         />
       </div>
-
-      {/* Keyframe animation styling for the tab progress indicator */}
-      <style jsx>{`
-        @keyframes growWidth {
-          0% {
-            width: 0%;
-          }
-          100% {
-            width: 100%;
-          }
-        }
-      `}</style>
     </div>
   );
 }

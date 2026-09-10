@@ -89,7 +89,7 @@ export default function WebApplicationDevelopmentMotihariPage() {
             Web Application Development in Motihari, Bihar
           </h1>
 
-          <p className="text-base sm:text-lg text-[#64748B] leading-relaxed max-w-2xl mx-auto">
+          <p className="hero-supporting-subtitle mx-auto">
             Build responsive web portals, multi-role admin dashboards, and database applications engineered with Next.js, React, and PostgreSQL for maximum speed and scale.
           </p>
 
@@ -115,10 +115,13 @@ export default function WebApplicationDevelopmentMotihariPage() {
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-white">
         <div className="site-container max-w-5xl space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+              ENGINEERING FOUNDATIONS
+            </span>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Modern Web App Architecture
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B]">
+            <p className="section-supporting-subtitle mx-auto">
               Engineered with production-grade technologies that scale smoothly as your user base grows.
             </p>
           </div>
@@ -179,7 +182,10 @@ export default function WebApplicationDevelopmentMotihariPage() {
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-white">
         <div className="site-container max-w-4xl space-y-8">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+              QUESTIONS &amp; ANSWERS
+            </span>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Web Application FAQs
             </h2>
           </div>
@@ -194,10 +200,10 @@ export default function WebApplicationDevelopmentMotihariPage() {
       {/* CTA */}
       <section className="py-16 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="site-container max-w-3xl space-y-6">
-          <h2 className="text-3xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Build Your Custom Web Application
           </h2>
-          <p className="text-sm text-[#64748B] max-w-xl mx-auto">
+          <p className="section-supporting-subtitle mx-auto">
             Tell us about the portal, dashboard, or platform you want to build. We will prepare an architecture proposal and estimate.
           </p>
           <div className="pt-2">

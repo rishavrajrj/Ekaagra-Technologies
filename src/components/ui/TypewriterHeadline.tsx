@@ -21,78 +21,57 @@ const DEFAULT_PHRASES = [
 export default function TypewriterHeadline({
   prefix = 'Your business deserves a website',
   phrases = DEFAULT_PHRASES,
-  typingSpeed = 80,
-  deletingSpeed = 40,
-  pauseDuration = 2500,
+  pauseDuration = 3800,
   className = '',
 }: TypewriterHeadlineProps) {
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
-  const [currentText, setCurrentText] = useState(phrases[0] || 'people remember.');
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isPaused, setIsPaused] = useState(true);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [isReducedMotion, setIsReducedMotion] = useState(false);
 
   useEffect(() => {
     setIsHydrated(true);
+    if (typeof window !== 'undefined') {
+      const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      setIsReducedMotion(mediaQuery.matches);
+
+      const handleChange = (e: MediaQueryListEvent) => {
+        setIsReducedMotion(e.matches);
+      };
+
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
   }, []);
 
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || isReducedMotion || !phrases || phrases.length <= 1) return;
 
-    const prefersReducedMotion =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const interval = setInterval(() => {
+      setIsTransitioning(true);
 
-    if (prefersReducedMotion) {
-      setCurrentText(phrases[0] || 'people remember.');
-      return;
-    }
-
-    const fullPhrase = phrases[currentPhraseIndex];
-
-    if (isPaused) {
-      const pauseTimer = setTimeout(() => {
-        setIsPaused(false);
-        setIsDeleting(true);
-      }, pauseDuration);
-      return () => clearTimeout(pauseTimer);
-    }
-
-    if (!isDeleting) {
-      // Natural typing forward
-      if (currentText.length < fullPhrase.length) {
-        const timeout = setTimeout(() => {
-          setCurrentText(fullPhrase.slice(0, currentText.length + 1));
-        }, typingSpeed + (Math.random() * 20 - 10));
-        return () => clearTimeout(timeout);
-      } else {
-        // Reached end of phrase, hold
-        setIsPaused(true);
-      }
-    } else {
-      // Backspacing smoothly
-      if (currentText.length > 0) {
-        const timeout = setTimeout(() => {
-          setCurrentText(fullPhrase.slice(0, currentText.length - 1));
-        }, deletingSpeed);
-        return () => clearTimeout(timeout);
-      } else {
-        // Advance to next phrase
-        setIsDeleting(false);
+      const swapTimer = setTimeout(() => {
         setCurrentPhraseIndex((prev) => (prev + 1) % phrases.length);
-      }
-    }
-  }, [currentText, isDeleting, isPaused, currentPhraseIndex, phrases, typingSpeed, deletingSpeed, pauseDuration, isHydrated]);
+        setIsTransitioning(false);
+      }, 220);
+
+      return () => clearTimeout(swapTimer);
+    }, pauseDuration || 3800);
+
+    return () => clearInterval(interval);
+  }, [isHydrated, isReducedMotion, phrases, pauseDuration]);
+
+  const displayPhrase = phrases[currentPhraseIndex] || phrases[0] || '';
 
   return (
-    <h1 className={`fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight ${className}`}>
-      {prefix}{' '}
-      <span className="relative inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C] animate-gradient-shift">
-        <span>{currentText}</span>
-        <span
-          className="inline-block w-[3px] sm:w-[4px] h-[0.88em] align-middle ml-1 bg-gradient-to-b from-[#4338CA] to-[#F97360] rounded-full animate-cursor-blink shadow-[0_0_10px_rgba(249,115,96,0.85)]"
-          aria-hidden="true"
-        />
+    <h1 className={`fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight leading-[1.16] overflow-visible ${className}`}>
+      <span>{prefix}</span>{' '}
+      <span
+        className={`inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#4338CA] via-[#F97360] to-[#EA580C] animate-gradient-shift transition-all duration-300 ease-in-out px-1 whitespace-normal break-words ${
+          isTransitioning ? 'opacity-0 translate-y-1' : 'opacity-100 translate-y-0'
+        }`}
+      >
+        {displayPhrase}
       </span>
     </h1>
   );

@@ -36,11 +36,11 @@ export default function AboutPage() {
       {/* Core Values */}
       <section className="py-8 sm:py-10 lg:py-12 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="site-container space-y-6 sm:space-y-8">
-          <div className="text-center space-y-2">
-            <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+          <div className="text-center space-y-2.5">
+            <span className="text-[11px] sm:text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
               ETHOS &amp; STANDARDS
             </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">Our Core Principles</h2>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">Our Core Principles</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
@@ -49,9 +49,9 @@ export default function AboutPage() {
                 <div className="p-2.5 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-2xl text-[#4338CA]">
                   <Sparkles className="w-5 h-5 text-[#F97360]" />
                 </div>
-                <h3 className="text-lg font-extrabold text-[#131B2E]">Design That Converts</h3>
+                <h3 className="card-headline-title font-extrabold text-[#131B2E]">Design That Converts</h3>
               </div>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+              <p className="card-supporting-description leading-relaxed">
                 A website should do more than look pretty — it must build instant trust, guide visitors clearly, and make contacting you effortless.
               </p>
             </div>
@@ -61,9 +61,9 @@ export default function AboutPage() {
                 <div className="p-2.5 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-2xl text-[#4338CA]">
                   <Zap className="w-5 h-5 text-[#F4C95D]" />
                 </div>
-                <h3 className="text-lg font-extrabold text-[#131B2E]">Speed &amp; Mobile Polish</h3>
+                <h3 className="card-headline-title font-extrabold text-[#131B2E]">Speed &amp; Mobile Polish</h3>
               </div>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+              <p className="card-supporting-description leading-relaxed">
                 Most visitors view your site on their phone. We engineer lightweight, responsive code with sub-500ms load times and fluid navigation.
               </p>
             </div>
@@ -73,9 +73,9 @@ export default function AboutPage() {
                 <div className="p-2.5 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-2xl text-[#4338CA]">
                   <ShieldCheck className="w-5 h-5 text-emerald-500" />
                 </div>
-                <h3 className="text-lg font-extrabold text-[#131B2E]">Reliability &amp; Uptime</h3>
+                <h3 className="card-headline-title font-extrabold text-[#131B2E]">Reliability &amp; Uptime</h3>
               </div>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+              <p className="card-supporting-description leading-relaxed">
                 Our solutions are built to be dependable and secure. We write robust code, configure automatic SSL, and deploy on high-uptime global edge networks.
               </p>
             </div>
@@ -85,9 +85,9 @@ export default function AboutPage() {
                 <div className="p-2.5 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-2xl text-[#4338CA]">
                   <HeartHandshake className="w-5 h-5 text-[#4338CA]" />
                 </div>
-                <h3 className="text-lg font-extrabold text-[#131B2E]">Long-term Partnership</h3>
+                <h3 className="card-headline-title font-extrabold text-[#131B2E]">Long-term Partnership</h3>
               </div>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+              <p className="card-supporting-description leading-relaxed">
                 We value honest communication and transparent timelines. We are here not just to deliver a project, but to be a trusted technology partner for long-term growth.
               </p>
             </div>
@@ -98,11 +98,11 @@ export default function AboutPage() {
       {/* Focus List */}
       <section className="py-8 sm:py-10 lg:py-12 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-          <div className="space-y-1.5">
-            <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
+          <div className="space-y-2">
+            <span className="text-[11px] sm:text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
               OUR COMMITMENT
             </span>
-            <h2 className="text-2xl font-extrabold text-[#131B2E] tracking-tight">What We Focus On</h2>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">What We Focus On</h2>
           </div>
 
           <div className="divide-y divide-[#E2E8F0] border-t border-b border-[#E2E8F0]">
@@ -130,8 +130,8 @@ export default function AboutPage() {
       {/* CTA */}
       <section className="py-10 sm:py-14 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">Ready to Work Together?</h2>
-          <p className="text-base text-[#64748B] max-w-lg mx-auto leading-relaxed">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">Ready to Work Together?</h2>
+          <p className="section-supporting-subtitle mx-auto">
             Let us discuss how we can help bring your ideas to life with a website people remember.
           </p>
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">

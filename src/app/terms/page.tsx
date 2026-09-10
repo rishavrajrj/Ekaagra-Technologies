@@ -41,7 +41,7 @@ export default function TermsPage() {
           <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             Terms of Service
           </h1>
-          <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto leading-relaxed">
+          <p className="hero-supporting-subtitle mx-auto">
             Please read these terms carefully before engaging Ekaagra Technologies for web development, software engineering, or related digital services.
           </p>
           <div className="text-xs font-mono text-[#64748B]">Last updated: {lastUpdated}</div>

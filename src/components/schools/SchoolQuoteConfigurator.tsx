@@ -592,10 +592,10 @@ export default function SchoolQuoteConfigurator({
             <GraduationCap className="w-3.5 h-3.5 text-[#4338CA]" />
             STEP-BY-STEP SCHOOL PLAN CONFIGURATOR
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Build Your School Plan
           </h2>
-          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle leading-relaxed">
             Choose your product, select your student capacity, add optional modules, and get a transparent estimate.
           </p>
         </div>

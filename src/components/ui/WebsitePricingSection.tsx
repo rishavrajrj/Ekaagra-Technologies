@@ -33,10 +33,10 @@ export function WebsitePricingSection({
                 <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
                 TRANSPARENT BUSINESS PRICING
               </span>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+              <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                 Year 1 Setup with ~50% Annual Renewal
               </h2>
-              <p className="text-sm sm:text-base text-[#64748B] leading-relaxed">
+              <p className="section-supporting-subtitle mx-auto">
                 Year 1 covers custom architecture, responsive engineering, and public launch. From Year 2 onward, renewal covers production hosting, domain upkeep, maintenance, and technical stability.
               </p>
             </div>

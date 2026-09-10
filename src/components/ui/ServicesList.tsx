@@ -59,10 +59,10 @@ export default function ServicesList({ showAll = false }: ServicesListProps) {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-extrabold text-[#131B2E] group-hover:text-[#4338CA] transition-colors tracking-tight">
+                  <h3 className="card-headline-title font-extrabold text-[#131B2E] group-hover:text-[#4338CA] transition-colors tracking-tight">
                     {service.title}
                   </h3>
-                  <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
+                  <p className="card-supporting-description mt-1.5 leading-relaxed font-normal">
                     {service.description}
                   </p>
                 </div>

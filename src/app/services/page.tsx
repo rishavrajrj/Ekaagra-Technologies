@@ -61,27 +61,40 @@ export default function ServicesPage() {
 
       {/* Hero */}
       <AnimatedPageHero pageName="services">
-        <a
-          href="#capabilities"
-          className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-[#131B2E] border border-[#E2E8F0] px-5 py-2.5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:border-[#4338CA]/40"
-        >
-          <Layers className="w-4 h-4 text-[#4338CA]" />
-          <span>8 Core Capabilities</span>
-        </a>
-        <a
-          href="#industries"
-          className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-[#131B2E] border border-[#E2E8F0] px-5 py-2.5 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:border-[#4338CA]/40"
-        >
-          <Briefcase className="w-4 h-4 text-[#F97360]" />
-          <span>Industry Solutions</span>
-        </a>
+        <MagneticButton maxDistance={5}>
+          <a
+            href="#capabilities"
+            className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-[#131B2E] border border-[#E2E8F0] px-5 py-3 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:border-[#4338CA]/40 hover:text-[#4338CA] hover:-translate-y-0.5"
+          >
+            <Layers className="w-4 h-4 text-[#4338CA]" />
+            <span>8 Core Capabilities</span>
+          </a>
+        </MagneticButton>
+        <MagneticButton maxDistance={5}>
+          <a
+            href="#industries"
+            className="inline-flex items-center gap-2 rounded-xl bg-white hover:bg-slate-50 text-[#131B2E] border border-[#E2E8F0] px-5 py-3 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:border-[#4338CA]/40 hover:text-[#4338CA] hover:-translate-y-0.5"
+          >
+            <Briefcase className="w-4 h-4 text-[#F97360]" />
+            <span>Industry Solutions</span>
+          </a>
+        </MagneticButton>
+        <MagneticButton maxDistance={6}>
+          <Link
+            href="/get-quote"
+            className="premium-shimmer-btn inline-flex items-center justify-center gap-2 px-6 py-3 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-300 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/40 hover:-translate-y-0.5"
+          >
+            <span>Request Proposal</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </MagneticButton>
       </AnimatedPageHero>
 
       {/* Section 1: Core Technical Capabilities */}
       <section id="capabilities" className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-[#FAF7F2] scroll-mt-20">
         <div className="site-container space-y-10">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E2E8F0] pb-4">
-            <div className="space-y-1">
+            <div className="space-y-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-wider">
                 <Sparkles className="w-3 h-3 text-[#F4C95D]" />
                 FULL TECHNICAL STACK
@@ -90,7 +103,7 @@ export default function ServicesPage() {
                 Core Engineering Capabilities
               </h2>
             </div>
-            <p className="text-xs sm:text-sm text-[#64748B] max-w-md">
+            <p className="section-supporting-subtitle max-w-md">
               Every system is engineered with clean code, mobile-first responsiveness, and complete code ownership.
             </p>
           </div>
@@ -103,15 +116,15 @@ export default function ServicesPage() {
       {/* Section 2: Specialized Industry Solutions */}
       <section id="industries" className="py-16 sm:py-24 border-b border-[#E2E8F0] bg-[#FAF7F2]/60 scroll-mt-20">
         <div className="site-container space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#F97360]/10 text-[#F97360] rounded-full text-xs font-bold uppercase tracking-widest border border-[#F97360]/20">
               <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
               TAILORED FOR YOUR SECTOR
             </span>
-            <h2 className="text-3xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Specialized Industry Solutions
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+            <p className="section-supporting-subtitle mx-auto">
               Every industry has distinct operational requirements and audience expectations. Explore how we tailor digital workflows for your exact market.
             </p>
           </div>
@@ -201,12 +214,12 @@ export default function ServicesPage() {
       <section className="py-24 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <Reveal>
-            <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Need a Custom Architecture?
             </h2>
           </Reveal>
           <Reveal delay={100}>
-            <p className="text-base text-[#64748B] leading-relaxed max-w-lg mx-auto">
+            <p className="section-supporting-subtitle mx-auto">
               Talk to our engineering team about your specific workflows, database requirements, and business systems.
             </p>
           </Reveal>

@@ -873,7 +873,21 @@ export default function TransportFleetSection({
   return (
     <div className="space-y-6 text-xs text-[#131B2E]">
       {/* ─── SECTION HEADER & GLOBAL ACTION TOOLBAR ──────────────────────────── */}
-      {!isWebsiteOnly && (
+      {isWebsiteOnly ? (
+        // Website-only: reduced header with section counter and heading only
+        <div className="pb-3 border-b border-[#E2E8F0]">
+          <div className="flex items-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]">
+              <Bus className="w-3.5 h-3.5" />
+              Section 12 of 29 • School Transport & Fleet Management
+            </span>
+          </div>
+          <h2 className="text-sm font-bold text-[#131B2E] mt-2 flex items-center gap-2">
+            School Transport & Bus Attendance System
+          </h2>
+        </div>
+      ) : (
+        // Full header for non-website-only products
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
           <div>
             <div className="flex items-center gap-2">

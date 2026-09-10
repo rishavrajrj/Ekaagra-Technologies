@@ -36,7 +36,7 @@ export default function Footer() {
                 </p>
 
                 <div className="flex items-center gap-2 text-xs font-semibold text-[#131B2E]">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 motion-safe:animate-pulse"></span>
                   <span>Available for new website &amp; software projects</span>
                 </div>
               </div>

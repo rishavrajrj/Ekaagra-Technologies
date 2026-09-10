@@ -134,8 +134,8 @@ export function ProjectCard({
 
       {/* --- Project Information Content --------------------------- */}
       <div className="flex flex-1 flex-col p-6 sm:p-7 justify-between space-y-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
             <span className="text-[10px] font-mono font-bold text-[#F97360] uppercase tracking-widest block">
               {project.category}
             </span>
@@ -147,10 +147,10 @@ export function ProjectCard({
             )}
           </div>
 
-          <h3 className="text-xl font-extrabold text-[#131B2E] group-hover:text-[#4338CA] transition-colors">
+          <h3 className="card-headline-title font-extrabold text-[#131B2E] tracking-tight group-hover:text-[#4338CA] transition-colors leading-snug">
             {project.title}
           </h3>
-          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed line-clamp-3">
+          <p className="card-supporting-description leading-relaxed line-clamp-3 font-normal mt-2">
             {project.description}
           </p>
         </div>

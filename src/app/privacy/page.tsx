@@ -41,7 +41,7 @@ export default function PrivacyPage() {
           <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             Privacy Policy
           </h1>
-          <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto leading-relaxed">
+          <p className="hero-supporting-subtitle mx-auto">
             Your privacy and institutional data security are fundamental to our work. Learn how Ekaagra Technologies collects, processes, and protects your information.
           </p>
           <div className="text-xs font-mono text-[#64748B]">Last updated: {lastUpdated}</div>

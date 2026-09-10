@@ -124,10 +124,10 @@ export default function SchoolOptionalModules() {
             <Sparkles className="w-3.5 h-3.5 text-[#4338CA]" />
             <span>EXPANSION CAPABILITIES</span>
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Optional School Modules
           </h2>
-          <p className="text-sm sm:text-base text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             Activate specialized campus modules as your digital operations grow. Every module integrates seamlessly with the core platform.
           </p>
         </div>
@@ -263,7 +263,7 @@ export default function SchoolOptionalModules() {
           {/* Mobile View Toggle */}
           <div className="flex items-center justify-between px-1">
             <span className="text-[11px] font-bold text-[#64748B] uppercase tracking-wider">
-              {mobileViewMode === 'carousel' ? 'Swipe to explore' : 'All 5 Categories'}
+              {mobileViewMode === 'carousel' ? 'Swipe to explore' : `All ${schoolAddonCategories.length} Categories`}
             </span>
             <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 border border-slate-200">
               <button

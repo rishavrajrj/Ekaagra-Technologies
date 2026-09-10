@@ -79,11 +79,11 @@ export default async function BlogPostPage({ params }: Props) {
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight leading-tight">
+          <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight leading-tight">
             {post.title}
           </h1>
 
-          <p className="text-sm sm:text-base text-[#64748B] leading-relaxed">
+          <p className="hero-supporting-subtitle leading-relaxed font-normal">
             {post.description}
           </p>
 

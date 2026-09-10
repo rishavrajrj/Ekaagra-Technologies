@@ -41,7 +41,7 @@ export default function ProcessPage() {
           <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             How We Work
           </h1>
-          <p className="text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed">
+          <p className="hero-supporting-subtitle mx-auto">
             A structured, predictable 6-step roadmap with client review checkpoints before anything goes live.
           </p>
         </div>
@@ -50,15 +50,15 @@ export default function ProcessPage() {
       {/* Timeline Section */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="site-container">
-          <ProcessTimeline />
+          <ProcessTimeline showLink={false} />
         </div>
       </section>
 
       {/* CTA */}
       <section className="py-24 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">Ready to Begin?</h2>
-          <p className="text-base text-[#64748B] max-w-lg mx-auto leading-relaxed">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">Ready to Begin?</h2>
+          <p className="section-supporting-subtitle mx-auto">
             Contact us today to start discussing your website or software requirements and receive a comprehensive development roadmap.
           </p>
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">

@@ -80,11 +80,11 @@ export default async function ServiceDetailPage({ params }: Props) {
             </span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#131B2E] tracking-tight">
+          <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             {service.title}
           </h1>
 
-          <p className="text-lg text-[#64748B] leading-relaxed max-w-3xl">
+          <p className="hero-supporting-subtitle">
             {service.longDescription}
           </p>
 
@@ -165,10 +165,10 @@ export default async function ServiceDetailPage({ params }: Props) {
 
         {/* Footer CTA */}
         <section className="bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] p-10 sm:p-14 rounded-3xl text-center border border-[#E2E8F0] space-y-6">
-          <h2 className="text-3xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Ready to build your {service.shortTitle.toLowerCase()}?
           </h2>
-          <p className="text-base text-[#64748B] max-w-xl mx-auto leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             Let us scope your technical requirements and provide a clear quote and development roadmap.
           </p>
           <div className="pt-2">

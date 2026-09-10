@@ -3,20 +3,10 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Sparkles,
-  Check,
   CheckCircle2,
-  Zap,
-  Smartphone,
-  Search,
   ShieldCheck,
-  Cloud,
-  Layers,
-  MapPin,
 } from 'lucide-react';
-import {
-  faqs,
-  pricingTiers,
-} from '@/lib/data';
+import { faqs } from '@/lib/data';
 import {
   createPageMetadata,
   localBusinessSchema,
@@ -30,8 +20,8 @@ import IndustryShowcase from '@/components/ui/IndustryShowcase';
 import BeforeAfterSection from '@/components/ui/BeforeAfterSection';
 import ServicesList from '@/components/ui/ServicesList';
 import ProcessTimeline from '@/components/ui/ProcessTimeline';
+import HomePricingSection from '@/components/ui/HomePricingSection';
 import ShowcaseFrameSync from '@/components/showcase/ShowcaseFrameSync';
-import TypewriterHeadline from '@/components/ui/TypewriterHeadline';
 import AnimatedPageHero from '@/components/ui/AnimatedPageHero';
 import Reveal from '@/components/motion/Reveal';
 import MagneticButton from '@/components/motion/MagneticButton';
@@ -64,72 +54,32 @@ export default function HomePage() {
       <ShowcaseFrameSync />
 
       {/* --- 1. UNIFIED PREMIUM HERO SECTION --- */}
-      <AnimatedPageHero pageName="home" id="hero">
-        <div className="flex flex-col items-center w-full">
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto">
-            <MagneticButton maxDistance={6}>
-              <Link
-                href="/get-quote"
-                className="premium-shimmer-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-300 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/40 hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <span>Build My Website</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </MagneticButton>
-            <MagneticButton maxDistance={5}>
-              <Link
-                href="/projects"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 bg-white hover:bg-[#FAF7F2] text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/40 hover:text-[#4338CA] transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5"
-              >
-                <span>Explore Our Work</span>
-              </Link>
-            </MagneticButton>
-          </div>
-
-          {/* Why Ekaagra Trust Strip — part of hero */}
-          <div className="mt-10 sm:mt-12 pt-6 border-t border-[#E2E8F0]/60 w-full max-w-4xl">
-            <p className="text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#4338CA] mb-1.5">
-              ✦ Why Ekaagra
-            </p>
-            <p className="text-center text-[13px] sm:text-[14px] font-medium text-[#64748B] mb-5">
-              Built around quality, performance &amp; real results.
-            </p>
-          </div>
-        </div>
-        <div className="w-full overflow-x-auto no-scrollbar flex items-center justify-start sm:justify-center gap-x-4 sm:gap-x-6 lg:gap-x-7 whitespace-nowrap py-1">
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="w-[7px] h-[7px] rounded-full bg-[#4338CA] shrink-0" />
-            <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.08em] text-[#475569] uppercase">100% Custom Designed</span>
-          </div>
-          <span className="text-[#CBD5E1] text-xs select-none shrink-0">•</span>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="w-[7px] h-[7px] rounded-full bg-[#F97360] shrink-0" />
-            <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.08em] text-[#475569] uppercase">Mobile-First Architecture</span>
-          </div>
-          <span className="text-[#CBD5E1] text-xs select-none shrink-0">•</span>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="w-[7px] h-[7px] rounded-full bg-[#F4C95D] shrink-0" />
-            <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.08em] text-[#475569] uppercase">Direct Lead Capture</span>
-          </div>
-          <span className="text-[#CBD5E1] text-xs select-none shrink-0">•</span>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="w-[7px] h-[7px] rounded-full bg-[#10B981] shrink-0" />
-            <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.08em] text-[#475569] uppercase">India-Based • Global Reach</span>
-          </div>
+      <AnimatedPageHero
+        pageName="home"
+        id="hero"
+        showTrustStrip={false}
+        rightContent={<HeroVisual />}
+      >
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center lg:justify-start gap-3 w-full sm:w-auto">
+          <MagneticButton maxDistance={6}>
+            <Link
+              href="/get-quote"
+              className="premium-shimmer-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-300 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/40 hover:-translate-y-0.5 active:translate-y-0"
+            >
+              <span>Build My Website</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </MagneticButton>
+          <MagneticButton maxDistance={5}>
+            <Link
+              href="/projects"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 sm:px-7 py-3 sm:py-3.5 bg-white hover:bg-[#FAF7F2] text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/40 hover:text-[#4338CA] transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5"
+            >
+              <span>Explore Our Work</span>
+            </Link>
+          </MagneticButton>
         </div>
       </AnimatedPageHero>
-
-      {/* --- 2. SIGNATURE INTERACTIVE SHOWCASE SECTION --- */}
-      <section className="py-8 sm:py-12 border-b border-[#E2E8F0] bg-[#FAF7F2]">
-        <div className="site-container">
-          <div className="max-w-5xl mx-auto">
-            <Reveal delay={100} distance={18} duration={600}>
-              <HeroVisual />
-            </Reveal>
-          </div>
-        </div>
-      </section>
 
       {/* --- 3. INDUSTRIES (WHO WE SERVE) ------------------------- */}
       <IndustryShowcase />
@@ -144,8 +94,8 @@ export default function HomePage() {
       >
         <div className="site-container relative z-10 w-full space-y-6 sm:space-y-8">
           <Reveal>
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-[#E2E8F0] pb-3">
-              <div className="space-y-1">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E2E8F0] pb-4">
+              <div className="space-y-2">
                 <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-wider">
                   <Sparkles className="w-3 h-3 text-[#F4C95D]" />
                   END-TO-END CAPABILITIES
@@ -154,7 +104,7 @@ export default function HomePage() {
                   Services Built Around Your Brand
                 </h2>
               </div>
-              <p className="text-xs sm:text-sm text-[#64748B] max-w-md">
+              <p className="section-supporting-subtitle max-w-md">
                 From high-converting business websites to full-scale school ERP systems and native Android apps.
               </p>
             </div>
@@ -162,33 +112,6 @@ export default function HomePage() {
 
           {/* 3 Flagship Services Card Grid */}
           <ServicesList />
-
-          {/* Integrated Capability Strip */}
-          <Reveal delay={150}>
-            <div className="pt-4 border-t border-[#E2E8F0]">
-              <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-2.5 gap-x-4 sm:gap-x-8 text-[11px] sm:text-xs font-bold tracking-wider text-[#475569] uppercase text-center sm:text-left">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#4338CA] shrink-0" />
-                  <span>CUSTOM CMS &amp; ADMIN PORTALS</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F97360] shrink-0" />
-                  <span>GOOGLE PLAY STORE APP DEPLOYMENT</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F4C95D] shrink-0" />
-                  <span>PAYMENT GATEWAY &amp; WHATSAPP APIS</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>CONTINUOUS CLOUD BACKUPS</span>
-                </div>
-              </div>
-            </div>
-          </Reveal>
         </div>
       </section>
 
@@ -199,7 +122,7 @@ export default function HomePage() {
       >
         <div className="site-container relative z-10 w-full flex flex-col gap-6 sm:gap-8">
           <Reveal>
-            <div className="text-center max-w-2xl mx-auto space-y-2">
+            <div className="text-center max-w-3xl mx-auto space-y-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
                 <Sparkles className="w-3 h-3 text-[#F97360]" />
                 TRANSPARENT WORKFLOW
@@ -207,7 +130,7 @@ export default function HomePage() {
               <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                 From First Idea to Live Launch
               </h2>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+              <p className="section-supporting-subtitle mx-auto">
                 A predictable 6-step roadmap with dedicated client review checkpoints before anything goes live.
               </p>
             </div>
@@ -219,193 +142,7 @@ export default function HomePage() {
       </section>
 
       {/* ─── 8. PRICING (INVESTMENT) ────────────────────────────── */}
-      <section
-        id="pricing"
-        className="relative py-10 sm:py-12 lg:py-16 border-b border-[#E2E8F0] bg-[#F5F0E8] overflow-hidden"
-      >
-        <div className="site-container relative z-10 w-full space-y-6 sm:space-y-8">
-          <Reveal>
-            <div className="text-center max-w-2xl mx-auto space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
-                <Sparkles className="w-3 h-3 text-[#F4C95D]" />
-                HONEST &amp; TRANSPARENT PRICING
-              </span>
-              <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
-                Simple Packages. Real Value.
-              </h2>
-              <p className="text-xs sm:text-sm text-[#64748B]">
-                Clear starting packages tailored for small businesses, educational institutions, and growing enterprises.
-              </p>
-            </div>
-          </Reveal>
-
-          {/* Special Launch Offer Spotlight Banner */}
-          <Reveal delay={80}>
-            <div className="bg-white border-2 border-[#4338CA] rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-              <div className="space-y-1.5">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-3 py-0.5 bg-[#4338CA] text-white font-extrabold text-[10px] uppercase tracking-wider rounded-full">
-                    🎉 NEW LAUNCH OFFER
-                  </span>
-                  <span className="text-xs font-mono font-bold text-emerald-600">
-                    Free Landing Page (₹0 / 3 Months)
-                  </span>
-                  <span className="text-xs text-[#64748B] hidden sm:inline">•</span>
-                  <span className="text-xs font-mono font-bold text-[#4338CA]">
-                    Starter Website (₹999/yr with Domain &amp; SEO)
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-lg font-extrabold text-[#131B2E]">
-                  Test Your Business Online for ₹0, or Launch a Full 3–5 Page Website for ₹999/year
-                </h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">
-                  ✓ Maintenance included on all plans • Standard domain included on paid plans • Additional pages from ₹199
-                </p>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto shrink-0">
-                <Link
-                  href="/get-quote?plan=free-launch"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#131B2E] hover:bg-black text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md"
-                >
-                  <span>Claim Free (₹0)</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-                <Link
-                  href="/pricing#website-plans"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-md shadow-[#4338CA]/20"
-                >
-                  <span>Explore Website Plans</span>
-                </Link>
-              </div>
-            </div>
-          </Reveal>
-
-          {/* Pricing Grid */}
-          <Reveal delay={100}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {pricingTiers.slice(0, 3).map((tier) => (
-                <div
-                  key={tier.title}
-                  className={`card-popup relative flex flex-col justify-between rounded-2xl p-4 sm:p-6 border bg-white shadow-sm min-w-0 ${tier.highlighted
-                    ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15'
-                    : 'border-[#E2E8F0]'
-                    }`}
-                >
-                  {tier.highlighted && (
-                    <span className="absolute -top-2.5 right-3 bg-[#4338CA] text-white text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-sm">
-                      Most Popular
-                    </span>
-                  )}
-
-                  <div className="space-y-3 min-w-0">
-                    <div>
-                      <span className="text-[9px] font-mono font-bold text-[#F97360] uppercase tracking-wider block">
-                        {tier.badge || 'Package'}
-                      </span>
-                      <h3 className="text-base sm:text-lg font-extrabold text-[#131B2E] mt-0.5 truncate">
-                        {tier.title}
-                      </h3>
-                      <div className="mt-0.5 text-xl sm:text-2xl font-extrabold text-[#4338CA] font-mono">
-                        {tier.startingFrom}
-                      </div>
-                      <p className="text-xs text-[#64748B] mt-1 leading-relaxed">
-                        {tier.description}
-                      </p>
-                    </div>
-
-                    <div className="pt-2 border-t border-[#E2E8F0] space-y-1.5">
-                      <span className="text-[9px] font-bold text-[#131B2E] uppercase tracking-wider block">
-                        Included Scope:
-                      </span>
-                      {tier.features.slice(0, 3).map((feat, i) => (
-                        <div key={i} className="flex items-start gap-1.5 text-xs text-[#334155] font-medium min-w-0">
-                          <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                          <span className="truncate">{feat}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-4">
-                    <MagneticButton maxDistance={5} className="w-full">
-                      <Link
-                        href="/get-quote"
-                        className={`w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm ${tier.highlighted
-                          ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-[#4338CA]/25'
-                          : 'bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0]'
-                          }`}
-                      >
-                        <span>Get a Quote</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </MagneticButton>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-
-          {/* Featured Strategy Callout: The Prestige Combo */}
-          <Reveal delay={150}>
-            <div className="card-popup bg-white border border-[#E2E8F0] rounded-2xl p-3.5 sm:p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="space-y-1 text-left min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-[#F97360]/10 text-[#F97360] font-bold text-[8.5px] uppercase tracking-wider rounded-full border border-[#F97360]/20 shrink-0">
-                    FEATURED COMBO 🚀
-                  </span>
-                  <span className="text-xs font-mono font-bold text-emerald-600">
-                    ₹38,000 Special Offer
-                  </span>
-                </div>
-                <h3 className="text-xs sm:text-sm font-extrabold text-[#131B2E]">
-                  The &ldquo;Prestige Combo&rdquo; Bundle (Custom Web App + Google Play Store Android App)
-                </h3>
-                <p className="text-[11px] text-[#64748B]">
-                  Combine an institutional web platform with an official mobile app for maximum credibility.
-                </p>
-              </div>
-
-              <MagneticButton maxDistance={6}>
-                <Link
-                  href="/pricing"
-                  className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm"
-                >
-                  <span>Explore All Packages</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </MagneticButton>
-            </div>
-          </Reveal>
-
-          {/* Integrated Pricing Transparency Strip */}
-          <Reveal delay={200}>
-            <div className="pt-3 border-t border-[#E2E8F0]">
-              <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-2.5 gap-x-4 sm:gap-x-8 text-[11px] sm:text-xs font-bold tracking-wider text-[#475569] uppercase text-center sm:text-left">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#4338CA] shrink-0" />
-                  <span>FIXED MILESTONE PAYMENTS</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F97360] shrink-0" />
-                  <span>ZERO HIDDEN OR RENEWAL SURPRISES</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F4C95D] shrink-0" />
-                  <span>FREE DOMAIN &amp; SSL CONFIGURATION</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>FULL SOURCE CODE HANDOVER</span>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
+      <HomePricingSection />
 
       {/* ─── 9. TECHNOLOGY (HOW WE BUILD) ───────────────────────── */}
       <section
@@ -415,7 +152,7 @@ export default function HomePage() {
         <div className="site-container relative z-10 w-full flex flex-col gap-6 sm:gap-8">
           {/* Section Header */}
           <Reveal>
-            <div className="text-center max-w-2xl mx-auto space-y-2">
+            <div className="text-center max-w-3xl mx-auto space-y-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
                 <Sparkles className="w-3 h-3 text-[#F97360]" />
                 ENGINEERING &amp; STANDARDS
@@ -423,7 +160,7 @@ export default function HomePage() {
               <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                 Engineered with Modern Speed &amp; Security
               </h2>
-              <p className="text-xs sm:text-sm text-[#64748B]">
+              <p className="section-supporting-subtitle mx-auto">
                 Every project is built on modern frameworks for instant responsiveness, high SEO authority, and zero maintenance headaches.
               </p>
             </div>
@@ -436,8 +173,8 @@ export default function HomePage() {
                 <div className="w-8 h-8 rounded-lg bg-[#4338CA]/10 text-[#4338CA] flex items-center justify-center font-bold text-sm">
                   ⚡
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">Sub-500ms Edge Speed</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">
+                <h3 className="card-headline-title font-extrabold text-[#131B2E] tracking-tight">Sub-500ms Edge Speed</h3>
+                <p className="card-supporting-description leading-relaxed font-normal">
                   Next.js Server-Side Rendering (SSR) and optimized asset pipelines for instant global loading.
                 </p>
               </GlowCard>
@@ -446,8 +183,8 @@ export default function HomePage() {
                 <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
                   🛡️
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">100% Code Ownership</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">
+                <h3 className="card-headline-title font-extrabold text-[#131B2E] tracking-tight">100% Code Ownership</h3>
+                <p className="card-supporting-description leading-relaxed font-normal">
                   Full handover of clean Git repositories and databases. Zero proprietary builder lock-in.
                 </p>
               </GlowCard>
@@ -456,8 +193,8 @@ export default function HomePage() {
                 <div className="w-8 h-8 rounded-lg bg-[#F97360]/10 text-[#F97360] flex items-center justify-center font-bold text-sm">
                   🔍
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">Google Search Ready</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">
+                <h3 className="card-headline-title font-extrabold text-[#131B2E] tracking-tight">Google Search Ready</h3>
+                <p className="card-supporting-description leading-relaxed font-normal">
                   Automated sitemaps, JSON-LD schema markup, and OpenGraph preview tags for high search discovery.
                 </p>
               </GlowCard>
@@ -466,84 +203,17 @@ export default function HomePage() {
                 <div className="w-8 h-8 rounded-lg bg-[#F4C95D]/20 text-[#B45309] flex items-center justify-center font-bold text-sm">
                   🔒
                 </div>
-                <h3 className="text-sm sm:text-base font-bold text-[#131B2E]">Enterprise Security</h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">
+                <h3 className="card-headline-title font-extrabold text-[#131B2E] tracking-tight">Enterprise Security</h3>
+                <p className="card-supporting-description leading-relaxed font-normal">
                   Automated SSL encryption certificates, DDoS edge mitigation, and automated daily database backups.
                 </p>
               </GlowCard>
             </div>
           </Reveal>
 
-          {/* Built for Real-World Performance Proof Strip */}
-          <Reveal delay={150}>
-            <div className="w-full bg-white border border-[#E2E8F0] rounded-xl p-3.5 sm:p-4 shadow-sm space-y-2.5">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[11px] font-extrabold uppercase tracking-wider text-[#131B2E]">
-                    Built for Real-World Performance
-                  </span>
-                </div>
-                <p className="text-[11px] text-[#64748B]">
-                  Fast, responsive, discoverable, secure, and built to scale with your business.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-2.5 pt-2 border-t border-[#E2E8F0]">
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <Zap className="w-4 h-4 text-[#F97360] shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Fast by Default</span>
-                    <span className="text-[9px] text-[#64748B] block truncate">Optimized assets</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <Smartphone className="w-4 h-4 text-[#4338CA] shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Responsive All</span>
-                    <span className="text-[9px] text-[#64748B] block truncate">Mobile &amp; desktop</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <Search className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Search Ready</span>
-                    <span className="text-[9px] text-[#64748B] block truncate">Technical SEO</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <ShieldCheck className="w-4 h-4 text-[#4338CA] shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Secure by Design</span>
-                    <span className="text-[9px] text-[#64748B] block truncate">SSL &amp; safe data</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <Cloud className="w-4 h-4 text-[#F97360] shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Ready to Scale</span>
-                    <span className="text-[9px] text-[#64748B] block truncate">High traffic ready</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 p-2 rounded-lg bg-[#FAF7F2] border border-[#E2E8F0]/70 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <Layers className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <div className="min-w-0">
-                    <span className="text-[10.5px] font-bold text-[#131B2E] block truncate">Easy to Maintain</span>
-                    <span className="text-[9px] text-[#64748B] block truncate">Zero vendor lock</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-
           {/* Tech stack badges */}
-          <Reveal delay={200}>
-            <div className="w-full pt-3 sm:pt-4 border-t border-[#E2E8F0] flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 max-w-4xl mx-auto">
+          <Reveal delay={150}>
+            <div className="w-full pt-3 sm:pt-4 px-2 border-t border-[#E2E8F0] flex flex-wrap justify-center items-center gap-1.5 sm:gap-2 max-w-4xl mx-auto">
               {['Next.js 16', 'React 19', 'TypeScript', 'Tailwind CSS', 'Supabase', 'PostgreSQL', 'Kotlin / Android', 'Java', 'Spring Boot', 'Vercel Edge'].map((tech) => (
                 <span
                   key={tech}
@@ -567,14 +237,14 @@ export default function HomePage() {
           <Reveal>
             <div className="grid lg:grid-cols-12 gap-5 lg:gap-6 items-center">
               {/* Left: Heading & Description */}
-              <div className="lg:col-span-6 space-y-2">
+              <div className="lg:col-span-6 space-y-3">
                 <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-wider">
                   CLEAR ANSWERS &amp; TRANSPARENCY
                 </span>
                 <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                   Everything you need to know before we build.
                 </h2>
-                <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                <p className="section-supporting-subtitle">
                   Clear policies on source code ownership, project milestones, free revisions, and ongoing post-launch technical support.
                 </p>
               </div>
@@ -639,101 +309,29 @@ export default function HomePage() {
             </div>
           </Reveal>
 
-          {/* Full-Width Assurance Panel: Your Project, Without Surprises */}
+          {/* Direct Project Guarantee & Post-Launch Support Banner */}
           <Reveal delay={150}>
-            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-4 pb-2 border-b border-[#E2E8F0]/80">
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-[#4338CA]/10 text-[#4338CA] font-bold text-[9px] uppercase tracking-wider rounded-md shrink-0">
-                    Project Guarantee
-                  </span>
-                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#131B2E]">
-                    Your Project, Without Surprises
-                  </h3>
+            <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="w-5 h-5" />
                 </div>
-                <p className="text-[11px] text-[#64748B] leading-relaxed">
-                  Clear ownership, visible progress, private review, and direct technical support from start to launch.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-3 pt-1">
-                <div className="bg-[#FAF7F2]/70 rounded-xl p-2.5 border border-[#E2E8F0]/70 flex items-start gap-1.5 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-bold text-[#131B2E] block truncate">Clear Scope</span>
-                    <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
-                      Know what is included before development begins.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-[#FAF7F2]/70 rounded-xl p-2.5 border border-[#E2E8F0]/70 flex items-start gap-1.5 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#4338CA] shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-bold text-[#131B2E] block truncate">Visible Progress</span>
-                    <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
-                      Review the project at defined milestones.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-[#FAF7F2]/70 rounded-xl p-2.5 border border-[#E2E8F0]/70 flex items-start gap-1.5 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#F97360] shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-bold text-[#131B2E] block truncate">Private Staging</span>
-                    <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
-                      Test the real website before it goes public.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="bg-[#FAF7F2]/70 rounded-xl p-2.5 border border-[#E2E8F0]/70 flex items-start gap-1.5 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-bold text-[#131B2E] block truncate">Full Ownership</span>
-                    <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
-                      Your code, domain, and assets remain yours.
-                    </span>
-                  </div>
-                </div>
-
-                <div className="col-span-2 sm:col-span-1 bg-[#FAF7F2]/70 rounded-xl p-2.5 border border-[#E2E8F0]/70 flex items-start gap-1.5 min-w-0 hover:-translate-y-0.5 transition-transform">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#4338CA] shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <span className="text-[11px] font-bold text-[#131B2E] block truncate">Launch Support</span>
-                    <span className="text-[9.5px] text-[#64748B] leading-tight block mt-0.5">
-                      Help with deployment, DNS, SSL &amp; care.
-                    </span>
-                  </div>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-extrabold text-[#131B2E]">
+                    The Ekaagra Guarantee: 30-Day Post-Launch Support &amp; Zero Hidden Fees
+                  </h4>
+                  <p className="text-[11px] text-[#64748B] mt-0.5">
+                    Every deployment includes 30 days of complimentary bug fixes, performance monitoring, and complete handover of all production keys.
+                  </p>
                 </div>
               </div>
-            </div>
-          </Reveal>
-
-          {/* Integrated Trust Strip */}
-          <Reveal delay={200}>
-            <div className="pt-3 border-t border-[#E2E8F0]">
-              <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-2.5 gap-x-4 sm:gap-x-8 text-[11px] sm:text-xs font-bold tracking-wider text-[#475569] uppercase text-center sm:text-left">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#4338CA] shrink-0" />
-                  <span>NO VENDOR LOCK-IN</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F97360] shrink-0" />
-                  <span>TRANSPARENT CONTRACTS</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F4C95D] shrink-0" />
-                  <span>30-DAY SUPPORT INCLUDED</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>DEDICATED WHATSAPP ASSISTANCE</span>
-                </div>
-              </div>
+              <Link
+                href="/contact"
+                className="w-full sm:w-auto shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0] rounded-xl text-xs font-bold transition-all shadow-xs uppercase tracking-wider hover:-translate-y-0.5"
+              >
+                <span>Ask a Question</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           </Reveal>
         </div>
@@ -755,12 +353,12 @@ export default function HomePage() {
                 LET&apos;S BUILD YOUR WEBSITE
               </span>
 
-              <h2 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
+              <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                 Imagine what your business <br className="hidden sm:inline" />
                 could look like online.
               </h2>
 
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-2xl mx-auto font-normal">
+              <p className="section-supporting-subtitle mx-auto font-normal">
                 Let&apos;s turn your idea into a website people remember. Tell us what you need and receive a detailed roadmap and estimate within 24 hours.
               </p>
             </div>
@@ -774,16 +372,16 @@ export default function HomePage() {
                   href="/get-quote"
                   className="premium-shimmer-btn inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-200 shadow-xl shadow-[#4338CA]/25 hover:-translate-y-0.5 active:translate-y-0"
                 >
-                  <span>Build My Website</span>
+                  <span>Start Your Project</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </MagneticButton>
               <MagneticButton maxDistance={5}>
                 <Link
-                  href="/projects"
+                  href="/contact"
                   className="inline-flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-3.5 bg-white hover:bg-slate-50 text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] transition-all duration-200 shadow-sm hover:-translate-y-0.5"
                 >
-                  <span>Explore Our Work</span>
+                  <span>Book Free Consultation</span>
                 </Link>
               </MagneticButton>
             </div>
@@ -842,28 +440,6 @@ export default function HomePage() {
                     </span>
                   </div>
                 </div>
-              </div>
-            </div>
-          </Reveal>
-
-          {/* Micro Assurance Grid */}
-          <Reveal delay={240}>
-            <div className="w-full pt-4 border-t border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto text-center">
-              <div>
-                <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Turnaround</span>
-                <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">24h Roadmap</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Consultation</span>
-                <span className="text-xs font-extrabold text-emerald-600 block mt-0.5">100% Free &amp; Direct</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Delivery</span>
-                <span className="text-xs font-extrabold text-[#F97360] block mt-0.5">Staging Sign-off</span>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Ownership</span>
-                <span className="text-xs font-extrabold text-[#4338CA] block mt-0.5">Full Code Rights</span>
               </div>
             </div>
           </Reveal>

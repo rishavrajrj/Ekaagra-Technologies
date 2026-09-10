@@ -176,7 +176,7 @@ export default function WebsiteDevelopmentMotihariPage() {
             Website Design &amp; Development Company in Motihari, Bihar
           </h1>
 
-          <p className="text-base sm:text-lg text-[#64748B] leading-relaxed max-w-2xl mx-auto">
+          <p className="hero-supporting-subtitle mx-auto">
             We build fast, beautiful, and conversion-focused websites engineered to give Motihari businesses and institutions an undeniable competitive edge on Google Search and mobile devices.
           </p>
 
@@ -233,10 +233,10 @@ export default function WebsiteDevelopmentMotihariPage() {
             <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
               LOCAL MARKET CONTEXT
             </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Why Businesses in Motihari Need a Dedicated Website
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B]">
+            <p className="section-supporting-subtitle mx-auto">
               The way customers in East Champaran discover and choose businesses has shifted radically to smartphones and Google Search.
             </p>
           </div>
@@ -282,7 +282,7 @@ export default function WebsiteDevelopmentMotihariPage() {
             <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
               CORE SOLUTIONS
             </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Website &amp; Software Solutions We Deliver in Motihari
             </h2>
           </div>
@@ -366,10 +366,10 @@ export default function WebsiteDevelopmentMotihariPage() {
             <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
               TRANSPARENT EXECUTION
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Our 5-Step Web Development Workflow
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B]">
+            <p className="section-supporting-subtitle mx-auto">
               Every project is managed with clear review milestones so you always know what is being built.
             </p>
           </div>
@@ -404,10 +404,10 @@ export default function WebsiteDevelopmentMotihariPage() {
             <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
               PRODUCTION ARCHITECTURE
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Engineered With Modern Technologies
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B]">
+            <p className="section-supporting-subtitle mx-auto">
               Why our websites load in under 1 second while legacy WordPress sites take 5–8 seconds.
             </p>
           </div>
@@ -441,10 +441,10 @@ export default function WebsiteDevelopmentMotihariPage() {
             <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
               CUSTOM CORPORATE PACKAGES
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Bespoke &amp; Institutional Website Solutions in Motihari
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B]">
+            <p className="section-supporting-subtitle mx-auto">
               Advanced custom corporate builds, CBSE school portals, and interactive cloud systems with 100% code ownership.
             </p>
           </div>
@@ -554,7 +554,7 @@ export default function WebsiteDevelopmentMotihariPage() {
               <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
                 PROVEN REGIONAL TRACK RECORD
               </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+              <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                 Live Projects Engineered in Bihar
               </h2>
             </div>
@@ -629,7 +629,7 @@ export default function WebsiteDevelopmentMotihariPage() {
             <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
               CLIENT GUARANTEE
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Why Businesses in Motihari Choose Ekaagra Technologies
             </h2>
           </div>
@@ -677,7 +677,7 @@ export default function WebsiteDevelopmentMotihariPage() {
             <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
               CLEAR LOCAL ANSWERS
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Frequently Asked Questions About Web Development in Motihari
             </h2>
           </div>
@@ -712,10 +712,10 @@ export default function WebsiteDevelopmentMotihariPage() {
       {/* ─── 10. CONVERSION CTA ───────────────────────────────────── */}
       <section className="py-16 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="site-container max-w-3xl space-y-6">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Ready to Build Your Website in Motihari?
           </h2>
-          <p className="text-sm text-[#64748B] leading-relaxed max-w-xl mx-auto">
+          <p className="section-supporting-subtitle mx-auto">
             Discuss your requirements directly with our team. We provide a comprehensive development roadmap and fixed-price estimate within 24 hours.
           </p>
           <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">

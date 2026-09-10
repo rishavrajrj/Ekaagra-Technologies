@@ -89,10 +89,10 @@ export default async function ConfigureSchoolPlanPage({
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Back to School Solutions Overview</span>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
               Configure Your School Plan
             </h1>
-            <p className="text-xs sm:text-sm text-[#64748B]">
+            <p className="hero-supporting-subtitle">
               Step-by-step interactive specification: select your product tier, capacity, optional modules, and domain allowance to generate a verified institutional proposal.
             </p>
           </div>

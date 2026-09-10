@@ -173,11 +173,11 @@ export default function SchoolTransportShowcase() {
             <span>Interactive Live Fleet &amp; Route Network</span>
           </span>
 
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Live Bus Tracking &amp; Public Route Network
           </h2>
 
-          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle leading-relaxed">
             Give parents full confidence before admission. Our platforms include an interactive,
             turn-by-turn school bus route map with live animated GPS buses, locality discovery, and
             scheduled stop timings — completely free of third-party Google Maps API billing.

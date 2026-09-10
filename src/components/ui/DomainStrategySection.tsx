@@ -162,15 +162,15 @@ export function DomainStrategySection({
       <div className="site-container relative z-10 space-y-8">
         {/* Section Heading */}
         <Reveal>
-          <div className="text-center max-w-3xl mx-auto space-y-2.5">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest border border-[#4338CA]/20">
               <Globe className="w-3.5 h-3.5 text-[#F97360]" />
               TERM-AWARE DOMAIN PRICING SYSTEM
             </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Domain Included Based on Your Plan
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-2xl mx-auto">
+            <p className="section-supporting-subtitle mx-auto">
               Choose any available domain within your plan’s included price allowance. If you choose a higher-priced domain, simply pay the difference.
             </p>
           </div>

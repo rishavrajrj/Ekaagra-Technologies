@@ -95,7 +95,7 @@ export default function SchoolWebsiteDevelopmentMotihariPage() {
             School Website Development in Motihari, Bihar
           </h1>
 
-          <p className="text-base sm:text-lg text-[#64748B] leading-relaxed max-w-2xl mx-auto">
+          <p className="hero-supporting-subtitle mx-auto">
             Inspire prospective parents, satisfy CBSE mandatory disclosure regulations, and streamline student admissions with a modern, fast, and authoritative school website.
           </p>
 
@@ -121,10 +121,13 @@ export default function SchoolWebsiteDevelopmentMotihariPage() {
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-white">
         <div className="site-container max-w-5xl space-y-8">
           <div className="text-center max-w-2xl mx-auto space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+              CORE PLATFORM FEATURES
+            </span>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Essential Features for Modern Schools
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B]">
+            <p className="section-supporting-subtitle mx-auto">
               Designed specifically around the regulatory and communication requirements of schools in Bihar.
             </p>
           </div>
@@ -197,7 +200,10 @@ export default function SchoolWebsiteDevelopmentMotihariPage() {
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-white">
         <div className="site-container max-w-4xl space-y-8">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
+              QUESTIONS &amp; ANSWERS
+            </span>
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               School Website FAQs
             </h2>
           </div>
@@ -212,10 +218,10 @@ export default function SchoolWebsiteDevelopmentMotihariPage() {
       {/* CTA */}
       <section className="py-16 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="site-container max-w-3xl space-y-6">
-          <h2 className="text-3xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Elevate Your School&apos;s Digital Presence
           </h2>
-          <p className="text-sm text-[#64748B] max-w-xl mx-auto">
+          <p className="section-supporting-subtitle mx-auto">
             Contact Ekaagra Technologies in Motihari to discuss your school website project and get a free CBSE compliance review.
           </p>
           <div className="pt-2">

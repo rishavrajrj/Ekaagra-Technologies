@@ -105,11 +105,11 @@ export default async function ProjectDetailPage({ params }: Props) {
             CASE STUDY • {project.category}
           </span>
 
-          <h1 className="text-4xl sm:text-6xl font-extrabold text-[#131B2E] tracking-tight">
+          <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             {project.title}
           </h1>
 
-          <p className="text-base sm:text-lg text-[#64748B] max-w-3xl mx-auto leading-relaxed">
+          <p className="hero-supporting-subtitle mx-auto">
             {project.description}
           </p>
 
@@ -222,7 +222,7 @@ export default async function ProjectDetailPage({ params }: Props) {
           <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest block">
             PROJECT OVERVIEW
           </span>
-          <h2 className="text-2xl font-extrabold text-[#131B2E]">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Background &amp; Objectives
           </h2>
           <p className="text-sm sm:text-base text-[#64748B] leading-relaxed font-sans">
@@ -284,7 +284,7 @@ export default async function ProjectDetailPage({ params }: Props) {
                 <span className="text-xs font-mono font-bold text-emerald-600 uppercase tracking-widest block">
                   MEASURED VALUE &amp; ACHIEVEMENTS
                 </span>
-                <h2 className="text-2xl font-extrabold text-[#131B2E]">
+                <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                   Key Project Milestones &amp; Technical Innovations
                 </h2>
               </div>
@@ -310,10 +310,10 @@ export default async function ProjectDetailPage({ params }: Props) {
                         </span>
                       )}
                     </div>
-                    <h3 className="text-sm sm:text-base font-bold text-[#131B2E] leading-snug">
+                    <h3 className="card-headline-title font-bold text-[#131B2E] leading-snug">
                       {ach.title}
                     </h3>
-                    <p className="text-xs text-[#64748B] leading-relaxed">
+                    <p className="card-supporting-description leading-relaxed">
                       {ach.description}
                     </p>
                   </div>
@@ -328,7 +328,7 @@ export default async function ProjectDetailPage({ params }: Props) {
           <span className="text-xs font-mono font-bold text-[#4338CA] uppercase tracking-widest block">
             KEY DELIVERABLES
           </span>
-          <h2 className="text-2xl font-extrabold text-[#131B2E]">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Delivered Modules &amp; Capabilities
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -431,8 +431,8 @@ export default async function ProjectDetailPage({ params }: Props) {
 
         {/* Bottom Callout */}
         <section className="bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] p-10 sm:p-14 rounded-3xl text-center border border-[#E2E8F0] space-y-6">
-          <h2 className="text-3xl font-extrabold text-[#131B2E] tracking-tight">Need a Similar Solution?</h2>
-          <p className="text-sm sm:text-base text-[#64748B] max-w-xl mx-auto leading-relaxed">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">Need a Similar Solution?</h2>
+          <p className="section-supporting-subtitle mx-auto">
             Let us build a customized digital solution tailored to your exact business and audience requirements.
           </p>
           <div className="flex flex-wrap justify-center gap-4 pt-2">

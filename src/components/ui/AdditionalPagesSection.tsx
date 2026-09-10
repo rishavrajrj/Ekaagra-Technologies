@@ -19,10 +19,10 @@ export function AdditionalPagesSection({ className = '' }: AdditionalPagesSectio
               <Layers className="w-3.5 h-3.5 text-[#F97360]" />
               FLEXIBLE EXPANSION
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Additional Pages Starting from ₹199/page
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+            <p className="section-supporting-subtitle mx-auto">
               Expand your website anytime with fixed, complexity-based pricing. No percentages or hidden formulas — pay only for what you need.
             </p>
           </div>

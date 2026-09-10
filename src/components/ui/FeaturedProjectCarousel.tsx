@@ -140,7 +140,7 @@ export default function FeaturedProjectCarousel({
             <div className="lg:col-span-5 p-5 sm:p-6 lg:p-7 flex flex-col justify-between space-y-4">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold text-[#F97360] uppercase tracking-widest block">
+                  <span className="text-[10.5px] sm:text-[11px] font-mono font-bold text-[#F97360] uppercase tracking-widest block">
                     {currentProject.category || 'Featured Platform'}
                   </span>
                   <span className="text-[10px] font-bold text-[#4338CA] bg-[#4338CA]/10 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
@@ -148,11 +148,11 @@ export default function FeaturedProjectCarousel({
                   </span>
                 </div>
 
-                <h3 className="text-xl sm:text-2xl font-extrabold text-[#131B2E] tracking-tight">
+                <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#131B2E] tracking-tight leading-tight">
                   {currentProject.title}
                 </h3>
 
-                <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed line-clamp-2">
+                <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed line-clamp-3 font-normal max-w-lg">
                   {currentProject.description}
                 </p>
 

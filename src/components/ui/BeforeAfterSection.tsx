@@ -51,7 +51,7 @@ export default function BeforeAfterSection() {
       <div className="site-container relative z-10 w-full space-y-6 sm:space-y-8">
         {/* Section Heading */}
         <Reveal>
-          <div className="text-center max-w-2xl mx-auto space-y-2">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#F97360]/10 border border-[#F97360]/20 text-[#F97360] rounded-full text-[11px] font-bold uppercase tracking-widest">
               <Sparkles className="w-3 h-3" />
               THE TRANSFORMATION
@@ -59,7 +59,7 @@ export default function BeforeAfterSection() {
             <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Your website should work harder for your business.
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+            <p className="section-supporting-subtitle mx-auto">
               See the difference intentional design and custom craftsmanship make for customer trust and lead conversion.
             </p>
           </div>
@@ -179,31 +179,6 @@ export default function BeforeAfterSection() {
             </div>
           </div>
         </Reveal>
-
-        {/* Integrated Conversion Proof Strip */}
-        <div className="pt-4 border-t border-[#E2E8F0]">
-          <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-2.5 gap-x-4 sm:gap-x-8 text-[11px] sm:text-xs font-bold tracking-wider text-[#475569] uppercase text-center sm:text-left">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#4338CA] shrink-0" />
-              <span>3.2X HIGHER ENGAGEMENT</span>
-            </div>
-            <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#F97360] shrink-0" />
-              <span>SUB-500MS LOAD SPEEDS</span>
-            </div>
-            <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#F4C95D] shrink-0" />
-              <span>ZERO VENDOR LOCK-IN</span>
-            </div>
-            <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span>100% PROPRIETARY CODEBASE</span>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );

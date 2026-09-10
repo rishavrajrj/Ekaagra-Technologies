@@ -39,10 +39,10 @@ export default function SchoolPricingTable() {
           <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
             TRANSPARENT SCALE
           </span>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Student Capacity-Based Pricing
           </h2>
-          <p className="text-sm sm:text-base text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             School ERP and the Complete Platform scale with student enrollment. Pay only for the computing capacity and database throughput your campus requires.
           </p>
         </div>

@@ -65,10 +65,10 @@ export default function PalakEnterprisesAchievements() {
           <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
           PROVEN PROJECT DELIVERABLES • PALAK ENTERPRISES
         </div>
-        <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+        <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
           What We Achieved in Palak Enterprises
         </h2>
-        <p className="text-sm sm:text-base text-[#64748B] leading-relaxed">
+        <p className="section-supporting-subtitle mx-auto">
           From full Razorpay payment automation to queue-bypassing workflows and zero-malware cloud
           document handling, here is how Ekaagra Technologies modernized Chakia&apos;s commercial print hub.
         </p>

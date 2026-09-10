@@ -41,7 +41,7 @@ export default function BlogPage() {
           <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
             Resources for Local Businesses &amp; Schools
           </h1>
-          <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto leading-relaxed">
+          <p className="hero-supporting-subtitle mx-auto">
             Honest advice, pricing breakdowns, and practical digital roadmaps to help you make informed decisions about your technology investments.
           </p>
         </div>
@@ -67,13 +67,13 @@ export default function BlogPage() {
                     </span>
                   </div>
 
-                  <h2 className="text-base font-extrabold text-[#131B2E] leading-snug line-clamp-3 hover:text-[#4338CA] transition-colors">
+                  <h2 className="card-headline-title font-extrabold text-[#131B2E] leading-snug line-clamp-3 hover:text-[#4338CA] transition-colors">
                     <Link href={`/blog/${post.slug}`}>
                       {post.title}
                     </Link>
                   </h2>
 
-                  <p className="text-xs text-[#64748B] leading-relaxed line-clamp-3">
+                  <p className="card-supporting-description line-clamp-3 leading-relaxed font-normal">
                     {post.description}
                   </p>
                 </div>
@@ -104,10 +104,10 @@ export default function BlogPage() {
       {/* CTA */}
       <section className="py-16 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="site-container max-w-2xl space-y-4">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E]">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Have a Specific Question?
           </h2>
-          <p className="text-xs sm:text-sm text-[#64748B]">
+          <p className="section-supporting-subtitle mx-auto">
             We are always happy to answer technical or pricing questions for businesses and schools in Motihari and Bihar.
           </p>
           <div className="pt-2">

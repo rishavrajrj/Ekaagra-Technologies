@@ -196,10 +196,10 @@ export default function PalakIdStudioShowcase() {
           <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
           INTERACTIVE SAAS SHOWCASE • PALAK ID STUDIO
         </div>
-        <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+        <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
           Architectural Keypoints &amp; Precision ID Studio
         </h2>
-        <p className="text-sm sm:text-base text-[#64748B] leading-relaxed">
+        <p className="section-supporting-subtitle mx-auto">
           Palak ID Studio streamlines high-volume identity card production with CAD-level precision,
           instant Excel roster data-binding, and industrial 600 DPI press compilation.
         </p>

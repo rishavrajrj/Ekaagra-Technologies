@@ -53,15 +53,15 @@ export default function PricingPage() {
       <section id="enterprise-packages" className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="site-container space-y-8">
           <Reveal>
-            <div className="text-center max-w-2xl mx-auto space-y-2">
+            <div className="text-center max-w-3xl mx-auto space-y-3">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest border border-[#4338CA]/20">
                 <Building2 className="w-3.5 h-3.5 text-[#4338CA]" />
                 CUSTOM &amp; INSTITUTIONAL SYSTEMS
               </span>
-              <h2 className="text-2xl sm:text-4xl font-extrabold text-[#131B2E] tracking-tight">
+              <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                 Corporate Websites, Apps &amp; Enterprise Software
               </h2>
-              <p className="text-xs sm:text-sm text-[#64748B]">
+              <p className="section-supporting-subtitle mx-auto">
                 High-scale web applications, native Android apps, and bespoke operational systems engineered for demanding business workflows.
               </p>
             </div>
@@ -91,7 +91,7 @@ export default function PricingPage() {
                   )}
 
                   <div>
-                    <h3 className="text-lg font-extrabold text-[#131B2E]">{tier.title}</h3>
+                    <h3 className="card-headline-title font-extrabold text-[#131B2E]">{tier.title}</h3>
                     <div className="mt-1 text-2xl font-mono font-extrabold text-[#4338CA]">
                       {tier.startingFrom}
                     </div>
@@ -113,7 +113,7 @@ export default function PricingPage() {
 
                   {/* Scope Alignment */}
                   {tier.scopeAlignment && (
-                    <p className="text-xs text-[#64748B] leading-relaxed border-l-2 border-[#4338CA] pl-3">
+                    <p className="card-supporting-description leading-relaxed border-l-2 border-[#4338CA] pl-3">
                       {tier.scopeAlignment}
                     </p>
                   )}
@@ -163,10 +163,10 @@ export default function PricingPage() {
                 <span className="text-xs font-mono font-bold text-[#F97360] uppercase tracking-widest bg-[#F97360]/10 px-3 py-0.5 rounded-full border border-[#F97360]/20">
                   REAL-WORLD CASE STUDY BENCHMARK
                 </span>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E]">
+                <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
                   Where Does the {projectPricingBenchmark.projectName} Sit?
                 </h2>
-                <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+                <p className="section-supporting-subtitle leading-relaxed">
                   The {projectPricingBenchmark.projectName} project built by Ekaagra Technologies exemplifies our{' '}
                   <strong className="text-[#131B2E]">Web Applications tier (Tier 2)</strong>:
                 </p>
@@ -233,14 +233,14 @@ export default function PricingPage() {
       {/* Specialized Service & Delivery Packages */}
       <section className="py-8 sm:py-10 lg:py-12 border-b border-[#E2E8F0] bg-[#FAF7F2]">
         <div className="site-container space-y-6 sm:space-y-8">
-          <div className="text-center max-w-3xl mx-auto space-y-2">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="text-xs font-mono font-bold text-emerald-600 uppercase tracking-widest bg-emerald-500/10 px-3 py-0.5 rounded-full border border-emerald-500/20">
               FLEXIBLE ENGAGEMENT MODELS
             </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#131B2E] tracking-tight">
+            <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Specialized Institutional &amp; Delivery Bundles
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+            <p className="section-supporting-subtitle mx-auto">
               Tailored engagement packages designed to meet your organization&apos;s budget, compliance, and mobile application requirements.
             </p>
           </div>
@@ -290,10 +290,10 @@ export default function PricingPage() {
       {/* CTA */}
       <section className="py-14 sm:py-20 bg-gradient-to-b from-[#FAF7F2] to-[#F1ECE4] text-center border-b border-[#E2E8F0]">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             Ready to Scope Your Next Project?
           </h2>
-          <p className="text-base text-[#64748B] max-w-lg mx-auto leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             Talk to Ekaagra Technologies today to craft a customized package or schedule a free CBSE compliance audit.
           </p>
           <div className="pt-4 flex flex-wrap items-center justify-center gap-4">

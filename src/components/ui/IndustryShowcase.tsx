@@ -194,7 +194,7 @@ export default function IndustryShowcase() {
       <div className="site-container relative z-10 w-full space-y-6 sm:space-y-8">
         {/* Section Header */}
         <Reveal>
-          <div className="text-center max-w-3xl mx-auto space-y-2">
+          <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-[#4338CA]/10 border border-[#4338CA]/20 text-[#4338CA] rounded-full text-[11px] font-bold uppercase tracking-widest">
               <Sparkles className="w-3 h-3 text-[#F97360]" />
               WHERE WE BUILD
@@ -202,7 +202,7 @@ export default function IndustryShowcase() {
             <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
               Tailored around the people you serve.
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed max-w-2xl mx-auto">
+            <p className="section-supporting-subtitle mx-auto">
               Every industry has distinct operational challenges. We build digital experiences designed around your specific audience and workflow.
             </p>
           </div>
@@ -267,10 +267,10 @@ export default function IndustryShowcase() {
                 <ActiveIcon className="w-3 h-3 text-[#F97360]" />
                 <span>{activeSector.highlight}</span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-extrabold text-[#131B2E] tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-extrabold text-[#131B2E] tracking-tight leading-snug">
                 {activeSector.tagline}
               </h3>
-              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+              <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed font-normal">
                 {activeSector.description}
               </p>
             </div>

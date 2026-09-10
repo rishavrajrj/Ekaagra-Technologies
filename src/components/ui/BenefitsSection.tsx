@@ -78,10 +78,10 @@ export default function BenefitsSection() {
             <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
             BUILT-IN VALUE
           </span>
-          <h2 className="text-3xl sm:text-5xl font-extrabold text-[#131B2E] tracking-tight">
+          <h2 className="fluid-section-headline font-extrabold text-[#131B2E] tracking-tight">
             What you get with every Ekaagra website
           </h2>
-          <p className="text-base sm:text-lg text-[#64748B] leading-relaxed">
+          <p className="section-supporting-subtitle mx-auto">
             Every digital product we deliver is engineered around these eight pillars to ensure long-term business return.
           </p>
         </div>
@@ -99,10 +99,10 @@ export default function BenefitsSection() {
                   <Icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#131B2E] tracking-tight group-hover:text-[#4338CA] transition-colors">
+                  <h3 className="card-headline-title font-extrabold text-[#131B2E] tracking-tight group-hover:text-[#4338CA] transition-colors">
                     {b.title}
                   </h3>
-                  <p className="text-xs sm:text-sm text-[#64748B] mt-2 leading-relaxed">
+                  <p className="card-supporting-description mt-2 leading-relaxed">
                     {b.description}
                   </p>
                 </div>
