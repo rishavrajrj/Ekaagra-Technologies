@@ -106,7 +106,7 @@ export default function SchoolSolutionCards() {
                           Renewal: {plan.renewalPriceDisplay}
                         </span>
                       ) : (
-                        <span className="text-xs text-transparent select-none">Renewal: —</span>
+                        <span aria-hidden="true" className="text-xs text-transparent select-none">Renewal: —</span>
                       )}
                     </div>
                   </div>
@@ -128,19 +128,18 @@ export default function SchoolSolutionCards() {
                     {/* 6. Expand/Collapse Details */}
                     {extraCapabilities.length > 0 && (
                       <div className="pt-1">
-                        {isExpanded && (
-                          <ul
-                            id={`extra-features-${plan.id}`}
-                            className="space-y-2 pt-2 border-t border-[#E2E8F0]/70 animate-in fade-in duration-200"
-                          >
-                            {extraCapabilities.map((capability, idx) => (
-                              <li key={idx} className="flex items-start gap-2 text-[#334155] leading-snug">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />
-                                <span>{capability}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
+                        <ul
+                          id={`extra-features-${plan.id}`}
+                          hidden={!isExpanded}
+                          className="space-y-2 pt-2 border-t border-[#E2E8F0]/70 animate-in fade-in duration-200"
+                        >
+                          {extraCapabilities.map((capability, idx) => (
+                            <li key={idx} className="flex items-start gap-2 text-[#334155] leading-snug">
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" aria-hidden="true" />
+                              <span>{capability}</span>
+                            </li>
+                          ))}
+                        </ul>
                         <button
                           type="button"
                           onClick={() => toggleExpand(plan.id)}
