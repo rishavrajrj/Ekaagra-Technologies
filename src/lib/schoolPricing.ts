@@ -88,7 +88,7 @@ export const schoolPlans: SchoolPlanConfig[] = [
     domainAllowance: 300,
     includedPages: 10,
     isStudentBased: false,
-    bestFor: 'Schools that need a professional, credible online presence with zero administrative complexity.',
+    bestFor: 'Professional public website to build institutional credibility, showcase your campus, and capture admission enquiries.',
     coreCapabilities: [
       'Professional school website, up to 10 standard pages',
       'Responsive, mobile-first design for smartphones and tablets',
@@ -135,8 +135,7 @@ export const schoolPlans: SchoolPlanConfig[] = [
     domainAllowance: 500,
     includedPages: 10,
     isStudentBased: false,
-    bestFor: 'Schools that want internal staff to manage public website content independently without coding.',
-    importantNote: 'CMS manages public website content such as notices and gallery. CMS is distinct from internal ERP student administration.',
+    bestFor: 'Public website plus a staff portal to easily publish notices, circulars, events, and photo galleries without any coding.',
     coreCapabilities: [
       'Dedicated CMS admin panel for authorized school staff',
       'Publish and unpublish public notices, circulars and announcements',
@@ -178,8 +177,7 @@ export const schoolPlans: SchoolPlanConfig[] = [
     renewalPriceDisplay: 'Based on student strength',
     domainAllowance: 500,
     isStudentBased: true,
-    bestFor: 'Schools, academies and institutes seeking to automate academic administration and student records.',
-    importantNote: 'ERP capacity scales dynamically based on student enrollment strength.',
+    bestFor: 'Comprehensive campus management for student records, attendance, fees, exams, and report cards—scaled to student strength.',
     coreCapabilities: [
       'Student Information System and complete academic history',
       'New admission workflow and student enrollment lifecycle',
@@ -232,8 +230,7 @@ export const schoolPlans: SchoolPlanConfig[] = [
     domainAllowance: 750,
     includedPages: 10,
     isStudentBased: true,
-    bestFor: 'Schools that want a single, cohesive technology partner for both their public brand and internal management.',
-    importantNote: 'ERP capacity scales dynamically based on student enrollment strength.',
+    bestFor: 'Complete unified platform: professional website, staff publishing CMS, and full campus ERP—scaled to your enrollment.',
     coreCapabilities: [
       'Professional school website with modern custom UI/UX',
       'Staff CMS admin panel for public notices, news and galleries',

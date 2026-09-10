@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Sparkles, ArrowRight, Calendar, Clock, BookOpen } from 'lucide-react';
 import { blogPosts } from '@/lib/blog-data';
 import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Blog & Web Development Guides | Ekaagra Technologies Motihari',
@@ -28,9 +28,7 @@ export default function BlogPage() {
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Blog & Guides' }]} />
-      </div>
+
 
       {/* Hero */}
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Shield, Sparkles, FileText, CheckCircle2, AlertCircle } from 'lucide-react';
 import { createPageMetadata, webPageSchema, SITE_URL, BRAND_EMAIL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Terms of Service | Ekaagra Technologies, Motihari',
@@ -28,9 +28,7 @@ export default function TermsPage() {
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Terms of Service' }]} />
-      </div>
+
 
       {/* Hero */}
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">

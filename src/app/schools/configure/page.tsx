@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, ShieldCheck } from 'lucide-react';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 import SchoolQuoteConfigurator from '@/components/schools/SchoolQuoteConfigurator';
 import type { SchoolProductId } from '@/lib/schoolPricing';
 import {
@@ -76,14 +76,7 @@ export default async function ConfigureSchoolPlanPage({
         }}
       />
 
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs
-          items={[
-            { label: 'School Solutions', href: '/schools' },
-            { label: 'Plan Configurator' },
-          ]}
-        />
-      </div>
+
 
       {/* Header Banner */}
       <div className="site-container py-6 border-b border-[#E2E8F0]">

@@ -36,6 +36,15 @@ import {
   planDomainAllowances,
   pricingTiers,
 } from '@/lib/data';
+import {
+  businessPlans,
+  getBusinessPlan,
+  formatBusinessYear1Price,
+  formatBusinessRenewalPrice,
+  type BusinessPlanId,
+  type BusinessPlanConfig,
+} from '@/lib/businessPricing';
+import BusinessPricingCarousel from '@/components/ui/BusinessPricingCarousel';
 import type {
   QuoteFormData,
   StructuredQuoteRequest,
@@ -105,7 +114,7 @@ export default function WebsiteQuoteBuilder() {
   const [currentStep, setCurrentStep] = useState(1);
 
   // STEP 1: Plan State
-  const [selectedPlanId, setSelectedPlanId] = useState<string>('starter');
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('business-website');
   const [showHigherPlans, setShowHigherPlans] = useState(false);
 
   // STEP 2: Pages State
@@ -156,7 +165,9 @@ export default function WebsiteQuoteBuilder() {
   useEffect(() => {
     const planParam = searchParams.get('plan');
     if (planParam) {
-      if (['free-launch', 'launch-plus', 'starter'].includes(planParam)) {
+      const matchBusiness = businessPlans.find((p) => p.id === planParam);
+      const matchWebsite = websitePlans.find((p) => p.id === planParam);
+      if (matchBusiness || matchWebsite) {
         setSelectedPlanId(planParam);
       }
     }
@@ -170,7 +181,7 @@ export default function WebsiteQuoteBuilder() {
     const upgradeParam = searchParams.get('upgrade');
 
     if (domainParam) {
-      const annualAllowance = planDomainAllowances[planParam || 'starter'] ?? 500;
+      const annualAllowance = planDomainAllowances[planParam || 'business-website'] ?? 500;
       const period = termParam.includes('2') ? 2 : 1;
       const termAllowance = termAllowanceParam ? Number(termAllowanceParam) : annualAllowance * period;
       const estimatedINR = inrParam ? Number(inrParam) : 995;
@@ -195,15 +206,47 @@ export default function WebsiteQuoteBuilder() {
     }
   }, [searchParams]);
 
-  // Selected plan details
-  const activePlan = websitePlans.find((p) => p.id === selectedPlanId) || websitePlans[2];
-  const activeAnnualAllowance = planDomainAllowances[selectedPlanId] ?? 0;
+  // Selected plan details: Resolve against businessPlans first, then fallback to websitePlans
+  const activeBusinessPlan = businessPlans.find((p) => p.id === selectedPlanId);
+  const activePlan = activeBusinessPlan
+    ? {
+        id: activeBusinessPlan.id,
+        name: activeBusinessPlan.name,
+        price: activeBusinessPlan.priceYear1 ?? 0,
+        priceDisplay: activeBusinessPlan.priceDisplayYear1,
+        duration: 'Year 1',
+        pages: activeBusinessPlan.pages,
+        badge: activeBusinessPlan.badge,
+        tagline: activeBusinessPlan.description,
+        description: activeBusinessPlan.description,
+        domainIncluded: true,
+        domainAllowance: activeBusinessPlan.domainAllowance,
+        domainDetails: 'Custom domain included (within plan allowance)',
+        seoIncluded: true,
+        maintenanceIncluded: true,
+        maintenanceNote: 'Maintenance included for live deployment & operational stability',
+        features: activeBusinessPlan.features,
+        ctaText: activeBusinessPlan.cta,
+        ctaHref: `/get-quote?plan=${activeBusinessPlan.id}`,
+      }
+    : websitePlans.find((p) => p.id === selectedPlanId) || websitePlans[0];
+
+  const activeAnnualAllowance =
+    activeBusinessPlan?.domainAllowance ?? planDomainAllowances[selectedPlanId] ?? 500;
 
   // Included pages for the active plan
-  const includedPagesList =
-    selectedPlanId === 'starter'
-      ? ['Home Landing Page', 'About Us & Profile', 'Core Services / Academics', 'Contact & Inquiries']
-      : ['Single High-Impact Landing Page'];
+  const includedPagesList = activeBusinessPlan
+    ? [
+        activeBusinessPlan.pages,
+        'Responsive Mobile-First Architecture',
+        'Contact Form & Lead Capture',
+        'Direct WhatsApp Integration',
+        'Hosting & SSL Included',
+        'Operational Maintenance Included',
+      ]
+    : selectedPlanId === 'starter'
+    ? ['Home Landing Page', 'About Us & Profile', 'Core Services / Academics', 'Contact & Inquiries']
+    : ['Single High-Impact Landing Page'];
 
   // Recalculate domain upgrade if plan changes
   useEffect(() => {
@@ -229,10 +272,11 @@ export default function WebsiteQuoteBuilder() {
   }, [selectedPlanId, activeAnnualAllowance]);
 
   // Calculations
-  const planPrice = activePlan.price;
+  const isCustomPlan = activeBusinessPlan?.billingType === 'custom' || activeBusinessPlan?.priceYear1 === null;
+  const planPrice = isCustomPlan ? 0 : activePlan.price;
   const additionalPagesTotal = additionalPages.reduce((sum, p) => sum + p.price, 0);
   const domainUpgradeAmount = skipCustomDomain || !selectedDomain ? 0 : selectedDomain.upgradeAmount;
-  const estimatedTotal = planPrice + additionalPagesTotal + domainUpgradeAmount;
+  const estimatedTotal = isCustomPlan ? 0 : planPrice + additionalPagesTotal + domainUpgradeAmount;
 
   // Handle adding an additional page
   const handleAddPage = (name: string, tierId: string, tierName: string, price: number) => {
@@ -754,118 +798,19 @@ export default function WebsiteQuoteBuilder() {
                 Step 01 of 06
               </span>
               <h3 className="text-xl sm:text-2xl font-extrabold text-[#131B2E]">
-                Choose Your Website Plan
+                Choose Your Business Technology Package
               </h3>
               <p className="text-xs sm:text-sm text-[#64748B]">
-                Your plan sets the baseline pages, hosting, maintenance, and domain allowance.
+                Select your package to configure baseline pages, domain allowance, cloud hosting, and maintenance care.
               </p>
             </div>
 
-            {/* Core Website Plans */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {websitePlans.map((plan) => {
-                const isSelected = selectedPlanId === plan.id;
-                return (
-                  <div
-                    key={plan.id}
-                    onClick={() => setSelectedPlanId(plan.id)}
-                    className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between space-y-4 ${
-                      isSelected
-                        ? 'border-[#4338CA] bg-indigo-50/40 shadow-md ring-2 ring-[#4338CA]/10'
-                        : 'border-[#E2E8F0] bg-[#FAF7F2] hover:border-[#4338CA]/40 hover:bg-white'
-                    }`}
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-1">
-                        {plan.badge && (
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-[#4338CA]/10 text-[#4338CA]">
-                            {plan.badge}
-                          </span>
-                        )}
-                        <div
-                          className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                            isSelected
-                              ? 'border-[#4338CA] bg-[#4338CA] text-white'
-                              : 'border-[#94A3B8] bg-white'
-                          }`}
-                        >
-                          {isSelected && <Check className="w-3 h-3" />}
-                        </div>
-                      </div>
-
-                      <h4 className="text-base font-extrabold text-[#131B2E]">{plan.name}</h4>
-                      <div className="flex items-baseline gap-1">
-                        <span className="text-2xl font-black text-[#131B2E]">{plan.priceDisplay}</span>
-                      </div>
-                      <p className="text-xs text-[#64748B] leading-relaxed">{plan.tagline}</p>
-                    </div>
-
-                    <div className="space-y-2 pt-3 border-t border-[#E2E8F0]/70 text-xs">
-                      <div className="flex items-center gap-1.5 text-[#334155]">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>{plan.pages} Page{plan.pages !== '1' ? 's' : ''} Included</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[#334155]">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>
-                          {plan.id === 'free-launch'
-                            ? 'Ekaagra Hosted Subdomain'
-                            : `₹${plan.domainAllowance}/yr Domain Allowance`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[#334155]">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>{plan.seoIncluded ? 'Basic SEO Setup Included' : 'No SEO Setup'}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[#334155]">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Maintenance Included</span>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      className={`w-full py-2 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#4338CA] text-white'
-                          : 'bg-white text-[#131B2E] border border-[#E2E8F0] hover:bg-[#FAF7F2]'
-                      }`}
-                    >
-                      {isSelected ? 'Selected' : 'Choose Plan'}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Higher-tier custom packages toggle */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setShowHigherPlans(!showHigherPlans)}
-                className="text-xs font-bold text-[#4338CA] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <span>{showHigherPlans ? 'Hide' : 'Looking for'} Bespoke Corporate / Web Application Packages?</span>
-                <span className="text-xs">{showHigherPlans ? '▲' : '▼'}</span>
-              </button>
-
-              {showHigherPlans && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3 animate-fadeIn">
-                  {pricingTiers.map((tier) => (
-                    <div
-                      key={tier.title}
-                      className="p-4 rounded-xl border border-[#E2E8F0] bg-[#FAF7F2] space-y-2 text-xs"
-                    >
-                      <div className="flex items-center justify-between">
-                        <strong className="font-bold text-[#131B2E]">{tier.title}</strong>
-                        <span className="font-bold text-[#4338CA]">{tier.startingFrom}</span>
-                      </div>
-                      <p className="text-[#64748B]">{tier.description}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            {/* 7-Plan Responsive Infinite Carousel with Selection & Auto-Slide */}
+            <BusinessPricingCarousel
+              mode="interactive"
+              selectedPlanId={selectedPlanId}
+              onSelectPlan={(id) => setSelectedPlanId(id)}
+            />
 
             <div className="flex justify-end pt-4 border-t border-[#E2E8F0]">
               <button
@@ -1748,13 +1693,26 @@ export default function WebsiteQuoteBuilder() {
 
               {/* Breakdown Total Card */}
               <div className="p-5 rounded-2xl bg-indigo-50/70 border-2 border-[#4338CA] space-y-2">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-[#4338CA] block">
-                  Estimated Request Total
-                </span>
-                <div className="flex items-center justify-between text-xs text-[#334155]">
-                  <span>Website Plan ({activePlan.name}):</span>
-                  <span className="font-bold text-[#131B2E]">₹{planPrice.toLocaleString('en-IN')}</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold uppercase tracking-wider text-[#4338CA]">
+                    Estimated Request Total
+                  </span>
+                  <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-md bg-[#4338CA]/10 text-[#4338CA]">
+                    {isCustomPlan ? 'Custom Scope' : 'Year 1 Investment'}
+                  </span>
                 </div>
+                <div className="flex items-center justify-between text-xs text-[#334155]">
+                  <span>Package ({activePlan.name}):</span>
+                  <span className="font-bold text-[#131B2E]">
+                    {isCustomPlan ? 'Custom Quote' : `₹${planPrice.toLocaleString('en-IN')}`}
+                  </span>
+                </div>
+                {activeBusinessPlan && (
+                  <div className="flex items-center justify-between text-xs text-[#64748B]">
+                    <span>Annual Renewal (Year 2+):</span>
+                    <span className="font-medium text-[#131B2E]">{activeBusinessPlan.renewalDisplay}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-xs text-[#334155]">
                   <span>Additional Pages ({additionalPages.length}):</span>
                   <span className="font-bold text-[#131B2E]">₹{additionalPagesTotal.toLocaleString('en-IN')}</span>
@@ -1766,8 +1724,10 @@ export default function WebsiteQuoteBuilder() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-[#4338CA]/20 text-base font-extrabold text-[#131B2E]">
-                  <span>Estimated Total:</span>
-                  <span className="text-xl text-[#4338CA]">₹{estimatedTotal.toLocaleString('en-IN')}</span>
+                  <span>Estimated Total (Year 1):</span>
+                  <span className="text-xl text-[#4338CA]">
+                    {isCustomPlan ? 'Custom Quote' : `₹${estimatedTotal.toLocaleString('en-IN')}`}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1813,7 +1773,7 @@ export default function WebsiteQuoteBuilder() {
                     </>
                   ) : (
                     <>
-                      <span>{activePlan.id === 'free-launch' ? 'Claim Free Landing Page' : 'Submit Project Enquiry'}</span>
+                      <span>{isCustomPlan ? 'Request Custom Proposal' : 'Submit Project Enquiry'}</span>
                       <Send className="w-3.5 h-3.5 text-amber-300" />
                     </>
                   )}
@@ -1838,39 +1798,41 @@ export default function WebsiteQuoteBuilder() {
           </div>
 
           {/* Plan Section */}
-          <div className="space-y-1 text-xs">
+          <div className="space-y-1.5 text-xs">
             <div className="flex items-center justify-between text-[#64748B]">
               <span>Active Plan:</span>
-              <strong className="text-[#131B2E]">{activePlan.name}</strong>
+              <strong className="text-[#131B2E] font-extrabold text-right">{activePlan.name}</strong>
             </div>
             <div className="flex items-center justify-between text-[#64748B]">
-              <span>Plan Duration:</span>
-              <span>{activePlan.duration}</span>
+              <span>Initial Plan:</span>
+              <span className="font-mono font-bold text-[#131B2E]">
+                {isCustomPlan
+                  ? 'Custom Quote'
+                  : `₹${planPrice.toLocaleString('en-IN')}`}
+              </span>
             </div>
             <div className="flex items-center justify-between text-[#64748B]">
-              <span>Plan Cost:</span>
-              <span className="font-bold text-[#131B2E]">₹{planPrice.toLocaleString('en-IN')}</span>
+              <span>Billing:</span>
+              <span className="font-mono text-[#4338CA] font-extrabold">
+                {isCustomPlan ? 'Custom Scope' : 'Year 1'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[#64748B]">
+              <span>Renewal:</span>
+              <span className="font-semibold text-[#131B2E]">
+                {activeBusinessPlan ? activeBusinessPlan.renewalDisplay.replace('Renewal: ', '') : 'Standard'}
+              </span>
             </div>
           </div>
 
-          {/* Pages Section */}
-          <div className="border-t border-[#E2E8F0] pt-3 space-y-1 text-xs">
+          {/* Scope & Capabilities Section */}
+          <div className="border-t border-[#E2E8F0] pt-3 space-y-1.5 text-xs">
             <div className="flex items-center justify-between text-[#64748B]">
               <span>Included Pages:</span>
-              <span>{includedPagesList.length} pages</span>
+              <span className="font-medium text-[#131B2E]">
+                {activeBusinessPlan ? activeBusinessPlan.pages : `${includedPagesList.length} pages`}
+              </span>
             </div>
-            <div className="flex items-center justify-between text-[#64748B]">
-              <span>Additional Pages:</span>
-              <span>{additionalPages.length} pages</span>
-            </div>
-            <div className="flex items-center justify-between text-[#64748B]">
-              <span>Pages Subtotal:</span>
-              <span className="font-bold text-[#131B2E]">₹{additionalPagesTotal.toLocaleString('en-IN')}</span>
-            </div>
-          </div>
-
-          {/* Domain Section */}
-          <div className="border-t border-[#E2E8F0] pt-3 space-y-1 text-xs">
             <div className="flex items-center justify-between text-[#64748B]">
               <span>Domain:</span>
               <span className="font-mono text-[11px] font-bold text-[#131B2E] truncate max-w-[150px]">
@@ -1878,19 +1840,31 @@ export default function WebsiteQuoteBuilder() {
                   ? 'Hosted Subdomain'
                   : selectedDomain
                   ? selectedDomain.domain
-                  : 'Pending Selection'}
+                  : 'Included'}
               </span>
             </div>
+            {domainUpgradeAmount > 0 && (
+              <div className="flex items-center justify-between text-[#64748B]">
+                <span>Domain Upgrade:</span>
+                <span className="font-bold text-emerald-700">
+                  +₹{domainUpgradeAmount.toLocaleString('en-IN')}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between text-[#64748B]">
-              <span>Plan Allowance:</span>
-              <span>{activePlan.id === 'free-launch' || activePlan.price === 0 ? '₹0 (Hosted Subdomain)' : `₹${activeAnnualAllowance}/yr`}</span>
+              <span>Hosting:</span>
+              <span className="font-semibold text-emerald-700">Included</span>
             </div>
             <div className="flex items-center justify-between text-[#64748B]">
-              <span>Domain Upgrade:</span>
-              <span className="font-bold text-emerald-700">
-                {domainUpgradeAmount > 0 ? `+₹${domainUpgradeAmount.toLocaleString('en-IN')}` : '₹0 (Included)'}
-              </span>
+              <span>Maintenance:</span>
+              <span className="font-semibold text-emerald-700">Included</span>
             </div>
+            {additionalPages.length > 0 && (
+              <div className="flex items-center justify-between text-[#64748B] pt-1 border-t border-slate-200/60">
+                <span>Additional Pages ({additionalPages.length}):</span>
+                <span className="font-bold text-[#131B2E]">+₹{additionalPagesTotal.toLocaleString('en-IN')}</span>
+              </div>
+            )}
           </div>
 
           {/* Grand Total */}
@@ -1899,7 +1873,9 @@ export default function WebsiteQuoteBuilder() {
               Estimated Total
             </span>
             <span className="text-xl font-black text-[#4338CA]">
-              ₹{estimatedTotal.toLocaleString('en-IN')}
+              {isCustomPlan
+                ? 'Custom Quote'
+                : `₹${estimatedTotal.toLocaleString('en-IN')}`}
             </span>
           </div>
 

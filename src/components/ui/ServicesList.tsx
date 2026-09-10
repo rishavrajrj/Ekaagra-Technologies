@@ -28,13 +28,17 @@ const iconMap: Record<string, LucideIcon> = {
   Wrench,
 };
 
-export default function ServicesList() {
-  const coreServices = services.slice(0, 3);
+interface ServicesListProps {
+  showAll?: boolean;
+}
+
+export default function ServicesList({ showAll = false }: ServicesListProps) {
+  const displayServices = showAll ? services : services.slice(0, 3);
 
   return (
     <div className="space-y-6">
-      <StaggerReveal staggerInterval={80} className="grid md:grid-cols-3 gap-6">
-        {coreServices.map((service, index) => {
+      <StaggerReveal staggerInterval={60} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {displayServices.map((service, index) => {
           const Icon = iconMap[service.icon] || Code2;
           const num = String(index + 1).padStart(2, '0');
 
@@ -42,7 +46,7 @@ export default function ServicesList() {
             <Link
               key={service.slug}
               href={`/services/${service.slug}`}
-              className="card-popup group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl border border-[#E2E8F0] bg-white transition-all duration-300 h-full"
+              className="card-popup group relative flex flex-col justify-between p-6 sm:p-7 rounded-3xl border border-[#E2E8F0] bg-white transition-all duration-300 h-full hover:border-[#4338CA]/40 hover:shadow-lg"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -72,9 +76,28 @@ export default function ServicesList() {
                     </div>
                   ))}
                 </div>
+
+                {/* Technology Badges */}
+                {service.technologies && service.technologies.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {service.technologies.slice(0, 3).map((tech) => (
+                      <span
+                        key={tech}
+                        className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-md bg-[#FAF7F2] text-[#475569] border border-[#E2E8F0]"
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                    {service.technologies.length > 3 && (
+                      <span className="text-[10px] font-mono text-[#94A3B8] px-1 py-0.5">
+                        +{service.technologies.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="pt-4 mt-3 border-t border-[#E2E8F0] flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#4338CA] group-hover:text-[#3730A3] transition-colors">
+              <div className="pt-4 mt-4 border-t border-[#E2E8F0] flex items-center justify-between text-xs font-bold uppercase tracking-wider text-[#4338CA] group-hover:text-[#3730A3] transition-colors">
                 <span>Explore Capability</span>
                 <div className="w-7 h-7 rounded-full bg-[#4338CA]/10 flex items-center justify-center group-hover:bg-[#4338CA] group-hover:text-white transition-all">
                   <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -85,15 +108,17 @@ export default function ServicesList() {
         })}
       </StaggerReveal>
 
-      <div className="text-center pt-1">
-        <Link
-          href="/services"
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#4338CA] hover:text-[#3730A3] hover:underline uppercase tracking-wider"
-        >
-          <span>View All 8 Specialized Capabilities &amp; Software Systems</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
-      </div>
+      {!showAll && (
+        <div className="text-center pt-1">
+          <Link
+            href="/services"
+            className="inline-flex items-center gap-2 text-xs font-bold text-[#4338CA] hover:text-[#3730A3] hover:underline uppercase tracking-wider"
+          >
+            <span>View All 8 Specialized Capabilities &amp; Software Systems</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

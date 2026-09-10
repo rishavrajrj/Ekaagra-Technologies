@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ShieldCheck, Lock, Eye, CheckCircle2, Server } from 'lucide-react';
 import { createPageMetadata, webPageSchema, SITE_URL, BRAND_EMAIL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Privacy Policy | Ekaagra Technologies, Motihari',
@@ -28,9 +28,7 @@ export default function PrivacyPage() {
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Privacy Policy' }]} />
-      </div>
+
 
       {/* Hero */}
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">

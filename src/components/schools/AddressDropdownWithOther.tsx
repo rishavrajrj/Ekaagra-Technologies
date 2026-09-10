@@ -103,7 +103,7 @@ export default function AddressDropdownWithOther({
           aria-required={required}
           aria-label={selectAriaLabel || label}
           aria-describedby={helperText ? helperId : undefined}
-          className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs font-medium text-xs disabled:opacity-75 disabled:bg-slate-50 disabled:cursor-not-allowed"
+          className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs font-medium text-xs disabled:opacity-75 disabled:bg-slate-50 disabled:cursor-not-allowed"
         >
           {standardOptions.map((opt) => (
             <option key={opt} value={opt}>
@@ -114,12 +114,12 @@ export default function AddressDropdownWithOther({
         </select>
 
         {hasNoStandardOptions ? (
-          <p id={helperId} className="text-[11px] text-[#64748B] mt-1 leading-normal font-medium">
+          <p id={helperId} className="text-[11px] text-[#64748B] mt-1.5 leading-normal font-medium">
             Standard {label.toLowerCase()}s for this region are entered manually below.
           </p>
         ) : (
           helperText && !isOther && (
-            <p id={helperId} className="text-[11px] text-[#94A3B8] mt-1 leading-normal">
+            <p id={helperId} className="text-[11px] text-[#94A3B8] mt-1.5 leading-normal">
               {helperText}
             </p>
           )
@@ -128,7 +128,7 @@ export default function AddressDropdownWithOther({
 
       {/* Manual Custom Input shown when Other is selected */}
       {isOther && (
-        <div className="pt-0.5 space-y-1 animate-in fade-in duration-150 min-w-0 w-full">
+        <div className="pt-1 space-y-1.5 animate-in fade-in duration-150 min-w-0 w-full">
           <label
             htmlFor={customId}
             className="block font-medium text-[#4338CA] text-xs"
@@ -147,7 +147,7 @@ export default function AddressDropdownWithOther({
             aria-invalid={isCustomInputInvalid}
             aria-describedby={isCustomInputInvalid ? errorId : undefined}
             aria-label={customAriaLabel || customInputLabel}
-            className={`w-full px-3 py-2 rounded-xl bg-white border text-[#131B2E] placeholder:text-[#94A3B8] text-xs focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs ${
+            className={`w-full px-3.5 py-2.5 rounded-xl bg-white border text-[#131B2E] placeholder:text-[#94A3B8] text-xs focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs ${
               isCustomInputInvalid
                 ? 'border-rose-300 hover:border-rose-400 focus:border-rose-500'
                 : 'border-[#CBD5E1] hover:border-[#94A3B8] focus:border-[#4338CA]'

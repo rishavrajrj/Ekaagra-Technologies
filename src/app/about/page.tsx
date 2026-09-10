@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import AnimatedPageHero from '@/components/ui/AnimatedPageHero';
 import { ShieldCheck, Sparkles, Zap, HeartHandshake, ArrowRight } from 'lucide-react';
 import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 
 export const metadata: Metadata = createPageMetadata({
   title: 'About Ekaagra Technologies — Website & Software Studio in Motihari, Bihar',
@@ -27,26 +28,10 @@ export default function AboutPage() {
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'About Us' }]} />
-      </div>
+
 
       {/* Hero */}
-      <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="site-container text-center space-y-3 relative z-10">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
-            <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-            STUDIO CREED • MOTIHARI, BIHAR
-          </span>
-          <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
-            Built with purpose. Designed for people.
-          </h1>
-          <p className="text-sm sm:text-base text-[#64748B] max-w-3xl mx-auto leading-relaxed">
-            Ekaagra Technologies is an independent creative website and software studio based in Motihari, East Champaran, Bihar. We design high-converting websites, educational platforms, and custom software systems built around how modern businesses and institutions actually run.
-          </p>
-        </div>
-      </section>
+      <AnimatedPageHero pageName="about" />
 
       {/* Core Values */}
       <section className="py-8 sm:py-10 lg:py-12 border-b border-[#E2E8F0] bg-[#FAF7F2]">

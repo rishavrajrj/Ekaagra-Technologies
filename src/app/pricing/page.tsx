@@ -6,15 +6,16 @@ import Reveal from '@/components/motion/Reveal';
 import StaggerReveal from '@/components/motion/StaggerReveal';
 import MagneticButton from '@/components/motion/MagneticButton';
 import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 import WebsitePricingSection from '@/components/ui/WebsitePricingSection';
+import AnimatedPageHero from '@/components/ui/AnimatedPageHero';
 import AdditionalPagesSection from '@/components/ui/AdditionalPagesSection';
 import DomainStrategySection from '@/components/ui/DomainStrategySection';
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Website Development Cost & Pricing in Motihari, Bihar | Ekaagra Technologies',
   description:
-    'Transparent website design, Free Launch offer, Launch Plus, Starter website, web application, and school ERP pricing in Motihari, Bihar. Clear packages from ₹0 with zero hidden costs and full code ownership.',
+    'Transparent business website design, CMS portals, web applications, Android apps, and custom software packages in Motihari, Bihar. Clear Year 1 development pricing with ~50% predictable annual renewals.',
   path: '/pricing',
 });
 
@@ -28,38 +29,16 @@ export default function PricingPage() {
             webPageSchema({
               name: 'Website Development Pricing in Motihari',
               description:
-                'Transparent pricing packages for website design, web applications, and School ERP systems in Motihari, Bihar.',
+                'Transparent pricing packages for business websites, CMS, web applications, and custom enterprise software in Motihari, Bihar.',
               url: `${SITE_URL}/pricing`,
             })
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Pricing & Packages' }]} />
-      </div>
+
 
       {/* Hero */}
-      <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="site-container text-center space-y-3 relative z-10">
-          <Reveal>
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
-              <Sparkles className="w-3.5 h-3.5 text-[#F4C95D]" />
-              HONEST &amp; TRANSPARENT PRICING
-            </span>
-          </Reveal>
-          <Reveal delay={100}>
-            <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
-              Investment &amp; Service Packages
-            </h1>
-          </Reveal>
-          <Reveal delay={180}>
-            <p className="text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto leading-relaxed">
-              Market-aligned starting estimates optimized for business utility, reliable execution, and long-term value.
-            </p>
-          </Reveal>
-        </div>
-      </section>
+      <AnimatedPageHero pageName="pricing" />
 
       {/* 1. Website Development Launch & Growth Plans */}
       <WebsitePricingSection />
@@ -83,7 +62,7 @@ export default function PricingPage() {
                 Corporate Websites, Apps &amp; Enterprise Software
               </h2>
               <p className="text-xs sm:text-sm text-[#64748B]">
-                High-scale web applications, native Android apps, and comprehensive School ERP platforms engineered for demanding operational workflows.
+                High-scale web applications, native Android apps, and bespoke operational systems engineered for demanding business workflows.
               </p>
             </div>
           </Reveal>

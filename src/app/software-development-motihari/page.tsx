@@ -17,7 +17,7 @@ import {
   faqPageSchema,
   SITE_URL,
 } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 import FAQItem from '@/components/ui/FAQItem';
 
 export const metadata: Metadata = createPageMetadata({
@@ -75,14 +75,7 @@ export default function SoftwareDevelopmentMotihariPage() {
         }}
       />
 
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs
-          items={[
-            { label: 'Services', href: '/services' },
-            { label: 'Software Development in Motihari' },
-          ]}
-        />
-      </div>
+
 
       {/* Hero */}
       <section className="py-12 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">

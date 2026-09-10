@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { CheckCircle2, ArrowRight, ShieldCheck, Calendar, Phone, Mail, Clock, FileText } from 'lucide-react';
 import { getOrderByNumber, isSupabaseConfigured } from '@/lib/supabase';
 import { createPageMetadata, SITE_URL, BRAND_EMAIL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
 
 export const metadata: Metadata = createPageMetadata({
@@ -44,9 +43,7 @@ export default async function PaymentSuccessPage({ searchParams }: SuccessPagePr
 
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Checkout' }, { label: isPaid ? 'Payment Confirmed' : 'Payment Status' }]} />
-      </div>
+
 
       <section className="py-12 sm:py-16">
         <div className="site-container max-w-3xl space-y-8">

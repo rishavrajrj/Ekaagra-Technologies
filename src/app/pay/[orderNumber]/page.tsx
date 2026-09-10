@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getOrderByNumber } from '@/lib/supabase';
 import { getRazorpayKeyId } from '@/lib/razorpay';
 import { createPageMetadata, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 import PayOrderClient from '@/components/forms/PayOrderClient';
 import { ShieldCheck, FileText, CheckCircle2 } from 'lucide-react';
 
@@ -41,9 +41,7 @@ export default async function PayOrderPage({ params }: PayPageProps) {
 
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Invoices' }, { label: order.order_number }]} />
-      </div>
+
 
       <section className="py-12 sm:py-16">
         <div className="site-container max-w-xl space-y-6">

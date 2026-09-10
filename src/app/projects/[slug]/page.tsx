@@ -9,7 +9,7 @@ import LiveWebsitePreview from '@/components/ui/LiveWebsitePreview';
 import PalakIdStudioShowcase from '@/components/ui/PalakIdStudioShowcase';
 import PalakEnterprisesAchievements from '@/components/ui/PalakEnterprisesAchievements';
 import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 
 export function generateStaticParams() {
   return projects.map((project) => ({
@@ -95,14 +95,7 @@ export default async function ProjectDetailPage({ params }: Props) {
           ),
         }}
       />
-      <div className="pb-8">
-        <Breadcrumbs
-          items={[
-            { label: 'Our Work', href: '/projects' },
-            { label: project.title },
-          ]}
-        />
-      </div>
+
 
       <article className="space-y-16">
         {/* Header Hero */}

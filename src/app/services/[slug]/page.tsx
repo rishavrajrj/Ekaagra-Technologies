@@ -6,7 +6,7 @@ import { Check, Globe, LayoutDashboard, Smartphone, Code2, GraduationCap, Buildi
 import React from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { createPageMetadata, serviceSchema, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 import WebsitePricingSection from '@/components/ui/WebsitePricingSection';
 import AdditionalPagesSection from '@/components/ui/AdditionalPagesSection';
 import DomainStrategySection from '@/components/ui/DomainStrategySection';
@@ -66,14 +66,7 @@ export default async function ServiceDetailPage({ params }: Props) {
           ),
         }}
       />
-      <div className="pb-8">
-        <Breadcrumbs
-          items={[
-            { label: 'Services', href: '/services' },
-            { label: service.title },
-          ]}
-        />
-      </div>
+
 
       <article className="space-y-16">
         {/* Header Hero */}

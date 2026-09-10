@@ -538,7 +538,7 @@ export default function CampusImagesSection({
   );
 
   return (
-    <div className="md:col-span-3 bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-2xs space-y-4">
+    <div className="md:col-span-3 bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4 sm:space-y-5">
       {/* Hidden File Input for Multiple Uploads */}
       <input
         ref={fileInputRef}
@@ -563,20 +563,20 @@ export default function CampusImagesSection({
       />
 
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3.5 sm:pb-4">
         <div className="space-y-0.5">
           <div className="flex items-center space-x-2 flex-wrap gap-y-1">
             <ImageIcon className="w-4 h-4 text-[#4338CA]" />
             <h4 className="font-bold text-sm text-[#131B2E]">Campus Gallery</h4>
-            <span className="text-[10px] font-semibold text-[#4338CA] bg-[#EEF2FF] border border-[#C7D2FE] px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-semibold text-[#4338CA] bg-[#EEF2FF] border border-[#C7D2FE] px-2.5 py-0.5 rounded-full">
               {images.length} {images.length === 1 ? 'photo' : 'photos'}
             </span>
             {isSingleCampus && campus.isMainCampus && (
-              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
                 Primary School Imagery
               </span>
             )}
-            <span className="text-[10px] font-mono font-medium text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-md">
+            <span className="text-[10px] font-mono font-medium text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
               WEBP
             </span>
           </div>
@@ -591,7 +591,7 @@ export default function CampusImagesSection({
             type="button"
             onClick={triggerAddImages}
             disabled={isUploadingActive}
-            className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#4338CA] hover:bg-[#3730A3] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-2xs transition cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-[#4338CA] hover:bg-[#3730A3] disabled:opacity-50 text-white rounded-xl text-xs font-semibold shadow-2xs transition cursor-pointer"
           >
             {isUploadingActive ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -610,7 +610,7 @@ export default function CampusImagesSection({
         <div
           role="tablist"
           aria-label="Campus Gallery Categories"
-          className="flex items-center gap-1.5 overflow-x-auto pb-1.5 pt-0.5 scrollbar-none border-b border-[#F1F5F9]"
+          className="flex items-center gap-2 overflow-x-auto pb-2 pt-0.5 scrollbar-none border-b border-[#F1F5F9]"
         >
           {/* All Tab */}
           <button
@@ -618,7 +618,7 @@ export default function CampusImagesSection({
             role="tab"
             aria-selected={selectedCategory === 'all'}
             onClick={() => setSelectedCategory('all')}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition cursor-pointer select-none ${
+            className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 transition cursor-pointer select-none ${
               selectedCategory === 'all'
                 ? 'bg-[#4338CA] text-white shadow-2xs'
                 : 'bg-[#FAF7F2] hover:bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]'
@@ -626,7 +626,7 @@ export default function CampusImagesSection({
           >
             <span>All</span>
             <span
-              className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                 selectedCategory === 'all'
                   ? 'bg-white/20 text-white'
                   : 'bg-slate-200/80 text-slate-700'
@@ -647,7 +647,7 @@ export default function CampusImagesSection({
                 role="tab"
                 aria-selected={isSelected}
                 onClick={() => setSelectedCategory(cat.key)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition cursor-pointer select-none ${
+                className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold shrink-0 transition cursor-pointer select-none ${
                   isSelected
                     ? 'bg-[#4338CA] text-white shadow-2xs'
                     : 'bg-[#FAF7F2] hover:bg-[#F1F5F9] text-[#475569] border border-[#E2E8F0]'
@@ -655,7 +655,7 @@ export default function CampusImagesSection({
               >
                 <span>{cat.label}</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
                     isSelected
                       ? 'bg-white/20 text-white'
                       : count > 0
@@ -672,7 +672,7 @@ export default function CampusImagesSection({
       </div>
 
       {/* Category Upload Header & Guidance */}
-      <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div className="space-y-0.5">
           <div className="flex items-center space-x-2">
             <h5 className="font-bold text-xs text-[#131B2E]">
@@ -695,7 +695,7 @@ export default function CampusImagesSection({
           type="button"
           onClick={triggerAddImages}
           disabled={isUploadingActive}
-          className="inline-flex items-center justify-center space-x-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-[#4338CA] border border-[#C7D2FE] rounded-xl text-xs font-semibold shadow-2xs transition shrink-0 cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-[#4338CA] border border-[#C7D2FE] rounded-xl text-xs font-semibold shadow-2xs transition shrink-0 cursor-pointer disabled:opacity-50"
         >
           <Plus className="w-3.5 h-3.5 text-[#4338CA]" />
           <span>
@@ -767,7 +767,7 @@ export default function CampusImagesSection({
 
       {/* Image Grid */}
       {filteredImages.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-4.5">
           {filteredImages.map((img, idx) => {
             const imgCategory = getEffectiveCategory(img);
             const categoryDef = CAMPUS_GALLERY_CATEGORIES.find((c) => c.key === imgCategory);
@@ -850,7 +850,7 @@ export default function CampusImagesSection({
                   </div>
 
                   {/* Card Content */}
-                  <div className="p-2.5 bg-white space-y-2 text-[11px]">
+                  <div className="p-3 sm:p-3.5 bg-white space-y-2.5 text-xs">
                     {/* Filename & Category Badge */}
                     <div className="flex items-center justify-between gap-1.5">
                       <span
@@ -871,7 +871,7 @@ export default function CampusImagesSection({
                               onClick={() => handleReorder(idx, 'left')}
                               disabled={idx === 0 && images.findIndex((im) => im.id === img.id) === 0}
                               title="Move photo left"
-                              className="p-0.5 hover:text-slate-700 disabled:opacity-20 cursor-pointer rounded-xs"
+                              className="p-1 hover:text-slate-700 disabled:opacity-20 cursor-pointer rounded-xs"
                               aria-label="Move left"
                             >
                               <ChevronLeft className="w-3 h-3" />
@@ -884,7 +884,7 @@ export default function CampusImagesSection({
                                 images.findIndex((im) => im.id === img.id) === images.length - 1
                               }
                               title="Move photo right"
-                              className="p-0.5 hover:text-slate-700 disabled:opacity-20 cursor-pointer rounded-xs"
+                              className="p-1 hover:text-slate-700 disabled:opacity-20 cursor-pointer rounded-xs"
                               aria-label="Move right"
                             >
                               <ChevronRight className="w-3 h-3" />
@@ -896,7 +896,7 @@ export default function CampusImagesSection({
 
                     {/* 1-Click Home Page Action */}
                     <label
-                      className={`flex items-center space-x-2 py-0.5 select-none cursor-pointer ${
+                      className={`flex items-center space-x-2 py-1 select-none cursor-pointer ${
                         !img.isHero && heroImagesCount >= MAX_HERO_IMAGES_LIMIT ? 'opacity-70' : ''
                       }`}
                     >
@@ -909,7 +909,7 @@ export default function CampusImagesSection({
                       <span className="text-[10.5px] font-semibold text-slate-800 flex items-center gap-1.5">
                         <span>Show on Home Page (Hero)</span>
                         {img.isHero && (
-                          <span className="text-[9px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.2 rounded-sm">
+                          <span className="text-[9px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-sm">
                             Hero ({heroImagesCount}/{MAX_HERO_IMAGES_LIMIT})
                           </span>
                         )}
@@ -917,7 +917,7 @@ export default function CampusImagesSection({
                     </label>
 
                     {/* Divider & Essential Inputs */}
-                    <div className="border-t border-[#F1F5F9] pt-2 space-y-2">
+                    <div className="border-t border-[#F1F5F9] pt-2.5 space-y-2.5">
                       {/* Caption */}
                       <div>
                         <div className="flex items-center justify-between mb-0.5">
@@ -948,7 +948,7 @@ export default function CampusImagesSection({
                           value={img.caption || ''}
                           onChange={(e) => handleUpdateDetails(img.id, { caption: e.target.value })}
                           placeholder={DEFAULT_CATEGORY_CAPTIONS[imgCategory] || 'Write a short description...'}
-                          className="w-full text-[10px] px-2 py-1.5 bg-white border border-[#E2E8F0] rounded-md text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
+                          className="w-full text-xs px-2.5 py-2 bg-white border border-[#E2E8F0] rounded-lg text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
                         />
                       </div>
 
@@ -964,7 +964,7 @@ export default function CampusImagesSection({
                           id={`category-${img.id}`}
                           value={imgCategory}
                           onChange={(e) => handleMoveCategory(img.id, e.target.value as CampusImageCategory)}
-                          className="w-full text-[10px] font-medium py-1.5 px-2 bg-white border border-[#CBD5E1] rounded-md text-[#131B2E] focus:ring-1 focus:ring-[#4338CA] focus:border-[#4338CA] transition truncate"
+                          className="w-full text-xs font-medium py-2 px-2.5 bg-white border border-[#CBD5E1] rounded-lg text-[#131B2E] focus:ring-1 focus:ring-[#4338CA] focus:border-[#4338CA] transition truncate"
                           aria-label={`Category for ${img.fileName}`}
                         >
                           {CAMPUS_GALLERY_CATEGORIES.map((c) => (
@@ -990,7 +990,7 @@ export default function CampusImagesSection({
                             value={img.customImageType || ''}
                             onChange={(e) => handleUpdateDetails(img.id, { customImageType: e.target.value })}
                             placeholder="e.g. Astronomy Observatory"
-                            className="w-full text-[10px] px-2 py-1.5 bg-white border border-[#CBD5E1] rounded-md text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
+                            className="w-full text-xs px-2.5 py-2 bg-white border border-[#CBD5E1] rounded-lg text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
                           />
                         </div>
                       )}

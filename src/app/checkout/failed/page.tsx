@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AlertTriangle, ArrowRight, RotateCcw, MessageSquare } from 'lucide-react';
 import { createPageMetadata, BRAND_EMAIL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
 
 export const metadata: Metadata = createPageMetadata({
@@ -19,9 +18,7 @@ export default function PaymentFailedPage() {
 
   return (
     <div className="bg-[#FAF7F2] text-[#131B2E] min-h-screen">
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Checkout' }, { label: 'Payment Status' }]} />
-      </div>
+
 
       <section className="py-12 sm:py-16">
         <div className="site-container max-w-2xl space-y-8">

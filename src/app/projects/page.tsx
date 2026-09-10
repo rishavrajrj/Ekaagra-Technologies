@@ -5,8 +5,9 @@ import { projects } from '@/lib/data';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import Reveal from '@/components/motion/Reveal';
 import MagneticButton from '@/components/motion/MagneticButton';
+import AnimatedPageHero from '@/components/ui/AnimatedPageHero';
 import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Website & Software Portfolio | Case Studies | Ekaagra Technologies Motihari',
@@ -31,31 +32,10 @@ export default function ProjectsPage() {
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Our Work' }]} />
-      </div>
+
 
       {/* Hero */}
-      <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative">
-        <div className="site-container text-center space-y-4">
-          <Reveal>
-            <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
-              <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-              PROVEN TRACK RECORD
-            </span>
-          </Reveal>
-          <Reveal delay={100}>
-            <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
-              Our Work &amp; Case Studies
-            </h1>
-          </Reveal>
-          <Reveal delay={180}>
-            <p className="text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed">
-              Real products, custom websites, web platforms, and mobile software applications built around actual client requirements.
-            </p>
-          </Reveal>
-        </div>
-      </section>
+      <AnimatedPageHero pageName="work" />
 
       {/* Featured Showcase & Case Studies Section with Arrow Carousel */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-[#FAF7F2]" id="portfolio">

@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { blogPosts, getBlogPost } from '@/lib/blog-data';
 import { createPageMetadata, articleSchema, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 import { Calendar, Clock, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react';
 
 export function generateStaticParams() {
@@ -54,14 +54,7 @@ export default async function BlogPostPage({ params }: Props) {
         }}
       />
 
-      <div className="pb-6">
-        <Breadcrumbs
-          items={[
-            { label: 'Blog', href: '/blog' },
-            { label: post.title },
-          ]}
-        />
-      </div>
+
 
       <article className="space-y-8 bg-white p-6 sm:p-12 rounded-3xl border border-[#E2E8F0] shadow-sm">
         {/* Header */}

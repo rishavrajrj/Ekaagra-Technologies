@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
 import ContactForm from '@/components/forms/ContactForm';
+import AnimatedPageHero from '@/components/ui/AnimatedPageHero';
 import { Mail, Clock, MapPin, Sparkles, MessageSquare } from 'lucide-react';
 import { createPageMetadata, webPageSchema, SITE_URL, BRAND_EMAIL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 import { buildGeneralInquiryWhatsAppUrl } from '@/lib/whatsapp';
 
 export const metadata: Metadata = createPageMetadata({
@@ -30,26 +31,10 @@ export default function ContactPage() {
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Contact Us' }]} />
-      </div>
+
 
       {/* Hero */}
-      <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[#4338CA]/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="site-container text-center space-y-4 relative z-10">
-          <span className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#4338CA]/10 text-[#4338CA] rounded-full text-xs font-bold uppercase tracking-widest border border-[#4338CA]/20">
-            <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-            START A CONVERSATION • MOTIHARI, BIHAR
-          </span>
-          <h1 className="fluid-hero-headline font-extrabold text-[#131B2E] tracking-tight">
-            Let&apos;s build something people remember.
-          </h1>
-          <p className="text-base sm:text-lg text-[#64748B] max-w-2xl mx-auto leading-relaxed">
-            Tell us what you&apos;re trying to achieve. We&apos;ll help turn your requirement into a beautiful, practical website or application.
-          </p>
-        </div>
-      </section>
+      <AnimatedPageHero pageName="contact" />
 
       {/* Main 2-Column Split Section */}
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-[#FAF7F2]">
@@ -75,7 +60,7 @@ export default function ContactPage() {
                     <Clock className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Prompt Consultation</span>
+                    <span className="text-xs font-bold text-[#131B2E] uppercase tracking-wider block">Quick Turnaround</span>
                     <span className="text-xs text-[#64748B] block mt-1">Proposal &amp; estimate within 24 hours</span>
                   </div>
                 </div>

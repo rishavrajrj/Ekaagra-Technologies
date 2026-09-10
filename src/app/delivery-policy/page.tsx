@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Truck, Sparkles, CheckCircle2, Clock, Globe, ArrowRight } from 'lucide-react';
 import { createPageMetadata, webPageSchema, SITE_URL, BRAND_EMAIL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Service Delivery & Fulfillment Policy | Ekaagra Technologies, Motihari',
@@ -28,9 +28,7 @@ export default function DeliveryPolicyPage() {
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'Service Delivery Policy' }]} />
-      </div>
+
 
       {/* Hero */}
       <section className="py-12 sm:py-16 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">

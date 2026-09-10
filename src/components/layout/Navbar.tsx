@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight, Sparkles } from 'lucide-react';
 import Logo from '@/components/ui/Logo';
-import ShowcaseManualButton from '@/components/showcase/ShowcaseManualButton';
 import { useShowcase } from '@/components/showcase/ShowcaseProvider';
 import MagneticButton from '@/components/motion/MagneticButton';
 
@@ -21,9 +20,7 @@ export default function Navbar() {
     { label: 'Our Work', href: '/projects' },
     { label: 'Services', href: '/services' },
     { label: 'Schools', href: '/schools' },
-    { label: 'Solutions', href: '/solutions' },
     { label: 'Pricing', href: '/pricing' },
-    { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
   ];
 
@@ -109,7 +106,6 @@ export default function Navbar() {
 
           {/* Desktop Right CTA */}
           <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
-            <ShowcaseManualButton variant="navbar" />
             <MagneticButton maxDistance={6}>
               <Link
                 href="/get-quote"

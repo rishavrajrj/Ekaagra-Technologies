@@ -25,21 +25,23 @@ export default function Footer() {
         <Reveal>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 pb-12 border-b border-[#E2E8F0]">
             {/* Brand Column */}
-            <div className="lg:col-span-2 space-y-4">
-              <Link href="/" className="inline-flex items-center gap-2 group transition-transform duration-200 hover:scale-[1.02]" aria-label="Ekaagra Technologies Home">
-                <Logo size="md" />
-              </Link>
-              
-              <p className="text-sm text-[#64748B] max-w-sm leading-relaxed">
-                We design and build custom websites, web applications, mobile apps, and business software systems designed to represent your organization with clarity and authority.
-              </p>
+            <div className="lg:col-span-2 flex flex-col justify-between h-full">
+              <div className="space-y-4">
+                <Link href="/" className="inline-flex items-center gap-2 group transition-transform duration-200 hover:scale-[1.02]" aria-label="Ekaagra Technologies Home">
+                  <Logo size="md" />
+                </Link>
+                
+                <p className="text-sm text-[#64748B] max-w-sm leading-relaxed">
+                  We design and build custom websites, web applications, mobile apps, and business software systems designed to represent your organization with clarity and authority.
+                </p>
 
-              <div className="flex items-center gap-2 text-xs font-semibold text-[#131B2E]">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>Available for new website &amp; software projects</span>
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#131B2E]">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Available for new website &amp; software projects</span>
+                </div>
               </div>
 
-              <div className="space-y-1 text-xs font-medium text-[#64748B] pt-1">
+              <div className="space-y-1 text-xs font-medium text-[#64748B] pt-4 lg:pt-0">
                 <p>📍 Motihari, East Champaran, Bihar, India</p>
                 <p>
                   ✉️{' '}
@@ -51,91 +53,100 @@ export default function Footer() {
             </div>
 
             {/* Services Column */}
-            <div>
-              <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
-                What We Build
-              </h3>
-              <ul className="space-y-2.5">
-                <li>
-                  <Link
-                    href="/website-development-motihari"
-                    className="group inline-flex items-center gap-1 text-xs font-semibold text-[#4338CA] hover:text-[#3730A3] transition-colors duration-200"
-                  >
-                    <span className="group-hover:translate-x-1 transition-transform duration-200">
-                      Web Development in Motihari &rarr;
-                    </span>
-                  </Link>
-                </li>
-                {services.slice(0, 5).map((service) => (
-                  <li key={service.slug}>
+            <div className="flex flex-col justify-between h-full">
+              <div>
+                <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
+                  What We Build
+                </h3>
+                <ul className="space-y-2.5">
+                  <li>
                     <Link
-                      href={`/services/${service.slug}`}
-                      className="group inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
+                      href="/website-development-motihari"
+                      className="group inline-flex items-center gap-1 text-xs font-semibold text-[#4338CA] hover:text-[#3730A3] transition-colors duration-200"
                     >
                       <span className="group-hover:translate-x-1 transition-transform duration-200">
-                        {service.title}
+                        Web Development in Motihari &rarr;
                       </span>
                     </Link>
                   </li>
-                ))}
-              </ul>
+                  {services.slice(0, 6).map((service) => (
+                    <li key={service.slug}>
+                      <Link
+                        href={`/services/${service.slug}`}
+                        className="group inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
+                      >
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">
+                          {service.title}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             {/* Navigation Column */}
-            <div>
-              <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
-                Navigation
-              </h3>
-              <ul className="space-y-2.5">
-                {[
-                  { label: 'Our Work', href: '/projects' },
-                  { label: 'School Solutions', href: '/schools' },
-                  { label: 'Industry Solutions', href: '/solutions' },
-                  { label: 'How We Work', href: '/process' },
-                  { label: 'Pricing & Packages', href: '/pricing' },
-                  { label: 'About Us', href: '/about' },
-                  { label: 'Contact Us', href: '/contact' },
-                ].map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="group inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
-                    >
-                      <span className="group-hover:translate-x-1 transition-transform duration-200">
-                        {item.label}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            <div className="flex flex-col justify-between h-full">
+              <div>
+                <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
+                  Navigation
+                </h3>
+                <ul className="space-y-2.5">
+                  {[
+                    { label: 'Our Work', href: '/projects' },
+                    { label: 'School Solutions', href: '/schools' },
+                    { label: 'Industry Solutions', href: '/services#industries' },
+                    { label: 'How We Work', href: '/process' },
+                    { label: 'Pricing & Packages', href: '/pricing' },
+                    { label: 'About Us', href: '/about' },
+                    { label: 'Contact Us', href: '/contact' },
+                  ].map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className="group inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
+                      >
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">
+                          {item.label}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
             {/* Legal & Compliance Column */}
-            <div>
-              <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
-                Legal &amp; Policy
-              </h3>
-              <ul className="space-y-2.5">
-                {[
-                  { label: 'Terms of Service', href: '/terms' },
-                  { label: 'Privacy Policy', href: '/privacy' },
-                  { label: 'Cancellation & Refund', href: '/refund-policy' },
-                  { label: 'Delivery & Fulfillment', href: '/delivery-policy' },
-                ].map((item) => (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      className="group inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
-                    >
-                      <span className="group-hover:translate-x-1 transition-transform duration-200">
-                        {item.label}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            <div className="flex flex-col justify-between h-full">
+              <div>
+                <h3 className="text-xs font-bold text-[#131B2E] uppercase tracking-widest mb-4">
+                  Legal &amp; Policy
+                </h3>
+                <ul className="space-y-2.5">
+                  {[
+                    { label: 'Terms of Service', href: '/terms' },
+                    { label: 'Privacy Policy', href: '/privacy' },
+                    { label: 'Cancellation & Refund', href: '/refund-policy' },
+                    { label: 'Delivery & Fulfillment', href: '/delivery-policy' },
+                  ].map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className="group inline-flex items-center gap-1 text-xs text-[#64748B] hover:text-[#4338CA] transition-colors duration-200"
+                      >
+                        <span className="group-hover:translate-x-1 transition-transform duration-200">
+                          {item.label}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
               <div className="pt-6">
+                <p className="text-[11px] text-[#64748B] mb-2 font-medium">
+                  Ready to start a project?
+                </p>
                 <MagneticButton maxDistance={5}>
                   <Link
                     href="/get-quote"

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import ProcessTimeline from '@/components/ui/ProcessTimeline';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { createPageMetadata, webPageSchema, SITE_URL } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Website Development Process & Workflow | Ekaagra Technologies Motihari',
@@ -28,9 +28,7 @@ export default function ProcessPage() {
           ),
         }}
       />
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs items={[{ label: 'How We Work' }]} />
-      </div>
+
 
       {/* Hero */}
       <section className="py-16 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">

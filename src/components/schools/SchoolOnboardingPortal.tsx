@@ -2320,7 +2320,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     intakeData.schoolProfile
                   );
                   return (
-                    <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50 to-amber-50/50 border border-indigo-100 rounded-2xl p-4 shadow-2xs space-y-3">
+                    <div className="bg-gradient-to-r from-indigo-50/90 via-slate-50 to-amber-50/50 border border-indigo-100 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3 sm:space-y-4">
                       <div className="flex items-center justify-between flex-wrap gap-2">
                         <div className="flex items-center space-x-2">
                           <GraduationCap className="w-4 h-4 text-[#4338CA]" />
@@ -2345,7 +2345,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </span>
                       </div>
 
-                      <div className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3 text-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-baseline gap-1.5 sm:gap-3 text-xs">
                         <span className="font-extrabold text-[#131B2E] text-sm sm:text-base">
                           {academicSummary.headlineSummary}
                         </span>
@@ -2360,17 +2360,17 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       </div>
 
                       {academicSummary.isLegacyUnspecified && academicSummary.legacySummaryText && (
-                        <p className="text-[11px] text-amber-800 bg-amber-50/80 border border-amber-200/80 rounded-xl p-2.5 leading-relaxed">
+                        <p className="text-[11px] text-amber-800 bg-amber-50/80 border border-amber-200/80 rounded-xl p-3 leading-relaxed">
                           {academicSummary.legacySummaryText}. Please assign each campus below its independent academic scope.
                         </p>
                       )}
 
                       {/* Campus-by-Campus Scope Pills */}
-                      <div className="flex flex-wrap gap-2 pt-1 border-t border-indigo-100/60">
+                      <div className="flex flex-wrap gap-2 pt-2 sm:pt-2.5 border-t border-indigo-100/60">
                         {academicSummary.campusBreakdowns.map((b) => (
                           <div
                             key={b.campusId}
-                            className="bg-white border border-[#E2E8F0] px-2.5 py-1 rounded-xl flex items-center gap-1.5 shadow-2xs text-[11px]"
+                            className="bg-white border border-[#E2E8F0] px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-2xs text-[11px]"
                           >
                             <span className="font-bold text-[#131B2E]">{b.campusName}:</span>
                             <span className="text-[#4338CA] font-semibold">{b.levelSummary}</span>
@@ -2383,10 +2383,10 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   );
                 })()}
 
-                <div className="space-y-4">
+                <div className="space-y-4 sm:space-y-5">
                   {(intakeData.campuses || []).map((camp, idx) => (
-                    <div key={camp.id} className="bg-[#FAF7F2] border border-[#E2E8F0] p-5 rounded-2xl space-y-4 text-xs">
-                      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-2">
+                    <div key={camp.id} className="bg-[#FAF7F2] border border-[#E2E8F0] p-4 sm:p-6 rounded-2xl sm:rounded-3xl space-y-5 text-xs">
+                      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 sm:pb-3.5">
                         <span className="font-bold text-[#131B2E] flex items-center space-x-2 flex-wrap gap-y-1">
                           <Building2 className="w-4 h-4 text-[#4338CA] shrink-0" />
                           <span>{camp.name || (camp.isMainCampus ? 'Main Campus' : `Campus ${idx + 1}`)}</span>
@@ -2449,37 +2449,37 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-4.5">
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1">Campus Name *</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">Campus Name *</label>
                           <input
                             type="text"
                             value={camp.name}
                             onChange={(e) => updateCampusField(idx, { name: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                           />
                         </div>
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1">Campus Code</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">Campus Code</label>
                           <input
                             type="text"
                             value={camp.code || ''}
                             onChange={(e) => updateCampusField(idx, { code: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs font-mono"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs font-mono text-xs"
                           />
                         </div>
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1">Coordinator / Head Name</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">Coordinator / Head Name</label>
                           <input
                             type="text"
                             value={camp.coordinatorName || camp.principalOrHead || ''}
                             onChange={(e) => updateCampusField(idx, { coordinatorName: e.target.value, principalOrHead: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                           />
                         </div>
 
                         {/* Campus Location Card (Clean, Simple Optional Text URL - No Detection Pipeline) */}
-                        <div className="md:col-span-3 bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-2xs space-y-2">
+                        <div className="md:col-span-3 bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
                           <div className="flex items-center space-x-2">
                             <MapPin className="w-4 h-4 text-[#4338CA]" aria-hidden="true" />
                             <h4 className="font-bold text-sm text-[#131B2E]">Campus Location</h4>
@@ -2487,7 +2487,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                           <div>
                             <label
                               htmlFor={`campus-${camp.id || idx}-google-maps-link`}
-                              className="flex items-center justify-between font-medium text-[#131B2E] mb-1 text-xs"
+                              className="flex items-center justify-between font-medium text-[#131B2E] mb-1.5 text-xs"
                             >
                               <span>Google Maps Location Link</span>
                               <span className="font-normal text-[#64748B] text-[11px]">Optional</span>
@@ -2528,7 +2528,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                               </p>
                             )}
                             {camp.googleMapsLink && isValidGoogleMapsUrl(camp.googleMapsLink) && (
-                              <div className="mt-1.5 flex items-center justify-between text-[11px]">
+                              <div className="mt-2.5 flex items-center justify-between text-[11px]">
                                 <a
                                   href={camp.googleMapsLink.startsWith('http') ? camp.googleMapsLink : `https://${camp.googleMapsLink}`}
                                   target="_blank"
@@ -2558,23 +2558,23 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="block font-medium text-[#64748B] mb-1">Campus Postal Address *</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">Campus Postal Address *</label>
                           <input
                             type="text"
                             value={camp.address}
                             onChange={(e) => updateCampusField(idx, { address: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                             placeholder="Campus street, locality, gate road"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1">Landmark / Campus Area</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">Landmark / Campus Area</label>
                           <input
                             type="text"
                             value={camp.landmark || ''}
                             onChange={(e) => updateCampusField(idx, { landmark: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                             placeholder="e.g. Near Gandhi Memorial, Station Road"
                           />
                         </div>
@@ -2744,51 +2744,51 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         })()}
 
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1">City / Town</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">City / Town</label>
                           <input
                             type="text"
                             value={camp.city || ''}
                             onChange={(e) => updateCampusField(idx, { city: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                             placeholder="e.g. Motihari"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1">Postal PIN</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">Postal PIN</label>
                           <input
                             type="text"
                             value={camp.pin || ''}
                             onChange={(e) => updateCampusField(idx, { pin: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs font-mono"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs font-mono text-xs"
                             placeholder="e.g. 845401"
                           />
                         </div>
 
                         <div>
-                          <label className="block font-medium text-[#64748B] mb-1">Campus Contact Phone</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">Campus Contact Phone</label>
                           <input
                             type="tel"
                             value={camp.contactPhone || ''}
                             onChange={(e) => updateCampusField(idx, { contactPhone: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                             placeholder="Phone number"
                           />
                         </div>
 
                         <div className="md:col-span-3">
-                          <label className="block font-medium text-[#64748B] mb-1">Operating Hours</label>
+                          <label className="block font-medium text-[#64748B] mb-1.5">Operating Hours</label>
                           <input
                             type="text"
                             value={camp.operatingHours || '08:00 AM - 03:00 PM'}
                             onChange={(e) => updateCampusField(idx, { operatingHours: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                           />
                         </div>
 
                         {/* Campus-Specific Academic Scope & Grades Offered */}
-                        <div className="md:col-span-3 bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 shadow-2xs space-y-4">
-                          <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3 flex-wrap gap-2">
+                        <div className="md:col-span-3 bg-white border border-[#E2E8F0] rounded-2xl p-4 sm:p-6 shadow-2xs space-y-4 sm:space-y-5">
+                          <div className="flex items-center justify-between border-b border-[#F1F5F9] pb-3 sm:pb-3.5 flex-wrap gap-2">
                             <div className="flex items-center space-x-2">
                               <GraduationCap className="w-4 h-4 text-[#4338CA]" />
                               <div>
@@ -2802,7 +2802,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             {(() => {
                               const scope = deriveCampusAcademicScope(camp);
                               return (
-                                <span className="text-[11px] font-bold px-2.5 py-1 rounded-xl bg-indigo-50 text-[#4338CA] border border-indigo-100 shadow-2xs">
+                                <span className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-indigo-50 text-[#4338CA] border border-indigo-100 shadow-2xs">
                                   {scope.academicLevels.length > 0 ? scope.academicLevels.join(', ') : 'Scope Unspecified'}
                                   {scope.classRange ? ` • ${scope.classRange}` : ''}
                                 </span>
@@ -2815,7 +2815,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             <label className="block font-semibold text-[#131B2E] mb-1.5 text-xs">
                               Applicable Academic Level(s) *
                             </label>
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-2">
                               {(['Pre-Primary', 'Primary', 'Middle', 'Secondary', 'Senior Secondary', 'Other'] as const).map((level) => {
                                 const currentLevels = Array.isArray(camp.academicLevels) ? camp.academicLevels : [];
                                 const isSelected = currentLevels.some((l) => l.toLowerCase() === level.toLowerCase());
@@ -2846,7 +2846,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                         classesOfferedTo: nextClasses.length > 0 ? nextClasses[nextClasses.length - 1] : '',
                                       });
                                     }}
-                                    className={`px-3 py-1.5 rounded-xl font-semibold text-xs border transition cursor-pointer shadow-2xs ${
+                                    className={`px-3.5 py-2 rounded-xl font-semibold text-xs border transition cursor-pointer shadow-2xs ${
                                       isSelected
                                         ? 'bg-[#4338CA] text-white border-[#4338CA]'
                                         : 'bg-white text-[#475569] border-[#E2E8F0] hover:border-[#CBD5E1] hover:bg-slate-50'
@@ -2857,13 +2857,13 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                 );
                               })}
                             </div>
-                            <p className="text-[11px] text-[#64748B] mt-1">
+                            <p className="text-[11px] text-[#64748B] mt-1.5">
                               Select one or more levels operated at this physical campus (e.g. Pre-Primary only, or Primary only).
                             </p>
                           </div>
 
                           {/* 2. Campus Wing / Role Description (Optional) */}
-                          <div className="pt-1">
+                          <div className="pt-2 sm:pt-2.5">
                             <label className="block font-semibold text-[#131B2E] mb-1.5 text-xs">
                               Campus Wing / Role Description <span className="font-normal text-[#64748B]">(Optional)</span>
                             </label>
@@ -2877,15 +2877,15 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                 });
                               }}
                               placeholder="e.g. Early Learning Wing / Senior Secondary Block / Junior Campus"
-                              className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs text-xs"
+                              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs text-xs"
                             />
-                            <p className="text-[11px] text-[#64748B] mt-1">
+                            <p className="text-[11px] text-[#64748B] mt-1.5">
                               Custom name or label shown on your school website and campus cards (e.g. Junior Wing, Toddlers Block).
                             </p>
                           </div>
 
                           {/* 3. Classes Offered */}
-                          <div className="space-y-2 pt-1 border-t border-[#F1F5F9]">
+                          <div className="space-y-3 pt-3 sm:pt-4 border-t border-[#F1F5F9]">
                             <div className="flex items-center justify-between flex-wrap gap-2">
                               <label className="font-semibold text-[#131B2E] text-xs">
                                 Classes Offered at this Campus
@@ -2893,12 +2893,12 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             </div>
 
                             {/* Class Pills */}
-                            <div className="flex flex-wrap gap-1.5 min-h-[38px] p-2 bg-[#FAF7F2] rounded-xl border border-[#E2E8F0]">
+                            <div className="flex flex-wrap gap-2 min-h-[44px] p-2.5 sm:p-3 bg-[#FAF7F2] rounded-xl border border-[#E2E8F0]">
                               {(camp.classesOffered || []).length > 0 ? (
                                 (camp.classesOffered || []).map((cls, cIdx) => (
                                   <span
                                     key={`${cls}-${cIdx}`}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#E2E8F0] text-xs font-semibold text-[#131B2E] shadow-2xs"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-xs font-semibold text-[#131B2E] shadow-2xs"
                                   >
                                     <span>{cls}</span>
                                     <button
@@ -2925,9 +2925,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             </div>
 
                             {/* Custom Class Quick Adder & Class Range Override */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1.5 sm:pt-2">
                               <div>
-                                <label className="block font-medium text-[#64748B] mb-1">
+                                <label className="block font-medium text-[#64748B] mb-1.5">
                                   Add Custom Class
                                 </label>
                                 <div className="flex gap-2">
@@ -2950,7 +2950,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                         }
                                       }
                                     }}
-                                    className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                                    className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                                   />
                                   <button
                                     type="button"
@@ -2966,7 +2966,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                         input.value = '';
                                       }
                                     }}
-                                    className="px-3 py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white rounded-xl font-semibold text-xs transition shadow-2xs shrink-0 cursor-pointer"
+                                    className="px-4 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white rounded-xl font-semibold text-xs transition shadow-2xs shrink-0 cursor-pointer"
                                   >
                                     Add
                                   </button>
@@ -2974,7 +2974,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                               </div>
 
                               <div>
-                                <label className="block font-medium text-[#64748B] mb-1">
+                                <label className="block font-medium text-[#64748B] mb-1.5">
                                   Class Range Display
                                 </label>
                                 <input
@@ -2984,7 +2984,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                     updateCampusField(idx, { classRange: e.target.value });
                                   }}
                                   placeholder="e.g. Playgroup to UKG / Class 1 to 5"
-                                  className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
                                 />
                               </div>
                             </div>
@@ -4783,7 +4783,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
             )}
 
             {/* Bottom Step Navigation Bar */}
-            <div className="border-t border-[#E2E8F0] pt-5 space-y-3">
+            <div className="border-t border-[#E2E8F0] pt-6 sm:pt-7 space-y-3.5">
               {currentSection.key === 'domainPresence' && domainStepError && (
                 <div
                   role="alert"

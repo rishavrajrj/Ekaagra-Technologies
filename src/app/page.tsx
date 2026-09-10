@@ -32,6 +32,7 @@ import ServicesList from '@/components/ui/ServicesList';
 import ProcessTimeline from '@/components/ui/ProcessTimeline';
 import ShowcaseFrameSync from '@/components/showcase/ShowcaseFrameSync';
 import TypewriterHeadline from '@/components/ui/TypewriterHeadline';
+import AnimatedPageHero from '@/components/ui/AnimatedPageHero';
 import Reveal from '@/components/motion/Reveal';
 import MagneticButton from '@/components/motion/MagneticButton';
 import GlowCard from '@/components/motion/GlowCard';
@@ -62,145 +63,71 @@ export default function HomePage() {
       {/* -- Dynamic Hero Height Synchronizer for Cinematic Showcase -- */}
       <ShowcaseFrameSync />
 
-      {/* --- 1. HERO SECTION (WHY / POSITIONING & MASTER FRAME) --- */}
-      <section
-        id="hero"
-        className="relative py-4 px-0 bg-warm-grid border-b border-[#E2E8F0] overflow-hidden"
-      >
-        {/* Ambient Top Glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-warm-glow pointer-events-none animate-aurora-glow" />
-
-        <div className="site-container relative z-10 w-full flex flex-col gap-4">
-          <div className="grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
-            {/* Left Content */}
-            <div className="lg:col-span-5 space-y-4 text-left">
-              {/* Top Category Badge */}
-              <Reveal delay={80} distance={14} duration={500}>
-                <Link
-                  href="/website-development-motihari"
-                  className="inline-flex items-center gap-2 px-3 py-1 bg-[#4338CA]/10 border border-[#4338CA]/20 rounded-full text-xs font-bold text-[#4338CA] uppercase tracking-wider shadow-sm hover:scale-[1.02] transition-transform"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-[#F97360]" />
-                  <span>WEBSITE DESIGN &amp; DEVELOPMENT • MOTIHARI, BIHAR</span>
-                </Link>
-              </Reveal>
-
-              {/* Main Animated Typewriter Headline */}
-              <Reveal delay={160} distance={16} duration={550}>
-                <TypewriterHeadline />
-              </Reveal>
-
-              {/* Supporting Copy */}
-              <Reveal delay={240} distance={16} duration={550}>
-                <p className="text-sm sm:text-base text-[#64748B] leading-relaxed max-w-xl font-normal">
-                  Beautiful, fast and conversion-focused websites designed around your business — not another generic template. We craft custom websites, school portals, and web applications in Motihari, Bihar that turn visitors into loyal customers.
-                </p>
-              </Reveal>
-
-              {/* 3 Core Value Differentiators */}
-              <Reveal delay={320} distance={14} duration={550}>
-                <div className="space-y-1.5 pt-0.5 text-xs sm:text-[13px] text-[#475569] font-medium">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                    <span>Custom UI/UX crafted for your business — zero cookie-cutter templates</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                    <span>Blazing fast load times with 100% mobile-first responsive design</span>
-                  </div>
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
-                      <Check className="w-2.5 h-2.5 stroke-[3]" />
-                    </div>
-                    <span>1-click WhatsApp inquiries, lead capture forms &amp; Google Search SEO</span>
-                  </div>
-                </div>
-              </Reveal>
-
-              {/* CTAs */}
-              <Reveal delay={380} distance={14} duration={550}>
-                <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                  <MagneticButton maxDistance={6}>
-                    <Link
-                      href="/get-quote"
-                      className="premium-shimmer-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-300 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/40 hover:-translate-y-0.5 active:translate-y-0"
-                    >
-                      <span>Build My Website</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </Link>
-                  </MagneticButton>
-                  <MagneticButton maxDistance={5}>
-                    <Link
-                      href="/projects"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-white hover:bg-[#FAF7F2] text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/40 hover:text-[#4338CA] transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5"
-                    >
-                      <span>Explore Our Work</span>
-                    </Link>
-                  </MagneticButton>
-                </div>
-              </Reveal>
-
-              {/* Micro Credibility Specs */}
-              <Reveal delay={440} distance={12} duration={500}>
-                <div className="pt-3 border-t border-[#E2E8F0] grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg">
-                  <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/70 hover:shadow-sm">
-                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Specialty</span>
-                    <span className="text-xs font-extrabold text-[#131B2E] block mt-0.5">High-Converting</span>
-                  </div>
-                  <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/70 hover:shadow-sm">
-                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Performance</span>
-                    <span className="text-xs font-extrabold text-emerald-600 block mt-0.5">Fast &amp; Optimized</span>
-                  </div>
-                  <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/70 hover:shadow-sm">
-                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Engagement</span>
-                    <span className="text-xs font-extrabold text-[#F97360] block mt-0.5">WhatsApp Ready</span>
-                  </div>
-                  <div className="p-1.5 rounded-xl transition-all duration-200 hover:bg-white/70 hover:shadow-sm">
-                    <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-wider block">Ownership</span>
-                    <span className="text-xs font-extrabold text-[#4338CA] block mt-0.5">100% Code &amp; Domain</span>
-                  </div>
-                </div>
-              </Reveal>
-            </div>
-
-            {/* Right Signature Visual Workspace (Preview Only) */}
-            <div className="lg:col-span-7 w-full min-w-0">
-              <Reveal delay={180} distance={18} duration={600}>
-                <HeroVisual />
-              </Reveal>
-            </div>
+      {/* --- 1. UNIFIED PREMIUM HERO SECTION --- */}
+      <AnimatedPageHero pageName="home" id="hero">
+        <div className="flex flex-col items-center w-full">
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full sm:w-auto">
+            <MagneticButton maxDistance={6}>
+              <Link
+                href="/get-quote"
+                className="premium-shimmer-btn w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 bg-[#4338CA] hover:bg-[#3730A3] text-white font-bold text-xs tracking-wider uppercase rounded-xl transition-all duration-300 shadow-xl shadow-[#4338CA]/25 hover:shadow-2xl hover:shadow-[#4338CA]/40 hover:-translate-y-0.5 active:translate-y-0"
+              >
+                <span>Build My Website</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </MagneticButton>
+            <MagneticButton maxDistance={5}>
+              <Link
+                href="/projects"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-4 bg-white hover:bg-[#FAF7F2] text-[#131B2E] font-bold text-xs tracking-wider uppercase rounded-xl border border-[#E2E8F0] hover:border-[#4338CA]/40 hover:text-[#4338CA] transition-all duration-300 shadow-sm hover:shadow hover:-translate-y-0.5"
+              >
+                <span>Explore Our Work</span>
+              </Link>
+            </MagneticButton>
           </div>
 
-          {/* Integrated Trust Strip Inside Hero */}
-          <Reveal delay={500} distance={10} duration={500}>
-            <div className="pt-4 sm:pt-5 border-t border-[#E2E8F0]">
-              <div className="flex flex-wrap items-center justify-center lg:justify-between gap-y-2.5 gap-x-4 sm:gap-x-8 text-[11px] sm:text-xs font-bold tracking-wider text-[#475569] uppercase text-center sm:text-left">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#4338CA] shrink-0" />
-                  <span>100% CUSTOM DESIGNED</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F97360] shrink-0" />
-                  <span>MOBILE-FIRST ARCHITECTURE</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#F4C95D] shrink-0" />
-                  <span>DIRECT LEAD CAPTURE</span>
-                </div>
-                <span className="text-[#CBD5E1] hidden sm:inline">•</span>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>POST-LAUNCH SUPPORT</span>
-                </div>
-              </div>
-            </div>
-          </Reveal>
+          {/* Why Ekaagra Trust Strip — part of hero */}
+          <div className="mt-10 sm:mt-12 pt-6 border-t border-[#E2E8F0]/60 w-full max-w-4xl">
+            <p className="text-center text-[11px] font-extrabold uppercase tracking-[0.12em] text-[#4338CA] mb-1.5">
+              ✦ Why Ekaagra
+            </p>
+            <p className="text-center text-[13px] sm:text-[14px] font-medium text-[#64748B] mb-5">
+              Built around quality, performance &amp; real results.
+            </p>
+          </div>
+        </div>
+        <div className="w-full overflow-x-auto no-scrollbar flex items-center justify-start sm:justify-center gap-x-4 sm:gap-x-6 lg:gap-x-7 whitespace-nowrap py-1">
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-[7px] h-[7px] rounded-full bg-[#4338CA] shrink-0" />
+            <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.08em] text-[#475569] uppercase">100% Custom Designed</span>
+          </div>
+          <span className="text-[#CBD5E1] text-xs select-none shrink-0">•</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-[7px] h-[7px] rounded-full bg-[#F97360] shrink-0" />
+            <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.08em] text-[#475569] uppercase">Mobile-First Architecture</span>
+          </div>
+          <span className="text-[#CBD5E1] text-xs select-none shrink-0">•</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-[7px] h-[7px] rounded-full bg-[#F4C95D] shrink-0" />
+            <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.08em] text-[#475569] uppercase">Direct Lead Capture</span>
+          </div>
+          <span className="text-[#CBD5E1] text-xs select-none shrink-0">•</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-[7px] h-[7px] rounded-full bg-[#10B981] shrink-0" />
+            <span className="text-[10.5px] sm:text-[11px] font-bold tracking-[0.08em] text-[#475569] uppercase">India-Based • Global Reach</span>
+          </div>
+        </div>
+      </AnimatedPageHero>
+
+      {/* --- 2. SIGNATURE INTERACTIVE SHOWCASE SECTION --- */}
+      <section className="py-8 sm:py-12 border-b border-[#E2E8F0] bg-[#FAF7F2]">
+        <div className="site-container">
+          <div className="max-w-5xl mx-auto">
+            <Reveal delay={100} distance={18} duration={600}>
+              <HeroVisual />
+            </Reveal>
+          </div>
         </div>
       </section>
 
@@ -360,11 +287,10 @@ export default function HomePage() {
               {pricingTiers.slice(0, 3).map((tier) => (
                 <div
                   key={tier.title}
-                  className={`card-popup relative flex flex-col justify-between rounded-2xl p-4 sm:p-6 border bg-white shadow-sm min-w-0 ${
-                    tier.highlighted
-                      ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15'
-                      : 'border-[#E2E8F0]'
-                  }`}
+                  className={`card-popup relative flex flex-col justify-between rounded-2xl p-4 sm:p-6 border bg-white shadow-sm min-w-0 ${tier.highlighted
+                    ? 'border-2 border-[#4338CA] shadow-[#4338CA]/15'
+                    : 'border-[#E2E8F0]'
+                    }`}
                 >
                   {tier.highlighted && (
                     <span className="absolute -top-2.5 right-3 bg-[#4338CA] text-white text-[9px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-sm">
@@ -405,11 +331,10 @@ export default function HomePage() {
                     <MagneticButton maxDistance={5} className="w-full">
                       <Link
                         href="/get-quote"
-                        className={`w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm ${
-                          tier.highlighted
-                            ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-[#4338CA]/25'
-                            : 'bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0]'
-                        }`}
+                        className={`w-full inline-flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-sm ${tier.highlighted
+                          ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-[#4338CA]/25'
+                          : 'bg-[#FAF7F2] hover:bg-[#F0EAE1] text-[#131B2E] border border-[#E2E8F0]'
+                          }`}
                       >
                         <span>Get a Quote</span>
                         <ArrowRight className="w-3.5 h-3.5" />

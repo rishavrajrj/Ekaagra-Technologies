@@ -30,7 +30,7 @@ import {
   SITE_URL,
   BRAND_EMAIL,
 } from '@/lib/seo.config';
-import Breadcrumbs from '@/components/ui/Breadcrumbs';
+
 import MagneticButton from '@/components/motion/MagneticButton';
 import GlowCard from '@/components/motion/GlowCard';
 import FAQItem from '@/components/ui/FAQItem';
@@ -161,14 +161,7 @@ export default function WebsiteDevelopmentMotihariPage() {
         }}
       />
 
-      <div className="site-container pt-6 pb-2">
-        <Breadcrumbs
-          items={[
-            { label: 'Services', href: '/services' },
-            { label: 'Website Development in Motihari' },
-          ]}
-        />
-      </div>
+
 
       {/* ─── 1. HERO SECTION ───────────────────────────────────────── */}
       <section className="py-12 sm:py-20 border-b border-[#E2E8F0] bg-warm-grid relative overflow-hidden">

@@ -163,9 +163,12 @@ export async function submitQuoteForm(data: QuoteFormData, structuredQuote?: Str
     const comparableCost = structuredQuote.domain?.estimatedINR || 0;
     const verifiedUpgrade = structuredQuote.domain ? Math.max(0, comparableCost - verifiedTermAllowance) : 0;
 
-    const verifiedTotal = verifiedPlanPrice + verifiedPagesTotal + verifiedUpgrade;
-
-    data.budget = `Estimated Total: ₹${verifiedTotal.toLocaleString('en-IN')} (Plan: ₹${verifiedPlanPrice.toLocaleString('en-IN')}, Pages: +₹${verifiedPagesTotal.toLocaleString('en-IN')}, Domain: +₹${verifiedUpgrade.toLocaleString('en-IN')})`;
+    if (structuredQuote.plan.id === 'business-solutions' || (verifiedPlanPrice === 0 && structuredQuote.plan.id !== 'free-launch')) {
+      data.budget = 'Custom Quote (Tailored Scope)';
+    } else {
+      const verifiedTotal = verifiedPlanPrice + verifiedPagesTotal + verifiedUpgrade;
+      data.budget = `Estimated Total (Year 1): ₹${verifiedTotal.toLocaleString('en-IN')} (Plan: ₹${verifiedPlanPrice.toLocaleString('en-IN')}, Pages: +₹${verifiedPagesTotal.toLocaleString('en-IN')}, Domain: +₹${verifiedUpgrade.toLocaleString('en-IN')})`;
+    }
   }
 
   const resendApiKey = process.env.RESEND_API_KEY?.trim();

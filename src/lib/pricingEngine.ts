@@ -1,4 +1,5 @@
 import { websitePlans, additionalPageTiers, planDomainAllowances } from './data';
+import { businessPlans } from './businessPricing';
 import type { CreateOrderRequest } from './types';
 
 export interface VerifiedOrderCalculation {
@@ -69,13 +70,24 @@ export function calculateVerifiedOrderTotal(
   }
 
   // 2. Validate Standardized Website Plan
-  const planId = request.planId || 'starter';
-  const matchedPlan = websitePlans.find((p) => p.id === planId);
+  const planId = request.planId || 'business-website';
+  const matchedBusiness = businessPlans.find((p) => p.id === planId);
+  const matchedWebsite = websitePlans.find((p) => p.id === planId);
+  const matchedPlan = matchedBusiness
+    ? {
+        id: matchedBusiness.id,
+        name: matchedBusiness.name,
+        price: matchedBusiness.priceYear1 ?? 0,
+      }
+    : matchedWebsite;
 
   if (!matchedPlan) {
     return {
       isValid: false,
-      error: `Invalid plan specified (${planId}). Must be one of: ${websitePlans.map((p) => p.id).join(', ')}`,
+      error: `Invalid plan specified (${planId}). Must be one of: ${[
+        ...businessPlans.map((p) => p.id),
+        ...websitePlans.map((p) => p.id),
+      ].join(', ')}`,
       serviceType: request.serviceType || 'Website Development',
       planName: 'Unknown Plan',
       planPrice: 0,
@@ -91,7 +103,7 @@ export function calculateVerifiedOrderTotal(
     };
   }
 
-  // Authoritative server-side plan price (e.g., Launch Plus = ₹499, Starter = ₹999)
+  // Authoritative server-side plan price (Year 1 initial setup/development price)
   const serverPlanPrice = matchedPlan.price;
 
   // 3. Validate & Recompute Additional Pages

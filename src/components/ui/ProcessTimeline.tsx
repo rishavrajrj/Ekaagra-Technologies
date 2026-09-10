@@ -9,6 +9,13 @@ export default function ProcessTimeline() {
       icon: Compass,
       description: 'Understand your business model, target audience, competitors, and exact goals.',
       badge: 'Discovery Call',
+      theme: {
+        border: 'border-sky-300 hover:border-sky-500',
+        badge: 'bg-sky-50 text-sky-700 border-sky-200',
+        numberBg: 'bg-sky-50 text-sky-700 group-hover:bg-sky-600 group-hover:text-white border border-sky-200/60',
+        titleHover: 'group-hover:text-sky-600',
+        shadowHover: 'hover:shadow-sky-500/10',
+      },
     },
     {
       number: '02',
@@ -16,6 +23,13 @@ export default function ProcessTimeline() {
       icon: Layout,
       description: 'Define the visual direction, page layout structure, and conversion sitemap.',
       badge: 'Wireframes',
+      theme: {
+        border: 'border-indigo-300 hover:border-indigo-500',
+        badge: 'bg-indigo-50 text-[#4338CA] border-indigo-200',
+        numberBg: 'bg-indigo-50 text-[#4338CA] group-hover:bg-[#4338CA] group-hover:text-white border border-indigo-200/60',
+        titleHover: 'group-hover:text-[#4338CA]',
+        shadowHover: 'hover:shadow-indigo-500/10',
+      },
     },
     {
       number: '03',
@@ -23,6 +37,13 @@ export default function ProcessTimeline() {
       icon: Sparkles,
       description: 'Create the polished visual interface, mockups, typography, and branded assets.',
       badge: 'Visual Identity',
+      theme: {
+        border: 'border-purple-300 hover:border-purple-500',
+        badge: 'bg-purple-50 text-purple-700 border-purple-200',
+        numberBg: 'bg-purple-50 text-purple-700 group-hover:bg-purple-600 group-hover:text-white border border-purple-200/60',
+        titleHover: 'group-hover:text-purple-600',
+        shadowHover: 'hover:shadow-purple-500/10',
+      },
     },
     {
       number: '04',
@@ -30,6 +51,13 @@ export default function ProcessTimeline() {
       icon: Code2,
       description: 'Turn approved designs into ultra-fast, responsive, clean code with database integration.',
       badge: 'Clean Code',
+      theme: {
+        border: 'border-amber-300 hover:border-amber-500',
+        badge: 'bg-amber-50 text-amber-800 border-amber-200',
+        numberBg: 'bg-amber-50 text-amber-800 group-hover:bg-amber-600 group-hover:text-white border border-amber-200/60',
+        titleHover: 'group-hover:text-amber-700',
+        shadowHover: 'hover:shadow-amber-500/10',
+      },
     },
     {
       number: '05',
@@ -38,6 +66,13 @@ export default function ProcessTimeline() {
       description: 'You test everything on a private live staging link and give final approval before public launch.',
       badge: 'Client Approval ★',
       highlighted: true,
+      theme: {
+        border: 'border-2 border-[#F97360] shadow-md shadow-[#F97360]/15 animate-approval-pulse',
+        badge: 'bg-[#F97360]/15 text-[#EA580C] font-extrabold border-[#F97360]/30',
+        numberBg: 'bg-[#F97360] text-white border border-[#EA580C]/40',
+        titleHover: 'group-hover:text-[#EA580C]',
+        shadowHover: 'hover:shadow-[#F97360]/20',
+      },
     },
     {
       number: '06',
@@ -45,6 +80,13 @@ export default function ProcessTimeline() {
       icon: Rocket,
       description: 'Deploy to fast edge hosting, connect custom domain, configure SSL, and provide post-launch care.',
       badge: 'Go Live 🚀',
+      theme: {
+        border: 'border-emerald-300 hover:border-emerald-500',
+        badge: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        numberBg: 'bg-emerald-50 text-emerald-700 group-hover:bg-emerald-600 group-hover:text-white border border-emerald-200/60',
+        titleHover: 'group-hover:text-emerald-600',
+        shadowHover: 'hover:shadow-emerald-500/10',
+      },
     },
   ];
 
@@ -53,7 +95,7 @@ export default function ProcessTimeline() {
       {/* Desktop Horizontal Line with Traveling Light Beam */}
       <div 
         aria-hidden="true" 
-        className="hidden lg:block absolute top-8 left-[6%] right-[6%] h-[2px] bg-[#E2E8F0] overflow-hidden z-0"
+        className="hidden lg:block absolute top-8 left-[6%] right-[6%] h-[2px] bg-gradient-to-r from-sky-200 via-indigo-200 via-purple-200 via-amber-200 via-[#F97360]/30 to-emerald-200 overflow-hidden z-0"
       >
         <div className="absolute top-0 bottom-0 w-28 bg-gradient-to-r from-transparent via-[#4338CA] to-transparent animate-traveling-beam" />
       </div>
@@ -64,37 +106,31 @@ export default function ProcessTimeline() {
           return (
             <div
               key={step.number}
-              className={`card-popup-sm group rounded-xl p-3.5 sm:p-4 flex flex-col justify-between border min-w-0 h-full ${
-                step.highlighted
-                  ? 'bg-white border-2 border-[#F97360] shadow-md shadow-[#F97360]/15 animate-approval-pulse'
-                  : 'bg-white border-[#E2E8F0] shadow-sm'
+              className={`card-popup-sm group rounded-xl p-3.5 sm:p-4 flex flex-col justify-between border min-w-0 h-full bg-white transition-all duration-300 ${
+                step.theme.border
+              } ${step.theme.shadowHover} ${
+                step.highlighted ? '' : 'shadow-sm'
               }`}
             >
               <div className="space-y-2.5 min-w-0">
                 {/* Step indicator circle */}
                 <div className="flex items-center justify-between">
                   <span
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold font-mono transition-all duration-300 shadow-sm shrink-0 ${
-                      step.highlighted
-                        ? 'bg-[#F97360] text-white'
-                        : 'bg-[#4338CA]/10 text-[#4338CA] group-hover:bg-[#4338CA] group-hover:text-white'
-                    }`}
+                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold font-mono transition-all duration-300 shadow-sm shrink-0 ${step.theme.numberBg}`}
                   >
                     {step.number}
                   </span>
                   <span
-                    className={`text-[8.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
-                      step.highlighted
-                        ? 'bg-[#F97360]/15 text-[#EA580C] font-extrabold'
-                        : 'bg-[#FAF7F2] text-[#64748B] border border-[#E2E8F0]'
-                    }`}
+                    className={`text-[8.5px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 border ${step.theme.badge}`}
                   >
                     {step.badge}
                   </span>
                 </div>
 
                 <div className="min-w-0">
-                  <h3 className="text-sm sm:text-base font-extrabold text-[#131B2E] tracking-tight group-hover:text-[#4338CA] transition-colors truncate">
+                  <h3
+                    className={`text-sm sm:text-base font-extrabold text-[#131B2E] tracking-tight transition-colors truncate ${step.theme.titleHover}`}
+                  >
                     {step.title}
                   </h3>
                   <p className="text-[11px] text-[#64748B] mt-1 leading-relaxed">

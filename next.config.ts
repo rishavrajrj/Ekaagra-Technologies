@@ -29,6 +29,11 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
+        source: '/solutions',
+        destination: '/services#industries',
+        permanent: true,
+      },
+      {
         source: '/blog/how-to-choose-best-website-developer-in-motihari',
         destination: '/blog/best-website-developer-motihari',
         permanent: true,

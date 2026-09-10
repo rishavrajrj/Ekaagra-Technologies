@@ -873,77 +873,79 @@ export default function TransportFleetSection({
   return (
     <div className="space-y-6 text-xs text-[#131B2E]">
       {/* ─── SECTION HEADER & GLOBAL ACTION TOOLBAR ──────────────────────────── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]">
-              <Bus className="w-3.5 h-3.5" />
-              Section 12 of 29 • School Transport & Fleet Management
-            </span>
-            {score.isConfiguredForLater ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
-                <Clock className="w-3 h-3" /> Configured for Later
+      {!isWebsiteOnly && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-[#E2E8F0]">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#EEF2FF] text-[#4338CA] border border-[#C7D2FE]">
+                <Bus className="w-3.5 h-3.5" />
+                Section 12 of 29 • School Transport & Fleet Management
               </span>
-            ) : score.isComplete ? (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
-                <CheckCircle2 className="w-3 h-3" /> 100% Configured
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
-                <AlertCircle className="w-3 h-3" /> {score.filled}/{score.total} Requirements ({score.percentage}%)
-              </span>
-            )}
-          </div>
-          <h2 className="text-base font-bold text-[#131B2E] mt-1.5 flex items-center gap-2">
-            School Transport & Bus Attendance System
-          </h2>
-          <p className="text-[#64748B] text-xs mt-0.5">
-            End-to-end operational transport management: vehicles, ordered route stops, staff allocation, student assignments, multi-mode attendance, and real-time parent alerts.
-          </p>
-        </div>
-
-        {/* Global Toolbar */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {status === 'yes' && (
-            <div className="inline-flex p-1 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl">
-              <button
-                type="button"
-                onClick={() => setActiveTab('config')}
-                className={'px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ' + (
-                  activeTab === 'config'
-                    ? 'bg-white text-[#4338CA] shadow-2xs'
-                    : 'text-[#64748B] hover:text-[#131B2E]'
-                )}
-              >
-                <Sliders className="w-3.5 h-3.5" />
-                10-Card Operational Setup
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('attendance')}
-                className={'px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ' + (
-                  activeTab === 'attendance'
-                    ? 'bg-white text-[#4338CA] shadow-2xs'
-                    : 'text-[#64748B] hover:text-[#131B2E]'
-                )}
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                Tablet Live Console
-              </button>
+              {score.isConfiguredForLater ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A]">
+                  <Clock className="w-3 h-3" /> Configured for Later
+                </span>
+              ) : score.isComplete ? (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0]">
+                  <CheckCircle2 className="w-3 h-3" /> 100% Configured
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FFFBEB] text-[#B45309] border border-[#FDE68A]">
+                  <AlertCircle className="w-3 h-3" /> {score.filled}/{score.total} Requirements ({score.percentage}%)
+                </span>
+              )}
             </div>
-          )}
+            <h2 className="text-base font-bold text-[#131B2E] mt-1.5 flex items-center gap-2">
+              School Transport & Bus Attendance System
+            </h2>
+            <p className="text-[#64748B] text-xs mt-0.5">
+              End-to-end operational transport management: vehicles, ordered route stops, staff allocation, student assignments, multi-mode attendance, and real-time parent alerts.
+            </p>
+          </div>
 
-          <button
-            type="button"
-            onClick={handleLoadDemoData}
-            title="Load complete DPS Motihari 4-vehicle operational dataset"
-            className="px-2.5 py-1.5 rounded-xl border border-[#CBD5E1] bg-white text-[#4338CA] hover:bg-[#FAF7F2] font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>Load DPS Motihari Fleet</span>
-          </button>
+          {/* Global Toolbar */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {status === 'yes' && (
+              <div className="inline-flex p-1 bg-[#FAF7F2] border border-[#E2E8F0] rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('config')}
+                  className={'px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ' + (
+                    activeTab === 'config'
+                      ? 'bg-white text-[#4338CA] shadow-2xs'
+                      : 'text-[#64748B] hover:text-[#131B2E]'
+                  )}
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  10-Card Operational Setup
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('attendance')}
+                  className={'px-3 py-1 rounded-lg font-bold text-[11px] transition cursor-pointer flex items-center gap-1.5 ' + (
+                    activeTab === 'attendance'
+                      ? 'bg-white text-[#4338CA] shadow-2xs'
+                      : 'text-[#64748B] hover:text-[#131B2E]'
+                  )}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  Tablet Live Console
+                </button>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleLoadDemoData}
+              title="Load complete DPS Motihari 4-vehicle operational dataset"
+              className="px-2.5 py-1.5 rounded-xl border border-[#CBD5E1] bg-white text-[#4338CA] hover:bg-[#FAF7F2] font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Load DPS Motihari Fleet</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* ─── PRIMARY CONDITIONAL SELECTOR: 5 STATUS OPTIONS ─────────────────── */}
       <div className="space-y-3 bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-2xs">
