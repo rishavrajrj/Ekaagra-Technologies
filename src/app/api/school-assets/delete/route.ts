@@ -82,9 +82,9 @@ export async function POST(req: NextRequest) {
         );
       }
       for (const p of candidatePaths) {
-        if (fs.existsSync(p)) {
+        if (fs.existsSync(/*turbopackIgnore: true*/ p)) {
           try {
-            fs.unlinkSync(p);
+            fs.unlinkSync(/*turbopackIgnore: true*/ p);
           } catch (e) {
             console.warn('[LOCAL DELETE WARNING] Could not unlink:', p, e);
           }

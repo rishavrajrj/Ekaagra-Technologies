@@ -152,11 +152,11 @@ export async function GET(req: NextRequest) {
       }
 
       for (const candidatePath of candidatePaths) {
-        if (fs.existsSync(candidatePath)) {
+        if (fs.existsSync(/*turbopackIgnore: true*/ candidatePath)) {
           try {
-            const stat = fs.statSync(candidatePath);
+            const stat = fs.statSync(/*turbopackIgnore: true*/ candidatePath);
             if (stat.isFile()) {
-              fileBuffer = fs.readFileSync(candidatePath);
+              fileBuffer = fs.readFileSync(/*turbopackIgnore: true*/ candidatePath);
               break;
             }
           } catch {
