@@ -319,12 +319,12 @@ export default function DirectProjectCreationModal({
   return (
     <ModalPortal isOpen={isOpen}>
       <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-        <div className="relative w-full max-w-2xl bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl overflow-hidden my-auto animate-fadeIn flex flex-col max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)]">
+        <div className="relative w-full max-w-2xl bg-[var(--admin-card)] border border-[var(--admin-border)] rounded-3xl shadow-2xl overflow-hidden my-auto animate-fadeIn flex flex-col max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100vh-3rem)]">
 
         {/* Header */}
-        <div className="px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-white/[0.02]">
+        <div className="px-5 sm:px-6 py-4 border-b border-[var(--admin-border)] flex items-center justify-between bg-[var(--admin-surface-secondary)]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
               <Plus className="w-4 h-4" />
             </div>
             <div>

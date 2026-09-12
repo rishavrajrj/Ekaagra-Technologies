@@ -29,6 +29,29 @@
   --color-text-navy: #131b2e;
   --color-text-body: #334155;
   --color-text-muted: #64748b;
+
+  /* Admin Operations HQ Dynamic Theme Tokens */
+  --color-admin-canvas: var(--admin-canvas);
+  --color-admin-sidebar: var(--admin-sidebar);
+  --color-admin-sidebar-border: var(--admin-sidebar-border);
+  --color-admin-main-bg: var(--admin-main-bg);
+  --color-admin-card: var(--admin-card);
+  --color-admin-card-border: var(--admin-card-border);
+  --color-admin-secondary: var(--admin-surface-secondary);
+  --color-admin-hover: var(--admin-surface-hover);
+  --color-admin-active: var(--admin-surface-active);
+  --color-admin-border: var(--admin-border);
+  --color-admin-border-subtle: var(--admin-border-subtle);
+  --color-admin-text-main: var(--admin-text-main);
+  --color-admin-text-sub: var(--admin-text-sub);
+  --color-admin-text-muted: var(--admin-text-muted);
+  --color-admin-header-bg: var(--admin-header-bg);
+  --color-admin-header-border: var(--admin-header-border);
+  --color-admin-accent: var(--admin-accent);
+  --color-admin-accent-hover: var(--admin-accent-hover);
+  --color-admin-accent-active: var(--admin-accent-active);
+  --color-admin-accent-soft: var(--admin-accent-soft);
+  --color-admin-accent-text: var(--admin-accent-text);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1248,229 +1271,287 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ADMIN PORTAL THEME TOKENS (EXECUTIVE LIGHT & COMMAND DARK)
+   EKAAGRA OPERATIONS HQ THEME SYSTEM (LIGHT WARM & COMMAND DARK)
    ═══════════════════════════════════════════════════════════════ */
-:root {
-  --admin-canvas: #F8FAFC;
-  --admin-surface: #FFFFFF;
-  --admin-surface-alt: #F1F5F9;
-  --admin-surface-hover: rgba(0, 0, 0, 0.03);
-  --admin-border: #E2E8F0;
-  --admin-border-subtle: #CBD5E1;
-  --admin-text-main: #0F172A;
-  --admin-text-sub: #64748B;
-  --admin-header-bg: rgba(255, 255, 255, 0.85);
-  --admin-header-border: rgba(226, 232, 240, 0.8);
+
+/* ── LIGHT THEME (Warm Professional Enterprise) ── */
+:root,
+[data-admin-theme="light"],
+html:not(.dark) [data-admin-theme] {
+  /* Surfaces */
+  --admin-canvas: #F7F5F0;
+  --admin-sidebar: #FFFDF8;
+  --admin-sidebar-border: #DDD9D0;
+  --admin-main-bg: #F7F5F0;
+  --admin-card: #FFFDF9;
+  --admin-card-border: #DDD9D0;
+  --admin-surface-secondary: #F1EEE7;
+  --admin-surface-hover: #EAE6DD;
+  --admin-surface-active: #E3DFD6;
+  --admin-border: #DDD9D0;
+  --admin-border-subtle: #EAE6DC;
+  
+  /* Typography */
+  --admin-text-main: #182033;
+  --admin-text-sub: #667085;
+  --admin-text-muted: #8D99AE;
+
+  /* Header */
+  --admin-header-bg: rgba(255, 253, 248, 0.92);
+  --admin-header-border: #DDD9D0;
+
+  /* Brand Accent: Ekaagra Indigo / Violet */
+  --admin-accent: #5146F5;
+  --admin-accent-hover: #4338CA;
+  --admin-accent-active: #3730A3;
+  --admin-accent-soft: rgba(81, 70, 245, 0.08);
+  --admin-accent-border: rgba(81, 70, 245, 0.25);
+  --admin-accent-text: #4338CA;
+
+  /* Semantic Status Tokens */
+  --admin-success-text: #065F46;
+  --admin-success-bg: #ECFDF5;
+  --admin-success-border: #A7F3D0;
+
+  --admin-warning-text: #92400E;
+  --admin-warning-bg: #FFFBEB;
+  --admin-warning-border: #FDE68A;
+
+  --admin-error-text: #991B1B;
+  --admin-error-bg: #FEF2F2;
+  --admin-error-border: #FECACA;
+
+  --admin-info-text: #1E40AF;
+  --admin-info-bg: #EFF6FF;
+  --admin-info-border: #BFDBFE;
 }
 
+/* ── DARK THEME (Premium Command Center) ── */
 [data-admin-theme="dark"],
-.dark[data-admin-theme="dark"] {
-  --admin-canvas: #0B1120;
-  --admin-surface: #111C30;
-  --admin-surface-alt: #16233B;
-  --admin-surface-hover: rgba(255, 255, 255, 0.05);
-  --admin-border: #1E293B;
-  --admin-border-subtle: #334155;
-  --admin-text-main: #F8FAFC;
-  --admin-text-sub: #94A3B8;
-  --admin-header-bg: rgba(11, 17, 32, 0.85);
-  --admin-header-border: rgba(30, 41, 59, 0.8);
+.dark[data-admin-theme="dark"],
+html.dark [data-admin-theme],
+html.dark {
+  /* Surfaces */
+  --admin-canvas: #080D1A;
+  --admin-sidebar: #0A1020;
+  --admin-sidebar-border: #1E293B;
+  --admin-main-bg: #0D1424;
+  --admin-card: #111A2D;
+  --admin-card-border: #263450;
+  --admin-surface-secondary: #172238;
+  --admin-surface-hover: #1C2940;
+  --admin-surface-active: #22314C;
+  --admin-border: #263450;
+  --admin-border-subtle: #1C2940;
+
+  /* Typography */
+  --admin-text-main: #F5F7FF;
+  --admin-text-sub: #9AA8C1;
+  --admin-text-muted: #71809A;
+
+  /* Header */
+  --admin-header-bg: rgba(10, 16, 32, 0.92);
+  --admin-header-border: #1E293B;
+
+  /* Brand Accent: Ekaagra Indigo / Violet */
+  --admin-accent: #5146F5;
+  --admin-accent-hover: #6359F7;
+  --admin-accent-active: #4F46E5;
+  --admin-accent-soft: rgba(81, 70, 245, 0.16);
+  --admin-accent-border: rgba(81, 70, 245, 0.35);
+  --admin-accent-text: #A5B4FC;
+
+  /* Semantic Status Tokens */
+  --admin-success-text: #34D399;
+  --admin-success-bg: rgba(16, 185, 129, 0.14);
+  --admin-success-border: rgba(16, 185, 129, 0.28);
+
+  --admin-warning-text: #FBBF24;
+  --admin-warning-bg: rgba(245, 158, 11, 0.14);
+  --admin-warning-border: rgba(245, 158, 11, 0.28);
+
+  --admin-error-text: #F87171;
+  --admin-error-bg: rgba(239, 68, 68, 0.14);
+  --admin-error-border: rgba(239, 68, 68, 0.28);
+
+  --admin-info-text: #60A5FA;
+  --admin-info-bg: rgba(59, 130, 246, 0.14);
+  --admin-info-border: rgba(59, 130, 246, 0.28);
 }
 
-/* Scoped dark surfaces for Admin Portal */
-[data-admin-theme="dark"] .bg-white {
-  background-color: var(--admin-surface) !important;
+/* ═══════════════════════════════════════════════════════════════
+   ADMIN PORTAL CONTEXTUAL TOKEN MAPPINGS (LIGHT & DARK)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Light Mode Surface & Typography Mapping ── */
+[data-admin-theme="light"] .bg-white {
+  background-color: var(--admin-card) !important;
+}
+
+[data-admin-theme="light"] .bg-slate-50,
+[data-admin-theme="light"] .bg-slate-100 {
+  background-color: var(--admin-surface-secondary) !important;
+}
+
+[data-admin-theme="light"] .border-slate-100,
+[data-admin-theme="light"] .border-slate-200,
+[data-admin-theme="light"] .border-slate-200\/80,
+[data-admin-theme="light"] .border-slate-200\/70 {
+  border-color: var(--admin-card-border) !important;
+}
+
+[data-admin-theme="light"] .text-slate-900,
+[data-admin-theme="light"] .text-slate-800 {
+  color: var(--admin-text-main) !important;
+}
+
+[data-admin-theme="light"] .text-slate-700,
+[data-admin-theme="light"] .text-slate-600,
+[data-admin-theme="light"] .text-slate-500 {
+  color: var(--admin-text-sub) !important;
+}
+
+[data-admin-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+[data-admin-theme="light"] select,
+[data-admin-theme="light"] textarea {
+  background-color: #FFFDF9 !important;
+  color: #182033 !important;
+  border-color: #DDD9D0 !important;
+}
+
+[data-admin-theme="light"] input::placeholder,
+[data-admin-theme="light"] textarea::placeholder {
+  color: #8D99AE !important;
+}
+
+[data-admin-theme="light"] tr:hover,
+[data-admin-theme="light"] .hover\:bg-slate-50:hover,
+[data-admin-theme="light"] .hover\:bg-slate-100:hover {
+  background-color: var(--admin-surface-hover) !important;
+}
+
+/* ── Dark Mode Surface & Typography Mapping ── */
+[data-admin-theme="dark"] .bg-white,
+[data-admin-theme="dark"] .bg-slate-900,
+[data-admin-theme="dark"] .bg-slate-950 {
+  background-color: var(--admin-card) !important;
 }
 
 [data-admin-theme="dark"] .bg-slate-50,
-[data-admin-theme="dark"] .bg-slate-100 {
-  background-color: var(--admin-surface-alt) !important;
-}
-
-[data-admin-theme="dark"] .bg-\[\#F8FAFC\],
-[data-admin-theme="dark"] .bg-\[\#FAF7F2\] {
-  background-color: var(--admin-canvas) !important;
+[data-admin-theme="dark"] .bg-slate-100,
+[data-admin-theme="dark"] .bg-slate-800 {
+  background-color: var(--admin-surface-secondary) !important;
 }
 
 [data-admin-theme="dark"] .border-slate-100,
 [data-admin-theme="dark"] .border-slate-200,
 [data-admin-theme="dark"] .border-slate-200\/80,
-[data-admin-theme="dark"] .border-slate-200\/70,
-[data-admin-theme="dark"] .border-\[\#E2E8F0\],
-[data-admin-theme="dark"] .border-\[\#CBD5E1\],
-[data-admin-theme="dark"] .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
-[data-admin-theme="dark"] .divide-\[\#E2E8F0\] > :not([hidden]) ~ :not([hidden]) {
-  border-color: var(--admin-border) !important;
+[data-admin-theme="dark"] .border-slate-800,
+[data-admin-theme="dark"] .border-slate-800\/80 {
+  border-color: var(--admin-card-border) !important;
 }
 
 [data-admin-theme="dark"] .text-slate-900,
-[data-admin-theme="dark"] .text-slate-800,
-[data-admin-theme="dark"] .text-\[\#0F172A\],
-[data-admin-theme="dark"] .text-\[\#131B2E\] {
+[data-admin-theme="dark"] .text-slate-800 {
   color: var(--admin-text-main) !important;
 }
 
 [data-admin-theme="dark"] .text-slate-700,
 [data-admin-theme="dark"] .text-slate-600,
 [data-admin-theme="dark"] .text-slate-500,
-[data-admin-theme="dark"] .text-\[\#64748B\] {
+[data-admin-theme="dark"] .text-slate-400 {
   color: var(--admin-text-sub) !important;
 }
 
-/* Form controls in Dark Mode */
 [data-admin-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
 [data-admin-theme="dark"] select,
 [data-admin-theme="dark"] textarea {
   background-color: #0F172A !important;
-  color: #F8FAFC !important;
-  border-color: #334155 !important;
+  color: #F5F7FF !important;
+  border-color: #263450 !important;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   ADMIN PORTAL HOVER STATES IN COMMAND DARK MODE
-   ═══════════════════════════════════════════════════════════════ */
-/* General rows, list cards, and table items hover */
+[data-admin-theme="dark"] input::placeholder,
+[data-admin-theme="dark"] textarea::placeholder {
+  color: #71809A !important;
+}
+
 [data-admin-theme="dark"] tr:hover,
 [data-admin-theme="dark"] .hover\:bg-slate-50:hover,
 [data-admin-theme="dark"] .hover\:bg-slate-100:hover,
-[data-admin-theme="dark"] .hover\:bg-slate-200:hover,
-[data-admin-theme="dark"] .hover\:bg-slate-50\/70:hover,
-[data-admin-theme="dark"] .hover\:bg-slate-50\/60:hover,
-[data-admin-theme="dark"] .hover\:bg-slate-50\/50:hover,
-[data-admin-theme="dark"] .hover\:bg-\[\#FAF7F2\]\/80:hover,
-[data-admin-theme="dark"] .hover\:bg-\[\#FAF7F2\]\/60:hover,
-[data-admin-theme="dark"] .hover\:bg-\[\#FAF7F2\]:hover,
-[data-admin-theme="dark"] .hover\:bg-\[\#F8FAFC\]:hover,
-[data-admin-theme="dark"] .hover\:bg-white:hover,
-[data-admin-theme="dark"] [class*="hover:bg-slate-50"]:hover,
-[data-admin-theme="dark"] [class*="hover:bg-slate-100"]:hover,
-[data-admin-theme="dark"] [class*="hover:bg-slate-200"]:hover,
-[data-admin-theme="dark"] [class*="hover:bg-[#FAF7F2]"]:hover,
-[data-admin-theme="dark"] [class*="hover:bg-[#F8FAFC]"]:hover,
-[data-admin-theme="dark"] [class*="hover:bg-white"]:hover {
+[data-admin-theme="dark"] .hover\:bg-slate-800:hover {
   background-color: var(--admin-surface-hover) !important;
 }
 
-/* Specific button & accent card hover states in Dark Mode */
-[data-admin-theme="dark"] .hover\:bg-indigo-50:hover,
-[data-admin-theme="dark"] .hover\:bg-indigo-50\/60:hover,
-[data-admin-theme="dark"] .hover\:bg-indigo-50\/50:hover,
-[data-admin-theme="dark"] [class*="hover:bg-indigo-50"]:hover {
-  background-color: rgba(99, 102, 241, 0.14) !important;
-  border-color: rgba(99, 102, 241, 0.35) !important;
+/* ═══════════════════════════════════════════════════════════════
+   STANDARDIZED SEMANTIC STATUS BADGES & CONTROLS
+   ═══════════════════════════════════════════════════════════════ */
+.admin-badge-success {
+  color: var(--admin-success-text) !important;
+  background-color: var(--admin-success-bg) !important;
+  border: 1px solid var(--admin-success-border) !important;
 }
 
-[data-admin-theme="dark"] .hover\:bg-indigo-100:hover,
-[data-admin-theme="dark"] [class*="hover:bg-indigo-100"]:hover {
-  background-color: rgba(99, 102, 241, 0.22) !important;
-  border-color: rgba(99, 102, 241, 0.45) !important;
-  color: #A5B4FC !important;
+.admin-badge-warning {
+  color: var(--admin-warning-text) !important;
+  background-color: var(--admin-warning-bg) !important;
+  border: 1px solid var(--admin-warning-border) !important;
 }
 
-[data-admin-theme="dark"] .hover\:bg-emerald-50:hover,
-[data-admin-theme="dark"] .hover\:bg-emerald-50\/60:hover,
-[data-admin-theme="dark"] [class*="hover:bg-emerald-50"]:hover {
-  background-color: rgba(16, 185, 129, 0.14) !important;
-  border-color: rgba(16, 185, 129, 0.35) !important;
+.admin-badge-error {
+  color: var(--admin-error-text) !important;
+  background-color: var(--admin-error-bg) !important;
+  border: 1px solid var(--admin-error-border) !important;
 }
 
-[data-admin-theme="dark"] .hover\:bg-emerald-100:hover,
-[data-admin-theme="dark"] [class*="hover:bg-emerald-100"]:hover {
-  background-color: rgba(16, 185, 129, 0.22) !important;
-  border-color: rgba(16, 185, 129, 0.45) !important;
-  color: #6EE7B7 !important;
+.admin-badge-info {
+  color: var(--admin-info-text) !important;
+  background-color: var(--admin-info-bg) !important;
+  border: 1px solid var(--admin-info-border) !important;
 }
 
-[data-admin-theme="dark"] .hover\:bg-blue-50:hover,
-[data-admin-theme="dark"] .hover\:bg-blue-50\/60:hover,
-[data-admin-theme="dark"] [class*="hover:bg-blue-50"]:hover {
-  background-color: rgba(59, 130, 246, 0.14) !important;
-  border-color: rgba(59, 130, 246, 0.35) !important;
+.admin-badge-neutral {
+  color: var(--admin-text-sub) !important;
+  background-color: var(--admin-surface-secondary) !important;
+  border: 1px solid var(--admin-border) !important;
 }
 
-[data-admin-theme="dark"] .hover\:bg-violet-50:hover,
-[data-admin-theme="dark"] .hover\:bg-violet-50\/60:hover,
-[data-admin-theme="dark"] .hover\:bg-violet-50\/50:hover,
-[data-admin-theme="dark"] [class*="hover:bg-violet-50"]:hover {
-  background-color: rgba(168, 85, 247, 0.14) !important;
-  border-color: rgba(168, 85, 247, 0.35) !important;
+.admin-badge-accent {
+  color: var(--admin-accent-text) !important;
+  background-color: var(--admin-accent-soft) !important;
+  border: 1px solid var(--admin-accent-border) !important;
 }
 
-[data-admin-theme="dark"] .hover\:bg-amber-50:hover,
-[data-admin-theme="dark"] .hover\:bg-amber-50\/60:hover,
-[data-admin-theme="dark"] [class*="hover:bg-amber-50"]:hover {
-  background-color: rgba(245, 158, 11, 0.14) !important;
-  border-color: rgba(245, 158, 11, 0.35) !important;
+/* Standardized Buttons */
+.admin-btn-primary {
+  background-color: var(--admin-accent);
+  color: #FFFFFF;
+  border: 1px solid transparent;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+.admin-btn-primary:hover {
+  background-color: var(--admin-accent-hover);
+}
+.admin-btn-primary:active {
+  background-color: var(--admin-accent-active);
 }
 
-[data-admin-theme="dark"] .hover\:bg-rose-50:hover,
-[data-admin-theme="dark"] [class*="hover:bg-rose-50"]:hover {
-  background-color: rgba(244, 63, 94, 0.14) !important;
-  border-color: rgba(244, 63, 94, 0.35) !important;
+.admin-btn-secondary {
+  background-color: var(--admin-surface-secondary);
+  color: var(--admin-text-main);
+  border: 1px solid var(--admin-border);
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.admin-btn-secondary:hover {
+  background-color: var(--admin-surface-hover);
 }
 
-/* Text hover in Dark Mode (prevent illegible dark navy text on dark surfaces) */
-[data-admin-theme="dark"] .hover\:text-\[\#131B2E\]:hover,
-[data-admin-theme="dark"] .hover\:text-slate-900:hover,
-[data-admin-theme="dark"] [class*="hover:text-[#131B2E]"]:hover,
-[data-admin-theme="dark"] [class*="hover:text-slate-900"]:hover {
-  color: #FFFFFF !important;
-}
-
-[data-admin-theme="dark"] .hover\:text-slate-700:hover,
-[data-admin-theme="dark"] .hover\:text-slate-600:hover,
-[data-admin-theme="dark"] [class*="hover:text-slate-700"]:hover,
-[data-admin-theme="dark"] [class*="hover:text-slate-600"]:hover {
-  color: #E2E8F0 !important;
-}
-
-[data-admin-theme="dark"] .group:hover .group-hover\:text-\[\#4338CA\],
-[data-admin-theme="dark"] .hover\:text-\[\#4338CA\]:hover,
-[data-admin-theme="dark"] [class*="hover:text-[#4338CA]"]:hover {
-  color: #818CF8 !important;
-}
-
-[data-admin-theme="dark"] .hover\:text-indigo-700:hover,
-[data-admin-theme="dark"] [class*="hover:text-indigo-700"]:hover {
-  color: #A5B4FC !important;
-}
-
-/* Subtle Command Center glowing badges in Dark Mode */
-[data-admin-theme="dark"] .bg-emerald-50 {
-  background-color: rgba(16, 185, 129, 0.12) !important;
-  border-color: rgba(16, 185, 129, 0.25) !important;
-  color: #34D399 !important;
-}
-[data-admin-theme="dark"] .bg-amber-50 {
-  background-color: rgba(245, 158, 11, 0.12) !important;
-  border-color: rgba(245, 158, 11, 0.25) !important;
-  color: #FBBF24 !important;
-}
-[data-admin-theme="dark"] .bg-blue-50 {
-  background-color: rgba(59, 130, 246, 0.12) !important;
-  border-color: rgba(59, 130, 246, 0.25) !important;
-  color: #60A5FA !important;
-}
-[data-admin-theme="dark"] .bg-rose-50,
-[data-admin-theme="dark"] .bg-red-50 {
-  background-color: rgba(244, 63, 94, 0.12) !important;
-  border-color: rgba(244, 63, 94, 0.25) !important;
-  color: #FB7185 !important;
-}
-[data-admin-theme="dark"] .bg-purple-50 {
-  background-color: rgba(168, 85, 247, 0.12) !important;
-  border-color: rgba(168, 85, 247, 0.25) !important;
-  color: #C084FC !important;
-}
-[data-admin-theme="dark"] .bg-cyan-50 {
-  background-color: rgba(6, 182, 212, 0.12) !important;
-  border-color: rgba(6, 182, 212, 0.25) !important;
-  color: #22D3EE !important;
-}
-[data-admin-theme="dark"] .bg-indigo-50 {
-  background-color: rgba(99, 102, 241, 0.12) !important;
-  border-color: rgba(99, 102, 241, 0.25) !important;
-  color: #818CF8 !important;
+/* Focus Indicator Standards */
+[data-admin-theme] :focus-visible {
+  outline: 2px solid var(--admin-accent) !important;
+  outline-offset: 2px !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -188,3 +188,40 @@ export function buildSchoolSubmissionWhatsAppUrl(params: SchoolSubmissionWhatsAp
   return getWhatsAppChatUrl(lines.join('\n'));
 }
 
+export interface SchoolChangeRequestWhatsAppParams {
+  clientPhone?: string;
+  clientName?: string;
+  schoolName?: string;
+  fieldOrSection: string;
+  reviewerMessage: string;
+  suggestedValue?: string;
+  onboardingUrl: string;
+}
+
+/**
+ * Builds a direct WhatsApp chat URL to notify school client of a change request.
+ */
+export function buildSchoolChangeRequestWhatsAppUrl(params: SchoolChangeRequestWhatsAppParams): string {
+  const lines: string[] = [
+    `Hello ${params.clientName ? params.clientName : 'there'},`,
+    '',
+    `Ekaagra Technologies has reviewed the onboarding submission for *${params.schoolName || 'your school'}*.`,
+    '',
+    `⚠️ *Adjustment Requested:* ${params.fieldOrSection}`,
+    `*Reviewer Note:* ${params.reviewerMessage}`,
+  ];
+
+  if (params.suggestedValue) {
+    lines.push(`*Suggested Value:* ${params.suggestedValue}`);
+  }
+
+  lines.push(
+    '',
+    'Please review and submit your correction through your secure onboarding portal:',
+    params.onboardingUrl,
+    '',
+    'Thank you!'
+  );
+
+  return getWhatsAppChatUrl(lines.join('\n'), params.clientPhone);
+}

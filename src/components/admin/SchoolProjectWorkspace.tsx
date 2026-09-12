@@ -99,7 +99,11 @@ export default function SchoolProjectWorkspace({
   const [activeTab, setActiveTab] = useState<'overview' | 'intake' | 'media' | 'reviews' | 'provisioning'>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [actionMessage, setActionMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [actionMessage, setActionMessage] = useState<{
+    text: string;
+    type: 'success' | 'error';
+    whatsappUrl?: string;
+  } | null>(null);
 
   // Section Filter for Intake tab
   const [intakeSectionFilter, setIntakeSectionFilter] = useState<string>('all');
@@ -205,7 +209,14 @@ export default function SchoolProjectWorkspace({
         };
         return { ...prev, status: 'changes_requested', metadata: { ...meta, fieldReviews } };
       });
-      setActionMessage({ text: 'Change request submitted and sent to school portal.', type: 'success' });
+      const notifDetail = res.emailSent
+        ? ` (Email notification sent to ${res.contactEmail || 'customer'})`
+        : '';
+      setActionMessage({
+        text: `Change request submitted and sent to school portal${notifDetail}.`,
+        type: 'success',
+        whatsappUrl: res.whatsappUrl || undefined,
+      });
       setFieldCRModal(null);
       setFieldCRComment('');
       setFieldCRSuggested('');
@@ -265,7 +276,14 @@ export default function SchoolProjectWorkspace({
         };
         return { ...prev, status: 'changes_requested', media_status: 'changes_requested', metadata: { ...meta, mediaReviews } };
       });
-      setActionMessage({ text: 'Media replacement request submitted to school portal.', type: 'success' });
+      const notifDetail = res.emailSent
+        ? ` (Email notification sent to ${res.contactEmail || 'customer'})`
+        : '';
+      setActionMessage({
+        text: `Media replacement request submitted to school portal${notifDetail}.`,
+        type: 'success',
+        whatsappUrl: res.whatsappUrl || undefined,
+      });
       setMediaCRModal(null);
       setMediaCRComment('');
     } else {
@@ -412,7 +430,7 @@ export default function SchoolProjectWorkspace({
               <School className="w-3 h-3" />
               <span>School Project Workspace</span>
             </span>
-            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-[var(--admin-surface-secondary)] text-[var(--admin-text-sub)] border border-[var(--admin-border)]">
               {project.project_number}
             </span>
           </div>
@@ -420,14 +438,14 @@ export default function SchoolProjectWorkspace({
 
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-black text-[var(--admin-text-main)] tracking-tight">
               {project.school_name}
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
+            <p className="text-xs text-[var(--admin-text-sub)] mt-1 flex items-center gap-2 flex-wrap">
               {project.city && <span>{project.city}, {project.state || ''} &bull;</span>}
               <span>Contact: {project.primary_contact_name} ({project.primary_contact_email})</span>
               <span>&bull;</span>
-              <span className="font-mono text-violet-600 dark:text-violet-400 font-bold uppercase">{project.product_id}</span>
+              <span className="font-mono text-indigo-600 dark:text-indigo-400 font-bold uppercase">{project.product_id}</span>
             </p>
           </div>
 
@@ -435,7 +453,7 @@ export default function SchoolProjectWorkspace({
             <button
               type="button"
               onClick={copyOnboardingLink}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 transition-colors shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[var(--admin-card)] text-[var(--admin-text-main)] hover:bg-[var(--admin-surface-hover)] text-xs font-bold rounded-xl border border-[var(--admin-card-border)] transition-colors shadow-2xs cursor-pointer"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedLink ? 'Link Copied' : 'Copy Onboarding Link'}</span>
@@ -445,7 +463,7 @@ export default function SchoolProjectWorkspace({
               href={onboardingUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-xl border border-slate-300 dark:border-slate-700 shadow-xs transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[var(--admin-surface-secondary)] hover:bg-[var(--admin-surface-hover)] text-[var(--admin-text-main)] text-xs font-bold rounded-xl border border-[var(--admin-border)] shadow-2xs transition-colors"
             >
               <span>Open Onboarding</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -500,38 +518,57 @@ export default function SchoolProjectWorkspace({
       {/* ─── ACTION NOTIFICATION ────────────────────────────────────────────── */}
       {actionMessage && (
         <div
-          className={`p-4 rounded-2xl text-xs font-bold flex items-center justify-between border ${
+          className={`p-4 rounded-2xl text-xs font-bold flex flex-wrap items-center justify-between gap-3 border ${
             actionMessage.type === 'success'
               ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800'
               : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
           }`}
         >
-          <span>{actionMessage.text}</span>
-          <button type="button" onClick={() => setActionMessage(null)} className="text-slate-400 hover:text-slate-600">
-            &times;
-          </button>
+          <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+            <span>{actionMessage.text}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {actionMessage.whatsappUrl && (
+              <a
+                href={actionMessage.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-colors cursor-pointer"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>Send WhatsApp Alert</span>
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setActionMessage(null)}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 text-sm leading-none"
+            >
+              &times;
+            </button>
+          </div>
         </div>
       )}
 
       {/* ─── 5 OPERATIONAL STATUS CARDS ──────────────────────────────────────── */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Card 1: Submission */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
+        <div className="bg-[var(--admin-card)] p-4 rounded-2xl border border-[var(--admin-card-border)] shadow-2xs space-y-1.5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Submission</span>
-            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <span className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-wider">Submission</span>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-[var(--admin-surface-secondary)] text-[var(--admin-text-sub)] border border-[var(--admin-border)]">
               v{currentSubmission?.version_number ?? 1}
             </span>
           </div>
           <div className="flex items-baseline justify-between">
-            <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
+            <span className="text-sm font-black text-[var(--admin-text-main)] uppercase tracking-tight">
               {reviewEval.submissionStatus}
             </span>
-            <span className="font-mono text-xs font-extrabold text-violet-600 dark:text-violet-400">
+            <span className="font-mono text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
               {reviewEval.submissionCompleteness}%
             </span>
           </div>
-          <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-[var(--admin-surface-secondary)] rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${
                 reviewEval.submissionCompleteness >= 100 ? 'bg-emerald-500' : 'bg-amber-500'
@@ -542,62 +579,62 @@ export default function SchoolProjectWorkspace({
         </div>
 
         {/* Card 2: Content Review */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Content Review</span>
+        <div className="bg-[var(--admin-card)] p-4 rounded-2xl border border-[var(--admin-card-border)] shadow-2xs space-y-1.5">
+          <span className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-wider block">Content Review</span>
           <div className="flex items-center justify-between">
             <span
               className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${
                 reviewEval.contentReviewStatus === 'approved'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'
+                  ? 'admin-badge-success'
                   : reviewEval.contentReviewStatus === 'changes_requested'
-                  ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300'
-                  : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300'
+                  ? 'admin-badge-error'
+                  : 'admin-badge-warning'
               }`}
             >
               {reviewEval.contentReviewStatus.replace(/_/g, ' ')}
             </span>
-            <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">
+            <span className="text-xs font-mono font-bold text-[var(--admin-text-sub)]">
               {reviewEval.overallReviewPercentage}%
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 truncate">
+          <p className="text-[11px] text-[var(--admin-text-muted)] truncate">
             {reviewEval.actionRequiredItems.filter((i) => i.targetTab === 'intake').length} fields need action
           </p>
         </div>
 
         {/* Card 3: Media Review */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Media Assets</span>
+        <div className="bg-[var(--admin-card)] p-4 rounded-2xl border border-[var(--admin-card-border)] shadow-2xs space-y-1.5">
+          <span className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-wider block">Media Assets</span>
           <div className="flex items-center justify-between">
             <span
               className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border ${
                 reviewEval.mediaReviewStatus === 'approved'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'
+                  ? 'admin-badge-success'
                   : reviewEval.mediaReviewStatus === 'changes_requested'
-                  ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300'
-                  : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300'
+                  ? 'admin-badge-error'
+                  : 'admin-badge-warning'
               }`}
             >
               {reviewEval.mediaReviewStatus.replace(/_/g, ' ')}
             </span>
-            <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400">
+            <span className="text-xs font-mono font-bold text-[var(--admin-text-sub)]">
               {reviewEval.aggregatedAssets.filter((a) => project.metadata?.mediaReviews?.[a.id]?.status === 'approved').length}/{reviewEval.aggregatedAssets.length}
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 truncate">
+          <p className="text-[11px] text-[var(--admin-text-muted)] truncate">
             {reviewEval.aggregatedAssets.filter((a) => project.metadata?.mediaReviews?.[a.id]?.status === 'changes_requested').length} replacements requested
           </p>
         </div>
 
         {/* Card 4: Website Readiness */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Website Readiness</span>
+        <div className="bg-[var(--admin-card)] p-4 rounded-2xl border border-[var(--admin-card-border)] shadow-2xs space-y-1.5">
+          <span className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-wider block">Website Readiness</span>
           <div className="flex items-center gap-1.5">
             <span
               className={`text-[11px] font-black px-2.5 py-0.5 rounded uppercase tracking-wider flex items-center gap-1 border ${
                 reviewEval.websiteReadiness === 'READY'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'
-                  : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300'
+                  ? 'admin-badge-success'
+                  : 'admin-badge-error'
               }`}
             >
               {reviewEval.websiteReadiness === 'READY' ? (
@@ -608,22 +645,22 @@ export default function SchoolProjectWorkspace({
               <span>{reviewEval.websiteReadiness}</span>
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 truncate" title={reviewEval.websiteReadinessReason}>
+          <p className="text-[11px] text-[var(--admin-text-muted)] truncate" title={reviewEval.websiteReadinessReason}>
             {reviewEval.blockers.length === 0 ? 'Verified for Build' : `${reviewEval.blockers.length} blockers active`}
           </p>
         </div>
 
         {/* Card 5: Provisioning State */}
-        <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-1.5">
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Provisioning</span>
+        <div className="bg-[var(--admin-card)] p-4 rounded-2xl border border-[var(--admin-card-border)] shadow-2xs space-y-1.5">
+          <span className="text-[10px] font-bold text-[var(--admin-text-muted)] uppercase tracking-wider block">Provisioning</span>
           <div className="flex items-center gap-1.5">
             <span
               className={`text-[11px] font-black px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1 border ${
                 reviewEval.provisioningStatus === 'HANDED_OFF'
-                  ? 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/50 dark:text-cyan-300'
+                  ? 'admin-badge-info'
                   : reviewEval.provisioningStatus === 'READY'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'
-                  : 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400'
+                  ? 'admin-badge-success'
+                  : 'admin-badge-neutral'
               }`}
             >
               {reviewEval.provisioningStatus === 'HANDED_OFF' ? (
@@ -636,7 +673,7 @@ export default function SchoolProjectWorkspace({
               <span>{reviewEval.provisioningStatus.replace(/_/g, ' ')}</span>
             </span>
           </div>
-          <p className="text-[11px] text-slate-500 truncate">
+          <p className="text-[11px] text-[var(--admin-text-muted)] truncate">
             {reviewEval.provisioningStatus === 'HANDED_OFF'
               ? 'Tenant compiled'
               : reviewEval.provisioningStatus === 'READY'
@@ -647,14 +684,14 @@ export default function SchoolProjectWorkspace({
       </section>
 
       {/* ─── TABS NAVIGATION ────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-[var(--admin-border)] pb-2 overflow-x-auto">
         <button
           type="button"
           onClick={() => setActiveTab('overview')}
           className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'overview'
-              ? 'bg-violet-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--admin-text-sub)] hover:text-[var(--admin-text-main)] hover:bg-[var(--admin-surface-secondary)]'
           }`}
         >
           Overview &amp; Profile
@@ -665,8 +702,8 @@ export default function SchoolProjectWorkspace({
           onClick={() => setActiveTab('intake')}
           className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
             activeTab === 'intake'
-              ? 'bg-violet-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--admin-text-sub)] hover:text-[var(--admin-text-main)] hover:bg-[var(--admin-surface-secondary)]'
           }`}
         >
           <span>Intake Data</span>
@@ -682,8 +719,8 @@ export default function SchoolProjectWorkspace({
           onClick={() => setActiveTab('media')}
           className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
             activeTab === 'media'
-              ? 'bg-violet-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--admin-text-sub)] hover:text-[var(--admin-text-main)] hover:bg-[var(--admin-surface-secondary)]'
           }`}
         >
           <span>Media &amp; Assets</span>
@@ -699,8 +736,8 @@ export default function SchoolProjectWorkspace({
           onClick={() => setActiveTab('reviews')}
           className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
             activeTab === 'reviews'
-              ? 'bg-violet-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--admin-text-sub)] hover:text-[var(--admin-text-main)] hover:bg-[var(--admin-surface-secondary)]'
           }`}
         >
           <span>Change Requests</span>
@@ -716,13 +753,13 @@ export default function SchoolProjectWorkspace({
           onClick={() => setActiveTab('provisioning')}
           className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
             activeTab === 'provisioning'
-              ? 'bg-violet-600 text-white shadow-xs'
-              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              ? 'bg-indigo-600 text-white shadow-xs'
+              : 'text-[var(--admin-text-sub)] hover:text-[var(--admin-text-main)] hover:bg-[var(--admin-surface-secondary)]'
           }`}
         >
           <span>Provisioning Handoff</span>
           {reviewEval.provisioningStatus === 'LOCKED' ? (
-            <Lock className="w-3 h-3 text-slate-400" />
+            <Lock className="w-3 h-3 text-[var(--admin-text-muted)]" />
           ) : (
             <Unlock className="w-3 h-3 text-emerald-500" />
           )}
@@ -1128,12 +1165,12 @@ export default function SchoolProjectWorkspace({
                       className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden"
                     >
                       {/* Section Header */}
-                      <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between flex-wrap gap-2">
+                      <div className="p-4 sm:p-5 bg-[var(--admin-surface-secondary)] border-b border-[var(--admin-border)] flex items-center justify-between flex-wrap gap-2">
                         <div>
-                          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                          <h3 className="text-sm font-bold text-[var(--admin-text-main)]">
                             {secSummary?.sectionLabel || secKey}
                           </h3>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-[var(--admin-text-sub)]">
                             {secSummary?.verifiedCount || 0} of {fields.length} verified
                           </p>
                         </div>
@@ -1141,10 +1178,10 @@ export default function SchoolProjectWorkspace({
                         <span
                           className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border ${
                             secSummary?.status === 'approved'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300'
+                              ? 'admin-badge-success'
                               : secSummary?.status === 'changes_requested'
-                              ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300'
-                              : 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300'
+                              ? 'admin-badge-error'
+                              : 'admin-badge-warning'
                           }`}
                         >
                           {secSummary?.status.replace(/_/g, ' ') || 'in review'}
@@ -1152,7 +1189,7 @@ export default function SchoolProjectWorkspace({
                       </div>
 
                       {/* Fields Table / Grid */}
-                      <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                      <div className="divide-y divide-[var(--admin-border-subtle)]">
                         {fields.map((field) => {
                           const rawVal = field.getter(intakePayload);
                           const displayVal = formatFieldValue(rawVal);
@@ -1173,38 +1210,38 @@ export default function SchoolProjectWorkspace({
                           return (
                             <div
                               key={field.key}
-                              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-colors"
+                              className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:bg-[var(--admin-surface-hover)] transition-colors"
                             >
-                              <div className="space-y-1 max-w-xl">
+                              <div className="space-y-1.5 max-w-xl">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-slate-900 dark:text-white">
+                                  <span className="font-bold text-[var(--admin-text-main)]">
                                     {field.label}
                                   </span>
                                   {field.required && (
                                     <span className="text-[10px] text-rose-500 font-bold">*Required</span>
                                   )}
                                   <span
-                                    className={`text-[9px] font-bold px-2 py-0.2 rounded-full uppercase tracking-wider ${
+                                    className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider border ${
                                       effectiveStatus === 'verified' || effectiveStatus === 'approved'
-                                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                                        ? 'admin-badge-success'
                                         : effectiveStatus === 'changes_requested'
-                                        ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                                        : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                                        ? 'admin-badge-error'
+                                        : 'admin-badge-warning'
                                     }`}
                                   >
                                     {effectiveStatus.replace(/_/g, ' ')}
                                   </span>
                                 </div>
-                                <div className="text-slate-700 dark:text-slate-300 font-mono text-xs break-words">
+                                <div className="text-[var(--admin-text-main)] font-mono text-xs break-words bg-[var(--admin-surface-secondary)]/50 p-2 rounded-lg border border-[var(--admin-border-subtle)]">
                                   {displayVal}
                                 </div>
 
                                 {activeCR && (
-                                  <div className="mt-1 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-[11px] text-rose-800 dark:text-rose-300">
+                                  <div className="mt-1 p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/25 text-[11px] text-rose-700 dark:text-rose-300">
                                     <span className="font-bold">Active Change Request: </span>
                                     {activeCR.request_comment}
                                     {activeCR.school_response && (
-                                      <div className="mt-1 font-semibold text-slate-700 dark:text-slate-300">
+                                      <div className="mt-1 font-semibold text-[var(--admin-text-main)]">
                                         School Response: {activeCR.school_response}
                                       </div>
                                     )}
@@ -1218,13 +1255,13 @@ export default function SchoolProjectWorkspace({
                                     type="button"
                                     onClick={() => handleApproveField(field.key, field.sectionKey)}
                                     disabled={isActionLoading}
-                                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 shadow-2xs transition-colors cursor-pointer"
                                   >
                                     <Check className="w-3.5 h-3.5" />
                                     <span>Approve</span>
                                   </button>
                                 ) : (
-                                  <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
+                                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold admin-badge-success">
                                     <CheckCircle2 className="w-3.5 h-3.5" />
                                     <span>Verified</span>
                                   </span>
@@ -1242,7 +1279,7 @@ export default function SchoolProjectWorkspace({
                                     setFieldCRComment('');
                                     setFieldCRSuggested('');
                                   }}
-                                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+                                  className="px-3 py-1.5 rounded-lg bg-[var(--admin-surface-secondary)] hover:bg-[var(--admin-surface-hover)] text-[var(--admin-text-main)] border border-[var(--admin-border)] font-bold text-xs transition-colors cursor-pointer"
                                 >
                                   Request Change
                                 </button>

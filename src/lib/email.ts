@@ -1541,3 +1541,89 @@ export async function sendClientPaymentMilestoneEmail(params: {
     type: 'client_contact_confirmation',
   });
 }
+
+export interface SchoolChangeRequestEmailParams {
+  clientName: string;
+  clientEmail: string;
+  schoolName: string;
+  projectNumber?: string;
+  sectionKey?: string;
+  fieldLabel: string;
+  reviewerMessage: string;
+  suggestedValue?: string;
+  onboardingUrl: string;
+}
+
+/**
+ * Dispatches an automated email notification to the school client when a reviewer requests adjustments.
+ */
+export async function sendSchoolChangeRequestEmail(
+  params: SchoolChangeRequestEmailParams
+): Promise<EmailDispatchResult> {
+  const appBaseUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.ekaagratechnologies.site');
+
+  const fullOnboardingUrl = params.onboardingUrl.startsWith('http')
+    ? params.onboardingUrl
+    : `${appBaseUrl.replace(/\/$/, '')}${params.onboardingUrl.startsWith('/') ? '' : '/'}${params.onboardingUrl}`;
+
+  const subject = `Action Required: Onboarding Adjustments for ${params.schoolName} — Ekaagra Technologies`;
+
+  const html = `
+<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 24px 12px; background: #FAF7F2; color: #1E293B;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 32px 28px; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+    <div style="margin-bottom: 24px; border-bottom: 1px solid #F1F5F9; padding-bottom: 16px;">
+      <h2 style="color: #4338CA; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">EKAAGRA TECHNOLOGIES</h2>
+    </div>
+    <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
+      <span style="font-weight: 700; color: #92400E; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Action Required &bull; Intake Review</span>
+    </div>
+    <p style="font-size: 15px; line-height: 1.5; margin: 0 0 12px 0;">Dear <strong>${params.clientName || 'School Administrator'}</strong>,</p>
+    <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
+      Our verification team has completed a preliminary review of the onboarding data for <strong>${params.schoolName}</strong>. 
+      To ensure the accuracy and quality of your digital platform, we have requested an update for the following item:
+    </p>
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748B; margin-bottom: 4px;">
+        ${params.sectionKey ? `${params.sectionKey} &bull; ` : ''}Field
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: #0F172A; margin-bottom: 12px;">
+        ${params.fieldLabel}
+      </div>
+      <div style="background: white; border: 1px solid #FED7AA; border-left: 4px solid #F97316; border-radius: 6px; padding: 12px 14px; margin-bottom: 12px;">
+        <div style="font-size: 11px; font-weight: 700; color: #C2410C; margin-bottom: 4px;">REVIEWER NOTE</div>
+        <div style="font-size: 13px; color: #7C2D12; line-height: 1.5;">${params.reviewerMessage}</div>
+      </div>
+      ${params.suggestedValue ? `
+      <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px; padding: 10px 14px;">
+        <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; margin-bottom: 2px;">SUGGESTION</div>
+        <div style="font-size: 13px; color: #1E40AF; font-family: monospace;">${params.suggestedValue}</div>
+      </div>` : ''}
+    </div>
+    <div style="text-align: center; margin: 28px 0 20px 0;">
+      <a href="${fullOnboardingUrl}" style="display: inline-block; background: #4338CA; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; box-shadow: 0 2px 6px rgba(67, 56, 202, 0.3);">
+        Review &amp; Update in Onboarding Portal &rarr;
+      </a>
+    </div>
+    <p style="font-size: 12px; color: #64748B; text-align: center; margin: 0 0 24px 0;">
+      Or copy and paste this link in your browser:<br/>
+      <a href="${fullOnboardingUrl}" style="color: #4338CA; word-break: break-all;">${fullOnboardingUrl}</a>
+    </p>
+    <div style="border-top: 1px solid #E2E8F0; padding-top: 16px; font-size: 12px; color: #94A3B8;">
+      Ekaagra Technologies Support Team &bull; <a href="mailto:${getAdminEmail()}" style="color: #64748B;">${getAdminEmail()}</a>
+    </div>
+  </div>
+</body></html>`;
+
+  const text = `Dear ${params.clientName || 'School Administrator'},\n\nOur verification team has requested an update for ${params.schoolName}:\n\nField: ${params.fieldLabel}\nReviewer Note: ${params.reviewerMessage}\n${params.suggestedValue ? `Suggested Value: ${params.suggestedValue}\n` : ''}\nPlease review and provide the corrected value via your onboarding portal:\n${fullOnboardingUrl}\n\nEkaagra Technologies Support`;
+
+  return sendEmail({
+    to: params.clientEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}

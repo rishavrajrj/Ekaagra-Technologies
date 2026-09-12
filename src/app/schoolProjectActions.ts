@@ -42,6 +42,8 @@ import {
   type ContentRecommendationRequest,
   type ContentRecommendationResult,
 } from '@/lib/contentRecommendationService';
+import { sendSchoolChangeRequestEmail } from '@/lib/email';
+import { buildSchoolChangeRequestWhatsAppUrl } from '@/lib/whatsapp';
 
 export async function startSchoolOnboardingAction(leadId: string) {
   const isAdmin = await verifyAdminSession();
@@ -721,6 +723,85 @@ export async function updateMediaAssetReviewStatusAction(
   }
 }
 
+async function dispatchChangeRequestNotifications(params: {
+  schoolsDb: any;
+  projectId: string;
+  fieldOrAssetTitle: string;
+  sectionKey?: string;
+  reviewerMessage: string;
+  suggestedValue?: string;
+}) {
+  try {
+    const { data: project } = await params.schoolsDb
+      .from('school_projects')
+      .select('project_number, school_name, primary_contact_name, primary_contact_email, primary_contact_phone')
+      .eq('id', params.projectId)
+      .single();
+
+    if (!project) return { emailSent: false, whatsappUrl: '' };
+
+    const { data: invitation } = await params.schoolsDb
+      .from('school_onboarding_invitations')
+      .select('invitation_code')
+      .eq('school_project_id', params.projectId)
+      .eq('is_revoked', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const onboardingPath = invitation?.invitation_code
+      ? `/school-onboarding/${invitation.invitation_code}`
+      : `/school-onboarding?project=${project.project_number}`;
+
+    const appBaseUrl =
+      process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.ekaagratechnologies.site');
+    const fullOnboardingUrl = `${appBaseUrl.replace(/\/$/, '')}${onboardingPath}`;
+
+    let emailSent = false;
+    let emailError: string | undefined;
+
+    if (project.primary_contact_email && project.primary_contact_email.trim() !== '') {
+      const emailRes = await sendSchoolChangeRequestEmail({
+        clientName: project.primary_contact_name || 'School Administrator',
+        clientEmail: project.primary_contact_email.trim(),
+        schoolName: project.school_name,
+        projectNumber: project.project_number,
+        sectionKey: params.sectionKey,
+        fieldLabel: params.fieldOrAssetTitle,
+        reviewerMessage: params.reviewerMessage,
+        suggestedValue: params.suggestedValue,
+        onboardingUrl: fullOnboardingUrl,
+      });
+      emailSent = emailRes.success;
+      if (!emailRes.success) {
+        emailError = emailRes.error;
+      }
+    }
+
+    const whatsappUrl = buildSchoolChangeRequestWhatsAppUrl({
+      clientPhone: project.primary_contact_phone || undefined,
+      clientName: project.primary_contact_name || undefined,
+      schoolName: project.school_name,
+      fieldOrSection: params.fieldOrAssetTitle,
+      reviewerMessage: params.reviewerMessage,
+      suggestedValue: params.suggestedValue,
+      onboardingUrl: fullOnboardingUrl,
+    });
+
+    return {
+      emailSent,
+      emailError,
+      whatsappUrl,
+      contactEmail: project.primary_contact_email,
+      contactPhone: project.primary_contact_phone,
+    };
+  } catch (err: any) {
+    console.error('[CR NOTIFICATION ERROR]', err);
+    return { emailSent: false, error: err?.message, whatsappUrl: '' };
+  }
+}
+
 export async function createFieldChangeRequestAction(input: {
   projectId: string;
   sectionKey: string;
@@ -803,7 +884,24 @@ export async function createFieldChangeRequestAction(input: {
       },
     ]);
 
-    return { success: true, changeRequest: inserted };
+    const notif = await dispatchChangeRequestNotifications({
+      schoolsDb,
+      projectId: input.projectId,
+      fieldOrAssetTitle: input.fieldKey,
+      sectionKey: input.sectionKey,
+      reviewerMessage: input.reviewerMessage,
+      suggestedValue: input.suggestedValue,
+    });
+
+    return {
+      success: true,
+      changeRequest: inserted,
+      emailSent: notif.emailSent,
+      emailError: notif.emailError,
+      whatsappUrl: notif.whatsappUrl,
+      contactEmail: notif.contactEmail,
+      contactPhone: notif.contactPhone,
+    };
   } catch (err: any) {
     console.error('[ACTION ERROR] createFieldChangeRequestAction:', err);
     return { success: false, error: err.message };
@@ -890,12 +988,29 @@ export async function createMediaChangeRequestAction(input: {
       },
     ]);
 
-    return { success: true, changeRequest: inserted };
+    const notif = await dispatchChangeRequestNotifications({
+      schoolsDb,
+      projectId: input.projectId,
+      fieldOrAssetTitle: input.assetTitle || input.assetId,
+      sectionKey: 'Media Assets',
+      reviewerMessage: input.reviewerMessage,
+    });
+
+    return {
+      success: true,
+      changeRequest: inserted,
+      emailSent: notif.emailSent,
+      emailError: notif.emailError,
+      whatsappUrl: notif.whatsappUrl,
+      contactEmail: notif.contactEmail,
+      contactPhone: notif.contactPhone,
+    };
   } catch (err: any) {
     console.error('[ACTION ERROR] createMediaChangeRequestAction:', err);
     return { success: false, error: err.message };
   }
 }
+
 
 export async function respondToChangeRequestAction(input: {
   token: string;
@@ -1199,7 +1314,22 @@ export async function requestProjectChangesAction(
       },
     ]);
 
-    return { success: true };
+    const notif = await dispatchChangeRequestNotifications({
+      schoolsDb,
+      projectId,
+      fieldOrAssetTitle: fieldKey || sectionKey,
+      sectionKey,
+      reviewerMessage: requestComment,
+    });
+
+    return {
+      success: true,
+      emailSent: notif.emailSent,
+      emailError: notif.emailError,
+      whatsappUrl: notif.whatsappUrl,
+      contactEmail: notif.contactEmail,
+      contactPhone: notif.contactPhone,
+    };
   } catch (err: any) {
     console.error('[ACTION ERROR] requestProjectChangesAction:', err);
     return { success: false, error: err.message };

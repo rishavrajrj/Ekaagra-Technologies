@@ -36,11 +36,11 @@ interface OrdersDashboardProps {
 }
 
 const STATUS_BADGES: Record<PaymentStatus, { bg: string; text: string; border: string }> = {
-  PENDING: { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-200' },
-  PAID: { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-200' },
-  FAILED: { bg: 'bg-rose-50', text: 'text-rose-800', border: 'border-rose-200' },
-  REFUNDED: { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-200' },
-  CANCELLED: { bg: 'bg-slate-50', text: 'text-slate-800', border: 'border-slate-200' },
+  PENDING: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/20' },
+  PAID: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/20' },
+  FAILED: { bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/20' },
+  REFUNDED: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/20' },
+  CANCELLED: { bg: 'bg-[var(--admin-surface-secondary)]', text: 'text-[var(--admin-text-muted)]', border: 'border-[var(--admin-border)]' },
 };
 
 export default function OrdersDashboard({

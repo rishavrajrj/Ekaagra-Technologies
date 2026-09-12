@@ -20,11 +20,7 @@ export default function SiteShell({ children }: { children: React.ReactNode }) {
   if (isStandalone) {
     const isAdmin = pathname?.startsWith('/admin');
     return (
-      <div
-        className={`min-h-[100dvh] w-full flex flex-col ${
-          isAdmin ? 'bg-[#0B1120] text-slate-100' : ''
-        }`}
-      >
+      <div className="min-h-[100dvh] w-full flex flex-col">
         {children}
       </div>
     );

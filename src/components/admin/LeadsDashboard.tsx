@@ -54,21 +54,21 @@ interface LeadsDashboardProps {
 }
 
 const STATUS_COLORS: Record<LeadStatus, { bg: string; text: string; border: string }> = {
-  NEW: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200' },
-  CONTACTED: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200' },
-  QUALIFIED: { bg: 'bg-cyan-50', text: 'text-cyan-700', border: 'border-cyan-200' },
-  PROPOSAL_SENT: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-  QUOTE_SENT: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200' },
-  NEGOTIATION: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200' },
-  FOLLOW_UP: { bg: 'bg-yellow-50', text: 'text-yellow-700', border: 'border-yellow-200' },
-  PROJECT_CONFIRMED: { bg: 'bg-emerald-100', text: 'text-emerald-800', border: 'border-emerald-300' },
-  PROJECT_ON_HOLD: { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200' },
-  CONVERTED: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
-  LOST: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-300' },
-  PROJECT_LOST: { bg: 'bg-rose-50', text: 'text-rose-600', border: 'border-rose-200' },
-  NOT_INTERESTED: { bg: 'bg-stone-100', text: 'text-stone-600', border: 'border-stone-300' },
-  CLOSED: { bg: 'bg-slate-100', text: 'text-slate-700', border: 'border-slate-300' },
-  CANCELLED: { bg: 'bg-slate-200', text: 'text-slate-700', border: 'border-slate-400' },
+  NEW: { bg: 'bg-blue-500/10', text: 'text-blue-600 dark:text-blue-400', border: 'border-blue-500/20' },
+  CONTACTED: { bg: 'bg-purple-500/10', text: 'text-purple-600 dark:text-purple-400', border: 'border-purple-500/20' },
+  QUALIFIED: { bg: 'bg-cyan-500/10', text: 'text-cyan-600 dark:text-cyan-400', border: 'border-cyan-500/20' },
+  PROPOSAL_SENT: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/20' },
+  QUOTE_SENT: { bg: 'bg-amber-500/10', text: 'text-amber-600 dark:text-amber-400', border: 'border-amber-500/20' },
+  NEGOTIATION: { bg: 'bg-indigo-500/10', text: 'text-indigo-600 dark:text-indigo-400', border: 'border-indigo-500/20' },
+  FOLLOW_UP: { bg: 'bg-yellow-500/10', text: 'text-yellow-600 dark:text-yellow-400', border: 'border-yellow-500/20' },
+  PROJECT_CONFIRMED: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/20' },
+  PROJECT_ON_HOLD: { bg: 'bg-orange-500/10', text: 'text-orange-600 dark:text-orange-400', border: 'border-orange-500/20' },
+  CONVERTED: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500/20' },
+  LOST: { bg: 'bg-[var(--admin-surface-secondary)]', text: 'text-[var(--admin-text-muted)]', border: 'border-[var(--admin-border)]' },
+  PROJECT_LOST: { bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', border: 'border-rose-500/20' },
+  NOT_INTERESTED: { bg: 'bg-[var(--admin-surface-secondary)]', text: 'text-[var(--admin-text-muted)]', border: 'border-[var(--admin-border)]' },
+  CLOSED: { bg: 'bg-[var(--admin-surface-secondary)]', text: 'text-[var(--admin-text-muted)]', border: 'border-[var(--admin-border)]' },
+  CANCELLED: { bg: 'bg-[var(--admin-surface-secondary)]', text: 'text-[var(--admin-text-muted)]', border: 'border-[var(--admin-border)]' },
 };
 
 const STATUS_OPTIONS: LeadStatus[] = [
