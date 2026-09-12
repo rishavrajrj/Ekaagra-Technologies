@@ -21,6 +21,7 @@ import {
   Phone,
   MapPin,
   ArrowRight,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface DirectSchoolOnboardingModalProps {
@@ -56,6 +57,7 @@ export default function DirectSchoolOnboardingModal({
   });
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [serverError, setServerError] = useState<string | null>(null);
   const [createdResult, setCreatedResult] = useState<{
     projectId: string;
     projectNumber: string;
@@ -82,6 +84,7 @@ export default function DirectSchoolOnboardingModal({
   };
 
   const handleCreate = () => {
+    setServerError(null);
     if (!validate()) return;
 
     startTransition(async () => {
@@ -105,7 +108,7 @@ export default function DirectSchoolOnboardingModal({
         });
         onProjectCreated(res.project.project_number);
       } else {
-        alert(res.error || 'Failed to initiate school onboarding');
+        setServerError(res.error || 'Failed to initiate school onboarding.');
       }
     });
   };
@@ -226,6 +229,18 @@ export default function DirectSchoolOnboardingModal({
             </div>
           ) : (
             <div className="space-y-4 text-xs">
+              {serverError && (
+                <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-start gap-3 animate-fadeIn">
+                  <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-rose-600 dark:text-rose-400" />
+                  <div className="space-y-1">
+                    <p className="font-bold text-xs">{serverError}</p>
+                    <p className="text-[11px] text-rose-600/90 dark:text-rose-300/80">
+                      In your Vercel Project Settings &rarr; Environment Variables, ensure <code className="bg-rose-100 dark:bg-rose-900/60 px-1 py-0.5 rounded font-mono text-[10px]">SCHOOLS_SUPABASE_URL</code> and <code className="bg-rose-100 dark:bg-rose-900/60 px-1 py-0.5 rounded font-mono text-[10px]">SCHOOLS_SUPABASE_SERVICE_ROLE_KEY</code> (or primary <code className="bg-rose-100 dark:bg-rose-900/60 px-1 py-0.5 rounded font-mono text-[10px]">SUPABASE_URL</code> / <code className="bg-rose-100 dark:bg-rose-900/60 px-1 py-0.5 rounded font-mono text-[10px]">SUPABASE_SERVICE_ROLE_KEY</code>) are configured.
+                    </p>
+                  </div>
+                </div>
+              )}
+
               <div className="p-3.5 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3">
                 <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   School Information

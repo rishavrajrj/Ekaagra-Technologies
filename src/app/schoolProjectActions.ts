@@ -79,7 +79,10 @@ export async function createDirectSchoolProjectAction(input: {
 
   const schoolsDb = getSchoolsServerClient();
   if (!schoolsDb) {
-    return { success: false, error: 'Schools DB not configured.' };
+    return {
+      success: false,
+      error: 'Schools database is not configured. Please configure SCHOOLS_SUPABASE_URL and SCHOOLS_SUPABASE_SERVICE_ROLE_KEY (or SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY) in your deployment environment variables.',
+    };
   }
 
   try {
