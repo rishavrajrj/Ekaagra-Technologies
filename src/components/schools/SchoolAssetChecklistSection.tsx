@@ -213,9 +213,9 @@ export default function SchoolAssetChecklistSection({
         return url;
       }
 
-      // If directUrl contains Supabase school-assets path, extract storageKey
+      // If directUrl contains Supabase storage path, extract storageKey
       if (token && directUrl && !targetItem.storageKey) {
-        const match = directUrl.match(/\/school-assets(?:-private)?\/(.+?)(?:\?|$)/);
+        const match = directUrl.match(/\/(?:school-assets|school-public|school-private)(?:-private)?\/(.+?)(?:\?|$)/);
         if (match && match[1]) {
           return `/api/school-assets/download?token=${encodeURIComponent(token)}&key=${encodeURIComponent(
             decodeURIComponent(match[1])

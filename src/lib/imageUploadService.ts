@@ -15,6 +15,7 @@ import {
 } from './schoolAssetChecklist';
 import { getSchoolsServerClient } from './schoolsDb';
 import { getSupabaseServerClient } from './supabase';
+import { recordCanonicalSchoolAsset } from './schoolAssetService';
 
 export interface UploadAssetInput {
   file: {
@@ -25,9 +26,11 @@ export interface UploadAssetInput {
   buffer: Buffer<ArrayBufferLike>;
   tenantId: string; // project.id or school.id
   folderPrefix?: string; // e.g. 'public', 'private', 'campus', 'business'
-  bucketName?: 'school-assets' | 'school-assets-private' | 'business-assets' | string;
+  bucketName?: 'school-public' | 'school-private' | 'school-assets' | 'school-assets-private' | 'business-assets' | string;
   isPrivate?: boolean;
   itemType?: 'image' | 'document' | 'gallery';
+  section?: string;
+  assetType?: string;
   optimizationOptions?: OptimizationOptions;
   authToken?: string;
 }
@@ -146,10 +149,20 @@ export async function processAndUploadCanonicalAsset(
     : file.name;
   const storageFileName = `${uniquePrefix}_${finalSanitizedName}`;
 
+  const isBusiness = bucketName === 'business-assets';
+  const resolvedBucket = isBusiness
+    ? 'business-assets'
+    : isPrivate || bucketName === 'school-assets-private' || bucketName === 'school-private'
+    ? 'school-private'
+    : 'school-public';
+
   const cleanFolder = (folderPrefix || (isPrivate ? 'private' : 'public')).replace(/^\/+|\/+$/g, '');
-  const storageKey = `${tenantId}/${cleanFolder}/${storageFileName}`;
+  const storageKey = isBusiness
+    ? `${tenantId}/${cleanFolder}/${storageFileName}`
+    : `school-projects/${tenantId}/${cleanFolder}/${storageFileName}`;
 
   let fileUrl = '';
+  let uploadErrorMessage = '';
 
   const schoolsDb = getSchoolsServerClient();
   const supabase = getSupabaseServerClient();
@@ -158,7 +171,7 @@ export async function processAndUploadCanonicalAsset(
   if (storageClient) {
     try {
       const { data: uploadData, error: uploadErr } = await storageClient
-        .from(bucketName)
+        .from(resolvedBucket)
         .upload(storageKey, finalBuffer, {
           contentType: finalMimeType,
           upsert: true,
@@ -169,21 +182,49 @@ export async function processAndUploadCanonicalAsset(
           fileUrl = `/api/school-assets/download?token=${encodeURIComponent(authToken || '')}&key=${encodeURIComponent(storageKey)}`;
         } else {
           const { data: publicUrlData } = storageClient
-            .from(bucketName)
+            .from(resolvedBucket)
             .getPublicUrl(storageKey);
           fileUrl = publicUrlData?.publicUrl || '';
         }
+
+        // Record canonical asset in PostgreSQL
+        if (!isBusiness && tenantId && tenantId !== 'demo-school-project') {
+          await recordCanonicalSchoolAsset({
+            school_project_id: tenantId,
+            section: input.section || cleanFolder,
+            asset_type: input.assetType || itemType,
+            original_filename: file.name,
+            storage_bucket: resolvedBucket as 'school-public' | 'school-private',
+            storage_path: storageKey,
+            mime_type: finalMimeType,
+            file_size: optimizedFileSize,
+            width: optimizationWidth,
+            height: optimizationHeight,
+            visibility: isPrivate ? 'private' : 'public',
+            status: 'provided',
+            checksum_sha256: checksumSha256,
+          });
+        }
       } else if (uploadErr) {
-        console.warn(`[CANONICAL STORAGE WARNING] Could not upload to bucket ${bucketName}:`, uploadErr.message);
+        uploadErrorMessage = uploadErr.message;
+        console.warn(`[CANONICAL STORAGE WARNING] Could not upload to bucket ${resolvedBucket}:`, uploadErr.message);
       }
-    } catch (storageEx) {
+    } catch (storageEx: any) {
+      uploadErrorMessage = storageEx?.message || 'Storage client exception';
       console.warn('[CANONICAL STORAGE EXCEPTION] Supabase upload failed:', storageEx);
     }
   }
 
   if (!fileUrl) {
+    const allowFallback = process.env.ALLOW_LOCAL_UPLOAD_FALLBACK === 'true';
+    if (!allowFallback && !isBusiness) {
+      throw new Error(
+        `Production asset upload rejected: Failed to store asset in Supabase Storage [${resolvedBucket}]. Error: ${uploadErrorMessage || 'Storage unavailable'}. Local filesystem fallback is disabled in production.`
+      );
+    }
+
     try {
-      const subFolder = bucketName === 'business-assets'
+      const subFolder = isBusiness
         ? path.join('business-assets', tenantId)
         : path.join('school-assets', tenantId, cleanFolder);
 
@@ -199,15 +240,14 @@ export async function processAndUploadCanonicalAsset(
 
       if (isPrivate) {
         fileUrl = `/api/school-assets/download?token=${encodeURIComponent(authToken || '')}&key=${encodeURIComponent(storageKey)}`;
-      } else if (bucketName === 'business-assets') {
+      } else if (isBusiness) {
         fileUrl = `/uploads/business-assets/${tenantId}/${storageFileName}`;
       } else {
         fileUrl = `/uploads/school-assets/${tenantId}/${cleanFolder}/${storageFileName}`;
       }
     } catch (localEx) {
       console.error('[LOCAL STORAGE FAILURE] Fallback write error:', localEx);
-      const base64 = finalBuffer.toString('base64');
-      fileUrl = `data:${finalMimeType};base64,${base64}`;
+      throw new Error('Upload completely failed across cloud and local storage.');
     }
   }
 

@@ -65,9 +65,11 @@ export async function POST(req: NextRequest) {
       buffer,
       tenantId,
       folderPrefix: isPrivate ? 'private' : 'public',
-      bucketName: isPrivate ? 'school-assets-private' : 'school-assets',
+      bucketName: isPrivate ? 'school-private' : 'school-public',
       isPrivate,
       itemType,
+      section: canonicalDef?.category || 'general',
+      assetType: canonicalDef?.id || itemType,
       authToken: rawToken,
     });
 

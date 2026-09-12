@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
     const project = verification.project;
 
     // 2. Strict Tenant Ownership Verification
-    // Prevent Tenant B from manipulating storageKey to delete Tenant A's files
-    if (!storageKey.startsWith(`${project.id}/`)) {
+    const isOwner = storageKey.startsWith(`${project.id}/`) || storageKey.startsWith(`school-projects/${project.id}/`);
+    if (!isOwner) {
       return NextResponse.json(
         { success: false, error: 'Forbidden: Cross-tenant deletion attempt blocked.' },
         { status: 403 }
@@ -40,14 +40,28 @@ export async function POST(req: NextRequest) {
 
     const schoolsDb = getSchoolsServerClient();
     const isPrivate = storageKey.includes('/private/');
-    const bucketName = isPrivate ? 'school-assets-private' : 'school-assets';
+    const targetBuckets = isPrivate
+      ? ['school-private', 'school-assets-private']
+      : ['school-public', 'school-assets'];
 
-    // 3. Delete from Supabase Storage
+    const keyCandidates = [
+      storageKey,
+      storageKey.startsWith('school-projects/') ? storageKey.replace(/^school-projects\//, '') : `school-projects/${storageKey}`,
+    ];
+
+    // 3. Delete from Supabase Storage & canonical DB table
     if (schoolsDb) {
+      for (const bucket of targetBuckets) {
+        try {
+          await schoolsDb.storage.from(bucket).remove(keyCandidates);
+        } catch (storageEx) {
+          console.warn('[STORAGE DELETE WARNING] Supabase remove error:', storageEx);
+        }
+      }
       try {
-        await schoolsDb.storage.from(bucketName).remove([storageKey]);
-      } catch (storageEx) {
-        console.warn('[STORAGE DELETE WARNING] Supabase remove error:', storageEx);
+        await schoolsDb.from('school_assets').delete().in('storage_path', keyCandidates);
+      } catch (dbErr) {
+        console.warn('[DB DELETE WARNING] Could not delete from school_assets:', dbErr);
       }
     }
 

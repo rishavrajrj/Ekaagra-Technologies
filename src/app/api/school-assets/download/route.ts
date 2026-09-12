@@ -81,35 +81,37 @@ export async function GET(req: NextRequest) {
     }
 
     const isPrivate = storageKey.includes('/private/');
-    const primaryBucket = isPrivate ? 'school-assets-private' : 'school-assets';
-    const fallbackBucket = isPrivate ? 'school-assets' : 'school-assets-private';
+    const candidateBuckets = isPrivate
+      ? ['school-private', 'school-assets-private', 'school-public', 'school-assets']
+      : ['school-public', 'school-assets', 'school-private', 'school-assets-private'];
+
+    const keyCandidates = [
+      storageKey,
+      storageKey.startsWith('school-projects/') ? storageKey.replace(/^school-projects\//, '') : `school-projects/${storageKey}`,
+    ];
 
     let fileBuffer: Buffer | null = null;
 
-    // 3. Retrieve from Supabase Storage (check primary bucket first, then fallback)
+    // 3. Retrieve from Supabase Storage (checking cloud buckets with key variants)
     const schoolsDb = getSchoolsServerClient();
     if (schoolsDb) {
-      try {
-        const { data, error } = await schoolsDb.storage
-          .from(primaryBucket)
-          .download(storageKey);
+      for (const bucket of candidateBuckets) {
+        for (const candidateKey of keyCandidates) {
+          try {
+            const { data, error } = await schoolsDb.storage
+              .from(bucket)
+              .download(candidateKey);
 
-        if (!error && data) {
-          const arrayBuf = await data.arrayBuffer();
-          fileBuffer = Buffer.from(arrayBuf);
-        } else {
-          // Try fallback bucket in case asset was stored in other bucket
-          const { data: fallbackData, error: fallbackError } = await schoolsDb.storage
-            .from(fallbackBucket)
-            .download(storageKey);
-
-          if (!fallbackError && fallbackData) {
-            const arrayBuf = await fallbackData.arrayBuffer();
-            fileBuffer = Buffer.from(arrayBuf);
+            if (!error && data) {
+              const arrayBuf = await data.arrayBuffer();
+              fileBuffer = Buffer.from(arrayBuf);
+              break;
+            }
+          } catch {
+            // continue checking
           }
         }
-      } catch (storageEx) {
-        console.warn('[STORAGE DOWNLOAD WARNING] Supabase download error:', storageEx);
+        if (fileBuffer) break;
       }
     }
 
