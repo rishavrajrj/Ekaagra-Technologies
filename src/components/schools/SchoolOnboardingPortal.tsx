@@ -56,6 +56,7 @@ import {
 } from 'lucide-react';
 import { formatBytes } from '@/lib/imageUtils';
 import Logo from '@/components/ui/Logo';
+import ModalPortal from '@/components/ui/ModalPortal';
 import SchoolIdentityCard from './SchoolIdentityCard';
 import SchoolAssetChecklistSection from './SchoolAssetChecklistSection';
 import CampusImagesSection from './CampusImagesSection';
@@ -90,6 +91,8 @@ import MediaAssetsSection from './MediaAssetsSection';
 import CampusStatisticsSection from './CampusStatisticsSection';
 import SectionPhotoGallery, { type SectionPhotoTag } from './SectionPhotoGallery';
 import { syncDerivedStatisticsToFacilities } from '@/lib/campusStatisticsUtils';
+import WebsiteScopeSection from './WebsiteScopeSection';
+import CustomRequirementsSection from './CustomRequirementsSection';
 
 const FACILITIES_PHOTO_TAGS: readonly SectionPhotoTag[] = [
   { value: 'smart_classroom', label: 'Smart Classroom', description: 'Digital boards & interactive multimedia classrooms' },
@@ -115,6 +118,7 @@ import {
   saveSchoolIntakeDraftAction,
   submitSchoolIntakeAction,
   updateProjectProductAction,
+  respondToChangeRequestAction,
 } from '@/app/schoolProjectActions';
 import { useFieldScope } from '@/hooks/useFieldScope';
 import { type ProductId } from '@/lib/fieldScopeRegistry';
@@ -183,6 +187,8 @@ import AddressDropdownWithOther from './AddressDropdownWithOther';
 import DesignationDropdownWithOther from './DesignationDropdownWithOther';
 import SchoolDomainSelector from './SchoolDomainSelector';
 import AdmissionsSection from './AdmissionsSection';
+import FeeStructureSection from './FeeStructureSection';
+import CurriculumSection from './CurriculumSection';
 import Step12ProjectDeliverySection from './Step12ProjectDeliverySection';
 import SecurityPrivacySection from './SecurityPrivacySection';
 import { validateSecurityPrivacyData, normalizeSecurityPrivacyData } from '@/lib/securityPrivacyUtils';
@@ -344,13 +350,53 @@ export default function SchoolOnboardingPortal({ token }: Props) {
   const [previewingStyle, setPreviewingStyle] = useState<StyleConfig | null>(null);
   const [designationCustomCache, setDesignationCustomCache] = useState<Record<string, string>>({});
   const [isMoreStatsExpanded, setIsMoreStatsExpanded] = useState(false);
+  const [isScopeExpanded, setIsScopeExpanded] = useState(false);
   const [domainStepError, setDomainStepError] = useState<string | null>(null);
   const [integrationsStepError, setIntegrationsStepError] = useState<string | null>(null);
   const [mobileSectionSubmitted, setMobileSectionSubmitted] = useState(false);
   const [securitySectionErrors, setSecuritySectionErrors] = useState<Record<string, string>>({});
   const [selectedProductId, setSelectedProductId] = useState<ProductId>('school-complete');
-  const [isScopeExpanded, setIsScopeExpanded] = useState(false);
   const [activeCampusId, setActiveCampusId] = useState<string>('');
+
+  // Operational Change Request remediation states
+  const [respondingCR, setRespondingCR] = useState<SchoolIntakeChangeRequest | null>(null);
+  const [crResponseText, setCrResponseText] = useState('');
+  const [crUpdatedValue, setCrUpdatedValue] = useState('');
+  const [isSubmittingCR, setIsSubmittingCR] = useState(false);
+  const [crSubmitError, setCrSubmitError] = useState<string | null>(null);
+
+  const handleSubmitCRResponse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!respondingCR || !crResponseText.trim()) return;
+    setIsSubmittingCR(true);
+    setCrSubmitError(null);
+    const res = await respondToChangeRequestAction({
+      token,
+      requestId: respondingCR.id,
+      schoolResponse: crResponseText.trim(),
+      updatedValue: crUpdatedValue.trim() || undefined,
+    });
+    if (res.success) {
+      setChangeRequests((prev) =>
+        prev.map((r) =>
+          r.id === respondingCR.id
+            ? {
+                ...r,
+                status: 'ready_for_review',
+                school_response: crResponseText.trim(),
+                school_updated_value: crUpdatedValue.trim() || r.current_value,
+              }
+            : r
+        )
+      );
+      setRespondingCR(null);
+      setCrResponseText('');
+      setCrUpdatedValue('');
+    } else {
+      setCrSubmitError(res.error || 'Failed to submit correction.');
+    }
+    setIsSubmittingCR(false);
+  };
 
   // Debounced autosave ref
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1257,7 +1303,8 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
         {/* Post-Onboarding Domain Setup Modal */}
         {showDomainSetupModal && (
-          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <ModalPortal isOpen={showDomainSetupModal}>
+          <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-white rounded-3xl max-w-3xl w-full border border-[#E2E8F0] shadow-2xl overflow-hidden my-8">
               <div className="p-5 sm:p-6 border-b border-[#E2E8F0] flex items-center justify-between bg-[#FAF7F2]">
                 <div className="flex items-center space-x-3">
@@ -1311,6 +1358,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               </div>
             </div>
           </div>
+          </ModalPortal>
         )}
       </div>
     );
@@ -1708,6 +1756,120 @@ export default function SchoolOnboardingPortal({ token }: Props) {
         {/* Main Content Area */}
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
+          {/* OPERATIONAL CHANGE REQUEST REMEDIATION BANNER */}
+          {changeRequests.some((cr) => cr.status === 'open' || cr.status === 'waiting_for_school' || cr.status === 'ready_for_review') && (
+            <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex items-start justify-between flex-wrap gap-3">
+                <div className="flex items-start space-x-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="flex items-center space-x-2">
+                      <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                        Action Required: Reviewer Requested Adjustments
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                        {changeRequests.filter(cr => cr.status === 'open' || cr.status === 'waiting_for_school').length} Pending
+                      </span>
+                    </div>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-1">
+                      Our verification team has reviewed your intake submission and identified specific items requiring your clarification or correction before public website generation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                {changeRequests
+                  .filter((cr) => cr.status === 'open' || cr.status === 'waiting_for_school' || cr.status === 'ready_for_review')
+                  .map((cr) => {
+                    const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
+                    return (
+                      <div
+                        key={cr.id}
+                        className={`rounded-2xl p-4 border transition-all ${
+                          isPending
+                            ? 'bg-white border-amber-200 shadow-xs'
+                            : 'bg-emerald-50/60 border-emerald-200'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                              {cr.section_key}
+                            </span>
+                            <span className="text-xs font-bold text-slate-900 truncate">
+                              {cr.field_key || cr.asset_id || 'Field Correction'}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                              isPending
+                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
+                                : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                            }`}
+                          >
+                            {isPending ? 'Action Needed' : 'Correction Submitted'}
+                          </span>
+                        </div>
+
+                        <div className="space-y-1.5 text-xs text-slate-700">
+                          <div>
+                            <span className="font-semibold text-slate-900">Reviewer Note: </span>
+                            <span className="text-amber-900 font-medium">{cr.request_comment || cr.reason}</span>
+                          </div>
+
+                          {cr.suggested_value && (
+                            <div className="bg-amber-50/80 rounded-lg p-2 border border-amber-100 text-xs">
+                              <span className="font-semibold text-amber-900">Suggested: </span>
+                              <span className="font-mono text-amber-800">{cr.suggested_value}</span>
+                            </div>
+                          )}
+
+                          {cr.school_response && (
+                            <div className="bg-slate-50 rounded-lg p-2 border border-slate-200 text-xs">
+                              <span className="font-semibold text-slate-800">Your Response: </span>
+                              <span className="text-slate-600">{cr.school_response}</span>
+                              {cr.school_updated_value && (
+                                <div className="mt-1 font-mono text-[11px] text-slate-700 font-medium truncate">
+                                  Updated to: {cr.school_updated_value}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                          <span className="text-[11px] text-slate-400">
+                            Requested {new Date(cr.created_at).toLocaleDateString()}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRespondingCR(cr);
+                              setCrResponseText(cr.school_response || '');
+                              setCrUpdatedValue(cr.school_updated_value || cr.current_value || '');
+                              setCrSubmitError(null);
+                            }}
+                            className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 ${
+                              isPending
+                                ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-xs'
+                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                            }`}
+                          >
+                            <span>{isPending ? 'Provide Correction' : 'Update Response'}</span>
+                            <ChevronRight className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+
           {/* PROJECT SCOPE BANNER */}
           <div className="bg-[#131B2E] text-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-800 relative overflow-hidden transition-all">
             <div className="flex items-center justify-between flex-wrap gap-2.5">
@@ -1966,6 +2128,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         <div>
                           <label className="block font-bold text-[#334155] mb-1">Official School Name *</label>
                           <input
+                            id="field-school-name"
                             type="text"
                             value={intakeData.schoolProfile.schoolName || ''}
                             onChange={(e) => {
@@ -2102,6 +2265,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         Affiliation Board / Body *
                       </label>
                       <select
+                        id="field-school-board"
                         value={intakeData.schoolProfile.board || 'CBSE'}
                         onChange={(e) => updateSectionField('schoolProfile', 'board', e.target.value)}
                         className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
@@ -2252,6 +2416,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     <div>
                       <label className="block font-bold text-[#334155] mb-1">Official School Email *</label>
                       <input
+                        id="field-school-email"
                         type="email"
                         value={intakeData.schoolProfile.officialEmail || ''}
                         onChange={(e) => updateSectionField('schoolProfile', 'officialEmail', e.target.value)}
@@ -2263,6 +2428,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     <div>
                       <label className="block font-bold text-[#334155] mb-1">Official School Phone / Helpline *</label>
                       <input
+                        id="field-school-phone"
                         type="tel"
                         value={intakeData.schoolProfile.officialPhone || ''}
                         onChange={(e) => updateSectionField('schoolProfile', 'officialPhone', e.target.value)}
@@ -2591,9 +2757,9 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         </div>
 
                         <div className="md:col-span-2">
-                          <label htmlFor={`campus-${camp.id || idx}-address`} className="block font-medium text-[#64748B] mb-1.5">Campus Postal Address *</label>
+                          <label htmlFor={idx === 0 ? 'field-campus-address' : `campus-${camp.id || idx}-address`} className="block font-medium text-[#64748B] mb-1.5">Campus Postal Address *</label>
                           <input
-                            id={`campus-${camp.id || idx}-address`}
+                            id={idx === 0 ? 'field-campus-address' : `campus-${camp.id || idx}-address`}
                             type="text"
                             value={camp.address}
                             onChange={(e) => updateCampusField(idx, { address: e.target.value })}
@@ -3066,6 +3232,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     <div>
                       <label className="block font-medium text-[#64748B] mb-1">{principalDesig} Full Name *</label>
                       <input
+                        id="field-principal-name"
                         type="text"
                         value={intakeData.leadership?.principalName || ''}
                         onChange={(e) => updateSectionField('leadership', 'principalName', e.target.value)}
@@ -3100,7 +3267,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     </div>
 
                     {/* Principal / Head Photo (Genuine WebP Optimization Pipeline) */}
-                    <div className="md:col-span-3">
+                    <div id="field-principal-portrait" className="md:col-span-3">
                       <PersonPhotoSection
                         personId={intakeData.leadership?.principalId || 'principal-main'}
                         personName={intakeData.leadership?.principalName || principalDesig}
@@ -3698,10 +3865,11 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                       {/* Lightbox Preview Modal */}
                       {showLogoLightbox && Boolean(effectiveLogoUrl) && (
+                        <ModalPortal isOpen={showLogoLightbox && Boolean(effectiveLogoUrl)}>
                         <div
                           role="dialog"
                           aria-modal="true"
-                          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+                          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
                           onClick={() => setShowLogoLightbox(false)}
                           onKeyDown={(e) => {
                             if (e.key === 'Escape') setShowLogoLightbox(false);
@@ -3752,6 +3920,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             </div>
                           </div>
                         </div>
+                        </ModalPortal>
                       )}
                     </div>
                   );
@@ -4023,75 +4192,35 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 intakeData={displayIntakeData}
                 updateSectionField={updateSectionField}
                 updateSectionDirect={updateSectionDirect}
+                onNavigateToSection={navigateToSectionKey}
+                activeCampusId={activeCampusId}
               />
             )}
 
             {/* SECTION 11: FEES & FINANCE */}
             {currentSection.key === 'feesConfiguration' && campusSectionResolution?.mode !== 'not_applicable' && (
-              <div className="space-y-6 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block font-bold text-[#334155] mb-1">Monthly Due Date (Day of Month) *</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={28}
-                      value={displayIntakeData.feesConfiguration?.dueDateDay ?? 10}
-                      onChange={(e) => updateSectionField('feesConfiguration', 'dueDateDay', parseInt(e.target.value, 10))}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-[#334155] mb-1">Grace Period (Days)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={30}
-                      value={displayIntakeData.feesConfiguration?.gracePeriodDays ?? 5}
-                      onChange={(e) => updateSectionField('feesConfiguration', 'gracePeriodDays', parseInt(e.target.value, 10))}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-[#334155] mb-1">Late Fine Type</label>
-                    <select
-                      value={displayIntakeData.feesConfiguration?.lateFeeType || 'fixed'}
-                      onChange={(e) => updateSectionField('feesConfiguration', 'lateFeeType', e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
-                    >
-                      <option value="fixed">Fixed Rate (₹ Per Day)</option>
-                      <option value="percentage">Percentage on Due</option>
-                      <option value="none">No Late Fee</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Slabs Table */}
-                <div className="bg-[#FAF7F2] border border-[#E2E8F0] p-4 rounded-2xl space-y-3">
-                  <h4 className="font-bold text-[#131B2E]">Class Tuition Fee Slabs</h4>
-                  <div className="space-y-2">
-                    {(displayIntakeData.feesConfiguration?.classFeeStructures || []).map((fee, idx) => (
-                      <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 bg-white p-2.5 rounded-xl border border-[#E2E8F0] shadow-2xs items-center">
-                        <span className="font-bold text-[#131B2E]">{fee.className}</span>
-                        <span className="text-[#94A3B8]">{fee.feeType}</span>
-                        <span className="font-mono text-emerald-400 font-bold">₹{fee.amount} / {fee.frequency}</span>
-                        <input
-                          type="number"
-                          value={fee.amount}
-                          onChange={(e) => {
-                            const copy = [...(displayIntakeData.feesConfiguration?.classFeeStructures || [])];
-                            copy[idx].amount = parseInt(e.target.value, 10) || 0;
-                            updateSectionField('feesConfiguration', 'classFeeStructures', copy);
-                          }}
-                          className="px-2.5 py-1.5 rounded-lg bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs font-mono"
-                          placeholder="Amount"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
+              <FeeStructureSection
+                intakeData={displayIntakeData}
+                updateSectionField={updateSectionField}
+                updateSectionDirect={updateSectionDirect}
+                project={effectiveProject || project}
+                activeCampusId={activeCampusId}
+                onNavigateToSection={navigateToSectionKey}
+              />
             )}
+
+            {/* SECTION 12: CURRICULUM */}
+            {currentSection.key === 'curriculum' && campusSectionResolution?.mode !== 'not_applicable' && (
+              <CurriculumSection
+                intakeData={displayIntakeData}
+                updateSectionField={updateSectionField}
+                updateSectionDirect={updateSectionDirect}
+                project={effectiveProject || project}
+                activeCampusId={activeCampusId}
+                onNavigateToSection={navigateToSectionKey}
+              />
+            )}
+
 
             {/* SECTION 14: TRANSPORT (Conditional) */}
             {currentSection.key === 'transportConfig' && campusSectionResolution?.mode !== 'not_applicable' && (
@@ -4489,7 +4618,12 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               'communicationConfig'
             ].includes(currentSection.key) && (
               <div className="space-y-4 text-xs">
-                {currentSection.key !== 'domainPresence' && currentSection.key !== 'securityPrivacy' && currentSection.key !== 'portalRequirements' && currentSection.key !== 'mediaAssets' && (
+                {currentSection.key !== 'domainPresence' &&
+                  currentSection.key !== 'websiteScope' &&
+                  currentSection.key !== 'additionalRequirements' &&
+                  currentSection.key !== 'securityPrivacy' &&
+                  currentSection.key !== 'portalRequirements' &&
+                  currentSection.key !== 'mediaAssets' && (
                   <div className="bg-[#FAF7F2] border border-[#E2E8F0] p-4 rounded-2xl text-[#64748B] space-y-2">
                     <span className="font-bold text-[#131B2E] block">{currentSection.title}</span>
                     <p>{currentSection.description}</p>
@@ -4500,50 +4634,6 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     )}
                   </div>
                 )}
-
-                {/* Configuration Review: Domain Preference summary when beyond domain step */}
-                {currentSection.key !== 'domainPresence' &&
-                  applicableSections.findIndex((s) => s.key === 'domainPresence') !== -1 &&
-                  currentStepIndex > applicableSections.findIndex((s) => s.key === 'domainPresence') && (
-                    <div className="p-3.5 rounded-xl bg-white border border-[#E2E8F0] shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#4338CA] bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">
-                          Domain Preference
-                        </span>
-                        {intakeData.domainPresence?.domainChoice === 'DECIDE_LATER' || intakeData.domainPresence?.decideLater ? (
-                          <span className="font-medium text-[#64748B] flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5 text-[#4338CA]" />
-                            <span>Decide later</span>
-                          </span>
-                        ) : intakeData.domainPresence?.domainChoice === 'EXISTING_DOMAIN' || intakeData.domainPresence?.alreadyOwnsDomain ? (
-                          <span className="font-semibold text-[#131B2E] flex items-center gap-1">
-                            <Globe className="w-3.5 h-3.5 text-blue-600" />
-                            <span>School already owns a domain: <strong className="font-mono text-[#4338CA]">{intakeData.domainPresence.existingDomainName || intakeData.domainPresence.preferredDomain}</strong></span>
-                          </span>
-                        ) : intakeData.domainPresence?.preferredNewDomainName ? (
-                          <span className="font-semibold text-[#131B2E] flex items-center gap-1.5 flex-wrap">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <strong className="font-mono text-[#131B2E]">{intakeData.domainPresence.preferredNewDomainName}</strong>
-                            <span className="text-emerald-700 font-bold">
-                              &bull; {intakeData.domainPresence.selectedDomainQuote?.isIncluded ? 'Included in plan' : intakeData.domainPresence.selectedDomainQuote?.upgradeAmount ? `+₹${intakeData.domainPresence.selectedDomainQuote.upgradeAmount.toLocaleString('en-IN')} Upgrade` : 'Included in plan'}
-                            </span>
-                          </span>
-                        ) : (
-                          <span className="text-[#64748B]">Decide later</span>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const domIdx = applicableSections.findIndex((s) => s.key === 'domainPresence');
-                          if (domIdx !== -1) setCurrentStepIndex(domIdx);
-                        }}
-                        className="text-xs font-bold text-[#4338CA] hover:underline shrink-0 text-left sm:text-right cursor-pointer"
-                      >
-                        Change Domain
-                      </button>
-                    </div>
-                  )}
 
                 {/* Section Specific Input Renderers */}
 
@@ -4783,6 +4873,16 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   />
                 )}
 
+                {currentSection.key === 'websiteScope' && (
+                  <WebsiteScopeSection
+                    intakeData={intakeData}
+                    updateSectionField={updateSectionField}
+                    updateSectionDirect={updateSectionDirect}
+                    project={effectiveProject || project}
+                    onNavigateToSection={navigateToSectionKey}
+                  />
+                )}
+
                 {currentSection.key === 'domainPresence' && (
                   <div className="space-y-6">
                     <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 sm:p-7 shadow-2xs space-y-6">
@@ -4810,6 +4910,16 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       />
                     </div>
                   </div>
+                )}
+
+                {currentSection.key === 'additionalRequirements' && (
+                  <CustomRequirementsSection
+                    intakeData={intakeData}
+                    updateSectionField={updateSectionField}
+                    updateSectionDirect={updateSectionDirect}
+                    project={effectiveProject || project}
+                    onNavigateToSection={navigateToSectionKey}
+                  />
                 )}
 
                 {currentSection.key === 'portalRequirements' && (
@@ -4955,6 +5065,106 @@ export default function SchoolOnboardingPortal({ token }: Props) {
             updateSectionField('brandingDesign', 'brandTone', previewingStyle.value);
           }}
         />
+      )}
+
+      {/* Change Request Response Modal */}
+      {respondingCR && (
+        <ModalPortal isOpen={!!respondingCR}>
+          <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden my-8">
+              <div className="p-5 sm:p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <AlertTriangle className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-base text-slate-900">Provide Correction / Update</h3>
+                    <p className="text-xs text-slate-500">
+                      {respondingCR.section_key} • {respondingCR.field_key || respondingCR.asset_id || 'Field'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRespondingCR(null);
+                    setCrSubmitError(null);
+                  }}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSubmitCRResponse} className="p-5 sm:p-6 space-y-4">
+                {/* Context Note */}
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-900 space-y-1">
+                  <div className="font-bold">Reviewer Request:</div>
+                  <div className="text-amber-800">{respondingCR.request_comment || respondingCR.reason}</div>
+                  {respondingCR.suggested_value && (
+                    <div className="pt-1 text-slate-700 font-mono text-[11px]">
+                      Suggestion: <span className="font-bold">{respondingCR.suggested_value}</span>
+                    </div>
+                  )}
+                </div>
+
+                {crSubmitError && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium">
+                    {crSubmitError}
+                  </div>
+                )}
+
+                {/* Updated value input */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Corrected Value or URL
+                  </label>
+                  <input
+                    type="text"
+                    value={crUpdatedValue}
+                    onChange={(e) => setCrUpdatedValue(e.target.value)}
+                    placeholder="e.g. correct title, updated phone, or high-res image link"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                {/* Explanation / Notes input */}
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
+                    Clarification / Note to Reviewer <span className="text-rose-500">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={crResponseText}
+                    onChange={(e) => setCrResponseText(e.target.value)}
+                    placeholder="Explain the correction or reason for this submission..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end space-x-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setRespondingCR(null)}
+                    className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+                    disabled={isSubmittingCR}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingCR || !crResponseText.trim()}
+                    className="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl shadow-xs flex items-center space-x-2 transition-all"
+                  >
+                    {isSubmittingCR && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>Submit Correction for Re-Review</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </ModalPortal>
       )}
     </div>
   );

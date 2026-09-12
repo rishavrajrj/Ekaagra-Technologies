@@ -26,6 +26,7 @@ import {
   isSubjectApplicableToGroup,
   deriveTeachingGroups,
 } from '@/lib/academicStructureUtils';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 interface Step5SubjectApplicabilityProps {
   structure: AcademicStructureData;
@@ -463,7 +464,8 @@ export default function Step5SubjectApplicability({
 
       {/* ── MODAL: COPY FROM ANOTHER CLASS ──────────────────────────────── */}
       {isCopyModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalPortal isOpen={isCopyModalOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white border border-[#E2E8F0] rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9]">
               <h3 className="font-bold text-sm text-[#131B2E]">Copy Curriculum Subjects</h3>
@@ -514,6 +516,7 @@ export default function Step5SubjectApplicability({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

@@ -1,0 +1,15 @@
+export { default as SchoolWebsiteRenderer } from './SchoolWebsiteRenderer';
+export { default as SchoolHeader } from './SchoolHeader';
+export { default as SchoolHero } from './SchoolHero';
+export { default as SchoolAbout } from './SchoolAbout';
+export { default as SchoolLeadership } from './SchoolLeadership';
+export { default as SchoolAcademics } from './SchoolAcademics';
+export { default as SchoolFacilities } from './SchoolFacilities';
+export { default as SchoolAdmissions } from './SchoolAdmissions';
+export { default as SchoolFees } from './SchoolFees';
+export { default as SchoolTransport } from './SchoolTransport';
+export { default as SchoolHostel } from './SchoolHostel';
+export { default as SchoolGallery } from './SchoolGallery';
+export { default as SchoolMandatoryDisclosures } from './SchoolMandatoryDisclosures';
+export { default as SchoolContact } from './SchoolContact';
+export { default as SchoolFooter } from './SchoolFooter';

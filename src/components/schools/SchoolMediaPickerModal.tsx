@@ -398,7 +398,7 @@ export default function SchoolMediaPickerModal({
 
         {/* ─── PREVIEW OVERLAY ─────────────────────────────────────────── */}
         {previewAsset && (
-          <div className="fixed inset-0 z-60 bg-black/80 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[10000] bg-black/80 flex items-center justify-center p-4">
             <div className="max-w-2xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl space-y-3 p-4">
               <div className="flex items-center justify-between border-b pb-2">
                 <span className="font-bold text-xs text-slate-900 truncate">{previewAsset.fileName}</span>
@@ -486,7 +486,7 @@ export default function SchoolMediaPickerModal({
 
         {/* ─── CONFIRM DELETE MODAL ────────────────────────────────────── */}
         {assetToDelete && (
-          <div className="fixed inset-0 z-70 bg-black/70 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[10010] bg-black/70 flex items-center justify-center p-4">
             <div className="max-w-md w-full bg-white rounded-2xl p-5 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-start space-x-3">
                 <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 flex items-center justify-center shrink-0 border border-red-200">

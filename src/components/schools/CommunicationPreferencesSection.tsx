@@ -39,6 +39,7 @@ import {
   Square,
   UserCheck,
 } from 'lucide-react';
+import ModalPortal from '@/components/ui/ModalPortal';
 import type {
   UniversalIntakeData,
   SchoolProject,
@@ -2151,7 +2152,8 @@ export default function CommunicationPreferencesSection({
 
       {/* ─── INTEGRATION DETAILS MODAL ────────────────────────────────────────── */}
       {integrationModalProvider && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <ModalPortal isOpen={!!integrationModalProvider}>
+        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl">
             <div className="flex items-center justify-between pb-3 border-b border-[#E2E8F0]">
               <div className="flex items-center gap-2">
@@ -2194,6 +2196,7 @@ export default function CommunicationPreferencesSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

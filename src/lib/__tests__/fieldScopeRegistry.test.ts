@@ -77,7 +77,7 @@ assert(isSectionApplicable('leadership', 'school-website'), 'leadership applicab
 assert(isSectionApplicable('admissions', 'school-website'), 'admissions applicable to school-website');
 assert(!isSectionApplicable('attendanceConfig', 'school-website'), 'attendanceConfig NOT applicable to school-website');
 assert(!isSectionApplicable('examinationConfig', 'school-website'), 'examinationConfig NOT applicable to school-website');
-assert(!isSectionApplicable('feesConfiguration', 'school-website'), 'feesConfiguration NOT applicable to school-website');
+assert(isSectionApplicable('feesConfiguration', 'school-website'), 'feesConfiguration applicable to school-website');
 assert(!isSectionApplicable('cmsRequirements', 'school-website'), 'cmsRequirements NOT applicable to school-website');
 assert(!isSectionApplicable('securityPrivacy', 'school-website'), 'securityPrivacy NOT applicable to school-website');
 
@@ -85,7 +85,7 @@ assert(!isSectionApplicable('securityPrivacy', 'school-website'), 'securityPriva
 assert(isSectionApplicable('cmsRequirements', 'school-website-cms'), 'cmsRequirements applicable to school-website-cms');
 assert(isSectionApplicable('securityPrivacy', 'school-website-cms'), 'securityPrivacy applicable to school-website-cms');
 assert(!isSectionApplicable('attendanceConfig', 'school-website-cms'), 'attendanceConfig NOT applicable to school-website-cms');
-assert(!isSectionApplicable('feesConfiguration', 'school-website-cms'), 'feesConfiguration NOT applicable to school-website-cms');
+assert(isSectionApplicable('feesConfiguration', 'school-website-cms'), 'feesConfiguration applicable to school-website-cms');
 assert(!isSectionApplicable('examinationConfig', 'school-website-cms'), 'examinationConfig NOT applicable to school-website-cms');
 
 // School ERP: includes ERP modules, excludes website-only marketing sections
@@ -246,12 +246,12 @@ const sampleIntake: Partial<UniversalIntakeData> = {
   } as any,
 };
 
-const websiteCompleteness = calculateIntakeCompleteness(sampleIntake as UniversalIntakeData, 'school-website');
+const websiteCompleteness = calculateIntakeCompleteness('school-website', sampleIntake as UniversalIntakeData);
 assert(typeof websiteCompleteness.percentage === 'number', 'Overall percentage is computed for school-website');
-assert(websiteCompleteness.sectionPercentages['feesConfiguration'] === undefined, 'feesConfiguration is NOT scored for school-website');
+assert(websiteCompleteness.sectionPercentages['feesConfiguration'] !== undefined, 'feesConfiguration IS scored for school-website');
 assert(websiteCompleteness.sectionPercentages['attendanceConfig'] === undefined, 'attendanceConfig is NOT scored for school-website');
 
-const erpCompleteness = calculateIntakeCompleteness(sampleIntake as UniversalIntakeData, 'school-erp');
+const erpCompleteness = calculateIntakeCompleteness('school-erp', sampleIntake as UniversalIntakeData);
 assert(erpCompleteness.sectionPercentages['websiteRequirements'] === undefined, 'websiteRequirements is NOT scored for school-erp');
 assert(erpCompleteness.sectionPercentages['domainPresence'] === undefined, 'domainPresence is NOT scored for school-erp');
 

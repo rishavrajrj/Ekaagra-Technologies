@@ -282,7 +282,8 @@ export const FIELD_SCOPE_REGISTRY: SectionFieldRegistry = {
   
   institutionStructure: [createField('*', 'erp', ERP_PRODUCTS)],
   studentConfig: [createField('*', 'erp', ERP_PRODUCTS)],
-  feesConfiguration: [createField('*', 'erp', ERP_PRODUCTS)],
+  feesConfiguration: [createField('*', 'shared', ALL_PRODUCTS, 'Website fee transparency + ERP billing')],
+  curriculum: [createField('*', 'shared', ALL_PRODUCTS, 'Website academic curriculum + ERP academics')],
   attendanceConfig: [createField('*', 'erp', ERP_PRODUCTS)],
   examinationConfig: [createField('*', 'erp', ERP_PRODUCTS)],
   communicationConfig: [createField('*', 'erp', ERP_PRODUCTS)],
@@ -404,7 +405,9 @@ export const FIELD_SCOPE_REGISTRY: SectionFieldRegistry = {
     createField('visitorManagement', 'erp', ERP_PRODUCTS, 'ERP visitors'),
   ],
 
-  // Shared sections (applicable to all products)
+  // Shared / Project configuration sections
+  websiteScope: [createField('*', 'website', ALL_PRODUCTS, 'Website scope and module configuration')],
+  additionalRequirements: [createField('*', 'shared', ALL_PRODUCTS, 'Custom requirements and notes')],
   projectDelivery: [createField('*', 'shared', ALL_PRODUCTS, 'Universal project management')],
   usersAccess: [createField('*', 'shared', ALL_PRODUCTS, 'Universal admin provisioning')],
 };

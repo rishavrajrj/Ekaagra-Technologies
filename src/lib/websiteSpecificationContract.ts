@@ -39,6 +39,7 @@ import {
   detectDuplicatePageRisks,
   type DuplicatePageRisk,
 } from './websitePageRequirements';
+import { evaluateWebsitePublicationReadiness } from './websiteDataStatus';
 
 /**
  * Recursively freezes an object and all nested properties in place,
@@ -182,6 +183,7 @@ export function generateWebsiteSpecificationSnapshot(
   const pages = pageConfigurations || intakeData.websiteRequirements?.pageConfigurations || buildWebsitePageConfigurations(intakeData);
   const principalRes = resolveCanonicalPrincipal(intakeData);
   const resolvedAssets = extractCanonicalAssetSnapshots(intakeData);
+  const pubValidation = evaluateWebsitePublicationReadiness(intakeData);
   const readiness = calculateWebsiteReadinessBreakdown(intakeData, pages);
 
   const schoolProf = intakeData.schoolProfile || ({} as any);
@@ -231,13 +233,21 @@ export function generateWebsiteSpecificationSnapshot(
       affiliationNumber: schoolProf.affiliationNumber || '',
     },
     readinessSnapshot: deepClone({
-      canApprove: readiness.canApprove,
+      canApprove: pubValidation.isReady,
       websitePagesCount: readiness.websitePagesCount,
       readyPagesCount: readiness.readyPagesCount,
       contentReadyPercentage: readiness.contentReadyPercentage,
       assetsVerifiedCount: readiness.assetsVerifiedCount,
-      complianceBlockersCount: readiness.complianceBlockersCount,
-      unresolvedBlockers: readiness.unresolvedBlockers,
+      complianceBlockersCount: pubValidation.blockers.filter((b) => b.isStatutory).length,
+      unresolvedBlockers: pubValidation.blockers.map((b) => ({
+        key: b.key || b.id,
+        pageLabel: b.pageLabel || 'Publication Readiness',
+        label: b.title,
+        sourceSection: b.section,
+        sourceSectionName: b.source,
+        message: b.reason,
+        isStatutory: Boolean(b.isStatutory),
+      })),
       duplicateRisks: readiness.duplicateRisks,
     }),
     sourceTimestamps: {
@@ -277,52 +287,34 @@ export function validateServerApprovalPreconditions(
   pageConfigurations?: Record<string, WebsitePageConfiguration>
 ): PreconditionValidationResult {
   const pages = pageConfigurations || intakeData.websiteRequirements?.pageConfigurations || buildWebsitePageConfigurations(intakeData);
-  const readiness = calculateWebsiteReadinessBreakdown(intakeData, pages);
-  const blockers: PreconditionBlocker[] = [...readiness.unresolvedBlockers];
+  const publicationResult = evaluateWebsitePublicationReadiness(intakeData);
   const duplicateRisks = detectDuplicatePageRisks(Object.values(pages));
 
-  // 1. Check mandatory School Logo
-  const logoRes = resolveCanonicalAsset(intakeData, 'school_logo');
-  if (!logoRes.isAvailable) {
-    if (!blockers.some((b) => b.key === 'asset_school_logo')) {
-      blockers.push({
-        key: 'asset_school_logo',
-        pageLabel: 'Global Branding',
-        label: 'Official School Crest / Logo',
-        sourceSection: 'brandingDesign',
-        sourceSectionName: 'Section 17 — Branding & Design',
-        message: 'High-resolution official school crest or logo must be uploaded before website publication.',
-        isStatutory: true,
-      });
-    }
-  }
+  const blockers: PreconditionBlocker[] = publicationResult.blockers.map((b) => ({
+    key: b.key || b.id,
+    pageLabel: b.pageLabel || 'Publication Readiness',
+    label: b.title,
+    sourceSection: b.section,
+    sourceSectionName: b.source,
+    message: b.reason,
+    isStatutory: Boolean(b.isStatutory),
+  }));
 
-  // 2. Check school identity essentials
-  const schoolName = intakeData.schoolProfile?.schoolName || (intakeData.schoolProfile as any)?.name;
-  if (!schoolName || String(schoolName).trim().length === 0) {
-    blockers.push({
-      key: 'profile_school_name',
-      pageLabel: 'Identity & Registration',
-      label: 'Official School Name',
-      sourceSection: 'schoolProfile',
-      sourceSectionName: 'Section 1 — Identity',
-      message: 'Official school name is missing in Section 1 (Identity).',
-      isStatutory: true,
-    });
-  }
-
-  // 3. Duplicate page / slug collisions that are blocking
+  // 1. Check duplicate page / slug collisions that are blocking
   for (const risk of duplicateRisks) {
     if (risk.matchType === 'exact_slug') {
-      blockers.push({
-        key: `duplicate_${risk.pageKey}_${risk.conflictingPageKey}`,
-        pageLabel: risk.label,
-        label: `Route Conflict (/${risk.slug})`,
-        sourceSection: 'websiteRequirements',
-        sourceSectionName: 'Step 27 — Website Verification',
-        message: risk.message,
-        isStatutory: false,
-      });
+      const conflictKey = `duplicate_${risk.pageKey}_${risk.conflictingPageKey}`;
+      if (!blockers.some((b) => b.key === conflictKey)) {
+        blockers.push({
+          key: conflictKey,
+          pageLabel: risk.label,
+          label: `Route Conflict (/${risk.slug})`,
+          sourceSection: 'websiteRequirements',
+          sourceSectionName: 'Section 27 — Final Website Review',
+          message: risk.message,
+          isStatutory: false,
+        });
+      }
     }
   }
 

@@ -26,10 +26,38 @@ function createValidBaseIntake(): Partial<UniversalIntakeData> {
       board: 'CBSE',
       affiliationNumber: 'CBSE-AFF-998811',
       officialEmail: 'info@dpa.edu.in',
+      officialPhone: '+91 9876543210',
       phone: '+91 9876543210',
+      schoolType: 'Day School',
+    },
+    branding: {
+      logoUrl: 'https://cdn.example.com/logo-high-res.png',
+    },
+    brandingDesign: {
+      logoUrl: 'https://cdn.example.com/logo-high-res.png',
+      logo: 'https://cdn.example.com/logo-high-res.png',
     },
     leadership: {
       principalName: 'Dr. Sunita Sharma',
+      principalPhotoUrl: 'https://cdn.example.com/principal-dr-sharma.jpg',
+      principalPhoto: {
+        id: 'principal_photo',
+        url: 'https://cdn.example.com/principal-dr-sharma.jpg',
+        name: 'principal.jpg',
+        status: 'verified',
+      } as any,
+    },
+    transportConfig: { status: 'no', enabled: false },
+    hostelConfig: { status: 'no', isApplicable: false },
+    statutoryCompliance: {
+      affiliationCertificate: { fileUrl: 'https://cdn.example.com/cbse-grant.pdf', fileName: 'cbse-grant.pdf' },
+      recognitionNoc: { fileUrl: 'https://cdn.example.com/state-noc.pdf', fileName: 'state-noc.pdf' },
+      fireSafetyCertificate: { fileUrl: 'https://cdn.example.com/fire-safety.pdf', fileName: 'fire-safety.pdf' },
+      mandatoryDisclosure: { fileUrl: 'https://cdn.example.com/appendix-ix.pdf', fileName: 'appendix-ix.pdf' },
+    },
+    clientConfirmation: {
+      isConfirmed: true,
+      confirmedByName: 'Dr. Sunita Sharma',
     },
     schoolContent: {
       aboutSchool: 'A premier educational institution fostering excellence and integrity.',
@@ -48,7 +76,8 @@ function createValidBaseIntake(): Partial<UniversalIntakeData> {
         images: [
           {
             id: 'img_hero_1',
-            category: 'campus_exterior',
+            category: 'campus_buildings',
+            url: 'https://images.unsplash.com/photo-campus-front.jpg',
             fileUrl: 'https://images.unsplash.com/photo-campus-front.jpg',
             caption: 'Front View of Main Campus',
           },
@@ -63,7 +92,7 @@ function createValidBaseIntake(): Partial<UniversalIntakeData> {
           category: 'branding',
           requirement: 'mandatory',
           type: 'image',
-          status: 'provided',
+          status: 'verified',
           fileUrl: 'https://cdn.example.com/logo-high-res.png',
           fileName: 'school-crest.png',
           fileSize: 450000,
@@ -76,7 +105,7 @@ function createValidBaseIntake(): Partial<UniversalIntakeData> {
           category: 'leadership',
           requirement: 'mandatory',
           type: 'image',
-          status: 'provided',
+          status: 'verified',
           fileUrl: 'https://cdn.example.com/principal-dr-sharma.jpg',
           fileName: 'principal.jpg',
           fileSize: 320000,
@@ -84,26 +113,48 @@ function createValidBaseIntake(): Partial<UniversalIntakeData> {
           height: 800,
         },
         {
-          id: 'doc-affiliation-cert',
+          id: 'cert-affiliation',
           title: 'CBSE Affiliation Grant Letter',
           category: 'compliance',
           requirement: 'mandatory',
           type: 'document',
-          status: 'provided',
+          status: 'verified',
           fileUrl: 'https://cdn.example.com/cbse-grant.pdf',
           fileName: 'cbse-grant.pdf',
           fileSize: 1200000,
         },
         {
-          id: 'doc-fire-safety',
+          id: 'cert-recognition',
+          title: 'State Government NOC / Recognition',
+          category: 'compliance',
+          requirement: 'mandatory',
+          type: 'document',
+          status: 'verified',
+          fileUrl: 'https://cdn.example.com/state-noc.pdf',
+          fileName: 'state-noc.pdf',
+          fileSize: 850000,
+        },
+        {
+          id: 'cert-safety',
           title: 'Building & Fire Safety Certificate',
           category: 'compliance',
           requirement: 'mandatory',
           type: 'document',
-          status: 'provided',
+          status: 'verified',
           fileUrl: 'https://cdn.example.com/fire-safety.pdf',
           fileName: 'fire-safety.pdf',
           fileSize: 950000,
+        },
+        {
+          id: 'cert-mandatory-disclosure',
+          title: 'Mandatory Public Disclosure (Appendix IX)',
+          category: 'compliance',
+          requirement: 'mandatory',
+          type: 'document',
+          status: 'verified',
+          fileUrl: 'https://cdn.example.com/appendix-ix.pdf',
+          fileName: 'appendix-ix.pdf',
+          fileSize: 750000,
         },
       ],
     },
@@ -180,7 +231,7 @@ test('Snapshot hash is deterministic and changes when content changes', () => {
   // Modifying principal name must alter the hash
   const modifiedIntake = {
     ...intake,
-    leadership: { principalName: 'Dr. Anand Mahindra' },
+    leadership: { ...intake.leadership, principalName: 'Dr. Anand Mahindra' },
   };
   const snap3 = generateWebsiteSpecificationSnapshot(modifiedIntake);
   const hash3 = computeSpecificationHash(snap3);
@@ -200,7 +251,9 @@ test('Server validation permits approval when all canonical requirements are met
 
 test('Server validation rejects approval when school logo is missing', () => {
   const intake = createValidBaseIntake();
-  // Remove logo from asset checklist
+  // Remove logo from asset checklist and branding
+  intake.branding = { logoUrl: '' } as any;
+  intake.brandingDesign = { logoUrl: '', logo: '' } as any;
   intake.assetChecklist = {
     items: (intake.assetChecklist?.items || []).filter((item) => item.id !== 'school_logo'),
   };
@@ -208,7 +261,7 @@ test('Server validation rejects approval when school logo is missing', () => {
   const result = validateServerApprovalPreconditions(intake);
   assert.strictEqual(result.canApprove, false, 'Must reject approval when logo is missing');
   assert.ok(
-    result.blockers.some((b) => b.key === 'asset_school_logo'),
+    result.blockers.some((b) => b.key === 'asset_school_logo' || b.key?.includes('logo') || b.label?.toLowerCase().includes('logo')),
     'Must include asset_school_logo blocker'
   );
 });

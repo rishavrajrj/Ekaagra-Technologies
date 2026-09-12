@@ -29,6 +29,7 @@ import {
   DoorOpen,
   Camera,
 } from 'lucide-react';
+import ModalPortal from '@/components/ui/ModalPortal';
 import SectionPhotoGallery, { type SectionPhotoTag } from './SectionPhotoGallery';
 
 const HOSTEL_PHOTO_TAGS: readonly SectionPhotoTag[] = [
@@ -1158,7 +1159,8 @@ export default function HostelResidentialSection({
       {/* MODAL: ADD / EDIT BUILDING */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {showAddBuildingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <ModalPortal isOpen={showAddBuildingModal}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-xl border border-[#E2E8F0]">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
               <h4 className="font-bold text-sm text-[#131B2E]">
@@ -1314,13 +1316,15 @@ export default function HostelResidentialSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {/* MODAL: ADD ROOM */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {showAddRoomModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <ModalPortal isOpen={showAddRoomModal}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-xl border border-[#E2E8F0]">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
               <h4 className="font-bold text-sm text-[#131B2E]">
@@ -1506,13 +1510,15 @@ export default function HostelResidentialSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {/* MODAL: ASSIGN STUDENT */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {showAssignStudentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <ModalPortal isOpen={showAssignStudentModal}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-xl border border-[#E2E8F0]">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
               <h4 className="font-bold text-sm text-[#131B2E]">Assign Student to Bed</h4>
@@ -1653,13 +1659,15 @@ export default function HostelResidentialSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {/* MODAL: TRANSFER STUDENT */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {showTransferModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <ModalPortal isOpen={showTransferModal}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 space-y-4 shadow-xl border border-[#E2E8F0]">
             <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
               <h4 className="font-bold text-sm text-[#131B2E]">Transfer Student Room</h4>
@@ -1763,13 +1771,15 @@ export default function HostelResidentialSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {/* MODAL: REMOVE BUILDING CONFIRMATION */}
       {/* ───────────────────────────────────────────────────────────────────────────── */}
       {buildingToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+        <ModalPortal isOpen={!!buildingToDelete}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl border border-[#E2E8F0]">
             <div className="flex items-start space-x-3">
               <div
@@ -1858,6 +1868,7 @@ export default function HostelResidentialSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

@@ -43,6 +43,7 @@ import {
   getSection6StatusSummary,
 } from '@/lib/schoolContentGenerator';
 import { getSchoolTypeConfig } from '@/lib/academicStructureUtils';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 interface SchoolContentSectionProps {
   intakeData: UniversalIntakeData;
@@ -599,7 +600,7 @@ export default function SchoolContentSection({
       {/* ---------------------------------------------------------------------- */}
       {/* 3. ABOUT YOUR SCHOOL */}
       {/* ---------------------------------------------------------------------- */}
-      <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-4 shadow-2xs">
+      <div id="field-about-school" className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-4 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3.5">
           <div className="flex items-start sm:items-center space-x-2.5">
             <div className="w-7 h-7 rounded-lg bg-white border border-[#E2E8F0] flex items-center justify-center text-[#4338CA] shrink-0 shadow-2xs mt-0.5 sm:mt-0">
@@ -700,7 +701,7 @@ export default function SchoolContentSection({
       {/* ---------------------------------------------------------------------- */}
       {/* 4. MISSION */}
       {/* ---------------------------------------------------------------------- */}
-      <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-4 shadow-2xs">
+      <div id="field-mission" className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-4 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3.5">
           <div className="flex items-start sm:items-center space-x-2.5">
             <div className="w-7 h-7 rounded-lg bg-white border border-[#E2E8F0] flex items-center justify-center text-[#4338CA] shrink-0 shadow-2xs mt-0.5 sm:mt-0">
@@ -798,7 +799,7 @@ export default function SchoolContentSection({
       {/* ---------------------------------------------------------------------- */}
       {/* 5. VISION */}
       {/* ---------------------------------------------------------------------- */}
-      <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-4 shadow-2xs">
+      <div id="field-vision" className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-4 shadow-2xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E2E8F0] pb-3.5">
           <div className="flex items-start sm:items-center space-x-2.5">
             <div className="w-7 h-7 rounded-lg bg-white border border-[#E2E8F0] flex items-center justify-center text-[#4338CA] shrink-0 shadow-2xs mt-0.5 sm:mt-0">
@@ -1356,7 +1357,8 @@ export default function SchoolContentSection({
       {/* REGENERATION CONFIRMATION MODAL */}
       {/* ---------------------------------------------------------------------- */}
       {confirmModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-xs animate-in fade-in">
+        <ModalPortal isOpen={confirmModal.isOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-[#0F172A]/40 backdrop-blur-xs animate-in fade-in">
           <div className="bg-white border border-[#E2E8F0] rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4 animate-in zoom-in-95">
             <div className="flex items-start space-x-3">
               <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shrink-0">
@@ -1395,6 +1397,7 @@ export default function SchoolContentSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

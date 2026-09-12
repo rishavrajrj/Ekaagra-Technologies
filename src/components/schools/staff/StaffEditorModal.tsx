@@ -15,6 +15,12 @@ import {
   Sparkles,
   Save,
   Layers,
+  Globe,
+  Star,
+  Eye,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
 import type { StaffMember, StaffFacultyConfigData, StaffCustomField } from '@/lib/types';
 import {
@@ -22,6 +28,7 @@ import {
   DEFAULT_FACULTY_DESIGNATIONS,
 } from '@/lib/staffFacultyUtils';
 import ModalPortal from '@/components/ui/ModalPortal';
+import StaffWebsitePreview from './StaffWebsitePreview';
 
 export interface StaffEditorModalProps {
   token?: string;
@@ -45,7 +52,7 @@ export default function StaffEditorModal({
   onSave,
 }: StaffEditorModalProps) {
   const [activeSection, setActiveSection] = useState<
-    'employment' | 'personal' | 'contact' | 'address' | 'qualification' | 'specific' | 'custom'
+    'employment' | 'personal' | 'contact' | 'address' | 'qualification' | 'specific' | 'website' | 'custom'
   >('employment');
 
   // Form State
@@ -68,6 +75,19 @@ export default function StaffEditorModal({
   const [maritalStatus, setMaritalStatus] = useState('Married');
   const [photoUrl, setPhotoUrl] = useState('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState('');
+  const [photoNotice, setPhotoNotice] = useState('');
+
+  // Website Profile State
+  const [showOnWebsite, setShowOnWebsite] = useState(false);
+  const [publicName, setPublicName] = useState('');
+  const [publicDesignation, setPublicDesignation] = useState('');
+  const [publicDepartment, setPublicDepartment] = useState('');
+  const [publicSubject, setPublicSubject] = useState('');
+  const [shortBio, setShortBio] = useState('');
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [displayOrder, setDisplayOrder] = useState<number | ''>('');
+  const [isPreviewWebsiteOpen, setIsPreviewWebsiteOpen] = useState(false);
 
   // Contact
   const [officialEmail, setOfficialEmail] = useState('');
@@ -168,6 +188,19 @@ export default function StaffEditorModal({
         ...(member.customFields || {}),
         ...(member.custom_fields || {}),
       });
+
+      // Website Profile
+      const wp = member.websiteProfile;
+      setShowOnWebsite(wp ? Boolean(wp.showOnWebsite) : Boolean(member.displayOnWebsite));
+      setPublicName(wp?.publicName || member.name || '');
+      setPublicDesignation(wp?.publicDesignation || member.designation || 'TGT (Trained Graduate Teacher)');
+      setPublicDepartment(wp?.publicDepartment || member.department || 'Mathematics');
+      setPublicSubject(wp?.publicSubject || member.primarySubject || member.jobRole || '');
+      setShortBio(wp?.shortBio || member.bio || '');
+      setIsFeatured(Boolean(wp?.featured));
+      setDisplayOrder(typeof wp?.displayOrder === 'number' ? wp.displayOrder : (typeof member.displayOrder === 'number' ? member.displayOrder : ''));
+      setPhotoError('');
+      setPhotoNotice('');
     } else {
       // New member defaults
       const count = (config.staffMembers || []).length + 1;
@@ -215,20 +248,68 @@ export default function StaffEditorModal({
       setIsCoordinator(false);
       setJobRole('');
       setCustomFieldValues({});
+
+      // Website Profile defaults to OFF
+      setShowOnWebsite(false);
+      setPublicName('');
+      setPublicDesignation('TGT (Trained Graduate Teacher)');
+      setPublicDepartment('Mathematics');
+      setPublicSubject('Mathematics');
+      setShortBio('');
+      setIsFeatured(false);
+      setDisplayOrder(count);
+      setPhotoError('');
+      setPhotoNotice('');
     }
   }, [member, config.staffMembers, isOpen]);
 
   if (!isOpen) return null;
 
-  // Handle Photo Upload
+  // Handle Photo Upload with validation and duplicate checking
   const handlePhotoFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setPhotoError('');
+    setPhotoNotice('');
+
+    // 1. Validate file format
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      setPhotoError('Invalid image format. Please upload a JPEG, PNG, or WebP photo.');
+      return;
+    }
+
+    // 2. Validate file size (<= 5 MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setPhotoError(`Photo size (${(file.size / (1024 * 1024)).toFixed(1)}MB) exceeds the maximum allowed size of 5 MB.`);
+      return;
+    }
+
+    // 3. Immediate local preview
+    const localPreview = URL.createObjectURL(file);
+    setPhotoUrl(localPreview);
+
+    // 4. Duplicate Asset Interception: Check against school's existing staff library
+    const existingMatch = (config.staffMembers || []).find((s) => {
+      if (!s.photoUrl || s.id === member?.id) return false;
+      const cleanUrl = s.photoUrl.toLowerCase();
+      const cleanFileName = file.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return cleanUrl.includes(cleanFileName) && cleanFileName.length > 4;
+    });
+
+    if (existingMatch && existingMatch.photoUrl) {
+      setPhotoUrl(existingMatch.photoUrl);
+      setPhotoNotice(`Matching photo found in school media library from ${existingMatch.name} (${existingMatch.employeeCode || existingMatch.facultyId}). Reused existing asset to prevent duplicates.`);
+      return;
+    }
+
+    // 5. Upload & WebP server optimization
     setIsUploadingPhoto(true);
     try {
       const formData = new FormData();
       formData.append('photo', file);
+      formData.append('file', file);
       if (token) formData.append('token', token);
       formData.append('employeeCode', employeeCode || 'NEW');
 
@@ -239,15 +320,16 @@ export default function StaffEditorModal({
 
       if (res.ok) {
         const json = await res.json();
-        if (json.photoUrl) {
-          setPhotoUrl(json.photoUrl);
+        if (json.photoUrl || json.asset?.url) {
+          setPhotoUrl(json.photoUrl || json.asset?.url);
+          setPhotoNotice('Photo uploaded and optimized to standard profile dimensions.');
         }
       } else {
-        // Fallback local object URL for preview
-        setPhotoUrl(URL.createObjectURL(file));
+        const errData = await res.json().catch(() => ({}));
+        setPhotoError(errData.error || 'Photo upload encountered a server issue. Using local preview.');
       }
     } catch {
-      setPhotoUrl(URL.createObjectURL(file));
+      setPhotoNotice('Local preview active. Will be saved with the form submission.');
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -356,7 +438,26 @@ export default function StaffEditorModal({
       return;
     }
 
+    // Validate website fields only when Show on Website is enabled
+    if (showOnWebsite) {
+      if (!publicName.trim()) {
+        setActiveSection('website');
+        alert('Public Name is required when Show on Website is enabled. Please enter how this faculty member should be identified on the public website.');
+        return;
+      }
+      if (!publicDesignation.trim()) {
+        setActiveSection('website');
+        alert('Public Designation is required when Show on Website is enabled. Please enter their public title or designation.');
+        return;
+      }
+    }
+
     const stableId = member?.id || `staff_${employeeCode.toLowerCase().replace(/[^a-z0-9]/g, '_')}_${Date.now()}`;
+
+    const effectivePublicName = publicName.trim() || name.trim();
+    const effectivePublicDesignation = publicDesignation.trim() || designation.trim();
+    const effectivePublicDepartment = publicDepartment.trim() || department.trim();
+    const effectivePublicSubject = publicSubject.trim() || (staffType === 'TEACHING' ? primarySubject : jobRole) || '';
 
     const savedRecord: StaffMember = {
       id: stableId,
@@ -410,7 +511,19 @@ export default function StaffEditorModal({
       isHod: staffType === 'TEACHING' ? isHod : false,
       isCoordinator: staffType === 'TEACHING' ? isCoordinator : false,
       jobRole: staffType === 'NON_TEACHING' ? jobRole || undefined : undefined,
-      displayOnWebsite: true,
+      displayOnWebsite: showOnWebsite,
+      displayOrder: typeof displayOrder === 'number' ? displayOrder : undefined,
+      bio: shortBio.trim() || undefined,
+      websiteProfile: {
+        showOnWebsite,
+        publicName: effectivePublicName,
+        publicDesignation: effectivePublicDesignation,
+        publicDepartment: effectivePublicDepartment || undefined,
+        publicSubject: effectivePublicSubject || undefined,
+        shortBio: shortBio.trim() || undefined,
+        featured: isFeatured && showOnWebsite,
+        displayOrder: typeof displayOrder === 'number' ? displayOrder : undefined,
+      },
       customFields: customFieldValues,
       custom_fields: customFieldValues,
     };
@@ -534,6 +647,24 @@ export default function StaffEditorModal({
           >
             {staffType === 'TEACHING' ? <BookOpen className="w-3.5 h-3.5" /> : <Settings className="w-3.5 h-3.5" />}
             <span>{staffType === 'TEACHING' ? 'Teaching Role' : 'Operational Role'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveSection('website')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 cursor-pointer shrink-0 ${
+              activeSection === 'website'
+                ? 'bg-emerald-600 text-white shadow-2xs'
+                : showOnWebsite
+                ? 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+                : 'text-slate-600 hover:bg-slate-100'
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Website Profile</span>
+            {showOnWebsite && (
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            )}
           </button>
 
           {applicableCustomFields.length > 0 && (
@@ -687,52 +818,98 @@ export default function StaffEditorModal({
           {activeSection === 'personal' && (
             <div className="space-y-4">
               {/* Photo Upload Area */}
-              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
-                <div className="w-20 h-20 rounded-2xl bg-white border border-slate-200 overflow-hidden flex items-center justify-center shrink-0 shadow-2xs relative">
-                  {photoUrl ? (
-                    <img src={photoUrl} alt="Staff" className="w-full h-full object-cover" />
-                  ) : (
-                    <User className="w-8 h-8 text-slate-400" />
-                  )}
-                  {isUploadingPhoto && (
-                    <div className="absolute inset-0 bg-white/80 flex items-center justify-center text-[10px] font-bold text-indigo-600">
-                      Optimizing...
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1 text-center sm:text-left">
-                  <h4 className="font-bold text-slate-800">Staff Profile Photo</h4>
-                  <p className="text-[11px] text-[#64748B]">
-                    Images are automatically optimized to lightweight 600x800 WebP for instant directory loading.
-                  </p>
-                  <div className="pt-1 flex items-center space-x-2 justify-center sm:justify-start">
-                    <input
-                      type="file"
-                      ref={photoInputRef}
-                      accept="image/jpeg,image/png,image/webp"
-                      className="hidden"
-                      onChange={handlePhotoFileSelected}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => photoInputRef.current?.click()}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-xs hover:bg-indigo-100 transition flex items-center space-x-1 cursor-pointer"
-                    >
-                      <Camera className="w-3.5 h-3.5" />
-                      <span>{photoUrl ? 'Change Photo' : 'Upload Photo'}</span>
-                    </button>
-                    {photoUrl && (
-                      <button
-                        type="button"
-                        onClick={() => setPhotoUrl('')}
-                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-rose-50 hover:text-rose-600 text-xs font-bold transition cursor-pointer"
-                      >
-                        Remove
-                      </button>
+              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
+                  {/* Avatar / Photo Preview */}
+                  <div className="w-24 h-28 rounded-2xl bg-white border-2 border-slate-200 overflow-hidden flex flex-col items-center justify-center shrink-0 shadow-2xs relative group">
+                    {photoUrl ? (
+                      <>
+                        <img src={photoUrl} alt={name || 'Faculty Member'} className="w-full h-full object-cover object-top" />
+                        <button
+                          type="button"
+                          onClick={() => photoInputRef.current?.click()}
+                          className="absolute inset-0 bg-slate-900/60 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                          title="Change Photo"
+                        >
+                          <Camera className="w-5 h-5 mb-1" />
+                          <span className="text-[10px] font-bold">Replace</span>
+                        </button>
+                      </>
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-indigo-50 to-slate-100 text-slate-400">
+                        <User className="w-10 h-10 text-slate-400 mb-1" />
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">No Photo</span>
+                      </div>
+                    )}
+                    {isUploadingPhoto && (
+                      <div className="absolute inset-0 bg-white/85 flex flex-col items-center justify-center text-[10px] font-bold text-indigo-600">
+                        <span className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full mb-1" />
+                        <span>Optimizing...</span>
+                      </div>
                     )}
                   </div>
+
+                  <div className="space-y-1.5 text-center sm:text-left flex-1">
+                    <div className="flex items-center space-x-2 justify-center sm:justify-start">
+                      <h4 className="font-bold text-slate-800">Faculty Profile Photo</h4>
+                      <span className="text-[10px] font-medium text-slate-400 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                        Optional
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-[#64748B] max-w-md leading-relaxed">
+                      Upload square or portrait faculty photographs. Images are automatically cropped and optimized to lightweight standard 600x800 WebP dimensions.
+                    </p>
+
+                    <div className="pt-1 flex flex-wrap items-center gap-2 justify-center sm:justify-start">
+                      <input
+                        type="file"
+                        ref={photoInputRef}
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handlePhotoFileSelected}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => photoInputRef.current?.click()}
+                        className="px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs transition flex items-center space-x-1.5 cursor-pointer"
+                      >
+                        <Camera className="w-3.5 h-3.5" />
+                        <span>{photoUrl ? 'Replace Photo' : 'Upload Photo'}</span>
+                      </button>
+
+                      {photoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPhotoUrl('');
+                            setPhotoNotice('');
+                            setPhotoError('');
+                          }}
+                          className="px-3 py-1.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition flex items-center space-x-1 cursor-pointer"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>Remove Photo</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Notifications / Alerts for Photo Upload */}
+                {photoError && (
+                  <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center space-x-2 animate-fade-in">
+                    <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+                    <span>{photoError}</span>
+                  </div>
+                )}
+
+                {photoNotice && (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex items-center space-x-2 animate-fade-in">
+                    <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                    <span>{photoNotice}</span>
+                  </div>
+                )}
               </div>
 
               {!isWebsiteOnly && (
@@ -1174,6 +1351,210 @@ export default function StaffEditorModal({
             </div>
           )}
 
+          {/* SECTION: WEBSITE PROFILE & PUBLISHING */}
+          {activeSection === 'website' && (
+            <div className="space-y-4">
+              {/* Publishing Control Card */}
+              <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50/50 space-y-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <h4 className="font-bold text-slate-800 text-sm">Show on School Website</h4>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          showOnWebsite
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                            : 'bg-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {showOnWebsite ? 'Visible to Public' : 'Private (Internal ERP Only)'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-[#64748B] max-w-xl">
+                      Control whether this staff member appears on the school&apos;s public website faculty directory.
+                      Turning this OFF keeps their record strictly private for ERP operations and does NOT alter employment status or salary data.
+                    </p>
+                  </div>
+
+                  {/* Toggle Switch */}
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      type="checkbox"
+                      checked={showOnWebsite}
+                      onChange={(e) => {
+                        const next = e.target.checked;
+                        setShowOnWebsite(next);
+                        if (!next) {
+                          setIsFeatured(false);
+                        } else {
+                          // Auto-fill public name if empty
+                          if (!publicName.trim()) setPublicName(name.trim());
+                          if (!publicDesignation.trim()) setPublicDesignation(designation.trim());
+                          if (!publicDepartment.trim()) setPublicDepartment(department.trim());
+                        }
+                      }}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                </div>
+
+                {showOnWebsite && (
+                  <div className="pt-2 border-t border-slate-200 flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-emerald-700 flex items-center space-x-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Website publishing is active for this faculty record</span>
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsPreviewWebsiteOpen(true)}
+                      className="px-3 py-1.5 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-bold text-xs transition flex items-center space-x-1.5 shadow-2xs cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Preview Live Website Profile</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Public Fields (Visible when Show on Website is ON) */}
+              {showOnWebsite ? (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 flex items-start space-x-2">
+                    <Globe className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold">Public Presentation Layer: </span>
+                      Configure public-facing metadata below. Sensitive ERP attributes (personal phone, salary, employee ID, and confidential HR files) will never be published publicly.
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="font-bold text-slate-700">Public Name *</label>
+                        <span className="text-[10px] text-rose-500 font-bold">Required</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={publicName}
+                        onChange={(e) => setPublicName(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-emerald-500 bg-white"
+                        placeholder="e.g. Dr. Rajesh Kumar"
+                      />
+                      <p className="text-[10px] text-slate-400">Public display name shown to students & parents.</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="font-bold text-slate-700">Public Designation *</label>
+                        <span className="text-[10px] text-rose-500 font-bold">Required</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={publicDesignation}
+                        onChange={(e) => setPublicDesignation(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-emerald-500 bg-white"
+                        placeholder="e.g. Senior Mathematics Faculty"
+                      />
+                      <p className="text-[10px] text-slate-400">Public-facing professional title.</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-700">Public Department</label>
+                      <input
+                        type="text"
+                        value={publicDepartment}
+                        onChange={(e) => setPublicDepartment(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-emerald-500 bg-white"
+                        placeholder="e.g. Science & Mathematics Department"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="font-bold text-slate-700">Public Subject / Role</label>
+                      <input
+                        type="text"
+                        value={publicSubject}
+                        onChange={(e) => setPublicSubject(e.target.value)}
+                        className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-emerald-500 bg-white"
+                        placeholder="e.g. Calculus & Algebra Specialist"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Short Bio */}
+                  <div className="space-y-1">
+                    <label className="font-bold text-slate-700">Short Biography & Teaching Profile</label>
+                    <textarea
+                      rows={3}
+                      value={shortBio}
+                      onChange={(e) => setShortBio(e.target.value)}
+                      className="w-full border border-slate-200 rounded-xl p-2.5 text-xs focus:ring-emerald-500 bg-white"
+                      placeholder="Brief overview of teaching background, achievements, and educational philosophy (displayed on faculty card and website profile)."
+                    />
+                  </div>
+
+                  {/* Featured Faculty & Display Order Controls */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-100">
+                    {/* Featured Faculty Toggle */}
+                    <div className="p-3 rounded-xl border border-amber-200 bg-amber-50/50 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center space-x-1.5">
+                          <Star className={`w-4 h-4 ${isFeatured ? 'fill-amber-500 text-amber-500' : 'text-slate-400'}`} />
+                          <span className="font-bold text-slate-800 text-xs">Featured Faculty</span>
+                        </div>
+                        <p className="text-[10px] text-slate-500 max-w-[200px]">
+                          Highlight this educator prominently on the school website homepage.
+                        </p>
+                      </div>
+
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isFeatured}
+                          onChange={(e) => setIsFeatured(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                      </label>
+                    </div>
+
+                    {/* Display Order */}
+                    <div className="p-3 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <label className="font-bold text-slate-700 text-xs block">Display Order</label>
+                        <p className="text-[10px] text-slate-500">
+                          Controls card order (lower numbers appear first).
+                        </p>
+                      </div>
+
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        value={displayOrder}
+                        onChange={(e) => setDisplayOrder(e.target.value === '' ? '' : parseInt(e.target.value, 10))}
+                        className="w-20 border border-slate-200 rounded-xl p-2 text-xs font-mono font-bold text-center bg-white focus:ring-emerald-500"
+                        placeholder="1"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-6 text-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 space-y-2">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <h5 className="font-bold text-slate-700 text-xs">Public Website Publishing is Turned Off</h5>
+                  <p className="text-[11px] text-slate-500 max-w-sm mx-auto">
+                    This staff member will remain completely confidential within your internal administrative ERP roster. Switch &quot;Show on School Website&quot; ON to configure public presentation settings.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* SECTION 7: CUSTOM EXTENSIBLE FIELDS */}
           {activeSection === 'custom' && (
             <div className="space-y-4">
@@ -1229,6 +1610,33 @@ export default function StaffEditorModal({
         </form>
       </div>
     </div>
+
+    {/* Live Website Profile Preview */}
+    {isPreviewWebsiteOpen && (
+      <StaffWebsitePreview
+        isOpen={isPreviewWebsiteOpen}
+        member={{
+          id: member?.id || 'preview_id',
+          name: (publicName.trim() || name.trim()) || 'Faculty Member',
+          designation: (publicDesignation.trim() || designation.trim()) || 'Staff',
+          department: (publicDepartment.trim() || department.trim()) || undefined,
+          photoUrl: photoUrl || undefined,
+          status,
+          displayOnWebsite: showOnWebsite,
+          websiteProfile: {
+            showOnWebsite,
+            publicName: publicName.trim() || name.trim(),
+            publicDesignation: publicDesignation.trim() || designation.trim(),
+            publicDepartment: publicDepartment.trim() || department.trim(),
+            publicSubject: publicSubject.trim() || (staffType === 'TEACHING' ? primarySubject : jobRole),
+            shortBio: shortBio.trim(),
+            featured: isFeatured && showOnWebsite,
+            displayOrder: typeof displayOrder === 'number' ? displayOrder : undefined,
+          },
+        }}
+        onClose={() => setIsPreviewWebsiteOpen(false)}
+      />
+    )}
     </ModalPortal>
   );
 }

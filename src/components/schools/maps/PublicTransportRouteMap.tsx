@@ -38,6 +38,7 @@ import {
   Send,
   Radio,
 } from 'lucide-react';
+import ModalPortal from '@/components/ui/ModalPortal';
 import type { Coordinates } from './mapTypes';
 import type {
   PublicTransportMapModel,
@@ -91,10 +92,19 @@ export default function PublicTransportRouteMap({
 }: PublicTransportRouteMapProps) {
   const { school, routes, isEnabled, isConfigured, totalActiveRoutes, totalStops, areasServed } = model;
 
-  // Active visibility states
+  // Active visibility states (all routes visible by default)
   const [visibleRouteIds, setVisibleRouteIds] = useState<Set<string>>(() => {
     return new Set(routes.map((r) => r.id));
   });
+
+  // Ensure all routes are visible by default when routes are loaded or updated
+  const initialSyncDoneRef = useRef(false);
+  useEffect(() => {
+    if (!initialSyncDoneRef.current && routes.length > 0) {
+      setVisibleRouteIds(new Set(routes.map((r) => r.id)));
+      initialSyncDoneRef.current = true;
+    }
+  }, [routes]);
 
   // Selected route for highlighting (null = all visible routes shown equally)
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
@@ -1143,7 +1153,8 @@ export default function PublicTransportRouteMap({
 
       {/* ─── "REQUEST A PICKUP POINT" MODAL ──────────────────────────────────── */}
       {isRequestModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <ModalPortal isOpen={isRequestModalOpen}>
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div>
@@ -1238,6 +1249,7 @@ export default function PublicTransportRouteMap({
             )}
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

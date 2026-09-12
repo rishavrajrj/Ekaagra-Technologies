@@ -499,7 +499,46 @@ export type CustomFieldType =
   | 'email'
   | 'phone';
 
-export type IntakeChangeRequestStatus = 'open' | 'resolved' | 'waived';
+export type IntakeChangeRequestStatus =
+  | 'open'
+  | 'waiting_for_school'
+  | 'ready_for_review'
+  | 'approved'
+  | 'rejected'
+  | 'cancelled'
+  | 'resolved'
+  | 'waived';
+
+export type FieldReviewStatus = 'needs_review' | 'verified' | 'changes_requested' | 'approved';
+export type MediaReviewStatus = 'pending_review' | 'approved' | 'changes_requested' | 'replaced' | 'rejected';
+
+export interface FieldReviewItem {
+  sectionKey: string;
+  fieldKey: string;
+  status: FieldReviewStatus;
+  notes?: string;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export interface MediaReviewItem {
+  assetId: string;
+  status: MediaReviewStatus;
+  notes?: string;
+  updatedAt: string;
+  updatedBy?: string;
+}
+
+export interface SchoolReviewMetadata {
+  fieldReviews?: Record<string, FieldReviewItem>;
+  mediaReviews?: Record<string, MediaReviewItem>;
+  finalApproval?: {
+    approvedAt: string;
+    approvedBy: string;
+    notes?: string;
+    specificationHash?: string;
+  };
+}
 
 export interface SchoolProject {
   id: string;
@@ -522,7 +561,7 @@ export interface SchoolProject {
   state?: string | null;
   domain_requirement?: string | null;
   commercial_summary: Record<string, unknown>;
-  metadata: Record<string, unknown>;
+  metadata: Record<string, unknown> & SchoolReviewMetadata;
   assigned_reviewer_id?: string | null;
   assigned_reviewer_name?: string | null;
   approved_at?: string | null;
@@ -570,12 +609,22 @@ export interface SchoolIntakeChangeRequest {
   school_project_id: string;
   section_key: string;
   field_key?: string | null;
+  asset_id?: string | null;
+  request_type?: 'correction' | 'replacement' | 'clarification' | 'content' | string;
+  reason?: string | null;
   request_comment: string;
+  suggested_value?: string | null;
+  previous_value?: string | null;
+  current_value?: string | null;
+  school_response?: string | null;
+  school_updated_value?: string | null;
   requested_by: string;
   status: IntakeChangeRequestStatus;
   resolution_notes?: string | null;
   created_at: string;
+  updated_at?: string;
   resolved_at?: string | null;
+  resolved_by?: string | null;
 }
 
 export interface SchoolProjectCustomField {
@@ -1501,6 +1550,15 @@ export interface WebsiteRequirementsData {
   approvalHistory?: WebsiteApprovalRecord[];
 }
 
+export interface WebsiteScopeData {
+  websiteType?: 'public_school' | 'group_institutions' | 'portal_first' | string;
+  coreModules?: string[];
+  optionalModules?: string[];
+  customPages?: Array<{ id: string; name: string; notes?: string }>;
+  specialInstructions?: string;
+  notes?: string;
+}
+
 export interface AwardOrAchievement {
   id: string;
   title: string;
@@ -1882,6 +1940,18 @@ export interface StaffMember {
   subjectsTaught?: string;
   displayOnWebsite: boolean;
   displayOrder?: number;
+  websiteProfile?: {
+    showOnWebsite: boolean;
+    publicName?: string;
+    publicDesignation?: string;
+    publicDepartment?: string;
+    publicSubject?: string;
+    shortBio?: string;
+    featured?: boolean;
+    displayOrder?: number;
+  };
+  archivedAt?: string;
+  archivedReason?: string;
   customFields?: Record<string, any>;
   custom_fields?: Record<string, any>;
   createdAt?: string;
@@ -2162,6 +2232,9 @@ export interface AdmissionFeeItem {
   currency?: string;
   frequency?: FeeFrequency | string;
   applicableClasses?: string[];
+  session?: string;
+  showOnWebsite?: boolean;
+  displayLabel?: string;
   notes?: string;
 }
 
@@ -2231,6 +2304,177 @@ export interface AdmissionsData {
   entranceTestRequired?: boolean;
 }
 
+// --- Layered Fee Architecture & Curriculum Models -------------------
+export type FeeCategoryType =
+  | 'Tuition'
+  | 'Annual Charges'
+  | 'Examination'
+  | 'Library'
+  | 'Insurance'
+  | 'Student Welfare'
+  | 'Sports'
+  | 'Technology / Computer'
+  | 'Activity'
+  | 'Other';
+
+export type StudentTypeEligibility = 'new_only' | 'existing_only' | 'both';
+
+export type FeeBillingFrequency = 'one_time' | 'monthly' | 'quarterly' | 'half_yearly' | 'annually';
+
+export type FeeStatusKind = 'INHERITED' | 'CUSTOM' | 'NOT APPLICABLE' | 'OPTIONAL' | 'INCLUDED';
+
+export interface CommonFeeItem {
+  id: string;
+  name: string;
+  category: FeeCategoryType | string;
+  amount: number;
+  frequency: FeeBillingFrequency;
+  studentType: StudentTypeEligibility;
+  applicableClasses: 'all' | string[]; // 'all' or list of class names
+  isRefundable?: boolean;
+  refundPolicy?: string;
+  isVisibleOnWebsite?: boolean;
+  description?: string;
+  isAdmissionOnly?: boolean;
+  paymentTiming?: 'at_admission' | 'before_session' | 'installments' | string;
+}
+
+export type OptionalServiceKey =
+  | 'transport'
+  | 'hostel'
+  | 'meals'
+  | 'uniform'
+  | 'books'
+  | 'trips'
+  | 'activities'
+  | 'other';
+
+export interface OptionalServiceConfig {
+  id: string;
+  key: OptionalServiceKey | string;
+  name: string;
+  isProvided: boolean; // Does your school provide this service?
+  description?: string;
+  feeAmount?: number;
+  frequency?: FeeBillingFrequency;
+  applicableClasses?: 'all' | string[];
+  isRequired?: boolean; // Optional vs Mandatory
+  studentType?: StudentTypeEligibility;
+  isVisibleOnWebsite?: boolean;
+  pricingModel?: 'flat' | 'route_based';
+}
+
+export interface ClassFeeOverrideItem {
+  amount: number;
+  isCustom: boolean;
+  isExcluded?: boolean;
+  notes?: string;
+}
+
+export type PaymentPlanFrequency = 'monthly' | 'quarterly' | 'half_yearly' | 'yearly';
+
+export interface PaymentPlanConfig {
+  frequency: PaymentPlanFrequency;
+  isEnabled: boolean;
+  yearlyDiscountPercentage?: number;
+  discountAppliesTo?: 'tuition_only' | 'selected_fees' | 'all_academic';
+}
+
+export interface MeritScholarshipSlab {
+  id: string;
+  minPercentage: number;
+  maxPercentage: number;
+  discountPercentage: number;
+  appliesTo: 'net_tuition' | 'tuition' | 'total_fee';
+}
+
+export interface ScholarshipConfigData {
+  meritScholarship: {
+    isEnabled: boolean;
+    slabs: MeritScholarshipSlab[];
+  };
+  defenceScholarship: {
+    isEnabled: boolean;
+    name: string;
+    discountPercentage: number;
+    eligibility: string;
+    appliesTo: 'net_tuition' | 'tuition' | 'total_fee';
+  };
+  girlsScholarship: {
+    isEnabled: boolean;
+    discountPercentage: number;
+    appliesTo: 'net_tuition' | 'tuition' | 'total_fee';
+  };
+  siblingDiscount: {
+    isEnabled: boolean;
+    secondChildDiscount: number;
+    thirdChildDiscount: number;
+    appliesTo: 'net_tuition' | 'tuition' | 'total_fee';
+  };
+  customScholarships?: Array<{
+    id: string;
+    name: string;
+    discountPercentage: number;
+    criteria: string;
+    appliesTo: 'net_tuition' | 'tuition' | 'total_fee';
+  }>;
+  seatAvailability: {
+    seatLimitPercentage: number;
+    allocation: 'fcfs' | 'merit' | 'school_selection' | 'custom';
+    notes?: string;
+  };
+  stackingRule: 'highest_only' | 'stackable' | 'custom_priority';
+}
+
+export interface FeeNoteItem {
+  id: string;
+  text: string;
+  isPublished: boolean;
+}
+
+// Curriculum Models
+export type SubjectCategoryType =
+  | 'Language'
+  | 'Mathematics'
+  | 'Science'
+  | 'Social Science'
+  | 'Computer / Technology'
+  | 'Arts'
+  | 'Physical Education'
+  | 'Life Skills'
+  | 'Other';
+
+export interface SubjectItem {
+  id: string;
+  name: string;
+  category: SubjectCategoryType | string;
+  isMandatory: boolean;
+  description?: string;
+  applicableClasses?: string[];
+}
+
+export interface ClassCurriculumItem {
+  className: string;
+  classId?: string;
+  subjects?: string[];
+  learningAreas?: string[];
+  learningObjectives?: string[];
+  description?: string;
+}
+
+export interface CurriculumData {
+  overview?: {
+    board?: string;
+    curriculumType?: string;
+    academicApproach?: string;
+    learningPhilosophy?: string;
+    teachingMethodology?: string;
+    assessmentApproach?: string;
+  };
+  subjects?: SubjectItem[];
+  classCurricula?: ClassCurriculumItem[];
+}
+
 export interface FeeStructureItem {
   className: string;
   feeType: string;
@@ -2256,6 +2500,18 @@ export interface FeesConfigurationData {
   feeReceiptsAutomated?: boolean;
   parentLedgerHistoryEnabled?: boolean;
   dueRemindersEnabled?: boolean;
+
+  // Enriched 5-Layer Fee Architecture
+  commonFees?: CommonFeeItem[];
+  newStudentFees?: CommonFeeItem[];
+  optionalServices?: OptionalServiceConfig[];
+  classOverrides?: Record<string, Record<string, ClassFeeOverrideItem>>;
+  paymentPlans?: PaymentPlanConfig[];
+  scholarships?: ScholarshipConfigData;
+  annualChargesInclusions?: string[];
+  annualChargesCustomText?: string;
+  feeNotes?: FeeNoteItem[];
+  customFeeNotesText?: string;
 }
 
 export type StudentAttendanceMode =
@@ -5205,6 +5461,9 @@ export interface UniversalIntakeData {
   // 11. Fee Structures & Finance
   feesConfiguration?: FeesConfigurationData;
 
+  // 12. Academic Curriculum
+  curriculum?: CurriculumData;
+
   // 12. Attendance Workflow & Timetable Schedule
   attendanceConfig?: AttendanceData;
   timetableConfig?: TimetableData;
@@ -5294,7 +5553,11 @@ export interface UniversalIntakeData {
   mediaAssets?: MediaAssetsData;
   /** Centralized shared media registry across the school onboarding flow */
   mediaRegistry?: SharedMediaAsset[];
+  /** Project Scope & Website Module Configuration */
+  websiteScope?: WebsiteScopeData;
   additionalRequirements?: {
+    notes?: string;
+    customRequests?: string[];
     specialCustomWorkflows?: string;
     customReportsRequired?: string;
     thirdPartyIntegrations?: string;

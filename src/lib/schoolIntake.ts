@@ -13,6 +13,7 @@ import {
   type MobileAppAuthMethod,
   type MobileAppDistributionId,
   type SchoolAccommodationType,
+  type AcademicClassConfig,
 } from './types';
 import { isAddressFieldValid, resolveAddressValue, isKnownDistrict } from './geography';
 import { syncAssetChecklistWithIntake, calculateAssetChecklistScore } from './schoolAssetChecklist';
@@ -57,8 +58,24 @@ import {
   getMainCampus,
 } from './campusScopeRegistry';
 import { getFacilitiesSectionScore } from './facilitiesUtils';
+import { normalizeFeesData } from './feeCalculationEngine';
+import { getInitialCurriculumData } from './curriculumBoardPresets';
+import {
+  migrateAndNormalizeAcademicFees,
+  calculateAdmissionCompleteness,
+  calculateFeeStructureCompleteness,
+  calculateCurriculumCompleteness,
+  calculateAcademicCompleteness,
+} from './academicCompletenessEngine';
 
-export { isHostelApplicable };
+export {
+  isHostelApplicable,
+  migrateAndNormalizeAcademicFees,
+  calculateAdmissionCompleteness,
+  calculateFeeStructureCompleteness,
+  calculateCurriculumCompleteness,
+  calculateAcademicCompleteness,
+};
 
 export type IntakeSectionKey =
   | 'schoolProfile'
@@ -72,6 +89,7 @@ export type IntakeSectionKey =
   | 'studentConfig'
   | 'admissions'
   | 'feesConfiguration'
+  | 'curriculum'
   | 'attendanceConfig'
   | 'examinationConfig'
   | 'transportConfig'
@@ -92,17 +110,23 @@ export type IntakeSectionKey =
   | 'erpRequirements'
   | 'portalRequirements'
   | 'mediaAssets'
+  | 'websiteScope'
   | 'additionalRequirements';
 
 export type IntakeChapterKey =
+  | 'chapter_school_info'
+  | 'chapter_campus_operations'
+  | 'chapter_operations_finance'
+  | 'chapter_content_compliance'
+  | 'chapter_website_configuration'
+  | 'chapter_review_signoff'
+  // Backward compatibility aliases
   | 'chapter_identity'
   | 'chapter_branding_website'
   | 'chapter_academics_people'
-  | 'chapter_operations_finance'
   | 'chapter_campus_facilities'
   | 'chapter_tech_integrations'
-  | 'chapter_assets_legal'
-  | 'chapter_review_signoff';
+  | 'chapter_assets_legal';
 
 export interface SectionMetadata {
   key: IntakeSectionKey;
@@ -117,14 +141,12 @@ export interface SectionMetadata {
 }
 
 export const INTAKE_CHAPTERS: Array<{ key: IntakeChapterKey; title: string; subtitle: string; iconName: string }> = [
-  { key: 'chapter_identity', title: 'Identity & Campuses', subtitle: 'Permanent registration, UDISE, campuses & leadership', iconName: 'School' },
-  { key: 'chapter_branding_website', title: 'Branding & School Story', subtitle: 'Colors, crest, logos, identity & pedagogical story', iconName: 'Palette' },
-  { key: 'chapter_academics_people', title: 'Academics & People', subtitle: 'Classes, sections, subjects, staff & student configs', iconName: 'GraduationCap' },
-  { key: 'chapter_operations_finance', title: 'Admissions, Fees & Schedule', subtitle: 'Enrollment desk, fee slabs, attendance & exam schemes', iconName: 'DollarSign' },
-  { key: 'chapter_campus_facilities', title: 'Facilities & Campus Ops', subtitle: 'Labs, library, transport bus fleet & hostel', iconName: 'Building2' },
-  { key: 'chapter_tech_integrations', title: 'CMS & Integrations', subtitle: 'Publishing workflow, third-party services, apps & migration', iconName: 'Settings' },
-  { key: 'chapter_assets_legal', title: 'Assets & Legal Policies', subtitle: 'Document checklist, safety policies & delivery deadlines', iconName: 'FileText' },
-  { key: 'chapter_review_signoff', title: 'Verification & Final Sign-Off', subtitle: 'Final website specification review, admin provisioning & submission', iconName: 'ShieldCheck' },
+  { key: 'chapter_school_info', title: 'School Information', subtitle: 'Permanent registration, branding, leadership & academics', iconName: 'School' },
+  { key: 'chapter_campus_operations', title: 'Campus & Operations', subtitle: 'Campus infrastructure, facilities, transport & hostel', iconName: 'Building2' },
+  { key: 'chapter_operations_finance', title: 'Academic', subtitle: 'Enrollment desk, fee structure & academic curriculum', iconName: 'GraduationCap' },
+  { key: 'chapter_content_compliance', title: 'Content & Compliance', subtitle: 'Media gallery kit, document checklist & legal disclosures', iconName: 'FileText' },
+  { key: 'chapter_website_configuration', title: 'Website Configuration', subtitle: 'Website scope, domain setup & custom requirements', iconName: 'Settings' },
+  { key: 'chapter_review_signoff', title: 'Verification & Final Sign-Off', subtitle: 'Authoritative publication review, readiness & submission', iconName: 'ShieldCheck' },
 ];
 
 export const DESIGNATION_OTHER = 'Other';
@@ -643,10 +665,10 @@ export function isValidGoogleMapsUrl(url?: string | null): boolean {
 }
 
 export const INTAKE_SECTIONS: SectionMetadata[] = [
-  // Chapter 1: Identity & Campuses
+  // Chapter 1: School Information
   {
     key: 'schoolProfile',
-    chapter: 'chapter_identity',
+    chapter: 'chapter_school_info',
     stepNumber: 1,
     title: 'School Identity & Permanent Legal Information',
     shortTitle: 'Identity',
@@ -656,7 +678,7 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'campuses',
-    chapter: 'chapter_identity',
+    chapter: 'chapter_school_info',
     stepNumber: 2,
     title: 'Campuses & Branch Structure',
     shortTitle: 'Campuses',
@@ -666,7 +688,7 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'leadership',
-    chapter: 'chapter_identity',
+    chapter: 'chapter_school_info',
     stepNumber: 3,
     title: 'Management & Leadership',
     shortTitle: 'Leadership',
@@ -674,11 +696,9 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
     isMandatory: true,
   },
-
-  // Chapter 2: Branding & School Story
   {
     key: 'brandingDesign',
-    chapter: 'chapter_branding_website',
+    chapter: 'chapter_school_info',
     stepNumber: 4,
     title: 'Brand Identity & School Profile',
     shortTitle: 'Brand Identity',
@@ -688,7 +708,7 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'schoolContent',
-    chapter: 'chapter_branding_website',
+    chapter: 'chapter_school_info',
     stepNumber: 5,
     title: 'School Story, Mission & Educational Philosophy',
     shortTitle: 'Story & Philosophy',
@@ -696,11 +716,9 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     applicableProducts: ['school-website', 'school-website-cms', 'school-complete'],
     isMandatory: true,
   },
-
-  // Chapter 3: Academics & People
   {
     key: 'institutionStructure',
-    chapter: 'chapter_academics_people',
+    chapter: 'chapter_school_info',
     stepNumber: 6,
     title: 'Academic Structure & Curriculum',
     shortTitle: 'Academics',
@@ -710,7 +728,7 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'staffFaculty',
-    chapter: 'chapter_academics_people',
+    chapter: 'chapter_school_info',
     stepNumber: 7,
     title: 'Staff & Faculty Configuration',
     shortTitle: 'Faculty',
@@ -720,7 +738,7 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'studentConfig',
-    chapter: 'chapter_academics_people',
+    chapter: 'chapter_school_info',
     stepNumber: 8,
     title: 'Student Information & Configuration',
     shortTitle: 'Students',
@@ -729,53 +747,21 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     isMandatory: true,
   },
 
-  // Chapter 4: Operations & Finance
+  // Chapter 2: Campus & Operations
   {
-    key: 'admissions',
-    chapter: 'chapter_operations_finance',
+    key: 'facilitiesConfig',
+    chapter: 'chapter_campus_operations',
     stepNumber: 9,
-    title: 'Admissions, Fees & Schedule',
-    shortTitle: 'Admissions',
-    description: 'Configure your current admission cycle, eligibility, fees, application process, required documents and admissions contact information.',
+    title: 'Campus Facilities & Infrastructure Highlights',
+    shortTitle: 'Facilities',
+    description: 'Smart classrooms, composite science labs, computer laboratories & sports amenities.',
     applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
     isMandatory: true,
   },
   {
-    key: 'feesConfiguration',
-    chapter: 'chapter_operations_finance',
-    stepNumber: 10,
-    title: 'Fees & Finance Ledger Configuration',
-    shortTitle: 'Fees',
-    description: 'Fee heads, class-wise fee schedules, due dates, late fee rules & payment gateway preference.',
-    applicableProducts: ['school-erp', 'school-complete'],
-    isMandatory: true,
-  },
-  {
-    key: 'attendanceConfig',
-    chapter: 'chapter_operations_finance',
-    stepNumber: 11,
-    title: 'Attendance Workflow & Timetable Schedule',
-    shortTitle: 'Attendance',
-    description: 'Daily/biometric attendance modes, school timings, period duration & parent alerts.',
-    applicableProducts: ['school-erp', 'school-complete'],
-    isMandatory: true,
-  },
-  {
-    key: 'examinationConfig',
-    chapter: 'chapter_operations_finance',
-    stepNumber: 12,
-    title: 'Examinations, Grading & Report Cards',
-    shortTitle: 'Exams',
-    description: 'Exam terms, grading scales (CBSE/Percentage), internal marks & report card templates.',
-    applicableProducts: ['school-erp', 'school-complete'],
-    isMandatory: true,
-  },
-
-  // Chapter 5: Facilities & Campus Operations
-  {
     key: 'transportConfig',
-    chapter: 'chapter_campus_facilities',
-    stepNumber: 13,
+    chapter: 'chapter_campus_operations',
+    stepNumber: 10,
     title: 'Transport Fleet & Route Management',
     shortTitle: 'Transport',
     description: 'Bus count, route planning, GPS tracking requirements & parent transit visibility.',
@@ -784,19 +770,9 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     isConditional: true,
   },
   {
-    key: 'facilitiesConfig',
-    chapter: 'chapter_campus_facilities',
-    stepNumber: 14,
-    title: 'Campus Facilities & Infrastructure Highlights',
-    shortTitle: 'Facilities',
-    description: 'Smart classrooms, composite science labs, computer laboratories & sports amenities.',
-    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
-    isMandatory: true,
-  },
-  {
     key: 'libraryConfig',
-    chapter: 'chapter_campus_facilities',
-    stepNumber: 15,
+    chapter: 'chapter_campus_operations',
+    stepNumber: 11,
     title: 'Library Management System',
     shortTitle: 'Library',
     description: 'Book volume estimate, barcode/RFID integration, circulation limits & fine policies.',
@@ -806,8 +782,8 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'hostelConfig',
-    chapter: 'chapter_campus_facilities',
-    stepNumber: 16,
+    chapter: 'chapter_campus_operations',
+    stepNumber: 12,
     title: 'Hostel & Residential Boarding',
     shortTitle: 'Hostel',
     description: 'Boarding capacity, room categories, wardens, mess facilities & residential curfew rules.',
@@ -816,83 +792,75 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     isConditional: true, // Only if Residential
   },
 
-  // Chapter 6: Tech, Domain & Integrations
+  // Chapter 3: Academic (Admission, Fee Structure, Curriculum)
   {
-    key: 'communicationConfig',
-    chapter: 'chapter_tech_integrations',
-    stepNumber: 17,
-    title: 'Institutional Communication Preferences',
-    shortTitle: 'Communication',
-    description: 'WhatsApp API, SMS gateway, email circulars, push notifications & emergency broadcasts.',
-    applicableProducts: ['school-erp', 'school-complete'],
+    key: 'admissions',
+    chapter: 'chapter_operations_finance',
+    stepNumber: 13,
+    title: 'Admission Desk & Enrollment',
+    shortTitle: 'Admission',
+    description: 'Target admission session, class availability, age eligibility, admission process, required documents and key dates.',
+    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
     isMandatory: true,
   },
   {
-    key: 'cmsRequirements',
-    chapter: 'chapter_tech_integrations',
-    stepNumber: 18,
-    title: 'Website CMS Workflow & Publishing Roles',
-    shortTitle: 'CMS Workflow',
-    description: 'Editorial roles, draft approval workflows (single vs two-step) & publishing categories.',
-    applicableProducts: ['school-website-cms', 'school-complete'],
+    key: 'feesConfiguration',
+    chapter: 'chapter_operations_finance',
+    stepNumber: 14,
+    title: 'Fee Structure & Payment Policies',
+    shortTitle: 'Fee Structure',
+    description: 'Configure common fees, class-wise inheritance, optional services, payment plans, scholarships and transparent public fee presentation.',
+    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
     isMandatory: true,
   },
   {
-    key: 'domainPresence',
-    chapter: 'chapter_tech_integrations',
-    stepNumber: 19,
-    title: 'Website & Domain Setup',
-    shortTitle: 'Domain Setup',
-    description: 'Domain configuration happens after your school onboarding is complete.',
-    applicableProducts: ['school-website', 'school-website-cms', 'school-complete'],
-    isMandatory: false,
-  },
-  {
-    key: 'existingSystemsMigration',
-    chapter: 'chapter_tech_integrations',
-    stepNumber: 20,
-    title: 'Legacy Data Migration Assessment',
-    shortTitle: 'Data Migration',
-    description: 'Current system assessment (Excel/CSV/Legacy ERP/Tally), record volumes & formatting readiness.',
-    applicableProducts: ['school-erp', 'school-complete'],
-    isMandatory: false,
-  },
-  {
-    key: 'integrationsConfig',
-    chapter: 'chapter_tech_integrations',
-    stepNumber: 21,
-    title: 'Third-Party Integration Selections',
-    shortTitle: 'Integrations',
-    description: 'Gateway selections (Razorpay/MSG91/Meta Cloud API/Biometrics/DigiLocker). No secrets.',
-    applicableProducts: ['school-erp', 'school-complete'],
-    isMandatory: true,
-  },
-  {
-    key: 'mobileAppConfig',
-    chapter: 'chapter_tech_integrations',
-    stepNumber: 22,
-    title: 'Mobile Application Requirements',
-    shortTitle: 'Mobile Apps',
-    description: 'Parent, student, teacher and admin mobile apps for Android, iOS & PWA with push notifications.',
-    applicableProducts: ['school-erp', 'school-complete'],
-    isMandatory: true,
-  },
-  {
-    key: 'securityPrivacy',
-    chapter: 'chapter_tech_integrations',
-    stepNumber: 23,
-    title: 'Security, Privacy & Administrative Access',
-    shortTitle: 'Security',
-    description: 'Administrator headcounts, 2FA, session policies, audit logs retention & data export limits.',
-    applicableProducts: ['school-website-cms', 'school-erp', 'school-complete'],
+    key: 'curriculum',
+    chapter: 'chapter_operations_finance',
+    stepNumber: 15,
+    title: 'Academic Curriculum & Subjects',
+    shortTitle: 'Curriculum',
+    description: 'Curriculum overview, pedagogical approach, class-wise curriculum objectives, and reusable subject catalog.',
+    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
     isMandatory: true,
   },
 
-  // Chapter 7: Assets, Legal & Project Delivery
+  // Campus Operations - ERP Modules
+  {
+    key: 'attendanceConfig',
+    chapter: 'chapter_campus_operations',
+    stepNumber: 16,
+    title: 'Attendance Workflow & Timetable Schedule',
+    shortTitle: 'Attendance',
+    description: 'Daily/biometric attendance modes, school timings, period duration & parent alerts.',
+    applicableProducts: ['school-erp', 'school-complete'],
+    isMandatory: true,
+  },
+  {
+    key: 'examinationConfig',
+    chapter: 'chapter_campus_operations',
+    stepNumber: 17,
+    title: 'Examinations, Grading & Report Cards',
+    shortTitle: 'Exams',
+    description: 'Exam terms, grading scales (CBSE/Percentage), internal marks & report card templates.',
+    applicableProducts: ['school-erp', 'school-complete'],
+    isMandatory: true,
+  },
+
+  // Chapter 4: Content & Compliance
+  {
+    key: 'mediaAssets',
+    chapter: 'chapter_content_compliance',
+    stepNumber: 17,
+    title: 'Media Assets & Content Kit',
+    shortTitle: 'Media Kit',
+    description: 'Official branding photos, campus infrastructure photography & gallery collections.',
+    applicableProducts: ['school-erp'],
+    isMandatory: false,
+  },
   {
     key: 'assetChecklist',
-    chapter: 'chapter_assets_legal',
-    stepNumber: 24,
+    chapter: 'chapter_content_compliance',
+    stepNumber: 18,
     title: 'Content, Assets & Documents Provisioning',
     shortTitle: 'Assets & Documents',
     description: 'Structured repository of photos, affiliation certificates, prospectuses & mandatory disclosures.',
@@ -901,8 +869,8 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'legalPolicies',
-    chapter: 'chapter_assets_legal',
-    stepNumber: 25,
+    chapter: 'chapter_content_compliance',
+    stepNumber: 19,
     title: 'Legal Policies & Statutory Disclosures',
     shortTitle: 'Legal & Policies',
     description: 'Privacy policy, fee refund rules, child protection guidelines & mandatory public disclosure.',
@@ -911,8 +879,8 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'projectDelivery',
-    chapter: 'chapter_assets_legal',
-    stepNumber: 26,
+    chapter: 'chapter_content_compliance',
+    stepNumber: 20,
     title: 'Project Timeline & Delivery Priorities',
     shortTitle: 'Delivery Scope',
     description: 'Target launch dates, Phase 1 vs Phase 2 priorities, deadlines & designated decision makers.',
@@ -920,33 +888,101 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
     isMandatory: true,
   },
 
-  // Chapter 8: Verification & Final Sign-Off
+  // Chapter 5: Website Configuration / Project Scope
   {
-    key: 'websiteRequirements',
-    chapter: 'chapter_review_signoff',
-    stepNumber: 27,
-    title: 'Final Website Review & Submission',
-    shortTitle: 'Final Website Review & Submission',
-    description: "Universal final review, verification, asset management, compliance, preview, download, and submission command center.",
+    key: 'websiteScope',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 21,
+    title: 'Website Scope & Project Configuration',
+    shortTitle: 'Website Scope',
+    description: 'Select the modules, pages, and special capabilities that apply to this website project.',
+    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
+    isMandatory: false,
+  },
+  {
+    key: 'domainPresence',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 22,
+    title: 'Website & Domain Setup',
+    shortTitle: 'Domain Setup',
+    description: 'Configure your preferred website domain, transfer existing domain, or decide later.',
     applicableProducts: ['school-website', 'school-website-cms', 'school-complete'],
+    isMandatory: false,
+  },
+  {
+    key: 'additionalRequirements',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 23,
+    title: 'Custom Requirements & Special Requests',
+    shortTitle: 'Custom Requirements',
+    description: 'Capture project-specific client requests that do not fit into the standard school data model.',
+    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
+    isMandatory: false,
+  },
+  {
+    key: 'communicationConfig',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 24,
+    title: 'Institutional Communication Preferences',
+    shortTitle: 'Communication',
+    description: 'WhatsApp API, SMS gateway, email circulars, push notifications & emergency broadcasts.',
+    applicableProducts: ['school-erp', 'school-complete'],
     isMandatory: true,
   },
   {
-    key: 'usersAccess',
-    chapter: 'chapter_review_signoff',
-    stepNumber: 28,
-    title: 'Administrator Provisioning & Final Sign-Off',
-    shortTitle: 'Provisioning & Sign-Off',
-    description: 'Super Administrator identity, invitation recipients, final completeness check & submission declaration.',
-    applicableProducts: ['school-erp'],
+    key: 'cmsRequirements',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 25,
+    title: 'Website CMS Workflow & Publishing Roles',
+    shortTitle: 'CMS Workflow',
+    description: 'Editorial roles, draft approval workflows (single vs two-step) & publishing categories.',
+    applicableProducts: ['school-website-cms', 'school-complete'],
     isMandatory: true,
   },
-
-  // Legacy mappings for backward compatibility
+  {
+    key: 'existingSystemsMigration',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 26,
+    title: 'Legacy Data Migration Assessment',
+    shortTitle: 'Data Migration',
+    description: 'Current system assessment (Excel/CSV/Legacy ERP/Tally), record volumes & formatting readiness.',
+    applicableProducts: ['school-erp', 'school-complete'],
+    isMandatory: false,
+  },
+  {
+    key: 'integrationsConfig',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 27,
+    title: 'Third-Party Integration Selections',
+    shortTitle: 'Integrations',
+    description: 'Gateway selections (Razorpay/MSG91/Meta Cloud API/Biometrics/DigiLocker). No secrets.',
+    applicableProducts: ['school-erp', 'school-complete'],
+    isMandatory: true,
+  },
+  {
+    key: 'mobileAppConfig',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 28,
+    title: 'Mobile Application Requirements',
+    shortTitle: 'Mobile Apps',
+    description: 'Parent, student, teacher and admin mobile apps for Android, iOS & PWA with push notifications.',
+    applicableProducts: ['school-erp', 'school-complete'],
+    isMandatory: true,
+  },
+  {
+    key: 'securityPrivacy',
+    chapter: 'chapter_website_configuration',
+    stepNumber: 29,
+    title: 'Security, Privacy & Administrative Access',
+    shortTitle: 'Security',
+    description: 'Administrator headcounts, 2FA, session policies, audit logs retention & data export limits.',
+    applicableProducts: ['school-website-cms', 'school-erp', 'school-complete'],
+    isMandatory: true,
+  },
   {
     key: 'erpRequirements',
-    chapter: 'chapter_operations_finance',
-    stepNumber: 29,
+    chapter: 'chapter_website_configuration',
+    stepNumber: 30,
     title: 'ERP Requirements & Scope',
     shortTitle: 'ERP Scope',
     description: 'Legacy ERP scope assessment',
@@ -955,33 +991,35 @@ export const INTAKE_SECTIONS: SectionMetadata[] = [
   },
   {
     key: 'portalRequirements',
-    chapter: 'chapter_tech_integrations',
-    stepNumber: 30,
+    chapter: 'chapter_website_configuration',
+    stepNumber: 31,
     title: 'Portal Requirements & Notifications',
     shortTitle: 'Portals',
     description: 'Legacy portal visibility and alerts configuration',
     applicableProducts: ['school-erp', 'school-complete'],
     isMandatory: false,
   },
+
+  // Chapter 6: Verification & Final Sign-Off
   {
-    key: 'mediaAssets',
-    chapter: 'chapter_assets_legal',
-    stepNumber: 31,
-    title: 'Media Assets & Content Kit',
-    shortTitle: 'Media Kit',
-    description: 'Legacy media assets - absorbed into Final Website Review & Submission',
-    applicableProducts: ['school-erp'],
-    isMandatory: false,
-  },
-  {
-    key: 'additionalRequirements',
+    key: 'websiteRequirements',
     chapter: 'chapter_review_signoff',
     stepNumber: 32,
-    title: 'Additional Requirements & Scope Notes',
-    shortTitle: 'Additional Notes',
-    description: 'Legacy notes and custom requests',
-    applicableProducts: ['school-website', 'school-website-cms', 'school-erp', 'school-complete'],
-    isMandatory: false,
+    title: 'Final Website Review & Submission',
+    shortTitle: 'Final Review',
+    description: 'Universal final review, verification, asset management, compliance, preview, download, and submission command center.',
+    applicableProducts: ['school-website', 'school-website-cms', 'school-complete'],
+    isMandatory: true,
+  },
+  {
+    key: 'usersAccess',
+    chapter: 'chapter_review_signoff',
+    stepNumber: 33,
+    title: 'Administrator Provisioning & Final Sign-Off',
+    shortTitle: 'Provisioning & Sign-Off',
+    description: 'Super Administrator identity, invitation recipients, final completeness check & submission declaration.',
+    applicableProducts: ['school-erp'],
+    isMandatory: true,
   },
 ];
 
@@ -1900,6 +1938,7 @@ export function createInitialIntakeData(params: {
   city?: string | null;
   state?: string | null;
   domainRequirement?: string | null;
+  board?: string | null;
 }): UniversalIntakeData {
   const slug = deriveSlugFromSchoolName(params.schoolName || 'School');
 
@@ -1908,6 +1947,54 @@ export function createInitialIntakeData(params: {
     params.city && isKnownDistrict('India', effectiveState, params.city)
       ? params.city
       : 'East Champaran';
+
+  const effectiveBoard = params.board || 'CBSE';
+
+  const initialClasses: AcademicClassConfig[] = [
+    { id: 'cls_sugg_nur', name: 'Nursery', code: 'NUR', level: 'Pre-Primary', sortOrder: 1, displayOrder: 1, isActive: true, sections: ['A'] },
+    { id: 'cls_sugg_lkg', name: 'LKG', code: 'LKG', level: 'Pre-Primary', sortOrder: 2, displayOrder: 2, isActive: true, sections: ['A'] },
+    { id: 'cls_sugg_ukg', name: 'UKG', code: 'UKG', level: 'Pre-Primary', sortOrder: 3, displayOrder: 3, isActive: true, sections: ['A'] },
+    { id: 'cls_sugg_c1', name: 'Class 1', code: 'STD-1', level: 'Primary', sortOrder: 4, displayOrder: 4, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c2', name: 'Class 2', code: 'STD-2', level: 'Primary', sortOrder: 5, displayOrder: 5, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c3', name: 'Class 3', code: 'STD-3', level: 'Primary', sortOrder: 6, displayOrder: 6, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c4', name: 'Class 4', code: 'STD-4', level: 'Primary', sortOrder: 7, displayOrder: 7, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c5', name: 'Class 5', code: 'STD-5', level: 'Primary', sortOrder: 8, displayOrder: 8, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c6', name: 'Class 6', code: 'STD-6', level: 'Middle', sortOrder: 9, displayOrder: 9, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c7', name: 'Class 7', code: 'STD-7', level: 'Middle', sortOrder: 10, displayOrder: 10, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c8', name: 'Class 8', code: 'STD-8', level: 'Middle', sortOrder: 11, displayOrder: 11, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c9', name: 'Class 9', code: 'STD-9', level: 'Secondary', sortOrder: 12, displayOrder: 12, isActive: true, sections: ['A', 'B'] },
+    { id: 'cls_sugg_c10', name: 'Class 10', code: 'STD-10', level: 'Secondary', sortOrder: 13, displayOrder: 13, isActive: true, sections: ['A', 'B'] },
+    {
+      id: 'cls_sugg_c11',
+      name: 'Class 11',
+      code: 'STD-11',
+      level: 'Senior Secondary',
+      sortOrder: 14,
+      displayOrder: 14,
+      isActive: true,
+      sections: ['A'],
+      streams: [
+        { id: 'strm_c11_sci', name: 'Science', sections: ['A', 'B'] },
+        { id: 'strm_c11_com', name: 'Commerce', sections: ['A'] },
+        { id: 'strm_c11_hum', name: 'Humanities', sections: ['A'] },
+      ],
+    },
+    {
+      id: 'cls_sugg_c12',
+      name: 'Class 12',
+      code: 'STD-12',
+      level: 'Senior Secondary',
+      sortOrder: 15,
+      displayOrder: 15,
+      isActive: true,
+      sections: ['A'],
+      streams: [
+        { id: 'strm_c12_sci', name: 'Science', sections: ['A', 'B'] },
+        { id: 'strm_c12_com', name: 'Commerce', sections: ['A'] },
+        { id: 'strm_c12_hum', name: 'Humanities', sections: ['A'] },
+      ],
+    },
+  ];
 
   const initialIntake: UniversalIntakeData = {
     schoolProfile: {
@@ -1922,7 +2009,7 @@ export function createInitialIntakeData(params: {
       yearOfEstablishment: '2010',
       establishmentYear: '2010',
       schoolStatus: 'active',
-      board: 'CBSE',
+      board: effectiveBoard,
       affiliationNumber: '',
       registrationNumber: '',
       accreditationBody: 'Central Board of Secondary Education',
@@ -2105,58 +2192,14 @@ export function createInitialIntakeData(params: {
       studentCapacityTotal: 650,
       teachingStaffCount: 32,
       nonTeachingStaffCount: 12,
-      board: 'CBSE',
-      effectiveCurriculum: 'CBSE',
+      board: effectiveBoard,
+      effectiveCurriculum: effectiveBoard,
       namingConvention: 'Class',
       confirmed: false,
       academicStructureConfirmed: false,
       structureStatus: 'suggested',
       academicStreams: ['Science', 'Commerce', 'Humanities'],
-      classes: [
-        { id: 'cls_sugg_nur', name: 'Nursery', code: 'NUR', level: 'Pre-Primary', sortOrder: 1, displayOrder: 1, isActive: true, sections: ['A'] },
-        { id: 'cls_sugg_lkg', name: 'LKG', code: 'LKG', level: 'Pre-Primary', sortOrder: 2, displayOrder: 2, isActive: true, sections: ['A'] },
-        { id: 'cls_sugg_ukg', name: 'UKG', code: 'UKG', level: 'Pre-Primary', sortOrder: 3, displayOrder: 3, isActive: true, sections: ['A'] },
-        { id: 'cls_sugg_c1', name: 'Class 1', code: 'STD-1', level: 'Primary', sortOrder: 4, displayOrder: 4, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c2', name: 'Class 2', code: 'STD-2', level: 'Primary', sortOrder: 5, displayOrder: 5, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c3', name: 'Class 3', code: 'STD-3', level: 'Primary', sortOrder: 6, displayOrder: 6, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c4', name: 'Class 4', code: 'STD-4', level: 'Primary', sortOrder: 7, displayOrder: 7, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c5', name: 'Class 5', code: 'STD-5', level: 'Primary', sortOrder: 8, displayOrder: 8, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c6', name: 'Class 6', code: 'STD-6', level: 'Middle', sortOrder: 9, displayOrder: 9, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c7', name: 'Class 7', code: 'STD-7', level: 'Middle', sortOrder: 10, displayOrder: 10, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c8', name: 'Class 8', code: 'STD-8', level: 'Middle', sortOrder: 11, displayOrder: 11, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c9', name: 'Class 9', code: 'STD-9', level: 'Secondary', sortOrder: 12, displayOrder: 12, isActive: true, sections: ['A', 'B'] },
-        { id: 'cls_sugg_c10', name: 'Class 10', code: 'STD-10', level: 'Secondary', sortOrder: 13, displayOrder: 13, isActive: true, sections: ['A', 'B'] },
-        {
-          id: 'cls_sugg_c11',
-          name: 'Class 11',
-          code: 'STD-11',
-          level: 'Senior Secondary',
-          sortOrder: 14,
-          displayOrder: 14,
-          isActive: true,
-          sections: ['A'],
-          streams: [
-            { id: 'strm_c11_sci', name: 'Science', sections: ['A', 'B'] },
-            { id: 'strm_c11_com', name: 'Commerce', sections: ['A'] },
-            { id: 'strm_c11_hum', name: 'Humanities', sections: ['A'] },
-          ],
-        },
-        {
-          id: 'cls_sugg_c12',
-          name: 'Class 12',
-          code: 'STD-12',
-          level: 'Senior Secondary',
-          sortOrder: 15,
-          displayOrder: 15,
-          isActive: true,
-          sections: ['A'],
-          streams: [
-            { id: 'strm_c12_sci', name: 'Science', sections: ['A', 'B'] },
-            { id: 'strm_c12_com', name: 'Commerce', sections: ['A'] },
-            { id: 'strm_c12_hum', name: 'Humanities', sections: ['A'] },
-          ],
-        },
-      ],
+      classes: initialClasses,
       subjects: [
         { name: 'English Core', code: 'ENG', subjectType: 'theory', isElective: false },
         { name: 'Hindi Course A', code: 'HIN', subjectType: 'theory', isElective: false },
@@ -2240,7 +2283,7 @@ export function createInitialIntakeData(params: {
         officialPhone: params.contactPhone,
       }
     ),
-    feesConfiguration: {
+    feesConfiguration: normalizeFeesData({
       feeCategories: ['Tuition Fee', 'Admission Fee', 'Annual Development Fee', 'Examination Fee', 'Computer / Smart Class Fee', 'Transport Fee'],
       classFeeStructures: [
         { className: 'Pre-Primary (Nursery - UKG)', feeType: 'Tuition Fee', amount: 1200, frequency: 'monthly', dueDateDay: 10, lateFeePerDay: 10 },
@@ -2262,7 +2305,8 @@ export function createInitialIntakeData(params: {
       feeReceiptsAutomated: true,
       parentLedgerHistoryEnabled: true,
       dueRemindersEnabled: true,
-    },
+    }),
+    curriculum: getInitialCurriculumData(effectiveBoard, initialClasses),
     attendanceConfig: {
       studentAttendanceMode: 'daily',
       staffAttendanceMode: 'biometric',
@@ -2479,6 +2523,14 @@ export function createInitialIntakeData(params: {
       requiresApprovalBeforePublish: true,
       contentCategories: ['Notices & Circulars', 'Photo Gallery', 'Events Calendar', 'School News', 'Academic Achievements'],
     },
+    websiteScope: {
+      websiteType: 'public_school',
+      coreModules: ['home', 'about', 'academics', 'admissions', 'contact', 'gallery'],
+      optionalModules: [],
+      customPages: [],
+      specialInstructions: '',
+      notes: '',
+    },
     domainPresence: {
       alreadyOwnsDomain: false,
       needsNewDomain: true,
@@ -2489,6 +2541,14 @@ export function createInitialIntakeData(params: {
       officialEmailDomainNeeded: true,
       emailSuite: 'google_workspace',
       schoolEmailProvider: 'google_workspace',
+    },
+    additionalRequirements: {
+      notes: '',
+      customRequests: [],
+      specialCustomWorkflows: '',
+      customReportsRequired: '',
+      thirdPartyIntegrations: '',
+      generalCommentsOrQuestions: '',
     },
     existingSystemsMigration: normalizeDataMigrationData({
       sources: ['excel'],
@@ -2636,7 +2696,8 @@ export function createInitialIntakeData(params: {
   // Initialize centralized media registry
   initialIntake.mediaRegistry = [];
 
-  return initialIntake;
+  const { intakeData: normalizedInitial } = migrateAndNormalizeAcademicFees(initialIntake);
+  return normalizedInitial as UniversalIntakeData;
 }
 
 export type SectionCompletionStatus =
@@ -2656,6 +2717,13 @@ export function calculateIntakeCompleteness(
   missingFields: string[];
   isSubmissionReady: boolean;
 } {
+  // Support reversed argument order defensively
+  if (typeof productId !== 'string' && typeof (data as any) === 'string') {
+    const temp = productId;
+    productId = data as any;
+    data = temp as any;
+  }
+
   const applicableSections = getApplicableSections(productId);
   const sectionPercentages = {} as Record<IntakeSectionKey, number>;
   const sectionStatuses = {} as Record<IntakeSectionKey, SectionCompletionStatus>;
@@ -2674,6 +2742,10 @@ export function calculateIntakeCompleteness(
       isSubmissionReady: false,
     };
   }
+
+  // Authoritatively migrate and normalize legacy academic fees
+  const { intakeData: normalizedData } = migrateAndNormalizeAcademicFees(data);
+  data = normalizedData;
 
   const sectionScores: Record<string, { total: number; filled: number }> = {};
   const campuses = data.campuses || [];
@@ -3089,85 +3161,14 @@ export function calculateIntakeCompleteness(
 
   // 10. Admissions, Fees & Schedule
   if (isSectionApplicable('admissions', productId)) {
-    const adm = data.admissions || ({} as any);
     if (!isMultiCampus) {
-      let total = 3;
-      let filled = 0;
-
-      // Required 1: Target Admission Session
-      const session = (adm.session || adm.targetSessions || '').trim();
-      if (session.length > 0) {
-        filled++;
-      } else {
-        missingFields.push('Admissions: Target Admission Session');
-      }
-
-      // Required 2: Admission In-Charge Name
-      const incharge = (adm.contact?.name || adm.contactPerson || '').trim();
-      if (incharge.length > 0) {
-        filled++;
-      } else {
-        missingFields.push('Admissions: Admission In-Charge Name');
-      }
-
-      // Required 3: At least one admissions contact method
-      const hasPhone = Boolean((adm.contact?.phone || adm.admissionPhone || '').trim());
-      const hasEmail = Boolean((adm.contact?.email || adm.admissionEmail || '').trim());
-      const hasWhatsapp = Boolean((adm.contact?.whatsapp || adm.admissionWhatsapp || '').trim());
-      const hasHours = Boolean((adm.contact?.visitingHours || adm.officeHours || '').trim());
-      const hasAddress = Boolean((adm.contact?.address || '').trim());
-
-      if (hasPhone || hasEmail || hasWhatsapp || hasHours || hasAddress) {
-        filled++;
-      } else {
-        missingFields.push('Admissions: Primary admissions contact method (Phone, Email or Visiting Hours)');
-      }
-
-      // Conditional Requirement 1: Online Application enabled -> Application method known
-      const onlineAppEnabled = Boolean(adm.applicationOptions?.onlineApplication ?? adm.onlineApplicationEnabled);
-      if (onlineAppEnabled) {
-        total++;
-        const appMethod = (adm.application?.method || '').trim();
-        if (appMethod.length > 0) {
-          filled++;
-        } else {
-          missingFields.push('Admissions: Application Method (Online Application enabled)');
-        }
-      }
-
-      // Conditional Requirement 2: Document Upload enabled -> Document configuration available
-      const docUploadEnabled = Boolean(adm.applicationOptions?.documentUpload ?? adm.documentUploadEnabled);
-      if (docUploadEnabled) {
-        total++;
-        const hasConfiguredDoc =
-          (Array.isArray(adm.documents) &&
-            adm.documents.some((d: any) => d.requirement === 'required' || d.requirement === 'optional')) ||
-          (Array.isArray(adm.requiredDocuments) && adm.requiredDocuments.length > 0);
-        if (hasConfiguredDoc) {
-          filled++;
-        } else {
-          missingFields.push('Admissions: Required/Optional Document configuration (Document Upload enabled)');
-        }
-      }
-
-      // Conditional Requirement 3: Application Fee Required -> at least one application/registration fee
-      const appFeeRequired = Boolean(adm.applicationOptions?.applicationFeeRequired);
-      if (appFeeRequired) {
-        total++;
-        const hasFee =
-          (Array.isArray(adm.fees) && adm.fees.some((f: any) => typeof f.amount === 'number' && f.amount > 0)) ||
-          (typeof adm.applicationFee === 'number' && adm.applicationFee > 0);
-        if (hasFee) {
-          filled++;
-        } else {
-          missingFields.push('Admissions: Application or Registration fee amount (Fee Required enabled)');
-        }
-      }
-
-      sectionScores['admissions'] = { total, filled };
+      const admResult = calculateAdmissionCompleteness(data, productId);
+      sectionScores['admissions'] = admResult.score;
+      missingFields.push(...admResult.missingFields);
     } else {
       let total = 1;
       let filled = 0;
+      const adm = data.admissions || ({} as any);
 
       // Required 1: Target Admission Session (School-wide)
       const session = (adm.session || adm.targetSessions || '').trim();
@@ -3209,15 +3210,16 @@ export function calculateIntakeCompleteness(
 
   // 11. Fees
   if (isSectionApplicable('feesConfiguration', productId)) {
-    const fee = data.feesConfiguration || ({} as any);
-    let filled = 0;
-    if (Array.isArray(fee.feeCategories) && fee.feeCategories.length > 0) filled++;
-    else missingFields.push('Fees: Fee Categories');
+    const feeResult = calculateFeeStructureCompleteness(data, productId);
+    sectionScores['feesConfiguration'] = feeResult.score;
+    missingFields.push(...feeResult.missingFields);
+  }
 
-    if (Array.isArray(fee.classFeeStructures) && fee.classFeeStructures.length > 0) filled++;
-    else missingFields.push('Fees: Class Fee Structure');
-
-    sectionScores['feesConfiguration'] = { total: 2, filled };
+  // 12. Academic Curriculum
+  if (isSectionApplicable('curriculum', productId)) {
+    const currResult = calculateCurriculumCompleteness(data, productId);
+    sectionScores['curriculum'] = currResult.score;
+    missingFields.push(...currResult.missingFields);
   }
 
   // 12. Attendance
@@ -3454,6 +3456,11 @@ export function calculateIntakeCompleteness(
     sectionScores['cmsRequirements'] = { total, filled };
   }
 
+  // Website Scope & Project Configuration (Section 21) - Strictly optional
+  if (isSectionApplicable('websiteScope', productId)) {
+    sectionScores['websiteScope'] = { total: 1, filled: 1 };
+  }
+
   // 20. Domain Presence (Website & Domain Setup)
   if (isSectionApplicable('domainPresence', productId)) {
     const dom = data.domainPresence || ({} as any);
@@ -3494,6 +3501,11 @@ export function calculateIntakeCompleteness(
       sectionScores['domainPresence'] = { total: 1, filled: 0 };
       missingFields.push('Website & Domain Setup: Please select a preferred domain, confirm your existing domain, or choose decide later.');
     }
+  }
+
+  // Custom Requirements & Special Requests (Section 23) - Strictly optional
+  if (isSectionApplicable('additionalRequirements', productId)) {
+    sectionScores['additionalRequirements'] = { total: 1, filled: 1 };
   }
 
   // 21. Data Migration (Section 18 in 29-section ERP)

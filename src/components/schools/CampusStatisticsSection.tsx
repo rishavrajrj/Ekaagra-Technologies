@@ -43,6 +43,7 @@ import {
   type ErpCampusStatistics,
   type ErpFieldComparison,
 } from '@/lib/erpStatisticsUtils';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // FIELD CONFIGURATION
@@ -805,7 +806,8 @@ export default function CampusStatisticsSection({
           MODAL: ERP SYNC CONFIRMATION
           ───────────────────────────────────────────────────────────── */}
       {erpModalStep === 'confirm' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <ModalPortal isOpen={erpModalStep === 'confirm'}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
             <div className="p-5 space-y-4">
               <div className="flex items-center space-x-2.5">
@@ -842,26 +844,30 @@ export default function CampusStatisticsSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
           MODAL: ERP LOADING
           ───────────────────────────────────────────────────────────── */}
       {erpModalStep === 'loading' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <ModalPortal isOpen={erpModalStep === 'loading'}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200 p-6 text-center space-y-3">
             <Loader2 className="w-8 h-8 text-[#4338CA] animate-spin mx-auto" />
             <p className="text-xs font-semibold text-[#334155]">Fetching ERP campus statistics...</p>
             <p className="text-[11px] text-[#64748B]">This should only take a moment.</p>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
           MODAL: ERP ERROR
           ───────────────────────────────────────────────────────────── */}
       {erpModalStep === 'error' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <ModalPortal isOpen={erpModalStep === 'error'}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden">
             <div className="p-5 space-y-4">
               <div className="flex items-center space-x-2.5">
@@ -887,13 +893,15 @@ export default function CampusStatisticsSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ─────────────────────────────────────────────────────────────
           MODAL: ERP REVIEW / COMPARE
           ───────────────────────────────────────────────────────────── */}
       {erpModalStep === 'review' && erpData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <ModalPortal isOpen={erpModalStep === 'review' && !!erpData}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
             {/* Header */}
             <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
@@ -1019,6 +1027,7 @@ export default function CampusStatisticsSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

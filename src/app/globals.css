@@ -1487,3 +1487,25 @@
   overflow: hidden;
   box-sizing: border-box;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   GUIDED REMEDIATION VISUAL HIGHLIGHT PULSE
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes remediationPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.5), 0 10px 25px -5px rgba(99, 102, 241, 0.2);
+    border-color: #4338ca;
+  }
+  50% {
+    box-shadow: 0 0 0 7px rgba(99, 102, 241, 0.75), 0 20px 25px -5px rgba(99, 102, 241, 0.35);
+    border-color: #312e81;
+  }
+}
+
+.remediation-highlight-pulse {
+  animation: remediationPulse 1.2s ease-in-out infinite;
+  border-color: #4338ca !important;
+  border-radius: 1rem;
+  background-color: rgba(238, 242, 255, 0.35) !important;
+  transition: all 0.3s ease;
+}

@@ -22,6 +22,7 @@ import {
   MoveDown,
   Check,
   Eye,
+  EyeOff,
   Sparkles,
   Layers,
   HelpCircle,
@@ -46,6 +47,7 @@ import type {
 import {
   DEFAULT_ADMISSION_STATUS_OPTIONS,
   DEFAULT_CLASS_ADMISSION_STATUSES,
+  DEFAULT_FEE_TYPES,
   DEFAULT_FEE_FREQUENCIES,
   DEFAULT_APPLICATION_METHODS,
   DEFAULT_CTA_OPTIONS,
@@ -56,12 +58,17 @@ import {
   normalizeAdmissionsData,
   getAdmissionsWebsiteOutput,
 } from '@/lib/admissionsUtils';
+import { useCampusAcademicScope } from '@/hooks/useCampusAcademicScope';
+import { filterAdmissionsByCampusScope } from '@/lib/campusAcademicScopeService';
+import CampusAcademicScopeSummary from './CampusAcademicScopeSummary';
 
 interface AdmissionsSectionProps {
   project: SchoolProject;
   intakeData: UniversalIntakeData;
   updateSectionField: (section: keyof UniversalIntakeData, field: string, value: any) => void;
   updateSectionDirect: (section: keyof UniversalIntakeData, value: any) => void;
+  onNavigateToSection?: (sectionKey: any) => void;
+  activeCampusId?: string;
 }
 
 export default function AdmissionsSection({
@@ -69,17 +76,23 @@ export default function AdmissionsSection({
   intakeData,
   updateSectionField,
   updateSectionDirect,
+  onNavigateToSection,
+  activeCampusId,
 }: AdmissionsSectionProps) {
-  // Canonical context derived from other sections
+  const campusScope = useCampusAcademicScope(activeCampusId, intakeData);
+
+  // Canonical context derived from other sections and campus scope
   const canonicalContext = useMemo(() => {
-    const mainCampus = intakeData.campuses?.[0];
-    const canonicalClasses = intakeData.institutionStructure?.classes || [];
+    const targetCampus =
+      intakeData.campuses?.find((c) => c.id === activeCampusId) ||
+      intakeData.campuses?.[0];
+    const canonicalClasses = campusScope.classes;
     const canonicalSession = intakeData.institutionStructure?.currentAcademicSession;
-    const country = mainCampus?.country || 'India';
+    const country = targetCampus?.country || 'India';
     const currency = country.toLowerCase() === 'india' ? 'INR' : 'USD';
     const officialEmail = intakeData.schoolProfile?.officialEmail || project.primary_contact_email;
     const officialPhone = intakeData.schoolProfile?.officialPhone || project.primary_contact_phone;
-    const schoolAddress = mainCampus?.address ? `${mainCampus.address}, ${mainCampus.city || ''}` : '';
+    const schoolAddress = targetCampus?.address ? `${targetCampus.address}, ${targetCampus.city || ''}` : '';
 
     return {
       classes: canonicalClasses,
@@ -91,12 +104,13 @@ export default function AdmissionsSection({
       schoolAddress,
       principalName: intakeData.leadership?.principalName,
     };
-  }, [intakeData, project]);
+  }, [intakeData, project, activeCampusId, campusScope.classes]);
 
-  // Normalized admissions data
+  // Normalized admissions data strictly scoped to Campus Academic Scope
   const admissions: AdmissionsData = useMemo(() => {
-    return normalizeAdmissionsData(intakeData.admissions, canonicalContext);
-  }, [intakeData.admissions, canonicalContext]);
+    const raw = normalizeAdmissionsData(intakeData.admissions, canonicalContext);
+    return filterAdmissionsByCampusScope(raw, campusScope);
+  }, [intakeData.admissions, canonicalContext, campusScope]);
 
   const isWebsiteIncluded = project?.product_id !== 'school-erp';
 
@@ -141,9 +155,10 @@ export default function AdmissionsSection({
     (updater: (prev: AdmissionsData) => AdmissionsData) => {
       const updated = updater(admissions);
       const normalized = normalizeAdmissionsData(updated, canonicalContext);
-      updateSectionDirect('admissions', normalized);
+      const filtered = filterAdmissionsByCampusScope(normalized, campusScope);
+      updateSectionDirect('admissions', filtered);
     },
-    [admissions, canonicalContext, updateSectionDirect]
+    [admissions, canonicalContext, campusScope, updateSectionDirect]
   );
 
   // Derived website preview payload
@@ -164,6 +179,12 @@ export default function AdmissionsSection({
 
   return (
     <div className="space-y-6 text-xs text-[#131B2E]">
+      {/* ─── CANONICAL CAMPUS ACADEMIC SCOPE SUMMARY ─────────────────── */}
+      <CampusAcademicScopeSummary
+        scope={campusScope}
+        onNavigateToClasses={() => onNavigateToSection?.('campuses')}
+      />
+
       {/* ─── 1. SECTION HEADER & PURPOSE CARD ───────────────────────────── */}
       <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl p-4 sm:p-5 flex items-start space-x-3.5 shadow-2xs">
         <div className="w-9 h-9 rounded-xl bg-white border border-[#E2E8F0] flex items-center justify-center shrink-0 text-[#4338CA] shadow-2xs mt-0.5">
@@ -891,7 +912,119 @@ export default function AdmissionsSection({
         </div>
       </div>
 
-      {/* ─── 6. ADMISSION ELIGIBILITY ───────────────────────────────────── */}
+      {/* ─── 6. ADMISSION FEES & FINANCIAL POLICIES ─────────────────────── */}
+      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-5 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#E2E8F0] pb-3.5">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] border border-[#C7D2FE] flex items-center justify-center text-[#4338CA] shrink-0">
+              <DollarSign className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-bold text-sm text-[#131B2E]">Admission Fees &amp; Financial Policies</h3>
+              <p className="text-[11px] text-[#64748B] mt-0.5">
+                Fee schedules, one-time admission charges, and payment plans are centrally managed in the <strong>Fee Structure</strong> module.
+              </p>
+            </div>
+          </div>
+          {onNavigateToSection && (
+            <button
+              type="button"
+              onClick={() => onNavigateToSection('feesConfiguration')}
+              className="px-3.5 py-1.5 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] text-white font-semibold text-xs transition shadow-2xs flex items-center justify-center space-x-1.5 self-start sm:self-auto cursor-pointer"
+            >
+              <span>Configure Fee Structure</span>
+              <span>→</span>
+            </button>
+          )}
+        </div>
+
+        {/* Read-Only Summary Card from authoritative feesConfiguration */}
+        {(() => {
+          const feesConfig = intakeData.feesConfiguration;
+          const newStudentFees = feesConfig?.newStudentFees || [];
+          const commonFees = feesConfig?.commonFees || [];
+          const totalAdmissionFees = newStudentFees.reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+
+          return (
+            <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-xl p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-[#1E293B] uppercase tracking-wider flex items-center space-x-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#4338CA]" />
+                  <span>Configured New Student Admission Fees</span>
+                </span>
+                <span className="text-xs font-semibold text-[#4338CA] bg-[#EEF2FF] px-2.5 py-0.5 rounded-full">
+                  Total One-Time: ₹{totalAdmissionFees.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              {newStudentFees.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-1">
+                  {newStudentFees.map((fee) => (
+                    <div
+                      key={fee.id}
+                      className="bg-white border border-[#E2E8F0] rounded-lg p-3 flex flex-col justify-between shadow-2xs"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="font-semibold text-xs text-[#131B2E]">{fee.name}</p>
+                          <p className="text-[10px] text-[#64748B] mt-0.5">{fee.category || 'Admission Fee'}</p>
+                        </div>
+                        <span className="font-bold text-xs text-[#131B2E]">
+                          ₹{Number(fee.amount).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-[#F1F5F9] flex items-center justify-between text-[10px] text-[#64748B]">
+                        <span>Timing: {fee.paymentTiming === 'at_admission' ? 'At Admission' : 'With Form'}</span>
+                        <span className={fee.isRefundable ? 'text-amber-600' : 'text-slate-500'}>
+                          {fee.isRefundable ? 'Refundable' : 'Non-refundable'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white border border-dashed border-[#CBD5E1] rounded-lg p-4 text-center">
+                  <p className="text-xs text-[#64748B]">
+                    No new student admission charges have been configured yet.
+                  </p>
+                  {onNavigateToSection && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigateToSection('feesConfiguration')}
+                      className="mt-2 inline-flex items-center space-x-1 text-xs text-[#4338CA] hover:underline font-semibold"
+                    >
+                      <span>Set up admission &amp; registration fees in Fee Structure</span>
+                      <span>→</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+          {/* Core Tuition & Frequency Summary */}
+          <div className="pt-2 border-t border-[#E2E8F0] flex flex-wrap items-center justify-between gap-2 text-xs text-[#64748B]">
+            <div className="flex items-center space-x-2">
+              <span>Regular Tuition Fees:</span>
+              <strong className="text-[#131B2E]">
+                {commonFees.filter((f) => f.category?.toLowerCase() === 'tuition' || f.name?.toLowerCase().includes('tuition')).length} Head(s) Active
+              </strong>
+            </div>
+            {onNavigateToSection && (
+              <button
+                type="button"
+                onClick={() => onNavigateToSection('feesConfiguration')}
+                className="text-xs text-[#4338CA] hover:underline font-medium flex items-center space-x-1"
+              >
+                <span>View full fee schedule, payment plans &amp; class-wise breakdown</span>
+                <span>→</span>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    })()}
+  </div>
+
+      {/* ─── 7. ADMISSION ELIGIBILITY ───────────────────────────────────── */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-2xs">
         <button
           type="button"
@@ -1054,7 +1187,7 @@ export default function AdmissionsSection({
         )}
       </div>
 
-      {/* ─── 7. ADMISSION PROCESS ───────────────────────────────────────── */}
+      {/* ─── 8. ADMISSION PROCESS & STEPS ───────────────────────────────── */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-2xs">
         <button
           type="button"
@@ -1232,7 +1365,7 @@ export default function AdmissionsSection({
         )}
       </div>
 
-      {/* ─── 8. REQUIRED ADMISSION DOCUMENTS (Conditional on Document Upload) ─── */}
+      {/* ─── 9. REQUIRED ADMISSION DOCUMENTS (Conditional on Document Upload) ─── */}
       {admissions.applicationOptions?.documentUpload && (
         <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-4 shadow-2xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E2E8F0] pb-3.5">
@@ -1360,211 +1493,6 @@ export default function AdmissionsSection({
           </div>
         </div>
       )}
-
-      {/* ─── 9. FEE STRUCTURE & NOTES ───────────────────────────────────── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 md:p-6 space-y-5 shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#E2E8F0] pb-3.5">
-          <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] border border-[#C7D2FE] flex items-center justify-center text-[#4338CA] shrink-0">
-              <DollarSign className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-[#131B2E]">Admission &amp; Fee Information</h3>
-              <p className="text-[11px] text-[#64748B] mt-0.5">
-                Dynamic fee table displaying registration, admission, tuition, or campus fees.
-              </p>
-            </div>
-          </div>
-          <span className="text-[10px] font-semibold text-[#4338CA] bg-[#EEF2FF] border border-[#C7D2FE] px-2.5 py-1 rounded-md self-start sm:self-auto">
-            Fee Breakdown
-          </span>
-        </div>
-
-        {/* Fees Table */}
-        <div className="space-y-3">
-          {(admissions.fees || []).length === 0 ? (
-            <div className="p-6 text-center border-2 border-dashed border-[#CBD5E1] rounded-xl bg-[#FAF7F2]/40">
-              <p className="text-xs text-[#64748B]">No fee items configured yet.</p>
-              <p className="text-[11px] text-[#94A3B8] mt-1">
-                You can specify registration, tuition, and term fees below for public prospectus visibility.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <div className="hidden sm:grid grid-cols-12 gap-3 px-3 py-2 text-[11px] font-bold text-[#64748B] uppercase tracking-wider bg-[#F8FAFC] rounded-lg">
-                <span className="col-span-4">Fee Head Name</span>
-                <span className="col-span-2">Amount</span>
-                <span className="col-span-2">Currency</span>
-                <span className="col-span-2">Frequency</span>
-                <span className="col-span-1">Notes</span>
-                <span className="col-span-1 text-center">Action</span>
-              </div>
-
-              {(admissions.fees || []).map((fee, idx) => (
-                <div
-                  key={fee.id}
-                  className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-3 p-3 sm:p-2.5 rounded-xl border border-[#E2E8F0] bg-white items-center shadow-2xs hover:border-[#CBD5E1] transition"
-                >
-                  {/* Fee Name */}
-                  <div className="col-span-1 sm:col-span-4">
-                    <input
-                      type="text"
-                      value={fee.name}
-                      onChange={(e) => {
-                        const name = e.target.value;
-                        updateAdmissions((prev) => {
-                          const copy = [...(prev.fees || [])];
-                          copy[idx] = { ...copy[idx], name };
-                          return { ...prev, fees: copy };
-                        });
-                      }}
-                      placeholder="e.g. Registration Fee"
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] text-xs font-semibold text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
-                    />
-                  </div>
-
-                  {/* Amount (Optional number) */}
-                  <div className="col-span-1 sm:col-span-2">
-                    <input
-                      type="number"
-                      min={0}
-                      value={fee.amount ?? ''}
-                      onChange={(e) => {
-                        const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                        updateAdmissions((prev) => {
-                          const copy = [...(prev.fees || [])];
-                          copy[idx] = { ...copy[idx], amount: val !== undefined && !isNaN(val) ? val : undefined };
-                          return { ...prev, fees: copy };
-                        });
-                      }}
-                      placeholder="Amount (Opt)"
-                      className="w-full px-2.5 py-1.5 rounded-lg border border-[#E2E8F0] text-xs font-mono text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
-                    />
-                  </div>
-
-                  {/* Currency */}
-                  <div className="col-span-1 sm:col-span-2">
-                    <select
-                      value={fee.currency || canonicalContext.currency}
-                      onChange={(e) => {
-                        const cur = e.target.value;
-                        updateAdmissions((prev) => {
-                          const copy = [...(prev.fees || [])];
-                          copy[idx] = { ...copy[idx], currency: cur };
-                          return { ...prev, fees: copy };
-                        });
-                      }}
-                      className="w-full px-2 py-1.5 rounded-lg border border-[#E2E8F0] text-xs text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
-                    >
-                      <option value="INR">INR (₹)</option>
-                      <option value="USD">USD ($)</option>
-                      <option value="GBP">GBP (£)</option>
-                      <option value="EUR">EUR (€)</option>
-                      <option value="AED">AED (AED)</option>
-                    </select>
-                  </div>
-
-                  {/* Frequency */}
-                  <div className="col-span-1 sm:col-span-2">
-                    <select
-                      value={fee.frequency || 'one_time'}
-                      onChange={(e) => {
-                        const freq = e.target.value as FeeFrequency;
-                        updateAdmissions((prev) => {
-                          const copy = [...(prev.fees || [])];
-                          copy[idx] = { ...copy[idx], frequency: freq };
-                          return { ...prev, fees: copy };
-                        });
-                      }}
-                      className="w-full px-2 py-1.5 rounded-lg border border-[#E2E8F0] text-xs text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
-                    >
-                      {DEFAULT_FEE_FREQUENCIES.map((f) => (
-                        <option key={f.value} value={f.value}>
-                          {f.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Notes */}
-                  <div className="col-span-1">
-                    <input
-                      type="text"
-                      value={fee.notes || ''}
-                      onChange={(e) => {
-                        const notes = e.target.value;
-                        updateAdmissions((prev) => {
-                          const copy = [...(prev.fees || [])];
-                          copy[idx] = { ...copy[idx], notes };
-                          return { ...prev, fees: copy };
-                        });
-                      }}
-                      placeholder="Notes"
-                      className="w-full px-2 py-1.5 rounded-lg border border-[#E2E8F0] text-xs text-[#131B2E] focus:border-[#4338CA] focus:outline-hidden"
-                    />
-                  </div>
-
-                  {/* Action */}
-                  <div className="col-span-1 text-right sm:text-center pt-1 sm:pt-0">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        updateAdmissions((prev) => ({
-                          ...prev,
-                          fees: (prev.fees || []).filter((_, i) => i !== idx),
-                        }));
-                      }}
-                      className="p-1.5 text-[#94A3B8] hover:text-rose-600 transition"
-                      title="Delete fee"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 mx-auto" />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Add Fee Button */}
-          <button
-            type="button"
-            onClick={() => {
-              updateAdmissions((prev) => ({
-                ...prev,
-                fees: [
-                  ...(prev.fees || []),
-                  {
-                    id: `fee-${Date.now()}`,
-                    name: 'New Fee Head',
-                    currency: canonicalContext.currency,
-                    frequency: 'one_time',
-                    notes: '',
-                  },
-                ],
-              }));
-            }}
-            className="px-3.5 py-2 rounded-xl bg-[#EEF2FF] border border-[#C7D2FE] text-[#4338CA] font-bold text-xs hover:bg-[#E0E7FF] transition flex items-center space-x-1.5 shadow-2xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Add Fee Head</span>
-          </button>
-        </div>
-
-        {/* Fee Notes / Disclaimer */}
-        <div className="pt-2 border-t border-[#E2E8F0]">
-          <label htmlFor="fee-notes-input" className="block font-bold text-xs text-[#334155] mb-1.5">
-            Fee Notes / Disclaimer <span className="font-normal text-[#94A3B8]">(Optional)</span>
-          </label>
-          <textarea
-            id="fee-notes-input"
-            rows={2}
-            value={admissions.feeNotes || ''}
-            onChange={(e) => updateAdmissions((prev) => ({ ...prev, feeNotes: e.target.value }))}
-            placeholder="e.g. Fees are subject to revision by the management. Transport charges vary according to route. Fee once paid is non-refundable."
-            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-xs text-[#131B2E] placeholder:text-[#94A3B8] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:outline-hidden shadow-2xs"
-          />
-        </div>
-      </div>
 
       {/* ─── 10. IMPORTANT ADMISSION DATES ──────────────────────────────── */}
       <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden shadow-2xs">
@@ -1962,12 +1890,26 @@ export default function AdmissionsSection({
 
               <div className="p-3 bg-white rounded-xl border border-[#E2E8F0]">
                 <span className="text-[10px] font-bold text-[#64748B] uppercase block">Fee Structure</span>
-                <span className="font-bold text-sm text-[#131B2E] mt-1 block">
-                  {websiteOutput.fees.length} Fee Heads Listed
-                </span>
-                <span className="text-[11px] text-[#64748B] mt-0.5 block">
-                  {websiteOutput.feeNotes ? 'Disclaimer active' : 'Standard schedule'}
-                </span>
+                {websiteOutput.fees.length > 0 ? (
+                  <>
+                    <span className="font-bold text-sm text-emerald-700 mt-1 block">
+                      {websiteOutput.fees.length} Fee{websiteOutput.fees.length !== 1 ? 's' : ''} Published
+                    </span>
+                    <span className="text-[11px] text-[#64748B] mt-0.5 block truncate">
+                      {websiteOutput.fees.slice(0, 2).map((f) => f.name).join(', ')}
+                      {websiteOutput.fees.length > 2 ? ` +${websiteOutput.fees.length - 2} more` : ''}
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold text-sm text-[#94A3B8] mt-1 block">
+                      Not Displayed on Website
+                    </span>
+                    <span className="text-[11px] text-[#94A3B8] mt-0.5 block">
+                      {(admissions.fees || []).length > 0 ? 'All fees marked hidden' : 'No fees configured'}
+                    </span>
+                  </>
+                )}
               </div>
 
               <div className="p-3 bg-white rounded-xl border border-[#E2E8F0]">

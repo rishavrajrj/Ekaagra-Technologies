@@ -58,6 +58,7 @@ export const DEFAULT_EMPLOYMENT_STATUSES = [
   { value: 'on_leave', label: 'On Leave', badgeColor: 'bg-blue-50 text-blue-700 border-blue-200' },
   { value: 'inactive', label: 'Inactive', badgeColor: 'bg-amber-50 text-amber-800 border-amber-200' },
   { value: 'terminated', label: 'Terminated', badgeColor: 'bg-rose-50 text-rose-700 border-rose-200' },
+  { value: 'archived', label: 'Archived', badgeColor: 'bg-purple-50 text-purple-700 border-purple-200' },
 ] as const;
 
 // ─── STANDARD PRESET TEMPLATES ────────────────────────────────────────────────
@@ -316,7 +317,7 @@ export function normalizeStaffFacultyData(
     seenCodes.add(employeeCode.toUpperCase());
 
     const status = (item.status || 'active').trim().toLowerCase();
-    const normalizedStatus = ['active', 'inactive', 'on_leave', 'terminated'].includes(status)
+    const normalizedStatus = ['active', 'inactive', 'on_leave', 'terminated', 'archived'].includes(status)
       ? (status as StaffMember['status'])
       : 'active';
 
@@ -326,6 +327,7 @@ export function normalizeStaffFacultyData(
       : 'teaching';
 
     normalizedMembers.push({
+      ...item,
       id,
       name,
       firstName: item.firstName ? item.firstName.trim() : undefined,
@@ -344,6 +346,10 @@ export function normalizeStaffFacultyData(
       email: item.email ? item.email.trim().toLowerCase() : undefined,
       phone: item.phone ? item.phone.trim() : undefined,
       bio: item.bio ? item.bio.trim() : undefined,
+      photoUrl: item.photoUrl ? item.photoUrl.trim() : undefined,
+      websiteProfile: item.websiteProfile,
+      archivedAt: item.archivedAt,
+      archivedReason: item.archivedReason,
       subjectsTaught: item.subjectsTaught ? item.subjectsTaught.trim() : undefined,
       classesTaught: item.classesTaught ? item.classesTaught.trim() : undefined,
       displayOnWebsite: item.displayOnWebsite !== false,
@@ -415,6 +421,30 @@ export function isFacultyActive(member?: StaffMember | null): boolean {
 export function getActiveFacultyMembers(staffMembers?: StaffMember[] | null): StaffMember[] {
   if (!Array.isArray(staffMembers)) return [];
   return staffMembers.filter((m) => isFacultyActive(m));
+}
+
+/**
+ * Filter faculty members that should appear on the public school website.
+ * Must not be archived or terminated, and must have showOnWebsite set to true.
+ * Ordered by featured status (featured first), then by displayOrder, then alphabetically by name.
+ */
+export function getWebsiteFacultyMembers(staffMembers?: StaffMember[] | null): StaffMember[] {
+  if (!Array.isArray(staffMembers)) return [];
+  return staffMembers
+    .filter((m) => {
+      const status = (m.status || 'active').toLowerCase();
+      if (status === 'archived' || status === 'terminated') return false;
+      return Boolean(m.websiteProfile?.showOnWebsite ?? m.displayOnWebsite ?? false);
+    })
+    .sort((a, b) => {
+      const aFeatured = a.websiteProfile?.featured ? 1 : 0;
+      const bFeatured = b.websiteProfile?.featured ? 1 : 0;
+      if (bFeatured !== aFeatured) return bFeatured - aFeatured;
+      const aOrder = a.websiteProfile?.displayOrder ?? 999;
+      const bOrder = b.websiteProfile?.displayOrder ?? 999;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      return (a.name || '').localeCompare(b.name || '');
+    });
 }
 
 /**

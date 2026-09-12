@@ -22,6 +22,7 @@ import type {
   StaffCustomFieldType,
   StaffCustomFieldCategory,
 } from '@/lib/types';
+import ModalPortal from '@/components/ui/ModalPortal';
 import {
   STAFF_FIELD_CATEGORIES,
   generateSafeCustomFieldKey,
@@ -493,7 +494,8 @@ export default function StaffCustomFieldBuilder({
 
       {/* ADD / EDIT MODAL */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+        <ModalPortal isOpen={isModalOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
           <div className="bg-white rounded-2xl shadow-xl border border-[#E2E8F0] w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden animate-scale-up">
             {/* Modal Header */}
             <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
@@ -735,6 +737,7 @@ export default function StaffCustomFieldBuilder({
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

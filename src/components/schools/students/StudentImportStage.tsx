@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useMemo } from 'react';
+import ModalPortal from '@/components/ui/ModalPortal';
 import {
   Upload,
   FileSpreadsheet,
@@ -932,8 +933,8 @@ export default function StudentImportStage({
       )}
 
       {/* Confirmation Dialog Modal */}
-      {isConfirmModalOpen && validationResult && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+      <ModalPortal isOpen={isConfirmModalOpen && Boolean(validationResult)}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center">
@@ -942,7 +943,7 @@ export default function StudentImportStage({
               <div>
                 <h4 className="font-bold text-base text-[#131B2E]">Confirm Student Import</h4>
                 <p className="text-xs text-[#64748B]">
-                  {validationResult.readyCount + validationResult.warningCount} students ready for insertion
+                  {((validationResult?.readyCount ?? 0) + (validationResult?.warningCount ?? 0))} students ready for insertion
                 </p>
               </div>
             </div>
@@ -950,17 +951,17 @@ export default function StudentImportStage({
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
               <div className="flex justify-between text-[#334155]">
                 <span>Ready to Import:</span>
-                <span className="font-bold text-emerald-700">{validationResult.readyCount}</span>
+                <span className="font-bold text-emerald-700">{validationResult?.readyCount}</span>
               </div>
               <div className="flex justify-between text-[#334155]">
                 <span>Records with Warnings:</span>
-                <span className="font-bold text-amber-700">{validationResult.warningCount}</span>
+                <span className="font-bold text-amber-700">{validationResult?.warningCount}</span>
               </div>
               <div className="flex justify-between text-[#334155]">
                 <span>Duplicate Resolution:</span>
                 <span className="font-bold capitalize">{duplicatePolicy} Existing</span>
               </div>
-              {validationResult.errorCount > 0 && (
+              {validationResult && validationResult.errorCount > 0 && (
                 <div className="flex justify-between text-rose-700 pt-1 border-t border-slate-200">
                   <span>Invalid Rows Skipped:</span>
                   <span className="font-bold">{validationResult.errorCount}</span>
@@ -990,7 +991,7 @@ export default function StudentImportStage({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }

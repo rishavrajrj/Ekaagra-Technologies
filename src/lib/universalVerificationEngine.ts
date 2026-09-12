@@ -27,26 +27,24 @@ import type {
 } from './types';
 import JSZip from 'jszip';
 import { getEffectiveMediaRegistry } from './mediaRegistryUtils';
+import {
+  resolveCanonicalDocuments,
+  CANONICAL_DOCUMENT_IDS,
+  isValidUploadedDocument,
+} from './canonicalDocuments';
+import {
+  resolveRemediationDestination,
+  PUBLICATION_REQUIREMENT_KEYS,
+  type PublicationRequirementKey,
+} from './remediationRegistry';
+
+export {
+  PUBLICATION_REQUIREMENT_KEYS,
+  type PublicationRequirementKey,
+  isValidUploadedDocument,
+};
 
 // ─── 1. STATUS & VERIFICATION TYPES ──────────────────────────────────────────
-
-export const PUBLICATION_REQUIREMENT_KEYS = {
-  PRINCIPAL_NAME: 'PRINCIPAL_NAME',
-  PRINCIPAL_PORTRAIT: 'PRINCIPAL_PORTRAIT',
-  AFFILIATION_CERTIFICATE: 'AFFILIATION_CERTIFICATE',
-  RECOGNITION_NOC: 'RECOGNITION_NOC',
-  FIRE_SAFETY_CERTIFICATE: 'FIRE_SAFETY_CERTIFICATE',
-  MANDATORY_PUBLIC_DISCLOSURE: 'MANDATORY_PUBLIC_DISCLOSURE',
-  SCHOOL_NAME: 'SCHOOL_NAME',
-  SCHOOL_ADDRESS: 'SCHOOL_ADDRESS',
-  SCHOOL_PHONE: 'SCHOOL_PHONE',
-  SCHOOL_EMAIL: 'SCHOOL_EMAIL',
-  ADMIN_CONTACT: 'ADMIN_CONTACT',
-  CAMPUS_HERO_IMAGE: 'CAMPUS_HERO_IMAGE',
-} as const;
-
-export type PublicationRequirementKey =
-  typeof PUBLICATION_REQUIREMENT_KEYS[keyof typeof PUBLICATION_REQUIREMENT_KEYS];
 
 export interface BlockerValidationResult {
   key: PublicationRequirementKey | string;
@@ -116,6 +114,8 @@ export interface UniversalVerificationAsset {
   updatedAt?: string;
   verifiedAt?: string;
   verifiedBy?: string;
+  remediationAnchor?: string;
+  destination?: any;
 }
 
 export interface UniversalVerificationDocument {
@@ -128,14 +128,20 @@ export interface UniversalVerificationDocument {
   sourceField?: string;
   fileUrl?: string;
   fileName?: string;
+  fileSize?: number;
+  uploadedAt?: string;
   storageKey?: string;
   status: VerificationStatus;
   required: boolean;
   isPublicationBlocker: boolean;
+  allowNotApplicable?: boolean;
+  isNotApplicable?: boolean;
   issueDate?: string;
   expiryDate?: string;
   expiryStatus?: 'valid' | 'expiring_soon' | 'expired' | 'not_applicable';
   notes?: string;
+  remediationAnchor?: string;
+  destination?: any;
 }
 
 export interface UniversalFacilityItem {
@@ -182,6 +188,8 @@ export interface UniversalReadinessSummary {
     sourceSection: string;
     sourceLabel: string;
     sourceField?: string;
+    remediationAnchor?: string;
+    destination?: any;
     debug?: {
       key: string;
       satisfied: boolean;
@@ -198,6 +206,8 @@ export interface UniversalReadinessSummary {
     reason: string;
     sourceSection: string;
     sourceLabel: string;
+    remediationAnchor?: string;
+    destination?: any;
   }>;
 }
 
@@ -533,32 +543,6 @@ export function validatePrincipalPortrait(
 }
 
 /**
- * Validates whether a fileUrl represents a genuine uploaded document and not a placeholder, AI text, or empty value.
- */
-export function isValidUploadedDocument(url?: string, fileName?: string): boolean {
-  if (!url || typeof url !== 'string') return false;
-  const clean = url.trim().toLowerCase();
-  if (clean.length === 0) return false;
-  if (
-    clean === 'n/a' ||
-    clean === 'na' ||
-    clean === 'null' ||
-    clean === 'undefined' ||
-    clean === 'placeholder' ||
-    clean === 'tbd' ||
-    clean === 'will provide later' ||
-    clean.includes('will_provide_later') ||
-    clean.includes('demo') ||
-    clean.startsWith('ai_generated') ||
-    clean.startsWith('ai:') ||
-    clean === 'none'
-  ) {
-    return false;
-  }
-  return true;
-}
-
-/**
  * Validates CBSE Affiliation Certificate / Extension Letter.
  */
 export function validateAffiliationCertificate(intakeData: Partial<UniversalIntakeData>): BlockerValidationResult {
@@ -623,24 +607,32 @@ export function validateRecognitionNoc(intakeData: Partial<UniversalIntakeData>)
 export function validateFireSafetyCertificate(intakeData: Partial<UniversalIntakeData>): BlockerValidationResult {
   const checklistItems = intakeData.assetChecklist?.items || [];
   const fireItem = checklistItems.find(
-    (i) => i.id === 'cert-fire-safety' || i.title?.toLowerCase().includes('fire')
+    (i) =>
+      i.id === 'cert-safety' ||
+      i.id === 'cert-fire-safety' ||
+      i.id === 'cert-building-safety' ||
+      i.id === CANONICAL_DOCUMENT_IDS.BUILDING_FIRE_SAFETY ||
+      i.id === 'FIRE_SAFETY' ||
+      i.id === 'BUILDING_SAFETY' ||
+      i.title?.toLowerCase().includes('fire') ||
+      i.title?.toLowerCase().includes('building safety')
   );
   const isSatisfied = isValidUploadedDocument(fireItem?.fileUrl, fireItem?.fileName);
 
   return {
     key: PUBLICATION_REQUIREMENT_KEYS.FIRE_SAFETY_CERTIFICATE,
     isSatisfied,
-    title: 'Fire Safety Certificate',
+    title: 'Building Safety & Fire Safety Certificate',
     reason: isSatisfied
-      ? 'Fire safety certificate uploaded and verified.'
-      : 'Fire Safety Certificate is mandatory for statutory compliance.',
+      ? 'Building Safety & Fire Safety Certificate uploaded and verified.'
+      : 'Building Safety & Fire Safety Certificate is mandatory for statutory compliance.',
     sourceSection: 'assetChecklist',
     sourceLabel: 'Assets & Documents',
-    sourceField: 'cert-fire-safety',
+    sourceField: 'cert-safety',
     debug: {
       key: PUBLICATION_REQUIREMENT_KEYS.FIRE_SAFETY_CERTIFICATE,
       satisfied: isSatisfied,
-      source: 'assetChecklist.cert-fire-safety',
+      source: 'assetChecklist.cert-safety',
       valuePresent: Boolean(fireItem?.fileUrl),
     },
   };
@@ -801,7 +793,7 @@ export function aggregateUniversalAssets(
   // 4. Campuses Photos (Main building, gate, classrooms, etc.)
   (intakeData.campuses || []).forEach((campus, campusIdx) => {
     (campus.images || []).forEach((img: CampusImageData, imgIdx: number) => {
-      const url = img.url || (img as any).previewUrl;
+      const url = img.url || (img as any).previewUrl || (img as any).fileUrl;
       if (!url) return;
       const assetId = img.id || `campus-${campusIdx}-img-${imgIdx}`;
       const existing = assetMap.get(assetId);
@@ -987,148 +979,58 @@ export function aggregateUniversalAssets(
 // ─── 3. STATUTORY DOCUMENTS & COMPLIANCE ─────────────────────────────────────
 
 /**
- * Aggregates all statutory documents required for publication and regulatory disclosures.
+ * Aggregates all statutory documents required for publication and regulatory disclosures
+ * using the authoritative Canonical Document Registry.
  */
 export function aggregateUniversalDocuments(
   intakeData: Partial<UniversalIntakeData>
 ): UniversalVerificationDocument[] {
-  const docs: UniversalVerificationDocument[] = [];
-  const checklistItems = intakeData.assetChecklist?.items || [];
-  const board = intakeData.schoolProfile?.board || (intakeData.schoolProfile as any)?.curriculumBoard || 'CBSE';
+  const canonicalDocs = resolveCanonicalDocuments(intakeData);
 
-  // 1. Board Affiliation Certificate
-  const affValidation = validateAffiliationCertificate(intakeData);
-  const affItem = checklistItems.find(
-    (i) => i.id === 'cert-affiliation' || i.title?.toLowerCase().includes('affiliation')
-  );
-  docs.push({
-    id: 'doc-affiliation-cert',
-    key: PUBLICATION_REQUIREMENT_KEYS.AFFILIATION_CERTIFICATE,
-    documentName: affValidation.title,
-    type: 'affiliation_certificate',
-    sourceSection: 'assetChecklist',
-    sourceLabel: 'Assets & Documents',
-    sourceField: 'cert-affiliation',
-    fileUrl: affItem?.fileUrl,
-    fileName: affItem?.fileName || 'affiliation-certificate.pdf',
-    status: affValidation.isSatisfied ? 'verified' : 'missing',
-    required: true,
-    isPublicationBlocker: true,
-    expiryDate: '2028-03-31',
-    expiryStatus: 'valid',
-    notes: 'Required by education regulatory board for website mandatory public disclosure.',
+  return canonicalDocs.map((doc) => {
+    let docKey: string | undefined;
+    if (doc.requirementId === CANONICAL_DOCUMENT_IDS.BOARD_AFFILIATION) {
+      docKey = PUBLICATION_REQUIREMENT_KEYS.AFFILIATION_CERTIFICATE;
+    } else if (doc.requirementId === CANONICAL_DOCUMENT_IDS.SCHOOL_RECOGNITION_NOC) {
+      docKey = PUBLICATION_REQUIREMENT_KEYS.RECOGNITION_NOC;
+    } else if (doc.requirementId === CANONICAL_DOCUMENT_IDS.BUILDING_FIRE_SAFETY) {
+      docKey = PUBLICATION_REQUIREMENT_KEYS.FIRE_SAFETY_CERTIFICATE;
+    } else if (doc.requirementId === CANONICAL_DOCUMENT_IDS.MANDATORY_PUBLIC_DISCLOSURE) {
+      docKey = PUBLICATION_REQUIREMENT_KEYS.MANDATORY_PUBLIC_DISCLOSURE;
+    }
+
+    const status: VerificationStatus = doc.isNotApplicable
+      ? 'not_applicable'
+      : doc.isVerified
+      ? 'verified'
+      : doc.required
+      ? 'missing'
+      : 'optional';
+
+    return {
+      id: doc.id,
+      key: docKey,
+      documentName: doc.documentName,
+      type: doc.checklistId,
+      sourceSection: 'assetChecklist',
+      sourceLabel: 'Assets & Documents (Group F)',
+      sourceField: doc.checklistId,
+      fileUrl: doc.fileUrl,
+      fileName: doc.fileName,
+      fileSize: doc.fileSize,
+      uploadedAt: doc.uploadedAt,
+      status,
+      required: doc.required,
+      isPublicationBlocker: doc.isPublicationBlocker,
+      allowNotApplicable: doc.allowNotApplicable,
+      isNotApplicable: doc.isNotApplicable,
+      expiryDate: doc.expiryDate,
+      expiryStatus: doc.expiryStatus,
+      notes: doc.notes,
+      remediationAnchor: doc.remediationAnchor,
+      destination: resolveRemediationDestination(doc.requirementId || doc.checklistId),
+    };
   });
-
-  // 2. Government Recognition / NOC
-  const nocValidation = validateRecognitionNoc(intakeData);
-  const nocItem = checklistItems.find(
-    (i) => i.id === 'cert-recognition' || i.title?.toLowerCase().includes('recognition') || i.title?.toLowerCase().includes('noc')
-  );
-  docs.push({
-    id: 'doc-recognition-noc',
-    key: PUBLICATION_REQUIREMENT_KEYS.RECOGNITION_NOC,
-    documentName: nocValidation.title,
-    type: 'recognition_certificate',
-    sourceSection: 'assetChecklist',
-    sourceLabel: 'Assets & Documents',
-    sourceField: 'cert-recognition',
-    fileUrl: nocItem?.fileUrl,
-    fileName: nocItem?.fileName || 'state-noc.pdf',
-    status: nocValidation.isSatisfied ? 'verified' : 'missing',
-    required: true,
-    isPublicationBlocker: true,
-    expiryDate: 'Permanent',
-    expiryStatus: 'valid',
-    notes: 'Official permission certificate issued by State Education Department.',
-  });
-
-  // 3. Fire Safety Certificate
-  const fireValidation = validateFireSafetyCertificate(intakeData);
-  const fireItem = checklistItems.find(
-    (i) => i.id === 'cert-fire-safety' || i.title?.toLowerCase().includes('fire')
-  );
-  docs.push({
-    id: 'doc-fire-safety',
-    key: PUBLICATION_REQUIREMENT_KEYS.FIRE_SAFETY_CERTIFICATE,
-    documentName: fireValidation.title,
-    type: 'safety_certificate',
-    sourceSection: 'assetChecklist',
-    sourceLabel: 'Assets & Documents',
-    sourceField: 'cert-fire-safety',
-    fileUrl: fireItem?.fileUrl,
-    fileName: fireItem?.fileName || 'fire-safety.pdf',
-    status: fireValidation.isSatisfied ? 'verified' : 'missing',
-    required: true,
-    isPublicationBlocker: true,
-    expiryDate: '2027-06-30',
-    expiryStatus: 'valid',
-    notes: 'Mandatory annual fire safety inspection certificate.',
-  });
-
-  // 4. Building Safety Certificate
-  const bldgItem = checklistItems.find(
-    (i) => i.id === 'cert-building-safety' || i.title?.toLowerCase().includes('building')
-  );
-  const bldgProvided = isValidUploadedDocument(bldgItem?.fileUrl, bldgItem?.fileName);
-  docs.push({
-    id: 'doc-building-safety',
-    documentName: 'Building Safety & Structural Stability Certificate',
-    type: 'building_safety',
-    sourceSection: 'assetChecklist',
-    sourceLabel: 'Assets & Documents',
-    sourceField: 'cert-building-safety',
-    fileUrl: bldgItem?.fileUrl,
-    fileName: bldgItem?.fileName || 'building-safety.pdf',
-    status: bldgProvided ? 'verified' : 'optional',
-    required: false,
-    isPublicationBlocker: false,
-    expiryDate: '2029-12-31',
-    expiryStatus: 'valid',
-    notes: 'PWD / competent structural engineer safety report.',
-  });
-
-  // 5. Mandatory Public Disclosure PDF (Appendix IX)
-  const disclosureValidation = validateMandatoryDisclosure(intakeData);
-  const disclosureItem = checklistItems.find(
-    (i) => i.id === 'cert-mandatory-disclosure' || i.title?.toLowerCase().includes('mandatory')
-  );
-  docs.push({
-    id: 'doc-mandatory-disclosure',
-    key: PUBLICATION_REQUIREMENT_KEYS.MANDATORY_PUBLIC_DISCLOSURE,
-    documentName: disclosureValidation.title,
-    type: 'mandatory_disclosure',
-    sourceSection: 'assetChecklist',
-    sourceLabel: 'Assets & Documents',
-    sourceField: 'cert-mandatory-disclosure',
-    fileUrl: disclosureItem?.fileUrl,
-    fileName: disclosureItem?.fileName || 'mandatory-disclosure-appendix-ix.pdf',
-    status: disclosureValidation.isSatisfied ? 'verified' : 'missing',
-    required: true,
-    isPublicationBlocker: true,
-    notes: 'Comprehensive statutory disclosure form published at /mandatory-disclosures.',
-  });
-
-  // 6. Fee Policy & Schedule
-  const feeItem = checklistItems.find(
-    (i) => i.id === 'admissions-fees-schedule' || i.title?.toLowerCase().includes('fee')
-  );
-  const hasTuitionFees = Boolean(intakeData.feesConfiguration?.classFeeStructures?.length);
-  docs.push({
-    id: 'doc-fee-structure',
-    documentName: 'Annual Fee Schedule & Refund Policy',
-    type: 'fee_policy',
-    sourceSection: 'admissions',
-    sourceLabel: 'Section 9 — Admissions & Fees',
-    sourceField: 'feesConfiguration.classFeeStructures',
-    fileUrl: feeItem?.fileUrl,
-    fileName: feeItem?.fileName || 'fee-schedule.pdf',
-    status: feeItem?.fileUrl || hasTuitionFees ? 'verified' : 'needs_review',
-    required: true,
-    isPublicationBlocker: false,
-    notes: 'Published class-wise fee slabs and parent refund terms.',
-  });
-
-  return docs;
 }
 
 // ─── 4. FACILITIES & CONDITIONAL APPLICABILITY ───────────────────────────────
@@ -1371,6 +1273,8 @@ export function calculateUniversalReadiness(
     sourceSection: 'schoolProfile',
     sourceLabel: 'Section 1 — Identity',
     sourceField: 'schoolProfile.schoolName',
+    remediationAnchor: 'field-school-name',
+    destination: resolveRemediationDestination(PUBLICATION_REQUIREMENT_KEYS.SCHOOL_NAME),
   });
 
   const address = intakeData.campuses?.[0]?.address || schoolProf.address;
@@ -1383,6 +1287,8 @@ export function calculateUniversalReadiness(
     sourceSection: 'campuses',
     sourceLabel: 'Section 2 — Campuses',
     sourceField: 'campuses[0].address',
+    remediationAnchor: 'field-campus-address',
+    destination: resolveRemediationDestination(PUBLICATION_REQUIREMENT_KEYS.SCHOOL_ADDRESS),
   });
 
   const phone = schoolProf.contactPhone || schoolProf.phone || schoolProf.officialPhone;
@@ -1395,6 +1301,8 @@ export function calculateUniversalReadiness(
     sourceSection: 'schoolProfile',
     sourceLabel: 'Section 1 — Identity',
     sourceField: 'schoolProfile.officialPhone',
+    remediationAnchor: 'field-school-phone',
+    destination: resolveRemediationDestination(PUBLICATION_REQUIREMENT_KEYS.SCHOOL_PHONE),
   });
 
   const email = schoolProf.contactEmail || schoolProf.email || schoolProf.officialEmail;
@@ -1407,6 +1315,8 @@ export function calculateUniversalReadiness(
     sourceSection: 'schoolProfile',
     sourceLabel: 'Section 1 — Identity',
     sourceField: 'schoolProfile.officialEmail',
+    remediationAnchor: 'field-school-email',
+    destination: resolveRemediationDestination(PUBLICATION_REQUIREMENT_KEYS.SCHOOL_EMAIL),
   });
 
   const board = schoolProf.board || schoolProf.curriculumBoard;
@@ -1417,6 +1327,8 @@ export function calculateUniversalReadiness(
     reason: 'Educational board selection enhances academic presentation.',
     sourceSection: 'schoolProfile',
     sourceLabel: 'Section 1 — Identity',
+    remediationAnchor: 'field-school-board',
+    destination: resolveRemediationDestination('rec-board'),
   });
 
   const identityScore = Math.round((identityFilled / identityTotal) * 100);
@@ -1435,6 +1347,8 @@ export function calculateUniversalReadiness(
     reason: 'A personalized introduction improves engagement.',
     sourceSection: 'schoolContent',
     sourceLabel: 'Section 5 — Story & Philosophy',
+    remediationAnchor: 'field-about-school',
+    destination: resolveRemediationDestination('rec-about-school'),
   });
 
   const vision = typeof schoolContent.vision === 'object' ? schoolContent.vision?.text : schoolContent.vision;
@@ -1445,6 +1359,8 @@ export function calculateUniversalReadiness(
     reason: 'Vision statement clarifies institutional aspirations.',
     sourceSection: 'schoolContent',
     sourceLabel: 'Section 5 — Story & Philosophy',
+    remediationAnchor: 'field-vision',
+    destination: resolveRemediationDestination('rec-vision'),
   });
 
   const mission = typeof schoolContent.mission === 'object' ? schoolContent.mission?.text : schoolContent.mission;
@@ -1455,6 +1371,8 @@ export function calculateUniversalReadiness(
     reason: 'Mission statement outlines educational goals.',
     sourceSection: 'schoolContent',
     sourceLabel: 'Section 5 — Story & Philosophy',
+    remediationAnchor: 'field-mission',
+    destination: resolveRemediationDestination('rec-mission'),
   });
 
   const principalValidation = validatePrincipalName(intakeData);
@@ -1469,6 +1387,8 @@ export function calculateUniversalReadiness(
       sourceSection: principalValidation.sourceSection,
       sourceLabel: principalValidation.sourceLabel,
       sourceField: principalValidation.sourceField,
+      remediationAnchor: 'field-principal-name',
+      destination: resolveRemediationDestination(PUBLICATION_REQUIREMENT_KEYS.PRINCIPAL_NAME),
       debug: principalValidation.debug,
     });
   }
@@ -1491,14 +1411,18 @@ export function calculateUniversalReadiness(
     if (asset.status !== 'verified' && asset.isPublicationBlocker) {
       const isPortrait = asset.id.includes('principal') || asset.category === 'people';
       const portraitVal = isPortrait ? validatePrincipalPortrait(intakeData) : undefined;
+      const assetKey = asset.key || (isPortrait ? PUBLICATION_REQUIREMENT_KEYS.PRINCIPAL_PORTRAIT : PUBLICATION_REQUIREMENT_KEYS.CAMPUS_HERO_IMAGE);
+      const dest = resolveRemediationDestination(assetKey || asset.id);
       publicationBlockers.push({
         id: `blocker-asset-${asset.id}`,
-        key: asset.key || (isPortrait ? PUBLICATION_REQUIREMENT_KEYS.PRINCIPAL_PORTRAIT : PUBLICATION_REQUIREMENT_KEYS.CAMPUS_HERO_IMAGE),
+        key: assetKey,
         title: asset.title,
         reason: `${asset.title} is required before website launch.`,
         sourceSection: asset.sourceSection,
         sourceLabel: asset.sourceSectionLabel,
         sourceField: asset.sourceField,
+        remediationAnchor: dest?.anchor || asset.remediationAnchor || `asset-row-${asset.id}`,
+        destination: dest,
         debug: isPortrait ? portraitVal?.debug : undefined,
       });
     }
@@ -1509,7 +1433,7 @@ export function calculateUniversalReadiness(
     : 100;
 
   // ── Pillar 5: Compliance & Statutory Documents (20%) ─────────────────────────
-  const requiredDocs = documents.filter((d) => d.required);
+  const requiredDocs = documents.filter((d) => d.required && !d.isNotApplicable);
   const verifiedDocs = requiredDocs.filter((d) => d.status === 'verified');
 
   requiredDocs.forEach((doc) => {
@@ -1522,6 +1446,7 @@ export function calculateUniversalReadiness(
         else if (doc.id === 'doc-mandatory-disclosure') docKey = PUBLICATION_REQUIREMENT_KEYS.MANDATORY_PUBLIC_DISCLOSURE;
       }
       const valResult = docKey ? validateRequirement(docKey, intakeData) : undefined;
+      const dest = resolveRemediationDestination(docKey || doc.id);
       publicationBlockers.push({
         id: `blocker-doc-${doc.id}`,
         key: docKey,
@@ -1530,6 +1455,8 @@ export function calculateUniversalReadiness(
         sourceSection: doc.sourceSection,
         sourceLabel: doc.sourceLabel,
         sourceField: doc.sourceField,
+        remediationAnchor: dest?.anchor || doc.remediationAnchor || `asset-row-${doc.id}`,
+        destination: dest,
         debug: valResult?.debug,
       });
     }
@@ -1539,8 +1466,8 @@ export function calculateUniversalReadiness(
     ? Math.round((verifiedDocs.length / requiredDocs.length) * 100)
     : 100;
 
-  // ── Pillar 6: Administrator & Confirmation (10%) ────────────────────────────
-  let adminTotal = 2;
+  // ── Pillar 6: Administrator & Institutional Verification (10%) ──────────────
+  let adminTotal = 1;
   let adminFilled = 0;
 
   const adminName =
@@ -1549,22 +1476,21 @@ export function calculateUniversalReadiness(
     intakeData.clientConfirmation?.confirmedByName ||
     normalizeLeadershipData(intakeData.leadership).principalName ||
     intakeData.schoolProfile?.officialEmail;
-  if (adminName && String(adminName).trim().length > 0) adminFilled++;
-  else publicationBlockers.push({
-    id: 'blocker-admin-contact',
-    key: PUBLICATION_REQUIREMENT_KEYS.ADMIN_CONTACT,
-    title: 'Authorized Administrator Contact',
-    reason: 'Designated administrative contact required for website ownership.',
-    sourceSection: 'usersAccess',
-    sourceLabel: 'Final Review — Administrator',
-    sourceField: 'usersAccess.superAdminFullName',
-  });
-
-  const isDeclarationAccepted = Boolean(
-    intakeData.clientConfirmation?.isConfirmed ||
-    intakeData.websiteRequirements?.websiteApproved
-  );
-  if (isDeclarationAccepted) adminFilled++;
+  if (adminName && String(adminName).trim().length > 0) {
+    adminFilled++;
+  } else {
+    publicationBlockers.push({
+      id: 'blocker-admin-contact',
+      key: PUBLICATION_REQUIREMENT_KEYS.ADMIN_CONTACT,
+      title: 'Authorized Administrator Contact',
+      reason: 'Designated administrative contact required for website ownership.',
+      sourceSection: 'usersAccess',
+      sourceLabel: 'Final Review — Administrator',
+      sourceField: 'usersAccess.superAdminFullName',
+      remediationAnchor: 'field-admin-contact',
+      destination: resolveRemediationDestination(PUBLICATION_REQUIREMENT_KEYS.ADMIN_CONTACT),
+    });
+  }
 
   const confirmationScore = Math.round((adminFilled / adminTotal) * 100);
 
@@ -1637,7 +1563,11 @@ export function generateSubmissionReportHtml(
     adminPhone: string;
   }
 ): string {
-  const schoolName = (intakeData.schoolProfile as any)?.name || intakeData.schoolProfile?.schoolName || 'SparkNest Academy';
+  const schoolName =
+    (intakeData.schoolProfile as any)?.displayName ||
+    (intakeData.schoolProfile as any)?.name ||
+    intakeData.schoolProfile?.schoolName ||
+    'Official Institution';
   const board = intakeData.schoolProfile?.board || 'CBSE';
   const address = intakeData.campuses?.[0]?.address || 'Main Campus';
 

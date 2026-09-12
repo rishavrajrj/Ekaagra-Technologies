@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import ModalPortal from '@/components/ui/ModalPortal';
 import {
   FileSpreadsheet,
   FileText,
@@ -416,8 +417,8 @@ export default function StudentTemplateStage({
       </div>
 
       {/* Template Preview Modal */}
-      {isPreviewModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+      <ModalPortal isOpen={isPreviewModalOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden shadow-2xl flex flex-col">
             <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
               <div className="flex items-center space-x-2">
@@ -511,7 +512,7 @@ export default function StudentTemplateStage({
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import ModalPortal from '@/components/ui/ModalPortal';
 import {
   X,
   Sparkles,
@@ -91,8 +92,9 @@ export default function ManageCustomFieldsDrawer({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-2xs animate-fadeIn">
-      <div className="bg-white w-full max-w-xl h-full shadow-2xl flex flex-col overflow-hidden border-l border-slate-200 animate-slideLeft">
+    <ModalPortal isOpen={isOpen}>
+      <div className="fixed inset-0 z-[9999] flex justify-end bg-black/40 backdrop-blur-2xs animate-fadeIn">
+        <div className="bg-white w-full max-w-xl h-full shadow-2xl flex flex-col overflow-hidden border-l border-slate-200 animate-slideLeft">
         {/* Drawer Header */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
           <div className="flex items-center space-x-2.5">
@@ -392,5 +394,6 @@ export default function ManageCustomFieldsDrawer({
         </div>
       </div>
     </div>
-  );
+  </ModalPortal>
+);
 }

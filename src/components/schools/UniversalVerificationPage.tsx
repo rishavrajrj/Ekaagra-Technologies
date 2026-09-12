@@ -36,12 +36,21 @@ import {
   AlertCircle,
   Plus,
   Trash2,
+  Monitor,
+  Tablet,
+  Smartphone,
+  Maximize2,
+  Globe,
 } from 'lucide-react';
 import type {
   UniversalIntakeData,
   WebsitePageConfiguration,
   WebsiteApprovalRecord,
 } from '@/lib/types';
+import { buildSchoolWebsiteDataFromIntake } from '@/lib/schoolWebsiteContract';
+import ModalPortal from '@/components/ui/ModalPortal';
+import SchoolWebsiteRenderer from './website-engine/SchoolWebsiteRenderer';
+import { validateCrossSectionConsistency, type ConsistencyValidationResult } from '@/lib/dataConsistencyEngine';
 import {
   STANDARD_WEBSITE_PAGES,
   buildWebsitePageConfigurations,
@@ -65,10 +74,16 @@ import {
   normalizeLeadershipData,
 } from '@/lib/universalVerificationEngine';
 import {
+  executeRemediationNavigation,
+  resolveRemediationDestination,
+} from '@/lib/remediationRegistry';
+import {
   approveWebsiteSpecificationAction,
   reopenWebsiteSpecificationAction,
   submitSchoolIntakeAction,
+  saveSchoolIntakeDraftAction,
 } from '@/app/schoolProjectActions';
+import { evaluateWebsitePublicationReadiness } from '@/lib/websiteDataStatus';
 
 export interface UniversalVerificationPageProps {
   token?: string;
@@ -92,6 +107,7 @@ export default function UniversalVerificationPage({
   // ── Local State & Collapsible Sections ──────────────────────────────────────
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({
     identity: false,
+    scopeConfig: false,
     pages: false,
     content: true,
     facilities: false,
@@ -117,7 +133,8 @@ export default function UniversalVerificationPage({
   const [previewingAsset, setPreviewingAsset] = useState<UniversalVerificationAsset | null>(null);
   const [previewingPageKey, setPreviewingPageKey] = useState<string | null>(null);
   const [isWebsitePreviewOpen, setIsWebsitePreviewOpen] = useState(false);
-  const [activePreviewTab, setActivePreviewTab] = useState<string>('Home');
+  const [previewViewport, setPreviewViewport] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [activePreviewTab, setActivePreviewTab] = useState<string>('home');
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [isDownloadingZip, setIsDownloadingZip] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -126,6 +143,34 @@ export default function UniversalVerificationPage({
     submittedAt: string;
     version: string;
   } | null>(null);
+
+  // Authoritative Website Data Contract (Zero mock/fake fallbacks)
+  const schoolWebsiteData = useMemo(
+    () => buildSchoolWebsiteDataFromIntake(intakeData, false),
+    [intakeData]
+  );
+
+  // Cross-Section Consistency Engine
+  const consistencyResult: ConsistencyValidationResult = useMemo(
+    () => validateCrossSectionConsistency(intakeData),
+    [intakeData]
+  );
+
+  // Background Scroll Lock & Keyboard ESC handling for Live Preview Modal
+  useEffect(() => {
+    if (isWebsitePreviewOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') setIsWebsitePreviewOpen(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  }, [isWebsitePreviewOpen]);
 
   // Approval & Invalidation State
   const approvalHistory: WebsiteApprovalRecord[] = useMemo(
@@ -153,8 +198,8 @@ export default function UniversalVerificationPage({
     [intakeData, allAssets]
   );
   const readiness = useMemo(
-    () => calculateUniversalReadiness(intakeData, allAssets, allDocuments, allFacilities),
-    [intakeData, allAssets, allDocuments, allFacilities]
+    () => evaluateWebsitePublicationReadiness(intakeData),
+    [intakeData]
   );
 
   const pageConfigurations: Record<string, WebsitePageConfiguration> = useMemo(() => {
@@ -252,7 +297,7 @@ export default function UniversalVerificationPage({
 
     const htmlContent = generateSubmissionReportHtml(
       intakeData,
-      readiness,
+      readiness as any,
       allAssets,
       allDocuments,
       allFacilities,
@@ -293,7 +338,7 @@ export default function UniversalVerificationPage({
 
       const zipBlob = await buildUniversalSubmissionZip(
         intakeData,
-        readiness,
+        readiness as any,
         allAssets,
         allDocuments,
         allFacilities,
@@ -326,6 +371,15 @@ export default function UniversalVerificationPage({
   // ── Final Lock & Submission Handler ─────────────────────────────────────────
   const handleFinalSubmission = async () => {
     if (!token) return;
+
+    // Strict Publication Guardrail: Block submission if publication blockers or conflicts remain
+    if (readiness.hasPublicationBlockers || consistencyResult.criticalConflictsCount > 0) {
+      alert(
+        `Cannot Submit & Lock: There are ${readiness.publicationBlockers.length} publication blocker(s) and ${consistencyResult.criticalConflictsCount} critical data conflict(s) that must be resolved first.`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const approverInfo = {
@@ -335,12 +389,48 @@ export default function UniversalVerificationPage({
         phone: adminPhone,
       };
 
-      // 1. Approve & Lock specification snapshot
+      // 1. Prepare and persist latest authoritative snapshot before validation/locking
+      const latestIntake: UniversalIntakeData = {
+        ...intakeData,
+        usersAccess: {
+          ...(intakeData.usersAccess || {}),
+          superAdminFullName: adminName,
+          superAdminDesignation: adminDesignation,
+          superAdminEmail: adminEmail,
+          superAdminPhone: adminPhone,
+        },
+        clientConfirmation: {
+          ...(intakeData.clientConfirmation || {}),
+          isConfirmed: true,
+          confirmedByName: adminName,
+          confirmedByDesignation: adminDesignation,
+          confirmedAt: new Date().toISOString(),
+        },
+      } as UniversalIntakeData;
+
+      const saveRes = await saveSchoolIntakeDraftAction(token, latestIntake);
+      if (!saveRes.success) {
+        alert('Your latest changes could not be saved.\nPlease try again before submitting.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 2. Authoritative Publication Readiness Validation on authoritative snapshot
+      const currentValidation = evaluateWebsitePublicationReadiness(latestIntake);
+      if (!currentValidation.isReady || currentValidation.blockers.length > 0) {
+        alert(
+          `Cannot Submit & Lock: There are ${currentValidation.blockers.length} publication blocker(s) that must be resolved first.`
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 3. Approve & Lock specification snapshot
       const approvalRes = await approveWebsiteSpecificationAction(
         token,
         approverInfo,
         'Final Institutional Website Specification Verified and Approved',
-        intakeData
+        latestIntake
       );
 
       if (!approvalRes.success && approvalRes.error) {
@@ -349,7 +439,7 @@ export default function UniversalVerificationPage({
         return;
       }
 
-      // 2. Submit full intake payload
+      // 4. Submit full intake payload
       const subId = `SCH-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
       const now = new Date().toLocaleDateString('en-GB', {
         day: 'numeric',
@@ -499,7 +589,7 @@ export default function UniversalVerificationPage({
           <div className="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl">
             <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Compliance</div>
             <div className="text-lg font-black text-slate-800 mt-0.5">{readiness.categoryScores.compliance}%</div>
-            <span className="text-[10px] text-slate-500 font-medium">{allDocuments.filter((d) => d.status === 'verified').length} / {allDocuments.length} Statutory Docs</span>
+            <span className="text-[10px] text-slate-500 font-medium">{allDocuments.filter((d) => d.status === 'verified').length} / {allDocuments.filter((d) => !d.isNotApplicable).length} Statutory Docs</span>
           </div>
 
           <div className="bg-slate-50 border border-slate-200/80 p-2.5 rounded-xl">
@@ -562,6 +652,61 @@ export default function UniversalVerificationPage({
         </div>
       )}
 
+      {/* ── ATTENTION REQUIRED: GUIDED REMEDIATION CHECKLIST ──────────────── */}
+      {readiness.hasPublicationBlockers && (
+        <div className="bg-gradient-to-r from-rose-50/90 via-amber-50/70 to-rose-50/90 border-2 border-rose-300 rounded-2xl p-5 shadow-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-rose-200/80 pb-3.5">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-rose-600 text-white flex items-center justify-center font-bold text-sm shadow-xs shrink-0">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-sm sm:text-base text-rose-950 flex items-center gap-2 flex-wrap">
+                  <span>ATTENTION REQUIRED BEFORE PUBLICATION</span>
+                  <span className="text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900 border border-rose-300">
+                    {readiness.publicationBlockers.length} {readiness.publicationBlockers.length === 1 ? 'Action Required' : 'Actions Required'}
+                  </span>
+                </h3>
+                <p className="text-xs text-rose-800 mt-0.5">
+                  The following statutory requirements or mandatory fields are missing. Click any action item to navigate directly to the exact input or document upload card.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2.5">
+            {readiness.publicationBlockers.map((b) => {
+              const dest = b.destination || resolveRemediationDestination(b.key || b.id);
+              return (
+                <div
+                  key={`attention-${b.id}`}
+                  className="bg-white border border-rose-200 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs hover:border-rose-300 transition"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-slate-900">{b.title}</span>
+                      <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+                        {b.sourceLabel}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-snug">{b.reason}</p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => executeRemediationNavigation(dest, jumpTo)}
+                    className="self-start sm:self-auto px-3.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-xs inline-flex items-center gap-1.5 shrink-0 group"
+                  >
+                    <span>Fix Now</span>
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── SECTION 10: PUBLICATION BLOCKERS ("Before You Submit") ─────────── */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
         <button
@@ -589,34 +734,69 @@ export default function UniversalVerificationPage({
 
         {!collapsedSections.blockers && (
           <div className="p-4 sm:p-5 space-y-4">
+            {/* Cross-Section Consistency Conflicts */}
+            {consistencyResult.hasConflicts && (
+              <div className="p-4 rounded-xl border border-amber-300 bg-amber-50/80 space-y-3">
+                <div className="flex items-center gap-2 text-amber-900 font-extrabold text-xs">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <span>Cross-Section Data Contradictions Detected ({consistencyResult.conflicts.length})</span>
+                </div>
+                <div className="space-y-2">
+                  {consistencyResult.conflicts.map((c) => (
+                    <div
+                      key={c.id}
+                      className="p-3 rounded-lg bg-white border border-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs"
+                    >
+                      <div className="space-y-1">
+                        <div className="font-bold text-slate-900">{c.title}</div>
+                        <p className="text-[11px] text-slate-600">{c.description}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => jumpTo(c.conflictingSections[0])}
+                        className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs shrink-0 inline-flex items-center gap-1"
+                      >
+                        <span>Fix Now</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {readiness.hasPublicationBlockers ? (
               <div className="space-y-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-rose-700">
                   Publication Blockers (Must resolve before submission)
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  {readiness.publicationBlockers.map((b) => (
-                    <div
-                      key={b.id}
-                      className="p-3 rounded-xl border border-rose-200 bg-rose-50/60 flex items-start justify-between gap-3"
-                    >
-                      <div>
-                        <div className="font-bold text-xs text-rose-950 flex items-center gap-1.5">
-                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                          <span>{b.title}</span>
-                        </div>
-                        <p className="text-[11px] text-rose-800 mt-0.5">{b.reason}</p>
-                        <div className="text-[10px] font-semibold text-rose-600 mt-1">Source: {b.sourceLabel}</div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => jumpTo(b.sourceSection)}
-                        className="px-2.5 py-1 bg-white border border-rose-300 hover:bg-rose-100 text-rose-800 text-[11px] font-bold rounded-lg transition shrink-0 cursor-pointer shadow-2xs"
+                  {readiness.publicationBlockers.map((b) => {
+                    const dest = b.destination || resolveRemediationDestination(b.key || b.id);
+                    return (
+                      <div
+                        key={b.id}
+                        className="p-3 rounded-xl border border-rose-200 bg-rose-50/60 flex items-start justify-between gap-3"
                       >
-                        Fix
-                      </button>
-                    </div>
-                  ))}
+                        <div>
+                          <div className="font-bold text-xs text-rose-950 flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                            <span>{b.title}</span>
+                          </div>
+                          <p className="text-[11px] text-rose-800 mt-0.5">{b.reason}</p>
+                          <div className="text-[10px] font-semibold text-rose-600 mt-1">Source: {b.sourceLabel}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => executeRemediationNavigation(dest, jumpTo)}
+                          className="px-3 py-1.5 bg-white border border-rose-300 hover:bg-rose-50 text-rose-800 text-xs font-bold rounded-lg transition shrink-0 cursor-pointer shadow-2xs inline-flex items-center gap-1 group"
+                        >
+                          <span>Fix Now</span>
+                          <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ) : (
@@ -632,20 +812,23 @@ export default function UniversalVerificationPage({
                   Recommendations (Enhance your digital presence)
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {readiness.recommendations.map((r) => (
-                    <div key={r.id} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
-                      <div className="text-xs text-slate-700">
-                        <span className="font-bold">{r.title}:</span> {r.reason}
+                  {readiness.recommendations.map((r) => {
+                    const dest = r.destination || resolveRemediationDestination(r.id);
+                    return (
+                      <div key={r.id} className="p-2.5 rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between gap-2">
+                        <div className="text-xs text-slate-700">
+                          <span className="font-bold">{r.title}:</span> {r.reason}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => executeRemediationNavigation(dest, jumpTo)}
+                          className="text-[11px] font-semibold text-indigo-600 hover:underline shrink-0 cursor-pointer"
+                        >
+                          Edit →
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => jumpTo(r.sourceSection)}
-                        className="text-[11px] font-semibold text-indigo-600 hover:underline shrink-0"
-                      >
-                        Edit
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -775,7 +958,10 @@ export default function UniversalVerificationPage({
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Website Domain Presence</div>
                   <div className="text-xs font-mono font-bold text-indigo-700 mt-0.5">
-                    {intakeData.schoolProfile?.preferredPublicUrl || 'https://sparknestacademy.edu.in'}
+                    {intakeData.schoolProfile?.preferredPublicUrl ||
+                      (intakeData.schoolProfile?.slug
+                        ? `https://${intakeData.schoolProfile.slug}.edu.in`
+                        : 'https://school-domain.edu.in')}
                   </div>
                   <div className="text-[10px] text-slate-500 mt-1">Source: Section 19 — Domain Setup</div>
                 </div>
@@ -799,7 +985,7 @@ export default function UniversalVerificationPage({
                   <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Board Affiliation</div>
                   <div className="text-xs font-bold text-slate-900 mt-0.5">
                     {intakeData.schoolProfile?.board || 'CBSE'} (Affiliation No:{' '}
-                    {intakeData.schoolProfile?.affiliationNumber || '330892'})
+                    {intakeData.schoolProfile?.affiliationNumber || 'Pending / In-Process'})
                   </div>
                   <div className="text-[10px] text-slate-500 mt-1">Source: Section 1 — Identity</div>
                 </div>
@@ -813,6 +999,171 @@ export default function UniversalVerificationPage({
                     className="text-[11px] font-semibold text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Edit2 className="w-3 h-3" /> Edit Source
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ── SECTION: PROJECT SCOPE & WEBSITE CONFIGURATION ───────────────── */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
+        <button
+          type="button"
+          onClick={() => toggleSection('scopeConfig')}
+          className="w-full flex items-center justify-between p-4 bg-slate-50/70 hover:bg-slate-100/70 transition text-left cursor-pointer"
+        >
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center font-bold text-xs">
+              <Globe className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="font-extrabold text-sm text-[#131B2E]">Project Scope &amp; Website Configuration</div>
+              <div className="text-[11px] text-slate-500">Website architecture, domain setup, and custom institutional requests</div>
+            </div>
+          </div>
+          {collapsedSections.scopeConfig ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronUp className="w-4 h-4 text-slate-400" />}
+        </button>
+
+        {!collapsedSections.scopeConfig && (
+          <div className="p-4 sm:p-5 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs">
+              {/* Card 1: Website Scope & Modules */}
+              <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 flex flex-col justify-between space-y-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Website Scope</span>
+                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
+                      Configured
+                    </span>
+                  </div>
+                  <div className="text-sm font-bold text-slate-900 mt-1">
+                    {intakeData.websiteScope?.websiteType === 'multi_campus_group'
+                      ? 'Multi-Campus / Group Portal'
+                      : intakeData.websiteScope?.websiteType === 'k12_comprehensive'
+                      ? 'Comprehensive K-12 Portal'
+                      : 'Standard School Website'}
+                  </div>
+                  <div className="text-[11px] text-slate-600 mt-1">
+                    <span className="font-semibold text-slate-800">Core Modules:</span> 6 Included
+                  </div>
+                  {intakeData.websiteScope?.optionalModules && intakeData.websiteScope.optionalModules.length > 0 ? (
+                    <div className="text-[11px] text-slate-600 mt-0.5">
+                      <span className="font-semibold text-slate-800">Optional Modules:</span> {intakeData.websiteScope.optionalModules.length} Active
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-slate-500 mt-0.5 italic">
+                      Standard modules selected
+                    </div>
+                  )}
+                  {intakeData.websiteScope?.customPages && intakeData.websiteScope.customPages.length > 0 && (
+                    <div className="text-[11px] text-indigo-700 mt-0.5 font-semibold">
+                      +{intakeData.websiteScope.customPages.length} Custom Page(s)
+                    </div>
+                  )}
+                </div>
+                <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500">Chapter 5 — Config</span>
+                  <button
+                    type="button"
+                    onClick={() => jumpTo('websiteScope')}
+                    className="text-[11px] font-semibold text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit2 className="w-3 h-3" /> Edit Scope
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 2: Website & Domain Presence */}
+              <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 flex flex-col justify-between space-y-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Domain Preference</span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                      ✓ Valid
+                    </span>
+                  </div>
+                  <div className="text-sm font-mono font-bold text-indigo-700 mt-1 truncate">
+                    {intakeData.domainPresence?.domainChoice === 'DECIDE_LATER' || intakeData.domainPresence?.decideLater
+                      ? 'Decide Later (Ekaagra Subdomain)'
+                      : intakeData.domainPresence?.domainChoice === 'EXISTING_DOMAIN' || intakeData.domainPresence?.alreadyOwnsDomain
+                      ? intakeData.domainPresence?.existingDomainName || intakeData.domainPresence?.preferredDomain || 'School-owned Domain'
+                      : intakeData.domainPresence?.preferredNewDomainName || intakeData.domainPresence?.preferredDomain || 'Standard Edu Domain'}
+                  </div>
+                  <div className="text-[11px] text-slate-600 mt-1">
+                    {intakeData.domainPresence?.domainChoice === 'EXISTING_DOMAIN' || intakeData.domainPresence?.alreadyOwnsDomain
+                      ? 'School already owns this domain (DNS transfer supported)'
+                      : intakeData.domainPresence?.domainChoice === 'DECIDE_LATER' || intakeData.domainPresence?.decideLater
+                      ? 'Temporary preview on ekaagraschools.in; domain finalized later'
+                      : intakeData.domainPresence?.selectedDomainQuote?.isIncluded
+                      ? 'Included in plan subscription'
+                      : 'Standard annual registration'}
+                  </div>
+                </div>
+                <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500">Chapter 5 — Config</span>
+                  <button
+                    type="button"
+                    onClick={() => jumpTo('domainPresence')}
+                    className="text-[11px] font-semibold text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit2 className="w-3 h-3" /> Edit Domain
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 3: Custom Requirements & Special Requests */}
+              <div className="p-3.5 bg-slate-50/80 rounded-xl border border-slate-200 flex flex-col justify-between space-y-2">
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Custom Requests</span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                      ✓ Ready (Optional)
+                    </span>
+                  </div>
+                  {intakeData.additionalRequirements?.customRequests && intakeData.additionalRequirements.customRequests.length > 0 ? (
+                    <div className="space-y-1.5 mt-1">
+                      <div className="text-xs font-bold text-slate-900">
+                        {intakeData.additionalRequirements.customRequests.length} Custom Request(s)
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {intakeData.additionalRequirements.customRequests.slice(0, 2).map((req, idx) => (
+                          <span key={idx} className="text-[10px] px-1.5 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded truncate max-w-full">
+                            {req}
+                          </span>
+                        ))}
+                        {intakeData.additionalRequirements.customRequests.length > 2 && (
+                          <span className="text-[10px] text-slate-500 font-semibold">
+                            +{intakeData.additionalRequirements.customRequests.length - 2} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-1">
+                      <div className="text-xs font-semibold text-slate-800">
+                        Standard Project Scope
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-0.5">
+                        No custom requests submitted. Standard turnkey school deployment applies.
+                      </p>
+                    </div>
+                  )}
+                  {(intakeData.additionalRequirements?.notes || intakeData.additionalRequirements?.generalCommentsOrQuestions) && (
+                    <p className="text-[10px] text-slate-500 line-clamp-1 mt-1 italic">
+                      &ldquo;{intakeData.additionalRequirements.notes || intakeData.additionalRequirements.generalCommentsOrQuestions}&rdquo;
+                    </p>
+                  )}
+                </div>
+                <div className="pt-2 border-t border-slate-200/80 flex items-center justify-between">
+                  <span className="text-[10px] text-slate-500">Chapter 5 — Config</span>
+                  <button
+                    type="button"
+                    onClick={() => jumpTo('additionalRequirements')}
+                    className="text-[11px] font-semibold text-indigo-600 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Edit2 className="w-3 h-3" /> Edit Requests
                   </button>
                 </div>
               </div>
@@ -936,7 +1287,7 @@ export default function UniversalVerificationPage({
                   {typeof intakeData.schoolContent?.aboutSchool === 'object'
                     ? intakeData.schoolContent.aboutSchool?.text
                     : intakeData.schoolContent?.aboutSchool ||
-                      'SparkNest Academy is dedicated to nurturing young minds with a blend of academic rigor, character building, and modern educational values.'}
+                      'Institutional overview description pending entry in Story & Philosophy.'}
                 </p>
               </div>
 
@@ -1025,6 +1376,24 @@ export default function UniversalVerificationPage({
                 <div className="text-xs text-slate-700 space-y-1">
                   <div>Cycle: <span className="font-bold text-slate-900">{intakeData.admissions?.session || '2026–2027'}</span></div>
                   <div>Helpline: <span className="font-bold text-slate-900">{intakeData.admissions?.admissionPhone || intakeData.schoolProfile?.officialPhone || 'Admissions Desk'}</span></div>
+                  {(() => {
+                    const admFees = Array.isArray((intakeData.admissions as any)?.fees) ? (intakeData.admissions as any).fees : [];
+                    const totalFees = admFees.length;
+                    const visibleFees = admFees.filter((f: any) => f.showOnWebsite !== false).length;
+                    return totalFees > 0 ? (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                          ✓ {totalFees} fee{totalFees !== 1 ? 's' : ''} configured • {visibleFees} visible on website
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded">
+                          ✗ Not configured
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <div className="text-[11px] text-slate-500 mt-1">
                     Process: Online Application Form &rarr; Document Verification &rarr; Interaction &rarr; Fee Payment
                   </div>
@@ -1450,7 +1819,12 @@ export default function UniversalVerificationPage({
               <FileCheck className="w-4 h-4" />
             </div>
             <div>
-              <div className="font-extrabold text-sm text-[#131B2E]">Statutory Compliance &amp; Mandatory Documents</div>
+              <div className="font-extrabold text-sm text-[#131B2E] flex items-center gap-2 flex-wrap">
+                <span>Statutory Compliance &amp; Mandatory Documents</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-200/80 text-slate-700">
+                  {allDocuments.filter((d) => d.status === 'verified').length} / {allDocuments.filter((d) => !d.isNotApplicable).length} Verified
+                </span>
+              </div>
               <div className="text-[11px] text-slate-500">
                 Board affiliation, State NOC, building safety &amp; fire safety certification tracking
               </div>
@@ -1475,6 +1849,8 @@ export default function UniversalVerificationPage({
                 <tbody className="divide-y divide-slate-100">
                   {allDocuments.map((doc) => {
                     const isVerified = doc.status === 'verified';
+                    const isNA = Boolean(doc.isNotApplicable);
+                    const dest = doc.destination || resolveRemediationDestination(doc.key || doc.id);
                     return (
                       <tr key={doc.id} className="hover:bg-slate-50/50 transition">
                         <td className="py-3 px-3">
@@ -1484,12 +1860,14 @@ export default function UniversalVerificationPage({
                         <td className="py-3 px-3">
                           <span
                             className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold border ${
-                              isVerified
+                              isNA
+                                ? 'bg-slate-100 border-slate-200 text-slate-600'
+                                : isVerified
                                 ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                                 : 'bg-rose-50 border-rose-200 text-rose-700'
                             }`}
                           >
-                            {isVerified ? '✓ Uploaded & Valid' : 'Missing File'}
+                            {isNA ? 'Not Applicable' : isVerified ? '✓ Uploaded & Valid' : 'Missing File'}
                           </span>
                         </td>
                         <td className="py-3 px-3 font-mono text-[11px] text-slate-700">
@@ -1503,10 +1881,11 @@ export default function UniversalVerificationPage({
                         <td className="py-3 px-3 text-right">
                           <button
                             type="button"
-                            onClick={() => jumpTo('assetChecklist')}
-                            className="font-bold text-indigo-600 hover:underline cursor-pointer"
+                            onClick={() => executeRemediationNavigation(dest, jumpTo)}
+                            className="font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer inline-flex items-center gap-1"
                           >
-                            {isVerified ? 'Replace / View' : 'Upload'}
+                            <span>{isVerified ? 'Replace / View' : 'Upload'}</span>
+                            <span>→</span>
                           </button>
                         </td>
                       </tr>
@@ -1764,7 +2143,8 @@ export default function UniversalVerificationPage({
 
       {/* ── MODAL: SUBMISSION CONFIRMATION ─────────────────────────────────── */}
       {isSubmitModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <ModalPortal isOpen={isSubmitModalOpen}>
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 border border-slate-200 animate-in fade-in zoom-in-95">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-bold">
@@ -1823,11 +2203,13 @@ export default function UniversalVerificationPage({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ── MODAL: ASSET PREVIEW & METADATA EDITOR ──────────────────────────── */}
       {previewingAsset && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <ModalPortal isOpen={!!previewingAsset}>
+        <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-xl w-full p-5 shadow-2xl space-y-4 border border-slate-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
@@ -1907,217 +2289,135 @@ export default function UniversalVerificationPage({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
-      {/* ── MODAL: INTERACTIVE WEBSITE PREVIEW ──────────────────────────────── */}
+      {/* ── MODAL: LIVE PUBLIC WEBSITE PREVIEW ──────────────────────────────── */}
       {isWebsitePreviewOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6">
-          <div className="bg-white rounded-2xl max-w-5xl w-full h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
-            {/* Modal Header */}
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">
+        <ModalPortal isOpen={isWebsitePreviewOpen}>
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Live Public Website Preview"
+        >
+          <div
+            className={`bg-white rounded-2xl h-[92vh] flex flex-col shadow-2xl border border-slate-700 overflow-hidden transition-all duration-300 ${
+              previewViewport === 'mobile'
+                ? 'w-full max-w-[400px]'
+                : previewViewport === 'tablet'
+                ? 'w-full max-w-[780px]'
+                : 'w-full max-w-6xl'
+            }`}
+          >
+            {/* Modal Header & Viewport Switcher */}
+            <div className="p-3.5 border-b border-slate-200 bg-slate-900 text-white flex items-center justify-between gap-3 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
                   <Eye className="w-4 h-4" />
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-sm text-slate-900">
-                    Live Public Website Preview — {intakeData.schoolProfile?.schoolName || intakeData.schoolProfile?.displayName || 'SparkNest Academy'}
-                  </h3>
-                  <span className="text-[10px] text-slate-500 font-mono">
-                    Rendering with real school data, brand tone &amp; actual uploaded photography
-                  </span>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-extrabold text-xs sm:text-sm text-white tracking-tight truncate">
+                      Live Public Website Preview — {schoolWebsiteData.school.displayName || 'School Portal'}
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 shrink-0">
+                      {isWebsiteApproved ? 'LIVE DATA' : 'DRAFT DATA'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 font-mono truncate hidden sm:block">
+                    Rendering with real school database records, brand configuration, and approved media.
+                  </p>
                 </div>
               </div>
+
+              {/* Viewport Width Controls */}
+              <div className="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setPreviewViewport('desktop')}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    previewViewport === 'desktop'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Desktop View (100%)"
+                >
+                  <Monitor className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline text-[10px]">Desktop</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewViewport('tablet')}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    previewViewport === 'tablet'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Tablet View (768px)"
+                >
+                  <Tablet className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline text-[10px]">Tablet</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewViewport('mobile')}
+                  className={`p-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                    previewViewport === 'mobile'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                  title="Mobile View (390px)"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span className="hidden md:inline text-[10px]">Mobile</span>
+                </button>
+              </div>
+
+              {/* Close Button */}
               <button
                 type="button"
                 onClick={() => setIsWebsitePreviewOpen(false)}
-                className="p-1 hover:bg-slate-200 rounded-lg text-slate-500"
+                className="p-1.5 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-white transition cursor-pointer shrink-0"
+                aria-label="Close website preview (or press ESC)"
+                title="Close (ESC)"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Page Tabs */}
-            <div className="flex items-center gap-1.5 px-4 py-2 border-b border-slate-100 bg-white overflow-x-auto text-xs">
-              {[
-                'Home',
-                'About School',
-                'Academics',
-                'Admissions',
-                'Facilities',
-                'Gallery',
-                'Mandatory Disclosures',
-                'Contact Us',
-              ].map((tab) => (
-                <button
-                  key={tab}
-                  type="button"
-                  onClick={() => setActivePreviewTab(tab)}
-                  className={`px-3 py-1.5 rounded-lg font-bold shrink-0 transition cursor-pointer ${
-                    activePreviewTab === tab
-                      ? 'bg-indigo-600 text-white shadow-2xs'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
+            {/* Preview Viewport Container with Independent Scroll Area */}
+            <div className="flex-1 overflow-y-auto bg-slate-100">
+              <SchoolWebsiteRenderer
+                data={schoolWebsiteData}
+                viewMode="tabbed"
+                initialTab={activePreviewTab}
+                className="min-h-full shadow-md"
+              />
             </div>
 
-            {/* Preview Content Area */}
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
-              <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-6">
-                {activePreviewTab === 'Home' && (
-                  <div className="space-y-6">
-                    {/* Hero Section */}
-                    <div className="relative rounded-2xl bg-gradient-to-r from-indigo-900 to-purple-900 text-white p-8 overflow-hidden">
-                      <div className="relative z-10 max-w-xl space-y-3">
-                        <span className="text-xs font-extrabold uppercase tracking-widest text-indigo-300">
-                          {intakeData.schoolProfile?.board || 'CBSE'} Affiliated Institution
-                        </span>
-                        <h1 className="text-3xl font-black tracking-tight">
-                          {intakeData.schoolProfile?.schoolName || intakeData.schoolProfile?.displayName || 'SparkNest Academy'}
-                        </h1>
-                        <p className="text-xs text-indigo-100 leading-relaxed">
-                          {(intakeData.schoolProfile as any)?.tagline || intakeData.brandingDesign?.taglineOrMotto || 'Nurturing curiosity, ethical leadership, and academic excellence in every child.'}
-                        </p>
-                        <div className="pt-2 flex gap-2">
-                          <button className="px-4 py-2 bg-white text-indigo-950 font-black text-xs rounded-xl shadow-xs">
-                            Apply for Admission
-                          </button>
-                          <button className="px-4 py-2 bg-indigo-800 text-white font-bold text-xs rounded-xl">
-                            Virtual Tour
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Highlights Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-center">
-                        <div className="text-2xl font-black text-indigo-600">12+</div>
-                        <div className="text-xs font-bold text-slate-800 mt-1">Smart Classrooms</div>
-                      </div>
-                      <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-center">
-                        <div className="text-2xl font-black text-indigo-600">100%</div>
-                        <div className="text-xs font-bold text-slate-800 mt-1">Board Results</div>
-                      </div>
-                      <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 text-center">
-                        <div className="text-2xl font-black text-indigo-600">5,000+</div>
-                        <div className="text-xs font-bold text-slate-800 mt-1">Library Books</div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activePreviewTab === 'About School' && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-black text-slate-900">About {intakeData.schoolProfile?.schoolName || intakeData.schoolProfile?.displayName || 'SparkNest Academy'}</h2>
-                    <p className="text-xs text-slate-700 leading-relaxed">
-                      {typeof intakeData.schoolContent?.aboutSchool === 'object'
-                        ? intakeData.schoolContent.aboutSchool?.text
-                        : intakeData.schoolContent?.aboutSchool || 'Established with a vision to nurture young minds...'}
-                    </p>
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                        <h3 className="font-extrabold text-xs text-indigo-900">Vision</h3>
-                        <p className="text-xs text-slate-600 mt-1">
-                          {typeof intakeData.schoolContent?.vision === 'object'
-                            ? intakeData.schoolContent.vision?.text
-                            : intakeData.schoolContent?.vision || 'Empower students to lead with integrity.'}
-                        </p>
-                      </div>
-                      <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
-                        <h3 className="font-extrabold text-xs text-indigo-900">Mission</h3>
-                        <p className="text-xs text-slate-600 mt-1">
-                          {typeof intakeData.schoolContent?.mission === 'object'
-                            ? intakeData.schoolContent.mission?.text
-                            : intakeData.schoolContent?.mission || 'Provide holistic education.'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activePreviewTab === 'Facilities' && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-black text-slate-900">Campus Facilities &amp; Infrastructure</h2>
-                    <div className="grid grid-cols-2 gap-3">
-                      {allFacilities.filter((f) => f.isApplicable).map((f) => (
-                        <div key={f.key} className="p-3 rounded-xl border border-slate-200 bg-slate-50">
-                          <h4 className="font-extrabold text-xs text-slate-900">{f.name}</h4>
-                          <span className="text-[10px] font-bold text-indigo-700">{f.countOrCapacity}</span>
-                          <p className="text-[11px] text-slate-600 mt-1">{f.description}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {activePreviewTab === 'Mandatory Disclosures' && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-black text-slate-900">Mandatory Public Disclosures</h2>
-                    <p className="text-xs text-slate-600">
-                      CBSE / Education Department SARAS Disclosure Document and Certificates
-                    </p>
-                    <table className="w-full text-xs border border-slate-200">
-                      <thead>
-                        <tr className="bg-slate-100 text-left">
-                          <th className="p-2 border border-slate-200">Document</th>
-                          <th className="p-2 border border-slate-200">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {allDocuments.map((doc) => (
-                          <tr key={doc.id}>
-                            <td className="p-2 border border-slate-200 font-bold">{doc.documentName}</td>
-                            <td className="p-2 border border-slate-200 text-emerald-700 font-bold">
-                              {doc.status === 'verified' ? '✓ Verified' : 'Pending'}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-
-                {activePreviewTab === 'Contact Us' && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-black text-slate-900">Contact Institution</h2>
-                    <div className="space-y-2 text-xs text-slate-700">
-                      <div>Address: <strong>{intakeData.campuses?.[0]?.address || 'Main Campus'}</strong></div>
-                      <div>Phone: <strong>{intakeData.schoolProfile?.officialPhone || intakeData.schoolProfile?.phone || 'Official Telephone'}</strong></div>
-                      <div>Email: <strong>{intakeData.schoolProfile?.officialEmail || 'Official Email'}</strong></div>
-                    </div>
-                  </div>
-                )}
-
-                {(activePreviewTab === 'Academics' || activePreviewTab === 'Admissions' || activePreviewTab === 'Gallery') && (
-                  <div className="space-y-4">
-                    <h2 className="text-xl font-black text-slate-900">{activePreviewTab}</h2>
-                    <p className="text-xs text-slate-600">
-                      Live content preview generated from canonical intake data.
-                    </p>
-                  </div>
-                )}
+            {/* Modal Status Footer */}
+            <div className="px-4 py-2.5 border-t border-slate-200 bg-white flex flex-wrap items-center justify-between text-xs shrink-0 gap-2">
+              <div className="flex items-center gap-2 text-slate-500 text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Authoritative Single Source of Truth • Zero Mock Data</span>
               </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-3 border-t border-slate-200 flex items-center justify-between bg-white text-xs">
-              <span className="text-slate-500">
-                Displaying actual data and uploaded media assets.
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsWebsitePreviewOpen(false)}
-                className="px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-bold hover:bg-indigo-700"
-              >
-                Close Preview
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-slate-400 font-mono">
+                  UDISE: {schoolWebsiteData.school.udiseCode || 'Pending'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsWebsitePreviewOpen(false)}
+                  className="px-3.5 py-1.5 rounded-lg bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition cursor-pointer"
+                >
+                  Exit Preview
+                </button>
+              </div>
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

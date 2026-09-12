@@ -27,6 +27,7 @@ import {
   reconcileClassesForAcademicLevels,
   DEFAULT_LEVEL_CLASS_PRESETS,
 } from '@/lib/academicStructureUtils';
+import ModalPortal from '@/components/ui/ModalPortal';
 import { getCampusDisplayName } from '@/lib/campusScopeRegistry';
 
 interface Step2GradesClassesProps {
@@ -678,7 +679,8 @@ export default function Step2GradesClasses({
 
       {/* ── MODAL: ADD / EDIT GRADE ONLY ───────────────────────────────── */}
       {isEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalPortal isOpen={isEditorOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white border border-[#E2E8F0] rounded-3xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9]">
               <div className="flex items-center gap-2">
@@ -807,11 +809,13 @@ export default function Step2GradesClasses({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ── DIALOG: DELETE CONFIRMATION ──────────────────────────────────── */}
       {classToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalPortal isOpen={!!classToDelete}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white border border-[#E2E8F0] rounded-3xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-5 h-5" />
@@ -841,11 +845,13 @@ export default function Step2GradesClasses({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ── DIALOG: LOAD TEMPLATE CONFIRMATION ───────────────────────────── */}
       {showTemplateConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalPortal isOpen={showTemplateConfirm}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white border border-[#E2E8F0] rounded-3xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="w-10 h-10 rounded-2xl bg-[#EEF2FF] text-[#4338CA] flex items-center justify-center mx-auto">
               <RotateCcw className="w-5 h-5" />
@@ -874,11 +880,13 @@ export default function Step2GradesClasses({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ── DIALOG: CLEAR ALL CONFIRMATION ───────────────────────────────── */}
       {showClearConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalPortal isOpen={showClearConfirm}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white border border-[#E2E8F0] rounded-3xl shadow-2xl max-w-sm w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-5 h-5" />
@@ -907,6 +915,7 @@ export default function Step2GradesClasses({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

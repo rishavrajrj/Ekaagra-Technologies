@@ -326,6 +326,8 @@ export async function importStaffMembersAction(
             job_role: st.jobRole || null,
             work_location: st.workLocation || null,
             photo_url: st.photoUrl || null,
+            website_profile: st.websiteProfile || {},
+            archived_at: st.archivedAt || null,
             custom_fields: st.customFields || st.custom_fields || {},
             metadata: {
               bloodGroup: st.bloodGroup || null,
@@ -375,7 +377,7 @@ export async function importStaffMembersAction(
 export async function updateStaffStatusAction(
   token: string,
   staffIdOrCode: string,
-  newStatus: 'active' | 'inactive' | 'on_leave' | 'terminated'
+  newStatus: 'active' | 'inactive' | 'on_leave' | 'terminated' | 'archived'
 ): Promise<{ success: boolean; error?: string }> {
   const verification = await verifyOnboardingToken(token);
   if (!verification.valid || !verification.project) {
@@ -414,6 +416,14 @@ export async function updateStaffStatusAction(
       staffMembers[targetIndex].status = newStatus;
       staffMembers[targetIndex].updatedAt = new Date().toISOString();
 
+      if (newStatus === 'archived') {
+        staffMembers[targetIndex].archivedAt = new Date().toISOString();
+        if (staffMembers[targetIndex].websiteProfile) {
+          staffMembers[targetIndex].websiteProfile.showOnWebsite = false;
+        }
+        staffMembers[targetIndex].displayOnWebsite = false;
+      }
+
       await schoolsDb
         .from('school_intake_submissions')
         .update({
@@ -430,9 +440,16 @@ export async function updateStaffStatusAction(
       const code = staffMembers[targetIndex].employeeCode || staffMembers[targetIndex].facultyId;
       if (code) {
         try {
+          const updateData: Record<string, any> = {
+            status: newStatus,
+            updated_at: new Date().toISOString(),
+          };
+          if (newStatus === 'archived') {
+            updateData.archived_at = new Date().toISOString();
+          }
           await schoolsDb
             .from('staff')
-            .update({ status: newStatus, updated_at: new Date().toISOString() })
+            .update(updateData)
             .eq('school_id', schoolId)
             .eq('employee_code', code);
         } catch {}
@@ -444,6 +461,514 @@ export async function updateStaffStatusAction(
     return { success: false, error: 'Staff member not found.' };
   } catch (err: any) {
     return { success: false, error: err.message || 'Status update failed.' };
+  }
+}
+
+/**
+ * Safely archives a staff member.
+ * Automatically removes them from public website while preserving all historical records.
+ */
+export async function archiveStaffMemberAction(
+  token: string,
+  staffIdOrCode: string,
+  reason?: string
+): Promise<{ success: boolean; error?: string }> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, error: verification.error || 'Invalid session' };
+  }
+
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) {
+    return { success: false, error: 'Schools database client is not available.' };
+  }
+
+  const projectId = verification.project.id;
+  const schoolId =
+    ((verification.project.metadata as any)?.udise_code as string) ||
+    ((verification.project.metadata as any)?.school_code as string) ||
+    verification.project.id;
+
+  try {
+    const { data: currentSub } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('id, intake_payload')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .maybeSingle();
+
+    if (!currentSub) return { success: false, error: 'Intake submission not found.' };
+
+    const payload: Partial<UniversalIntakeData> = currentSub.intake_payload || {};
+    const staffMembers: StaffMember[] = payload.staffFaculty?.staffMembers || [];
+
+    const targetIndex = staffMembers.findIndex(
+      (s) => s.id === staffIdOrCode || s.employeeCode === staffIdOrCode || s.facultyId === staffIdOrCode
+    );
+
+    if (targetIndex >= 0) {
+      const now = new Date().toISOString();
+      const existing = staffMembers[targetIndex];
+
+      existing.status = 'archived';
+      existing.archivedAt = now;
+      existing.archivedReason = reason || 'Archived from staff roster';
+      existing.displayOnWebsite = false;
+      if (existing.websiteProfile) {
+        existing.websiteProfile.showOnWebsite = false;
+        existing.websiteProfile.featured = false;
+      }
+      existing.updatedAt = now;
+
+      await schoolsDb
+        .from('school_intake_submissions')
+        .update({
+          intake_payload: {
+            ...payload,
+            staffFaculty: {
+              ...(payload.staffFaculty || {}),
+              staffMembers,
+            },
+          },
+        })
+        .eq('id', currentSub.id);
+
+      const code = existing.employeeCode || existing.facultyId;
+      if (code) {
+        try {
+          await schoolsDb
+            .from('staff')
+            .update({
+              status: 'archived',
+              archived_at: now,
+              archived_reason: reason || 'Archived from staff roster',
+              website_profile: existing.websiteProfile || {},
+              updated_at: now,
+            })
+            .eq('school_id', schoolId)
+            .eq('employee_code', code);
+        } catch {}
+      }
+
+      return { success: true };
+    }
+
+    return { success: false, error: 'Staff member not found.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Archiving staff member failed.' };
+  }
+}
+
+/**
+ * Restores an archived staff member back to active status.
+ * Website visibility remains OFF until explicitly enabled.
+ */
+export async function restoreStaffMemberAction(
+  token: string,
+  staffIdOrCode: string
+): Promise<{ success: boolean; error?: string }> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, error: verification.error || 'Invalid session' };
+  }
+
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) {
+    return { success: false, error: 'Schools database client is not available.' };
+  }
+
+  const projectId = verification.project.id;
+  const schoolId =
+    ((verification.project.metadata as any)?.udise_code as string) ||
+    ((verification.project.metadata as any)?.school_code as string) ||
+    verification.project.id;
+
+  try {
+    const { data: currentSub } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('id, intake_payload')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .maybeSingle();
+
+    if (!currentSub) return { success: false, error: 'Intake submission not found.' };
+
+    const payload: Partial<UniversalIntakeData> = currentSub.intake_payload || {};
+    const staffMembers: StaffMember[] = payload.staffFaculty?.staffMembers || [];
+
+    const targetIndex = staffMembers.findIndex(
+      (s) => s.id === staffIdOrCode || s.employeeCode === staffIdOrCode || s.facultyId === staffIdOrCode
+    );
+
+    if (targetIndex >= 0) {
+      const now = new Date().toISOString();
+      const existing = staffMembers[targetIndex];
+
+      existing.status = 'active';
+      existing.archivedAt = undefined;
+      existing.archivedReason = undefined;
+      // Default to private on restore unless already configured
+      if (!existing.websiteProfile) {
+        existing.websiteProfile = { showOnWebsite: false };
+      }
+      existing.updatedAt = now;
+
+      await schoolsDb
+        .from('school_intake_submissions')
+        .update({
+          intake_payload: {
+            ...payload,
+            staffFaculty: {
+              ...(payload.staffFaculty || {}),
+              staffMembers,
+            },
+          },
+        })
+        .eq('id', currentSub.id);
+
+      const code = existing.employeeCode || existing.facultyId;
+      if (code) {
+        try {
+          await schoolsDb
+            .from('staff')
+            .update({
+              status: 'active',
+              archived_at: null,
+              archived_reason: null,
+              website_profile: existing.websiteProfile || {},
+              updated_at: now,
+            })
+            .eq('school_id', schoolId)
+            .eq('employee_code', code);
+        } catch {}
+      }
+
+      return { success: true };
+    }
+
+    return { success: false, error: 'Staff member not found.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Restoring staff member failed.' };
+  }
+}
+
+/**
+ * Checks whether a staff member is referenced by historical, academic, timetable, HR, or relational records.
+ */
+export async function checkStaffDependenciesAction(
+  token: string,
+  staffIdOrCode: string
+): Promise<{ success: boolean; hasDependencies: boolean; dependencies: string[]; error?: string }> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, hasDependencies: false, dependencies: [], error: verification.error || 'Invalid session' };
+  }
+
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) {
+    return { success: false, hasDependencies: false, dependencies: [], error: 'Schools database client is not available.' };
+  }
+
+  const projectId = verification.project.id;
+  const schoolId =
+    ((verification.project.metadata as any)?.udise_code as string) ||
+    ((verification.project.metadata as any)?.school_code as string) ||
+    verification.project.id;
+
+  try {
+    const { data: currentSub } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('id, intake_payload')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .maybeSingle();
+
+    const payload: Partial<UniversalIntakeData> = currentSub?.intake_payload || {};
+    const staffMembers: StaffMember[] = payload.staffFaculty?.staffMembers || [];
+    const target = staffMembers.find(
+      (s) => s.id === staffIdOrCode || s.employeeCode === staffIdOrCode || s.facultyId === staffIdOrCode
+    );
+
+    const dependencies: string[] = [];
+    const targetCode = target?.employeeCode || target?.facultyId || staffIdOrCode;
+    const targetId = target?.id || staffIdOrCode;
+    const targetName = (target?.name || '').trim().toLowerCase();
+
+    // 1. Check classes taught, subjects, class teacher status
+    if (target?.isClassTeacher || target?.isHod || target?.isCoordinator) {
+      dependencies.push('Designated as Class Teacher, Department Head, or Academic Coordinator');
+    }
+    if (target?.classesTaught || target?.sectionsTaught || (target?.classesTaughtList && target.classesTaughtList.length > 0)) {
+      dependencies.push('Assigned to classes, sections, or academic course schedules');
+    }
+
+    // 2. Check academicStructure / timetable in intake payload
+    const academicStructure = (payload as any).academicStructure;
+    if (academicStructure) {
+      const jsonStr = JSON.stringify(academicStructure);
+      if (jsonStr.includes(targetId) || jsonStr.includes(targetCode)) {
+        dependencies.push('Referenced in campus academic structure or section teacher allocations');
+      }
+    }
+
+    // 3. Check transport fleet (driver or conductor)
+    const transport = (payload as any).transport;
+    if (transport?.staffMembers) {
+      const matchTr = (transport.staffMembers as any[]).some(
+        (ts) => ts.id === targetId || ts.employeeCode === targetCode || (ts.name && ts.name.toLowerCase() === targetName)
+      );
+      if (matchTr) {
+        dependencies.push('Referenced as active transport crew (Driver or Bus Conductor)');
+      }
+    }
+
+    // 4. Check hostel warden
+    const hostel = (payload as any).hostel;
+    if (hostel?.wardenName && targetName && hostel.wardenName.toLowerCase().includes(targetName)) {
+      dependencies.push('Registered as Residential Hostel Warden');
+    }
+
+    // 5. Check leadership management members
+    const leadership = (payload as any).leadership;
+    if (leadership?.managementMembers) {
+      const matchLd = (leadership.managementMembers as any[]).some(
+        (lm) => lm.id === targetId || (lm.name && lm.name.toLowerCase() === targetName)
+      );
+      if (matchLd) {
+        dependencies.push('Referenced in school leadership council or management committee');
+      }
+    }
+
+    // 6. Check HR documents / statutory records
+    if (target?.documents && target.documents.length > 0) {
+      dependencies.push(`${target.documents.length} verified HR / statutory qualification documents on file`);
+    }
+
+    // 7. Check database relations if relational tables exist
+    try {
+      const { count: attendanceCount } = await schoolsDb
+        .from('staff_attendance')
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', schoolId)
+        .or(`employee_code.eq.${targetCode},staff_id.eq.${targetId}`);
+      if (attendanceCount && attendanceCount > 0) {
+        dependencies.push(`${attendanceCount} historical attendance log records`);
+      }
+    } catch {}
+
+    try {
+      const { count: timetableCount } = await schoolsDb
+        .from('timetable_slots')
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', schoolId)
+        .or(`teacher_code.eq.${targetCode},teacher_id.eq.${targetId}`);
+      if (timetableCount && timetableCount > 0) {
+        dependencies.push(`${timetableCount} timetable period schedule allocations`);
+      }
+    } catch {}
+
+    return {
+      success: true,
+      hasDependencies: dependencies.length > 0,
+      dependencies,
+    };
+  } catch (err: any) {
+    return {
+      success: false,
+      hasDependencies: false,
+      dependencies: [],
+      error: err.message || 'Dependency check failed.',
+    };
+  }
+}
+
+/**
+ * Permanently deletes a staff member ONLY if zero historical or relational dependencies exist.
+ * If dependencies exist, deletion is blocked and archiving is advised.
+ */
+export async function deleteStaffMemberPermanentlyAction(
+  token: string,
+  staffIdOrCode: string
+): Promise<{ success: boolean; hasDependencies?: boolean; dependencies?: string[]; message?: string; error?: string }> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, error: verification.error || 'Invalid session' };
+  }
+
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) {
+    return { success: false, error: 'Schools database client is not available.' };
+  }
+
+  // 1. Perform dependency check first
+  const depCheck = await checkStaffDependenciesAction(token, staffIdOrCode);
+  if (depCheck.hasDependencies) {
+    return {
+      success: false,
+      hasDependencies: true,
+      dependencies: depCheck.dependencies,
+      message: 'Cannot permanently delete this staff member because historical or related records exist. Archive the staff member instead.',
+    };
+  }
+
+  const projectId = verification.project.id;
+  const schoolId =
+    ((verification.project.metadata as any)?.udise_code as string) ||
+    ((verification.project.metadata as any)?.school_code as string) ||
+    verification.project.id;
+
+  try {
+    const { data: currentSub } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('id, intake_payload')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .maybeSingle();
+
+    if (!currentSub) return { success: false, error: 'Intake submission not found.' };
+
+    const payload: Partial<UniversalIntakeData> = currentSub.intake_payload || {};
+    const existingStaff: StaffMember[] = payload.staffFaculty?.staffMembers || [];
+
+    const target = existingStaff.find(
+      (s) => s.id === staffIdOrCode || s.employeeCode === staffIdOrCode || s.facultyId === staffIdOrCode
+    );
+
+    if (!target) {
+      return { success: false, error: 'Staff member record not found.' };
+    }
+
+    // 2. Remove from intake submission
+    const remainingStaff = existingStaff.filter(
+      (s) => s.id !== target.id && s.employeeCode !== target.employeeCode && s.facultyId !== target.facultyId
+    );
+
+    const updatedPayload: Partial<UniversalIntakeData> = {
+      ...payload,
+      staffFaculty: {
+        ...(payload.staffFaculty || {}),
+        staffMembers: remainingStaff,
+        estimatedTotalStaff: remainingStaff.length,
+      },
+    };
+
+    await schoolsDb
+      .from('school_intake_submissions')
+      .update({
+        intake_payload: updatedPayload,
+      })
+      .eq('id', currentSub.id);
+
+    // 3. Delete from public.staff table
+    const targetCode = target.employeeCode || target.facultyId;
+    try {
+      if (targetCode) {
+        await schoolsDb
+          .from('staff')
+          .delete()
+          .eq('school_id', schoolId)
+          .eq('employee_code', targetCode);
+      }
+      if (target.id) {
+        await schoolsDb
+          .from('staff')
+          .delete()
+          .eq('school_id', schoolId)
+          .eq('id', target.id);
+      }
+    } catch (dbErr) {
+      console.warn('[Staff Permanent Delete DB Note]:', dbErr);
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Permanent deletion failed.' };
+  }
+}
+
+/**
+ * Updates dedicated public website profile metadata for a staff member.
+ */
+export async function updateStaffWebsiteProfileAction(
+  token: string,
+  staffIdOrCode: string,
+  websiteProfile: NonNullable<StaffMember['websiteProfile']>
+): Promise<{ success: boolean; error?: string }> {
+  const verification = await verifyOnboardingToken(token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, error: verification.error || 'Invalid session' };
+  }
+
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) {
+    return { success: false, error: 'Schools database client is not available.' };
+  }
+
+  const projectId = verification.project.id;
+  const schoolId =
+    ((verification.project.metadata as any)?.udise_code as string) ||
+    ((verification.project.metadata as any)?.school_code as string) ||
+    verification.project.id;
+
+  try {
+    const { data: currentSub } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('id, intake_payload')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .maybeSingle();
+
+    if (!currentSub) return { success: false, error: 'Intake submission not found.' };
+
+    const payload: Partial<UniversalIntakeData> = currentSub.intake_payload || {};
+    const staffMembers: StaffMember[] = payload.staffFaculty?.staffMembers || [];
+
+    const targetIndex = staffMembers.findIndex(
+      (s) => s.id === staffIdOrCode || s.employeeCode === staffIdOrCode || s.facultyId === staffIdOrCode
+    );
+
+    if (targetIndex >= 0) {
+      const existing = staffMembers[targetIndex];
+      existing.websiteProfile = {
+        ...(existing.websiteProfile || {}),
+        ...websiteProfile,
+      };
+      existing.displayOnWebsite = Boolean(websiteProfile.showOnWebsite);
+      existing.updatedAt = new Date().toISOString();
+
+      await schoolsDb
+        .from('school_intake_submissions')
+        .update({
+          intake_payload: {
+            ...payload,
+            staffFaculty: {
+              ...(payload.staffFaculty || {}),
+              staffMembers,
+            },
+          },
+        })
+        .eq('id', currentSub.id);
+
+      const code = existing.employeeCode || existing.facultyId;
+      if (code) {
+        try {
+          await schoolsDb
+            .from('staff')
+            .update({
+              website_profile: existing.websiteProfile,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('school_id', schoolId)
+            .eq('employee_code', code);
+        } catch {}
+      }
+
+      return { success: true };
+    }
+
+    return { success: false, error: 'Staff member not found.' };
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Website profile update failed.' };
   }
 }
 

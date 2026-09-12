@@ -49,6 +49,7 @@ import {
   evaluatePublicationReadiness,
   validateSchoolAssetFile,
 } from '@/lib/schoolAssetChecklist';
+import ModalPortal from '@/components/ui/ModalPortal';
 import ContentRecommendationAssistant from './ContentRecommendationAssistant';
 
 interface SchoolAssetChecklistSectionProps {
@@ -96,6 +97,32 @@ export default function SchoolAssetChecklistSection({
   const score = useMemo(() => {
     return calculateAssetChecklistScore(items);
   }, [items]);
+
+  // Guided remediation: auto-reveal category and reset filter if remediation navigation targets this section
+  useEffect(() => {
+    const handleRemediation = (e: Event) => {
+      const customEvent = e as CustomEvent<{ section: string; subsection?: string; anchorId?: string }>;
+      if (customEvent.detail) {
+        if (customEvent.detail.subsection) {
+          const sub = customEvent.detail.subsection;
+          if (sub === 'certificates' || ASSET_CATEGORIES.some((c) => c.key === sub)) {
+            setSelectedCategory(sub as any);
+          } else {
+            setSelectedCategory('all');
+          }
+        } else {
+          setSelectedCategory('all');
+        }
+        setStatusFilter('all');
+        setSearchQuery('');
+      }
+    };
+
+    window.addEventListener('ekaagra:remediation-navigate', handleRemediation);
+    return () => {
+      window.removeEventListener('ekaagra:remediation-navigate', handleRemediation);
+    };
+  }, []);
 
   const publicationReadiness = useMemo(() => {
     return evaluatePublicationReadiness(items);
@@ -1255,6 +1282,8 @@ function ChecklistItemRow({
 
   return (
     <div
+      id={`asset-row-${item.id}`}
+      data-checklist-item-id={item.id}
       className={`p-4 sm:p-5 transition-colors ${
         isProvided
           ? 'bg-white'
@@ -2386,11 +2415,12 @@ function LightboxModal({
   }, [onClose]);
 
   return (
+    <ModalPortal isOpen={true}>
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="preview-title"
-      className="fixed inset-0 z-50 bg-black/75 flex items-center justify-center p-4 backdrop-blur-xs"
+      className="fixed inset-0 z-[9999] bg-black/75 flex items-center justify-center p-4 backdrop-blur-xs"
       onClick={onClose}
     >
       <div
@@ -2473,5 +2503,6 @@ function LightboxModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

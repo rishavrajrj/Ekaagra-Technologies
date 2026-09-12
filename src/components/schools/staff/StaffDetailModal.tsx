@@ -23,9 +23,14 @@ import {
   Heart,
   Share2,
   Sparkles,
+  Globe,
+  Archive,
+  Star,
+  Eye,
 } from 'lucide-react';
 import type { StaffMember, StaffCustomField } from '@/lib/types';
 import ModalPortal from '@/components/ui/ModalPortal';
+import StaffWebsitePreview from './StaffWebsitePreview';
 
 export interface StaffDetailModalProps {
   member: StaffMember | null;
@@ -45,8 +50,9 @@ export default function StaffDetailModal({
   onStatusChange,
 }: StaffDetailModalProps) {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'employment' | 'personal' | 'contact' | 'address' | 'qualification' | 'teaching' | 'documents' | 'custom'
+    'overview' | 'website' | 'employment' | 'personal' | 'contact' | 'address' | 'qualification' | 'teaching' | 'documents' | 'custom'
   >('overview');
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   if (!isOpen || !member) return null;
 
@@ -104,6 +110,28 @@ export default function StaffDetailModal({
                 >
                   {isTeaching ? 'Teaching Staff' : 'Non-Teaching Staff'}
                 </span>
+                {member.status === 'archived' ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/30 text-purple-200 border border-purple-400/30 flex items-center space-x-1">
+                    <Archive className="w-3 h-3 text-purple-300" />
+                    <span>Archived</span>
+                  </span>
+                ) : member.status !== 'archived' && (member.websiteProfile?.showOnWebsite ?? member.displayOnWebsite ?? false) ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/30 flex items-center space-x-1">
+                    <Globe className="w-3 h-3 text-emerald-300" />
+                    <span>Website: Visible</span>
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-500/30 text-slate-300 border border-slate-400/30 flex items-center space-x-1">
+                    <Globe className="w-3 h-3 text-slate-400" />
+                    <span>Website: Private</span>
+                  </span>
+                )}
+                {member.websiteProfile?.featured && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/30 text-amber-200 border border-amber-400/30 flex items-center space-x-1">
+                    <Star className="w-3 h-3 fill-amber-300 text-amber-300" />
+                    <span>Featured</span>
+                  </span>
+                )}
               </div>
 
               <p className="text-xs text-indigo-200 font-semibold">
@@ -122,6 +150,8 @@ export default function StaffDetailModal({
                       ? 'text-emerald-400'
                       : member.status === 'on_leave'
                       ? 'text-amber-400'
+                      : member.status === 'archived'
+                      ? 'text-purple-400'
                       : 'text-rose-400'
                   }`}
                 >
@@ -136,6 +166,7 @@ export default function StaffDetailModal({
         <div className="border-b border-slate-200 px-6 bg-slate-50 flex items-center space-x-2 overflow-x-auto scrollbar-none text-xs">
           {[
             { id: 'overview', label: 'Overview' },
+            { id: 'website', label: 'Website Profile' },
             { id: 'employment', label: 'Employment' },
             { id: 'personal', label: 'Personal' },
             { id: 'contact', label: 'Contact' },
@@ -216,6 +247,108 @@ export default function StaffDetailModal({
                   <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Work Shift / Schedule</span>
                   <p className="font-bold text-[#131B2E]">{member.workSchedule || 'Regular School Hours'}</p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 1.5: WEBSITE PROFILE */}
+          {activeTab === 'website' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3.5 rounded-xl border border-indigo-100 bg-indigo-50/50">
+                <div className="space-y-0.5">
+                  <div className="flex items-center space-x-2">
+                    <Globe className="w-4 h-4 text-indigo-600" />
+                    <span className="font-bold text-indigo-950">Public School Website Visibility</span>
+                  </div>
+                  <p className="text-[11px] text-indigo-700">
+                    Controls whether this staff member appears on the public website faculty directory and homepage.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center space-x-1.5 transition shadow-2xs shrink-0 cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Preview Card</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Website Status</span>
+                  <div className="pt-0.5">
+                    {member.status === 'archived' ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
+                        Hidden (Staff is Archived)
+                      </span>
+                    ) : (member.websiteProfile?.showOnWebsite ?? member.displayOnWebsite) ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        Visible on Website
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700 border border-slate-300">
+                        Private / Hidden
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Homepage Featured</span>
+                  <p className="font-bold text-[#131B2E]">
+                    {member.websiteProfile?.featured ? 'Yes (Highlighted)' : 'No'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Display Order</span>
+                  <p className="font-bold text-[#131B2E] font-mono">
+                    {member.websiteProfile?.displayOrder ?? member.displayOrder ?? 0}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Public Name</span>
+                  <p className="font-bold text-[#131B2E]">
+                    {member.websiteProfile?.publicName || member.name}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Public Designation</span>
+                  <p className="font-bold text-[#131B2E]">
+                    {member.websiteProfile?.publicDesignation || member.designation || 'Teacher'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Public Department</span>
+                  <p className="font-bold text-[#131B2E]">
+                    {member.websiteProfile?.publicDepartment || member.department || 'General'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 sm:col-span-3">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Public Subject</span>
+                  <p className="font-bold text-[#131B2E]">
+                    {member.websiteProfile?.publicSubject || member.primarySubject || member.specialization || 'Not specified'}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1 sm:col-span-3">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-500">Short Bio / Achievements</span>
+                  <p className="text-slate-700 whitespace-pre-line">
+                    {member.websiteProfile?.shortBio || member.bio || 'No public biography provided.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-start space-x-2">
+                <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  <strong>Privacy Guarantee:</strong> Sensitive ERP data (salary, personal phone number, private email, emergency contacts, home address, and government IDs) are never exposed on the public website.
+                </span>
               </div>
             </div>
           )}
@@ -500,6 +633,14 @@ export default function StaffDetailModal({
           <div className="flex items-center space-x-2">
             <button
               type="button"
+              onClick={() => setIsPreviewOpen(true)}
+              className="px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 bg-white border border-slate-200 rounded-xl transition flex items-center space-x-1.5 cursor-pointer shadow-2xs"
+            >
+              <Globe className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Preview Website</span>
+            </button>
+            <button
+              type="button"
               onClick={() => onEdit(member)}
               className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition flex items-center space-x-1.5 cursor-pointer shadow-xs"
             >
@@ -517,6 +658,13 @@ export default function StaffDetailModal({
         </div>
       </div>
     </div>
+
+    {/* Standalone Website Card Preview Modal */}
+    <StaffWebsitePreview
+      member={member}
+      isOpen={isPreviewOpen}
+      onClose={() => setIsPreviewOpen(false)}
+    />
     </ModalPortal>
   );
 }

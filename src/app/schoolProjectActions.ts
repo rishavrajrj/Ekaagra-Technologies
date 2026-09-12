@@ -15,11 +15,20 @@ import type {
   SchoolProjectCustomField,
   SchoolProjectCustomRequirement,
   WebsiteApprovalRecord,
+  FieldReviewStatus,
+  MediaReviewStatus,
 } from '@/lib/types';
+import {
+  evaluateSchoolReviewState,
+  buildVerifiedSchoolWebsiteDataset,
+  type OverallReviewEvaluation,
+} from '@/lib/schoolReviewEngine';
 import {
   approveWebsiteSpecification,
   type ApproverInfo,
 } from '@/lib/websiteSpecificationContract';
+import { evaluateWebsitePublicationReadiness } from '@/lib/websiteDataStatus';
+import { validateCampusAcademicPayload } from '@/lib/campusAcademicScopeService';
 
 import crypto from 'crypto';
 import { hashToken } from '@/lib/schoolHandoff';
@@ -249,6 +258,12 @@ export async function getSchoolProjectDetailsAction(projectId: string) {
       .limit(1)
       .maybeSingle();
 
+    const reviewEvaluation = evaluateSchoolReviewState(
+      project as SchoolProject,
+      currentSubmission,
+      changeRequests || []
+    );
+
     return {
       success: true,
       project: project as SchoolProject,
@@ -258,6 +273,7 @@ export async function getSchoolProjectDetailsAction(projectId: string) {
       customRequirements: (customRequirements || []) as SchoolProjectCustomRequirement[],
       approvedSnapshot,
       invitation,
+      reviewEvaluation,
     };
   } catch (err: any) {
     console.error('[ACTION ERROR] getSchoolProjectDetailsAction:', err);
@@ -454,6 +470,28 @@ export async function submitSchoolIntakeAction(
       }
     }
 
+    // Authoritative Server-Side Campus Academic Scope Validation (Zero Client Trust)
+    const campuses = payload.campuses || [];
+    if (campuses.length > 0) {
+      for (const c of campuses) {
+        const scopeValidation = validateCampusAcademicPayload(c.id, payload);
+        if (!scopeValidation.isValid) {
+          return {
+            success: false,
+            error: `Academic Scope Validation failed for ${c.name || 'Campus'}: ${scopeValidation.errors.join('; ')}`,
+          };
+        }
+      }
+    } else {
+      const scopeValidation = validateCampusAcademicPayload('main-campus', payload);
+      if (!scopeValidation.isValid) {
+        return {
+          success: false,
+          error: `Academic Scope Validation failed: ${scopeValidation.errors.join('; ')}`,
+        };
+      }
+    }
+
     const completeness = calculateIntakeCompleteness(verification.project.product_id, payload);
 
     await schoolsDb
@@ -542,6 +580,570 @@ export async function submitSchoolIntakeAction(
   }
 }
 
+export async function updateFieldReviewStatusAction(
+  projectId: string,
+  sectionKey: string,
+  fieldKey: string,
+  status: FieldReviewStatus,
+  notes?: string
+) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) return { success: false, error: 'Unauthorized' };
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
+
+  try {
+    const { data: project, error: pErr } = await schoolsDb
+      .from('school_projects')
+      .select('metadata')
+      .eq('id', projectId)
+      .single();
+    if (pErr || !project) throw new Error('Project not found');
+
+    const meta = project.metadata || {};
+    const fieldReviews = meta.fieldReviews || {};
+
+    fieldReviews[fieldKey] = {
+      sectionKey,
+      fieldKey,
+      status,
+      notes,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'Ekaagra Reviewer',
+    };
+
+    const updatedMetadata = {
+      ...meta,
+      fieldReviews,
+    };
+
+    const { error: updErr } = await schoolsDb
+      .from('school_projects')
+      .update({
+        metadata: updatedMetadata,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', projectId);
+
+    if (updErr) throw updErr;
+
+    const currentYear = new Date().getFullYear();
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: projectId,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: status === 'verified' || status === 'approved' ? 'field_approved' : 'field_review_updated',
+        actor_name: 'Ekaagra Reviewer',
+        actor_role: 'internal_reviewer',
+        details: { sectionKey, fieldKey, status, notes },
+      },
+    ]);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] updateFieldReviewStatusAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function updateMediaAssetReviewStatusAction(
+  projectId: string,
+  assetId: string,
+  status: MediaReviewStatus,
+  notes?: string
+) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) return { success: false, error: 'Unauthorized' };
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
+
+  try {
+    const { data: project, error: pErr } = await schoolsDb
+      .from('school_projects')
+      .select('metadata, media_status')
+      .eq('id', projectId)
+      .single();
+    if (pErr || !project) throw new Error('Project not found');
+
+    const meta = project.metadata || {};
+    const mediaReviews = meta.mediaReviews || {};
+
+    mediaReviews[assetId] = {
+      assetId,
+      status,
+      notes,
+      updatedAt: new Date().toISOString(),
+      updatedBy: 'Ekaagra Reviewer',
+    };
+
+    const updatedMetadata = {
+      ...meta,
+      mediaReviews,
+    };
+
+    let newMediaStatus = project.media_status;
+    if (status === 'changes_requested') {
+      newMediaStatus = 'changes_requested';
+    } else if (status === 'approved') {
+      newMediaStatus = 'package_in_progress';
+    }
+
+    const { error: updErr } = await schoolsDb
+      .from('school_projects')
+      .update({
+        metadata: updatedMetadata,
+        media_status: newMediaStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', projectId);
+
+    if (updErr) throw updErr;
+
+    const currentYear = new Date().getFullYear();
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: projectId,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: status === 'approved' ? 'media_approved' : 'media_review_updated',
+        actor_name: 'Ekaagra Reviewer',
+        actor_role: 'internal_reviewer',
+        details: { assetId, status, notes },
+      },
+    ]);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] updateMediaAssetReviewStatusAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function createFieldChangeRequestAction(input: {
+  projectId: string;
+  sectionKey: string;
+  fieldKey: string;
+  currentValue?: string;
+  reason: string;
+  suggestedValue?: string;
+  reviewerMessage: string;
+}) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) return { success: false, error: 'Unauthorized' };
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
+
+  try {
+    const { data: inserted, error: crError } = await schoolsDb
+      .from('school_intake_change_requests')
+      .insert([
+        {
+          school_project_id: input.projectId,
+          section_key: input.sectionKey,
+          field_key: input.fieldKey,
+          request_type: 'correction',
+          reason: input.reason,
+          request_comment: input.reviewerMessage,
+          current_value: input.currentValue || null,
+          previous_value: input.currentValue || null,
+          suggested_value: input.suggestedValue || null,
+          requested_by: 'Ekaagra Reviewer',
+          status: 'waiting_for_school',
+        },
+      ])
+      .select()
+      .single();
+
+    if (crError) throw crError;
+
+    const { data: project } = await schoolsDb
+      .from('school_projects')
+      .select('metadata')
+      .eq('id', input.projectId)
+      .single();
+
+    if (project) {
+      const meta = project.metadata || {};
+      const fieldReviews = meta.fieldReviews || {};
+      fieldReviews[input.fieldKey] = {
+        sectionKey: input.sectionKey,
+        fieldKey: input.fieldKey,
+        status: 'changes_requested',
+        notes: input.reviewerMessage,
+        updatedAt: new Date().toISOString(),
+        updatedBy: 'Ekaagra Reviewer',
+      };
+
+      await schoolsDb
+        .from('school_projects')
+        .update({
+          status: 'changes_requested',
+          metadata: { ...meta, fieldReviews },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', input.projectId);
+    }
+
+    const currentYear = new Date().getFullYear();
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: input.projectId,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: 'field_change_requested',
+        actor_name: 'Ekaagra Reviewer',
+        actor_role: 'internal_reviewer',
+        details: {
+          sectionKey: input.sectionKey,
+          fieldKey: input.fieldKey,
+          reason: input.reason,
+          reviewerMessage: input.reviewerMessage,
+        },
+      },
+    ]);
+
+    return { success: true, changeRequest: inserted };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] createFieldChangeRequestAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function createMediaChangeRequestAction(input: {
+  projectId: string;
+  assetId: string;
+  assetTitle: string;
+  reason: string;
+  reviewerMessage: string;
+}) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) return { success: false, error: 'Unauthorized' };
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
+
+  try {
+    const { data: inserted, error: crError } = await schoolsDb
+      .from('school_intake_change_requests')
+      .insert([
+        {
+          school_project_id: input.projectId,
+          section_key: 'media',
+          field_key: input.assetId,
+          asset_id: input.assetId,
+          request_type: 'replacement',
+          reason: input.reason,
+          request_comment: input.reviewerMessage,
+          current_value: input.assetTitle,
+          previous_value: input.assetTitle,
+          requested_by: 'Ekaagra Reviewer',
+          status: 'waiting_for_school',
+        },
+      ])
+      .select()
+      .single();
+
+    if (crError) throw crError;
+
+    const { data: project } = await schoolsDb
+      .from('school_projects')
+      .select('metadata')
+      .eq('id', input.projectId)
+      .single();
+
+    if (project) {
+      const meta = project.metadata || {};
+      const mediaReviews = meta.mediaReviews || {};
+      mediaReviews[input.assetId] = {
+        assetId: input.assetId,
+        status: 'changes_requested',
+        notes: input.reviewerMessage,
+        updatedAt: new Date().toISOString(),
+        updatedBy: 'Ekaagra Reviewer',
+      };
+
+      await schoolsDb
+        .from('school_projects')
+        .update({
+          status: 'changes_requested',
+          media_status: 'changes_requested',
+          metadata: { ...meta, mediaReviews },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', input.projectId);
+    }
+
+    const currentYear = new Date().getFullYear();
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: input.projectId,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: 'media_replacement_requested',
+        actor_name: 'Ekaagra Reviewer',
+        actor_role: 'internal_reviewer',
+        details: {
+          assetId: input.assetId,
+          assetTitle: input.assetTitle,
+          reason: input.reason,
+          reviewerMessage: input.reviewerMessage,
+        },
+      },
+    ]);
+
+    return { success: true, changeRequest: inserted };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] createMediaChangeRequestAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function respondToChangeRequestAction(input: {
+  token: string;
+  requestId: string;
+  schoolResponse: string;
+  updatedValue?: string;
+}) {
+  const verification = await verifyOnboardingToken(input.token);
+  if (!verification.valid || !verification.project) {
+    return { success: false, error: verification.error || 'Invalid onboarding session' };
+  }
+
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
+
+  try {
+    const { data: cr, error: crFetchErr } = await schoolsDb
+      .from('school_intake_change_requests')
+      .select('*')
+      .eq('id', input.requestId)
+      .eq('school_project_id', verification.project.id)
+      .single();
+
+    if (crFetchErr || !cr) {
+      return { success: false, error: 'Change request not found' };
+    }
+
+    const { error: updErr } = await schoolsDb
+      .from('school_intake_change_requests')
+      .update({
+        school_response: input.schoolResponse,
+        school_updated_value: input.updatedValue || cr.current_value,
+        status: 'ready_for_review',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', input.requestId);
+
+    if (updErr) throw updErr;
+
+    const currentYear = new Date().getFullYear();
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: verification.project.id,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: 'school_updated_field',
+        actor_name: verification.project.primary_contact_name,
+        actor_role: 'school_representative',
+        details: {
+          requestId: input.requestId,
+          sectionKey: cr.section_key,
+          fieldKey: cr.field_key,
+          schoolResponse: input.schoolResponse,
+          updatedValue: input.updatedValue,
+        },
+      },
+    ]);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] respondToChangeRequestAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function resolveChangeRequestAction(
+  projectId: string,
+  requestId: string,
+  resolutionNotes?: string
+) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) return { success: false, error: 'Unauthorized' };
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
+
+  try {
+    const { data: cr, error: crErr } = await schoolsDb
+      .from('school_intake_change_requests')
+      .select('*')
+      .eq('id', requestId)
+      .eq('school_project_id', projectId)
+      .single();
+
+    if (crErr || !cr) throw new Error('Change request not found');
+
+    await schoolsDb
+      .from('school_intake_change_requests')
+      .update({
+        status: 'resolved',
+        resolution_notes: resolutionNotes || 'Approved by administrator',
+        resolved_at: new Date().toISOString(),
+        resolved_by: 'Ekaagra Reviewer',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', requestId);
+
+    // Update field or media review in project metadata
+    const { data: project } = await schoolsDb
+      .from('school_projects')
+      .select('metadata')
+      .eq('id', projectId)
+      .single();
+
+    if (project) {
+      const meta = project.metadata || {};
+      if (cr.asset_id) {
+        const mediaReviews = meta.mediaReviews || {};
+        mediaReviews[cr.asset_id] = {
+          assetId: cr.asset_id,
+          status: 'approved',
+          notes: resolutionNotes || 'Resolved and approved',
+          updatedAt: new Date().toISOString(),
+          updatedBy: 'Ekaagra Reviewer',
+        };
+        await schoolsDb.from('school_projects').update({ metadata: { ...meta, mediaReviews } }).eq('id', projectId);
+      } else if (cr.field_key) {
+        const fieldReviews = meta.fieldReviews || {};
+        fieldReviews[cr.field_key] = {
+          sectionKey: cr.section_key,
+          fieldKey: cr.field_key,
+          status: 'verified',
+          notes: resolutionNotes || 'Resolved and approved',
+          updatedAt: new Date().toISOString(),
+          updatedBy: 'Ekaagra Reviewer',
+        };
+        await schoolsDb.from('school_projects').update({ metadata: { ...meta, fieldReviews } }).eq('id', projectId);
+      }
+    }
+
+    const currentYear = new Date().getFullYear();
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: projectId,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: 'change_request_resolved',
+        actor_name: 'Ekaagra Reviewer',
+        actor_role: 'internal_reviewer',
+        details: { requestId, resolutionNotes },
+      },
+    ]);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] resolveChangeRequestAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function finalApproveSchoolProjectAction(projectId: string, approverNotes?: string) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) return { success: false, error: 'Unauthorized' };
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
+
+  try {
+    const { data: project } = await schoolsDb
+      .from('school_projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+    if (!project) throw new Error('Project not found');
+
+    const { data: submission } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('*')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .single();
+    if (!submission) throw new Error('No active intake submission found.');
+
+    const { data: changeRequests } = await schoolsDb
+      .from('school_intake_change_requests')
+      .select('*')
+      .eq('school_project_id', projectId);
+
+    // Run authoritative review engine
+    const evalResult = evaluateSchoolReviewState(
+      project as SchoolProject,
+      submission,
+      changeRequests || []
+    );
+
+    if (evalResult.websiteReadiness !== 'READY') {
+      return {
+        success: false,
+        error: `Cannot approve: Website readiness is BLOCKED. ${evalResult.websiteReadinessReason}`,
+        blockers: evalResult.blockers,
+      };
+    }
+
+    const currentYear = new Date().getFullYear();
+    const snapshotNumber = `SNAP-${project.project_number}-V${submission.version_number}`;
+    const planCode = mapCommercialProductToStep41Plan(project.product_id);
+
+    // Save final approved snapshot
+    await schoolsDb.from('school_approved_snapshots').insert([
+      {
+        school_project_id: projectId,
+        snapshot_number: snapshotNumber,
+        version_number: submission.version_number,
+        approved_by: 'Ekaagra Review Team',
+        school_name: project.school_name,
+        product_id: project.product_id,
+        student_tier_id: project.student_tier_id || null,
+        commercial_reference: project.lead_reference,
+        snapshot_data: submission.intake_payload,
+        step41_entitlement_plan: planCode,
+        step42_provisioning_status: 'pending',
+      },
+    ]);
+
+    const updatedMetadata = {
+      ...(project.metadata || {}),
+      finalApproval: {
+        approvedAt: new Date().toISOString(),
+        approvedBy: 'Ekaagra Review Team',
+        notes: approverNotes || 'Final website specification and intake approved.',
+      },
+    };
+
+    await schoolsDb
+      .from('school_projects')
+      .update({
+        status: 'approved',
+        media_status: 'approved',
+        approved_at: new Date().toISOString(),
+        approved_by: 'Ekaagra Review Team',
+        metadata: updatedMetadata,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', projectId);
+
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: projectId,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: 'final_approval',
+        actor_name: 'Ekaagra Review Team',
+        actor_role: 'approver',
+        previous_status: project.status,
+        new_status: 'approved',
+        details: { snapshotNumber, approverNotes },
+      },
+    ]);
+
+    return { success: true, snapshotNumber };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] finalApproveSchoolProjectAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function requestProjectChangesAction(
   projectId: string,
   sectionKey: string,
@@ -566,7 +1168,7 @@ export async function requestProjectChangesAction(
         field_key: fieldKey || null,
         request_comment: requestComment,
         requested_by: 'Ekaagra Reviewer',
-        status: 'open',
+        status: 'waiting_for_school',
       },
     ]);
 
@@ -729,12 +1331,69 @@ export async function triggerPlatformHandoffAction(projectId: string) {
     return { success: false, error: 'Unauthorized' };
   }
 
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) {
+    return { success: false, error: 'Schools DB not configured' };
+  }
+
   try {
+    const { data: project } = await schoolsDb
+      .from('school_projects')
+      .select('*')
+      .eq('id', projectId)
+      .single();
+
+    if (!project) throw new Error('Project not found');
+
+    const { data: submission } = await schoolsDb
+      .from('school_intake_submissions')
+      .select('*')
+      .eq('school_project_id', projectId)
+      .eq('is_current', true)
+      .maybeSingle();
+
+    const { data: changeRequests } = await schoolsDb
+      .from('school_intake_change_requests')
+      .select('*')
+      .eq('school_project_id', projectId);
+
+    const evalResult = evaluateSchoolReviewState(
+      project as SchoolProject,
+      submission,
+      changeRequests || []
+    );
+
+    if (evalResult.websiteReadiness !== 'READY') {
+      return {
+        success: false,
+        error: `Provisioning handoff blocked: ${evalResult.websiteReadinessReason}`,
+      };
+    }
+
+    if (project.status !== 'approved' && !project.metadata?.finalApproval) {
+      return {
+        success: false,
+        error: 'Provisioning handoff blocked: Human administrator final approval is required before execution.',
+      };
+    }
+
     const result = await executePlatformHandoff(projectId, {
       name: 'Ekaagra Platform Admin',
       role: 'platform_engineer',
       email: 'admin@ekaagratechnologies.com',
     });
+
+    if (result.success) {
+      await schoolsDb
+        .from('school_projects')
+        .update({
+          status: 'handed_off',
+          handoff_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', projectId);
+    }
+
     return result;
   } catch (err: any) {
     console.error('[ACTION ERROR] triggerPlatformHandoffAction:', err);
@@ -1022,7 +1681,31 @@ export async function approveWebsiteSpecificationAction(
       ? { ...currentPayload, ...clientIntakeData }
       : currentPayload;
 
-    // 2. Concurrency check: check if already approved with identical snapshot
+    // 2. Authoritative Publication Readiness Validation & Structured Blocker Diagnostic
+    const publicationValidation = evaluateWebsitePublicationReadiness(effectiveIntake);
+    if (!publicationValidation.isReady) {
+      if (process.env.NODE_ENV !== 'production') {
+        const structuredLog = publicationValidation.blockers.map((b) => ({
+          id: b.id,
+          section: b.section,
+          field: b.field,
+          status: b.status,
+          severity: b.severity,
+          route: b.route,
+          anchor: b.anchor,
+          reason: b.reason,
+          source: b.source,
+          applicability: b.applicability,
+        }));
+        console.log('[SUBMIT & LOCK BLOCKERS DIAGNOSTIC]:', JSON.stringify(structuredLog, null, 2));
+      }
+      return {
+        success: false,
+        error: `Approval rejected: ${publicationValidation.blockers.length} unresolved blocker(s) exist.`,
+      };
+    }
+
+    // 3. Concurrency check: check if already approved with identical snapshot
     const currentApproval = existingSub?.intake_payload?.websiteRequirements?.currentApproval;
     const approvalRes = approveWebsiteSpecification(effectiveIntake, approver, notes);
 

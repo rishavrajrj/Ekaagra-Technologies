@@ -530,6 +530,62 @@ function runBlockerTestSuite() {
     `Assets pillar is 100% verified (Actual: ${readiness.categoryScores.assets}%)`
   );
 
+  // ─── 7. Full 100% Readiness (Zero Blockers, All Pillars Satisfied) ───────────
+  console.log('\n--- 7. Full 100% Readiness Alignment ---');
+  const fullySatisfiedIntake: Partial<UniversalIntakeData> = {
+    ...userScenarioIntake,
+    clientConfirmation: {
+      isConfirmed: false, // Pre-submission review state
+      confirmedByName: 'Mrs. Mala Sinha',
+    } as any,
+    assetChecklist: {
+      items: [
+        { id: 'cert-affiliation', title: 'CBSE Affiliation Certificate', fileUrl: 'https://cdn.school.edu/affiliation.pdf', status: 'verified' },
+        { id: 'cert-state-noc', title: 'State Government NOC', fileUrl: 'https://cdn.school.edu/noc.pdf', status: 'verified' },
+        { id: 'cert-safety', title: 'Fire Safety Certificate', fileUrl: 'https://cdn.school.edu/fire-safety.pdf', status: 'verified' },
+        { id: 'cert-water-sanitation', title: 'Water & Sanitation Certificate', fileUrl: 'https://cdn.school.edu/sanitation.pdf', status: 'verified' },
+        { id: 'doc-mandatory-disclosure', title: 'Mandatory Public Disclosure (Appendix IX)', fileUrl: 'https://cdn.school.edu/appendix-ix.pdf', status: 'verified' },
+      ] as any,
+    },
+  };
+
+  const fullAssets = aggregateUniversalAssets(fullySatisfiedIntake);
+  const fullDocuments = aggregateUniversalDocuments(fullySatisfiedIntake);
+  const fullReadiness = calculateUniversalReadiness(fullySatisfiedIntake, fullAssets, fullDocuments, []);
+
+  assert(
+    fullReadiness.publicationBlockers.length === 0,
+    `Zero publication blockers when all documents and assets are provided (Actual blockers: ${fullReadiness.publicationBlockers.length})`
+  );
+  assert(
+    fullReadiness.isReadyForSubmission === true,
+    'Readiness engine flags isReadyForSubmission as true'
+  );
+  assert(
+    fullReadiness.categoryScores.identity === 100,
+    `Identity pillar is 100% (Actual: ${fullReadiness.categoryScores.identity}%)`
+  );
+  assert(
+    fullReadiness.categoryScores.content === 100,
+    `Content pillar is 100% (Actual: ${fullReadiness.categoryScores.content}%)`
+  );
+  assert(
+    fullReadiness.categoryScores.assets === 100,
+    `Assets pillar is 100% (Actual: ${fullReadiness.categoryScores.assets}%)`
+  );
+  assert(
+    fullReadiness.categoryScores.compliance === 100,
+    `Compliance pillar is 100% (Actual: ${fullReadiness.categoryScores.compliance}%)`
+  );
+  assert(
+    fullReadiness.categoryScores.confirmation === 100,
+    `Confirmation / Admin pillar is 100% (Actual: ${fullReadiness.categoryScores.confirmation}%)`
+  );
+  assert(
+    fullReadiness.overallScore === 100,
+    `SUCCESS: Overall Readiness is 100% (not stuck at 95%). Actual: ${fullReadiness.overallScore}%`
+  );
+
   console.log(`\n===========================================================`);
   console.log(`PUBLICATION BLOCKER ENGINE TEST RESULTS: ${passed} PASSED, ${failed} FAILED`);
   console.log(`===========================================================\n`);

@@ -73,6 +73,16 @@ export const DEFAULT_ADMISSION_DOCUMENTS_CATALOG: { id: string; name: string }[]
   { id: 'doc-passport', name: 'Passport (for NRI / International Students)' },
 ];
 
+export const DEFAULT_FEE_TYPES: { value: string; label: string }[] = [
+  { value: 'Application Fee', label: 'Application Fee' },
+  { value: 'Registration Fee', label: 'Registration Fee' },
+  { value: 'Admission Fee', label: 'Admission Fee' },
+  { value: 'Tuition Fee', label: 'Tuition Fee' },
+  { value: 'Annual Fee', label: 'Annual Fee' },
+  { value: 'Development Fee', label: 'Development Fee' },
+  { value: 'Other', label: 'Other' },
+];
+
 export const DEFAULT_FEE_FREQUENCIES: { value: FeeFrequency; label: string }[] = [
   { value: 'one_time', label: 'One-time' },
   { value: 'monthly', label: 'Monthly' },
@@ -370,6 +380,9 @@ export function normalizeAdmissionsData(
       currency: f.currency || defaultCurrency,
       frequency: f.frequency || 'one_time',
       applicableClasses: Array.isArray(f.applicableClasses) ? f.applicableClasses : [],
+      session: f.session || '',
+      showOnWebsite: typeof f.showOnWebsite === 'boolean' ? f.showOnWebsite : true,
+      displayLabel: f.displayLabel || '',
       notes: f.notes || '',
     }));
   } else {
@@ -803,14 +816,17 @@ export function getAdmissionsWebsiteOutput(
     else if (d.requirement === 'optional') optionalDocuments.push(displayName);
   });
 
-  const fees = (norm.fees || []).map((f) => ({
-    name: f.name,
-    amount: typeof f.amount === 'number' ? f.amount : null,
-    currency: f.currency || 'INR',
-    frequency: f.frequency || 'one_time',
-    applicableClasses: f.applicableClasses || [],
-    notes: f.notes?.trim() || null,
-  }));
+  const fees = (norm.fees || [])
+    .filter((f) => f.showOnWebsite !== false)
+    .map((f) => ({
+      name: f.displayLabel?.trim() || f.name,
+      amount: typeof f.amount === 'number' ? f.amount : null,
+      currency: f.currency || 'INR',
+      frequency: f.frequency || 'one_time',
+      applicableClasses: f.applicableClasses || [],
+      session: f.session?.trim() || null,
+      notes: f.notes?.trim() || null,
+    }));
 
   // Only enabled process steps, ordered numerically
   const process = (norm.process || [])

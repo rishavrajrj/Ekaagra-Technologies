@@ -45,6 +45,9 @@ import {
   saveStaffConfigurationAction,
   updateStaffStatusAction,
   fetchStaffCustomFieldsAction,
+  archiveStaffMemberAction,
+  restoreStaffMemberAction,
+  deleteStaffMemberPermanentlyAction,
 } from '@/app/staffActions';
 
 export interface StaffFacultySectionProps {
@@ -233,20 +236,91 @@ export default function StaffFacultySection({
     }
   };
 
-  // Archive Staff Member
+  // Archive Staff Member (Soft Archive: status = 'archived', website visibility = false)
   const handleArchiveMember = async (member: StaffMember) => {
-    if (!confirm(`Are you sure you want to deactivate/archive ${member.name}? Historical assignments will be preserved.`)) {
-      return;
-    }
-
-    const updatedList = staffMembers.map((s) => (s.id === member.id ? { ...s, status: 'inactive' } : s));
+    const updatedList = staffMembers.map((s) =>
+      s.id === member.id
+        ? {
+            ...s,
+            status: 'archived' as const,
+            displayOnWebsite: false,
+            archivedAt: new Date().toISOString(),
+            websiteProfile: s.websiteProfile ? { ...s.websiteProfile, showOnWebsite: false } : undefined,
+          }
+        : s
+    );
     handleUpdateConfig({ staffMembers: updatedList });
+
+    if (viewingMember && viewingMember.id === member.id) {
+      setViewingMember({
+        ...viewingMember,
+        status: 'archived',
+        displayOnWebsite: false,
+        archivedAt: new Date().toISOString(),
+        websiteProfile: viewingMember.websiteProfile
+          ? { ...viewingMember.websiteProfile, showOnWebsite: false }
+          : undefined,
+      });
+    }
 
     if (token) {
       try {
-        await updateStaffStatusAction(token, member.id, 'inactive');
+        await archiveStaffMemberAction(token, member.id);
       } catch (err) {
-        console.warn('Status action warning:', err);
+        console.warn('Archive action warning:', err);
+      }
+    }
+  };
+
+  // Restore Staff Member (Restore from archive to active roster)
+  const handleRestoreMember = async (member: StaffMember) => {
+    const updatedList = staffMembers.map((s) =>
+      s.id === member.id
+        ? {
+            ...s,
+            status: 'active' as const,
+            archivedAt: undefined,
+            archivedReason: undefined,
+          }
+        : s
+    );
+    handleUpdateConfig({ staffMembers: updatedList });
+
+    if (viewingMember && viewingMember.id === member.id) {
+      setViewingMember({
+        ...viewingMember,
+        status: 'active',
+        archivedAt: undefined,
+        archivedReason: undefined,
+      });
+    }
+
+    if (token) {
+      try {
+        await restoreStaffMemberAction(token, member.id);
+      } catch (err) {
+        console.warn('Restore action warning:', err);
+      }
+    }
+  };
+
+  // Delete Staff Member Permanently
+  const handleDeleteMember = async (member: StaffMember) => {
+    const updatedList = staffMembers.filter((s) => s.id !== member.id);
+    handleUpdateConfig({
+      staffMembers: updatedList,
+      estimatedTotalStaff: updatedList.length,
+    });
+
+    if (viewingMember && viewingMember.id === member.id) {
+      setViewingMember(null);
+    }
+
+    if (token) {
+      try {
+        await deleteStaffMemberPermanentlyAction(token, member.id);
+      } catch (err) {
+        console.warn('Permanent delete action warning:', err);
       }
     }
   };
@@ -254,7 +328,7 @@ export default function StaffFacultySection({
   // Bulk Status Change
   const handleBulkStatusChange = async (
     ids: string[],
-    status: 'active' | 'inactive' | 'on_leave' | 'terminated'
+    status: 'active' | 'inactive' | 'on_leave' | 'terminated' | 'archived'
   ) => {
     const idSet = new Set(ids);
     const updatedList = staffMembers.map((s) => (idSet.has(s.id) ? { ...s, status } : s));
@@ -520,11 +594,14 @@ export default function StaffFacultySection({
       {/* STAGE 4: STAFF DIRECTORY VIEW (DEFAULT) */}
       {activeStage === 'directory' && (
         <StaffDirectoryTable
+          token={token}
           staffMembers={staffMembers}
           customFields={customFields}
           onViewMember={(m) => setViewingMember(m)}
           onEditMember={handleOpenEdit}
           onArchiveMember={handleArchiveMember}
+          onRestoreMember={handleRestoreMember}
+          onDeleteMember={handleDeleteMember}
           onBulkStatusChange={handleBulkStatusChange}
           onAddNewStaff={handleOpenAdd}
           onOpenImport={() => setActiveStage('import')}

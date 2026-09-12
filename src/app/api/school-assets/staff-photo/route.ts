@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const rawToken = formData.get('token') as string | null;
-    const file = formData.get('file') as File | null;
+    const file = (formData.get('file') || formData.get('photo')) as File | null;
     const employeeCode = (formData.get('employeeCode') as string | null) || undefined;
     const targetFileName = (formData.get('fileName') as string | null) || file?.name || 'staff_photo.jpg';
 
@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      photoUrl: result.url,
+      checksumSha256: result.checksumSha256,
       asset: {
         url: result.url,
         storageKey: result.storageKey,
@@ -62,6 +64,7 @@ export async function POST(req: NextRequest) {
         width: result.width,
         height: result.height,
         mimeType: result.mimeType,
+        checksumSha256: result.checksumSha256,
       },
     });
   } catch (err: any) {

@@ -61,6 +61,7 @@ import {
   Star,
   RotateCw,
 } from 'lucide-react';
+import ModalPortal from '@/components/ui/ModalPortal';
 import type {
   UniversalIntakeData,
   CampusImageData,
@@ -442,7 +443,7 @@ export default function TransportFleetSection({
 
   const [routeModalOpen, setRouteModalOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<TransportRoute | null>(null);
-  const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
+  const [selectedRouteId, setSelectedRouteId] = useState<string | null>('__all__');
 
   const [stopModalOpen, setStopModalOpen] = useState(false);
   const [targetRouteForStop, setTargetRouteForStop] = useState<string | null>(null);
@@ -1046,7 +1047,7 @@ export default function TransportFleetSection({
       return { ...prev, routesList: next };
     });
     if (selectedRouteId === routeId) {
-      setSelectedRouteId(null);
+      setSelectedRouteId('__all__');
     }
   };
 
@@ -1260,16 +1261,13 @@ export default function TransportFleetSection({
   const currentVehicles = config.vehicles || [];
   const currentRoutes = config.routesList || [];
 
-  // Active selected route in Card 4 (defaults to first route if none explicitly selected; null when in '__all__' map mode)
+  // Active selected route in Card 4 (defaults to null in '__all__' map mode; found route when an individual route is selected)
   const activeSelectedRoute = useMemo(() => {
-    if (selectedRouteId === '__all__') {
+    if (selectedRouteId === '__all__' || !selectedRouteId) {
       return null;
     }
-    if (selectedRouteId) {
-      const found = currentRoutes.find((r) => r.id === selectedRouteId);
-      if (found) return found;
-    }
-    return currentRoutes[0] || null;
+    const found = currentRoutes.find((r) => r.id === selectedRouteId);
+    return found || null;
   }, [currentRoutes, selectedRouteId]);
 
   const currentStaff = config.staffMembers || [];
@@ -2610,7 +2608,7 @@ export default function TransportFleetSection({
                         type="button"
                         onClick={() => setSelectedRouteId('__all__')}
                         className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 shrink-0 transition-all cursor-pointer ${
-                          selectedRouteId === '__all__'
+                          selectedRouteId === '__all__' || !selectedRouteId
                             ? 'bg-[#4338CA] border-[#4338CA] text-white shadow-xs font-bold ring-2 ring-[#4338CA]/20'
                             : 'bg-indigo-50/70 hover:bg-indigo-100 border-indigo-200 text-[#4338CA]'
                         }`}
@@ -2620,7 +2618,7 @@ export default function TransportFleetSection({
                         <span>All Routes Map</span>
                         <span
                           className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                            selectedRouteId === '__all__' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'
+                            selectedRouteId === '__all__' || !selectedRouteId ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'
                           }`}
                         >
                           {currentRoutes.length}
@@ -2630,7 +2628,7 @@ export default function TransportFleetSection({
                       <span className="text-slate-300">|</span>
 
                       {currentRoutes.map((route, rIdx) => {
-                        const isSelected = activeSelectedRoute?.id === route.id;
+                        const isSelected = selectedRouteId === route.id;
                         const rColor = getDeterministicRouteColor(route.routeCode || route.id, rIdx);
                         const activeStops = (route.stops || []).filter((s) => s.status !== 'inactive').length;
                         return (
@@ -2686,7 +2684,7 @@ export default function TransportFleetSection({
                     </div>
 
                     {/* All-Routes Multi-Color Interactive Map */}
-                    {selectedRouteId === '__all__' && (
+                    {(selectedRouteId === '__all__' || !selectedRouteId) && (
                       <div className="space-y-3">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3.5 bg-indigo-50/80 rounded-2xl border border-indigo-100 text-xs text-indigo-950">
                           <div className="flex items-center gap-2 font-medium">
@@ -2712,7 +2710,7 @@ export default function TransportFleetSection({
                     )}
 
                     {/* Leaflet Visual Route Builder (Individual Route Selected) */}
-                    {selectedRouteId !== '__all__' && activeSelectedRoute && (
+                    {selectedRouteId !== '__all__' && !!selectedRouteId && activeSelectedRoute && (
                       <LeafletRouteBuilder
                         key={activeSelectedRoute.id}
                         route={activeSelectedRoute}
@@ -4196,7 +4194,8 @@ export default function TransportFleetSection({
 
       {/* ─── MODAL 1: ADD / EDIT VEHICLE ────────────────────────────────────── */}
       {vehicleModalOpen && editingVehicle && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <ModalPortal isOpen={vehicleModalOpen && !!editingVehicle}>
+        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
               <h4 className="font-bold text-sm text-[#131B2E]">
@@ -4877,11 +4876,13 @@ export default function TransportFleetSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ─── MODAL 2: SELECT EXISTING SCHOOL STAFF ───────────────────────────── */}
       {existingStaffModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <ModalPortal isOpen={existingStaffModalOpen}>
+        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-xl max-h-[85vh] flex flex-col">
             <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
               <div>
@@ -4990,11 +4991,13 @@ export default function TransportFleetSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ─── MODAL 3: ADD / EDIT DEDICATED TRANSPORT STAFF ──────────────────── */}
       {staffModalOpen && editingStaff && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <ModalPortal isOpen={staffModalOpen && !!editingStaff}>
+        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
               <h4 className="font-bold text-sm text-[#131B2E]">
@@ -5210,11 +5213,13 @@ export default function TransportFleetSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ─── MODAL 4: ADD / EDIT ROUTE ──────────────────────────────────────── */}
       {routeModalOpen && editingRoute && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <ModalPortal isOpen={routeModalOpen && !!editingRoute}>
+        <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
               <div className="flex items-center gap-2">
@@ -5481,11 +5486,13 @@ export default function TransportFleetSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ─── MODAL 6: ASSIGN STUDENT TO TRANSPORT ───────────────────────────── */}
       {assignModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <ModalPortal isOpen={assignModalOpen}>
+        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
             <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
               <h4 className="font-bold text-sm text-[#131B2E]">Assign Student to Transport</h4>
@@ -5653,11 +5660,13 @@ export default function TransportFleetSection({
             })()}
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ─── MODAL 7: REPORT OPERATIONAL EXCEPTION ───────────────────────────── */}
       {exceptionModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+        <ModalPortal isOpen={exceptionModalOpen}>
+        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-xl">
             <div className="flex items-center justify-between pb-2 border-b border-[#E2E8F0]">
               <div className="flex items-center gap-2 text-[#92400E]">
@@ -5736,13 +5745,15 @@ export default function TransportFleetSection({
             </form>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ════════════════════════════════════════════════════════════════════
          WEBSITE INTEGRATION & EMBED MODAL
          ════════════════════════════════════════════════════════════════════ */}
       {websiteEmbedModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+        <ModalPortal isOpen={websiteEmbedModalOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-3xl border border-[#E2E8F0] shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-5">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2.5">
@@ -5880,6 +5891,7 @@ export default function TransportFleetSection({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

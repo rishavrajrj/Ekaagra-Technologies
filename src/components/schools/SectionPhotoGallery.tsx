@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import type { UniversalIntakeData, CampusImageData, CampusImageCategory } from '@/lib/types';
 import { formatBytes, formatOptimizationStats } from '@/lib/imageUtils';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 export interface SectionPhotoTag {
   readonly value: string;
@@ -729,8 +730,9 @@ export default function SectionPhotoGallery({
 
       {/* Lightbox Preview Modal */}
       {previewPhoto && (
+        <ModalPortal isOpen={!!previewPhoto}>
         <div
-          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
           onClick={() => setPreviewPhoto(null)}
         >
           <div
@@ -762,6 +764,7 @@ export default function SectionPhotoGallery({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

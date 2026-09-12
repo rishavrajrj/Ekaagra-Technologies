@@ -21,6 +21,7 @@ import {
   DEFAULT_SUGGESTED_SUBJECTS,
   generateAcademicId,
 } from '@/lib/academicStructureUtils';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 interface Step4SubjectCatalogProps {
   structure: AcademicStructureData;
@@ -423,7 +424,8 @@ export default function Step4SubjectCatalog({
 
       {/* ── MODAL: ADD / EDIT SUBJECT ──────────────────────────────────── */}
       {isEditorOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalPortal isOpen={isEditorOpen}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white border border-[#E2E8F0] rounded-3xl shadow-2xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-[#F1F5F9]">
               <div className="flex items-center gap-2">
@@ -540,11 +542,13 @@ export default function Step4SubjectCatalog({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
 
       {/* ── DIALOG: DELETE CONFIRMATION ──────────────────────────────────── */}
       {subToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+        <ModalPortal isOpen={!!subToDelete}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
           <div className="bg-white border border-[#E2E8F0] rounded-3xl shadow-2xl max-w-sm w-full p-6 space-y-4">
             <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-5 h-5" />
@@ -574,6 +578,7 @@ export default function Step4SubjectCatalog({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );

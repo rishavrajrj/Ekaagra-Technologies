@@ -38,6 +38,7 @@ import {
   Radio,
 } from 'lucide-react';
 import type { PublicTransportMapModel } from '@/lib/publicTransportUtils';
+import ModalPortal from '@/components/ui/ModalPortal';
 
 // Lazy load the full ERP simulator modal
 const ErpLiveDemo = dynamic(() => import('@/components/ui/ErpLiveDemo'), {
@@ -1081,12 +1082,13 @@ export default function SchoolVisualShowcase({
 
       {/* ─── MODAL: FULL INTERACTIVE ERP SIMULATOR ──────────────────────────── */}
       {showFullErpModal && (
+        <ModalPortal isOpen={showFullErpModal}>
         <div
           ref={erpModalDialogRef}
           role="dialog"
           aria-modal="true"
           aria-labelledby="erp-modal-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in"
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowFullErpModal(false);
           }}
@@ -1122,6 +1124,7 @@ export default function SchoolVisualShowcase({
             </div>
           </div>
         </div>
+        </ModalPortal>
       )}
     </div>
   );
