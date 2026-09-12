@@ -1627,3 +1627,146 @@ export async function sendSchoolChangeRequestEmail(
     type: 'client_contact_confirmation',
   });
 }
+
+export interface SchoolChangeRequestBatchItem {
+  fieldLabel: string;
+  sectionKey?: string;
+  reviewerMessage: string;
+  suggestedValue?: string;
+}
+
+export interface SchoolChangeRequestBatchEmailParams {
+  clientName?: string;
+  clientEmail: string;
+  schoolName: string;
+  projectNumber?: string;
+  requests?: SchoolChangeRequestBatchItem[];
+  items?: SchoolChangeRequestBatchItem[];
+  onboardingUrl: string;
+}
+
+/**
+ * Dispatches a single consolidated batch email notification containing all requested adjustments.
+ */
+export async function sendSchoolChangeRequestBatchEmail(
+  params: SchoolChangeRequestBatchEmailParams
+): Promise<EmailDispatchResult> {
+  const reqList = params.requests || params.items || [];
+  const count = reqList.length;
+  if (count === 0) {
+    return { success: false, method: 'error', error: 'No change requests provided to dispatch' };
+  }
+
+  const appBaseUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.ekaagratechnologies.site');
+
+  const fullOnboardingUrl = params.onboardingUrl.startsWith('http')
+    ? params.onboardingUrl
+    : `${appBaseUrl.replace(/\/$/, '')}${params.onboardingUrl.startsWith('/') ? '' : '/'}${params.onboardingUrl}`;
+
+  const subject =
+    count === 1
+      ? `Action Required: 1 Adjustment Requested for ${params.schoolName} — Ekaagra Technologies`
+      : `Action Required: ${count} Adjustments Requested for ${params.schoolName} — Ekaagra Technologies`;
+
+  const itemCardsHtml = reqList
+    .map(
+      (req, idx) => `
+    <div style="background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px; margin-bottom: 16px;">
+      <div style="margin-bottom: 8px;">
+        <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #64748B;">
+          ${req.sectionKey ? `${req.sectionKey} &bull; ` : ''}Item ${idx + 1}
+        </span>
+        <span style="background: #FEE2E2; color: #991B1B; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; margin-left: 8px;">
+          CORRECTION NEEDED
+        </span>
+      </div>
+      <div style="font-size: 15px; font-weight: 700; color: #0F172A; margin-bottom: 10px;">
+        ${req.fieldLabel}
+      </div>
+      <div style="background: white; border: 1px solid #FED7AA; border-left: 4px solid #F97316; border-radius: 6px; padding: 10px 14px; margin-bottom: ${
+        req.suggestedValue ? '8px' : '0'
+      };">
+        <div style="font-size: 11px; font-weight: 700; color: #C2410C; margin-bottom: 3px;">REVIEWER NOTE</div>
+        <div style="font-size: 13px; color: #7C2D12; line-height: 1.5;">${req.reviewerMessage}</div>
+      </div>
+      ${
+        req.suggestedValue
+          ? `
+      <div style="background: #EFF6FF; border: 1px solid #BFDBFE; border-radius: 6px; padding: 8px 12px; margin-top: 8px;">
+        <div style="font-size: 11px; font-weight: 700; color: #1D4ED8; margin-bottom: 2px;">SUGGESTION</div>
+        <div style="font-size: 13px; color: #1E40AF; font-family: monospace;">${req.suggestedValue}</div>
+      </div>`
+          : ''
+      }
+    </div>
+  `
+    )
+    .join('');
+
+  const textItems = reqList
+    .map(
+      (r, i) =>
+        `${i + 1}. [${r.sectionKey ? `${r.sectionKey} - ` : ''}${r.fieldLabel}]\n   Reviewer Note: ${
+          r.reviewerMessage
+        }${r.suggestedValue ? `\n   Suggestion: ${r.suggestedValue}` : ''}`
+    )
+    .join('\n\n');
+
+  const html = `
+<!DOCTYPE html><html><head><meta charset="utf-8"/></head><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; padding: 24px 12px; background: #FAF7F2; color: #1E293B;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; padding: 32px 28px; border-radius: 16px; border: 1px solid #E2E8F0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+    <div style="margin-bottom: 24px; border-bottom: 1px solid #F1F5F9; padding-bottom: 16px;">
+      <h2 style="color: #4338CA; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.02em;">EKAAGRA TECHNOLOGIES</h2>
+    </div>
+    <div style="background: #FEF3C7; border: 1px solid #FDE68A; border-radius: 10px; padding: 12px 16px; margin-bottom: 20px;">
+      <span style="font-weight: 700; color: #92400E; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Action Required &bull; Intake Review (${count} ${
+        count === 1 ? 'Item' : 'Items'
+      })</span>
+    </div>
+    <p style="font-size: 15px; line-height: 1.5; margin: 0 0 12px 0;">Dear <strong>${
+      params.clientName || 'School Administrator'
+    }</strong>,</p>
+    <p style="font-size: 14px; line-height: 1.6; color: #475569; margin: 0 0 20px 0;">
+      Our verification team has completed a review of the onboarding data for <strong>${
+        params.schoolName
+      }</strong>. 
+      To ensure the accuracy and quality of your digital platform, we have requested adjustments for the following <strong>${count} ${
+        count === 1 ? 'item' : 'items'
+      }</strong>:
+    </p>
+
+    ${itemCardsHtml}
+
+    <div style="text-align: center; margin: 28px 0 20px 0;">
+      <a href="${fullOnboardingUrl}" style="display: inline-block; background: #4338CA; color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 14px; box-shadow: 0 2px 6px rgba(67, 56, 202, 0.3);">
+        Review &amp; Update in Onboarding Portal &rarr;
+      </a>
+    </div>
+    <p style="font-size: 12px; color: #64748B; text-align: center; margin: 0 0 24px 0;">
+      Or copy and paste this link in your browser:<br/>
+      <a href="${fullOnboardingUrl}" style="color: #4338CA; word-break: break-all;">${fullOnboardingUrl}</a>
+    </p>
+    <div style="border-top: 1px solid #E2E8F0; padding-top: 16px; font-size: 12px; color: #94A3B8;">
+      Ekaagra Technologies Support Team &bull; <a href="mailto:${getAdminEmail()}" style="color: #64748B;">${getAdminEmail()}</a>
+    </div>
+  </div>
+</body></html>`;
+
+  const text = `Dear ${
+    params.clientName || 'School Administrator'
+  },\n\nOur verification team has reviewed the onboarding data for ${
+    params.schoolName
+  } and requested ${count} adjustment(s):\n\n${textItems}\n\nPlease review and provide the corrected values via your onboarding portal:\n${fullOnboardingUrl}\n\nEkaagra Technologies Support`;
+
+  return sendEmail({
+    to: params.clientEmail,
+    subject,
+    htmlContent: html,
+    textContent: text,
+    replyTo: getAdminEmail(),
+    type: 'client_contact_confirmation',
+  });
+}
+

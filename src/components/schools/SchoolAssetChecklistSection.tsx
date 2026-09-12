@@ -40,6 +40,7 @@ import type {
   AssetChecklistStatus,
   AssetFileMeta,
   CampusImageData,
+  SchoolIntakeChangeRequest,
 } from '@/lib/types';
 import {
   ASSET_CATEGORIES,
@@ -56,12 +57,16 @@ interface SchoolAssetChecklistSectionProps {
   intakeData: UniversalIntakeData;
   updateSectionField: (section: keyof UniversalIntakeData, field: string, value: any) => void;
   token: string;
+  changeRequests?: SchoolIntakeChangeRequest[];
+  onRespondToCR?: (cr: SchoolIntakeChangeRequest) => void;
 }
 
 export default function SchoolAssetChecklistSection({
   intakeData,
   updateSectionField,
   token,
+  changeRequests,
+  onRespondToCR,
 }: SchoolAssetChecklistSectionProps) {
   // 1. Synced items with earlier sections
   const items = useMemo(() => {
@@ -782,6 +787,32 @@ export default function SchoolAssetChecklistSection({
     });
   }, [items, selectedCategory, statusFilter, searchQuery]);
 
+  // Helper to match change requests for individual checklist assets
+  const getItemCR = useCallback(
+    (itemId: string): SchoolIntakeChangeRequest | undefined => {
+      if (!changeRequests || changeRequests.length === 0) return undefined;
+      return changeRequests.find((cr) => {
+        if (cr.status === 'resolved') return false;
+        if (cr.asset_id && (cr.asset_id === itemId || cr.field_key === itemId)) return true;
+        const fk = (cr.field_key || '').toLowerCase();
+        const id = itemId.toLowerCase();
+        if (fk === id || fk.endsWith(`.${id}`) || fk.includes(id)) return true;
+
+        if (itemId === 'brand-logo' && (fk.includes('logo') || (cr.section_key === 'brandingDesign' && fk.includes('logo')))) return true;
+        if (itemId === 'brand-crest' && (fk.includes('crest') || (cr.section_key === 'brandingDesign' && fk.includes('crest')))) return true;
+        if (itemId === 'brand-favicon' && (fk.includes('favicon') || (cr.section_key === 'brandingDesign' && fk.includes('favicon')))) return true;
+        if (itemId === 'lead-principal-photo' && (fk.includes('principal') && (fk.includes('photo') || fk.includes('portrait')))) return true;
+        if (itemId === 'lead-principal-msg' && (fk.includes('principal') && fk.includes('message'))) return true;
+        if (itemId === 'acad-about' && (fk.includes('about') || fk.includes('schoolcontent'))) return true;
+        if (itemId === 'acad-vision' && fk.includes('vision')) return true;
+        if (itemId === 'acad-mission' && fk.includes('mission')) return true;
+
+        return false;
+      });
+    },
+    [changeRequests]
+  );
+
   // Group filtered items by category
   const groupedItems = useMemo(() => {
     const groups: { category: AssetCategoryInfo; items: AssetChecklistItem[] }[] = [];
@@ -1116,35 +1147,40 @@ export default function SchoolAssetChecklistSection({
 
               {/* Items List */}
               <div className="divide-y divide-[#E2E8F0]">
-                {catItems.map((item) => (
-                  <ChecklistItemRow
-                    key={item.id}
-                    item={item}
-                    uploadPhase={uploadPhase[item.id] || 'idle'}
-                    uploadError={uploadError?.id === item.id ? uploadError.message : null}
-                    onUpload={(files) => handleFileUpload(item, files)}
-                    onUpdate={(updates) => updateItemInState(item.id, updates)}
-                    onPreview={(url, title, meta) => setPreviewImage({ url, fileUrl: url, title, ...meta })}
-                    isNotesExpanded={Boolean(expandedNotes[item.id])}
-                    onToggleNotes={() =>
-                      setExpandedNotes((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
-                    }
-                    allItems={items}
-                    onReuseToggle={handleReuseToggle}
-                    formatFileSize={formatFileSize}
-                    copiedUrlId={copiedUrlId}
-                    setCopiedUrlId={setCopiedUrlId}
-                    getDownloadUrl={getAssetDownloadUrl}
-                    onRemoveAsset={handleRemoveAsset}
-                    campusImages={campusImages}
-                    isSingleCampus={isSingleCampus}
-                    campuses={intakeData.campuses}
-                    onReuseCampusImage={handleReuseCampusImage}
-                    onBatchReuseCampusImages={handleBatchReuseCampusImages}
-                    intakeData={intakeData}
-                    token={token}
-                  />
-                ))}
+                {catItems.map((item) => {
+                  const itemCR = getItemCR(item.id);
+                  return (
+                    <ChecklistItemRow
+                      key={item.id}
+                      item={item}
+                      changeRequest={itemCR}
+                      onRespondToCR={onRespondToCR}
+                      uploadPhase={uploadPhase[item.id] || 'idle'}
+                      uploadError={uploadError?.id === item.id ? uploadError.message : null}
+                      onUpload={(files) => handleFileUpload(item, files)}
+                      onUpdate={(updates) => updateItemInState(item.id, updates)}
+                      onPreview={(url, title, meta) => setPreviewImage({ url, fileUrl: url, title, ...meta })}
+                      isNotesExpanded={Boolean(expandedNotes[item.id])}
+                      onToggleNotes={() =>
+                        setExpandedNotes((prev) => ({ ...prev, [item.id]: !prev[item.id] }))
+                      }
+                      allItems={items}
+                      onReuseToggle={handleReuseToggle}
+                      formatFileSize={formatFileSize}
+                      copiedUrlId={copiedUrlId}
+                      setCopiedUrlId={setCopiedUrlId}
+                      getDownloadUrl={getAssetDownloadUrl}
+                      onRemoveAsset={handleRemoveAsset}
+                      campusImages={campusImages}
+                      isSingleCampus={isSingleCampus}
+                      campuses={intakeData.campuses}
+                      onReuseCampusImage={handleReuseCampusImage}
+                      onBatchReuseCampusImages={handleBatchReuseCampusImages}
+                      intakeData={intakeData}
+                      token={token}
+                    />
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -1167,6 +1203,8 @@ export default function SchoolAssetChecklistSection({
 // Subcomponent for individual checklist row
 interface ChecklistItemRowProps {
   item: AssetChecklistItem;
+  changeRequest?: SchoolIntakeChangeRequest;
+  onRespondToCR?: (cr: SchoolIntakeChangeRequest) => void;
   uploadPhase: 'idle' | 'uploading' | 'optimizing' | 'complete' | 'error';
   uploadError: string | null;
   onUpload: (files: FileList | null) => void;
@@ -1196,6 +1234,8 @@ interface ChecklistItemRowProps {
 
 function ChecklistItemRow({
   item,
+  changeRequest,
+  onRespondToCR,
   uploadPhase,
   uploadError,
   onUpload,
@@ -1284,8 +1324,10 @@ function ChecklistItemRow({
     <div
       id={`asset-row-${item.id}`}
       data-checklist-item-id={item.id}
-      className={`p-4 sm:p-5 transition-colors ${
-        isProvided
+      className={`p-4 sm:p-5 transition-all ${
+        changeRequest
+          ? 'border-2 border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/20 bg-amber-50/30 dark:bg-amber-950/20 rounded-2xl my-2 shadow-xs'
+          : isProvided
           ? 'bg-white'
           : isPending
           ? 'bg-amber-50/20'
@@ -1301,6 +1343,14 @@ function ChecklistItemRow({
             <span className="font-bold text-xs sm:text-sm text-[#131B2E]">
               {item.title}
             </span>
+
+            {/* Change Request Badge */}
+            {changeRequest && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 border border-rose-300 dark:border-rose-700 animate-pulse shrink-0">
+                <AlertCircle className="w-3 h-3 text-rose-600 dark:text-rose-400 shrink-0" />
+                <span>Changes Requested</span>
+              </span>
+            )}
 
             {/* Requirement Badge */}
             {item.requirement === 'statutory' && (
@@ -1392,6 +1442,45 @@ function ChecklistItemRow({
               <span>
                 <strong>Intended Use:</strong> {item.intendedUse}
               </span>
+            </div>
+          )}
+
+          {/* Reviewer Change Request Alert Box */}
+          {changeRequest && (
+            <div className="mt-2.5 p-3 rounded-xl border bg-amber-100/90 border-amber-300 text-amber-950 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 text-xs space-y-1.5 shadow-2xs">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="font-bold flex items-center gap-1.5 text-amber-900 dark:text-amber-200">
+                  <AlertTriangle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                  Review Team Feedback
+                  {changeRequest.requested_by && (
+                    <span className="font-normal opacity-80 text-[11px]">({changeRequest.requested_by})</span>
+                  )}
+                </span>
+                {onRespondToCR && (
+                  <button
+                    type="button"
+                    onClick={() => onRespondToCR(changeRequest)}
+                    className="text-[11px] font-bold px-2.5 py-1 rounded-md bg-amber-700 hover:bg-amber-800 text-white shadow-2xs transition cursor-pointer shrink-0"
+                  >
+                    Respond / Explain Fix
+                  </button>
+                )}
+              </div>
+              <p className="leading-relaxed whitespace-pre-wrap font-medium text-amber-950 dark:text-amber-100">
+                {changeRequest.request_comment || changeRequest.reviewer_comment}
+              </p>
+              {changeRequest.suggested_value && (
+                <div className="text-[11px] bg-white/70 dark:bg-black/30 p-2 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <span className="font-semibold text-amber-900 dark:text-amber-300">Suggested: </span>
+                  <span className="font-mono text-slate-800 dark:text-slate-200">{changeRequest.suggested_value}</span>
+                </div>
+              )}
+              {changeRequest.school_response && (
+                <div className="text-[11px] bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-2 rounded-lg text-emerald-900 dark:text-emerald-200">
+                  <span className="font-bold">Your Response: </span>
+                  <span>{changeRequest.school_response}</span>
+                </div>
+              )}
             </div>
           )}
 

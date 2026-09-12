@@ -42,8 +42,8 @@ import {
   type ContentRecommendationRequest,
   type ContentRecommendationResult,
 } from '@/lib/contentRecommendationService';
-import { sendSchoolChangeRequestEmail } from '@/lib/email';
-import { buildSchoolChangeRequestWhatsAppUrl } from '@/lib/whatsapp';
+import { sendSchoolChangeRequestEmail, sendSchoolChangeRequestBatchEmail } from '@/lib/email';
+import { buildSchoolChangeRequestWhatsAppUrl, buildSchoolBatchChangeRequestWhatsAppUrl } from '@/lib/whatsapp';
 
 export async function startSchoolOnboardingAction(leadId: string) {
   const isAdmin = await verifyAdminSession();
@@ -802,6 +802,120 @@ async function dispatchChangeRequestNotifications(params: {
   }
 }
 
+export async function sendSchoolChangeRequestsDigestAction(projectId: string) {
+  const isAdmin = await verifyAdminSession();
+  if (!isAdmin) return { success: false, error: 'Unauthorized' };
+  const schoolsDb = getSchoolsServerClient();
+  if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
+
+  try {
+    const { data: project, error: projErr } = await schoolsDb
+      .from('school_projects')
+      .select('project_number, school_name, primary_contact_name, primary_contact_email, primary_contact_phone, metadata')
+      .eq('id', projectId)
+      .single();
+
+    if (projErr || !project) throw new Error('School project not found');
+
+    const { data: invitation } = await schoolsDb
+      .from('school_onboarding_invitations')
+      .select('invitation_code')
+      .eq('school_project_id', projectId)
+      .eq('is_revoked', false)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const onboardingPath = invitation?.invitation_code
+      ? `/school-onboarding/${invitation.invitation_code}`
+      : `/school-onboarding?project=${project.project_number}`;
+
+    const appBaseUrl =
+      process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://www.ekaagratechnologies.site');
+    const fullOnboardingUrl = `${appBaseUrl.replace(/\/$/, '')}${onboardingPath}`;
+
+    const { data: changeRequests, error: crErr } = await schoolsDb
+      .from('school_intake_change_requests')
+      .select('*')
+      .eq('school_project_id', projectId)
+      .in('status', ['open', 'waiting_for_school'])
+      .order('created_at', { ascending: true });
+
+    if (crErr) throw crErr;
+    if (!changeRequests || changeRequests.length === 0) {
+      return { success: false, error: 'No active change requests waiting for school.' };
+    }
+
+    const requests = changeRequests.map((cr) => ({
+      fieldLabel: cr.field_key || cr.asset_id || cr.section_key || 'Field Correction',
+      sectionKey: cr.section_key,
+      reviewerMessage: cr.request_comment || cr.reason || 'Please review and update.',
+      suggestedValue: cr.suggested_value || undefined,
+    }));
+
+    let emailSent = false;
+    let emailError: string | undefined;
+
+    if (project.primary_contact_email && project.primary_contact_email.trim() !== '') {
+      const emailRes = await sendSchoolChangeRequestBatchEmail({
+        clientName: project.primary_contact_name || 'School Administrator',
+        clientEmail: project.primary_contact_email.trim(),
+        schoolName: project.school_name,
+        projectNumber: project.project_number,
+        requests,
+        onboardingUrl: fullOnboardingUrl,
+      });
+      emailSent = emailRes.success;
+      if (!emailRes.success) {
+        emailError = emailRes.error;
+      }
+    }
+
+    const whatsappUrl = buildSchoolBatchChangeRequestWhatsAppUrl({
+      clientPhone: project.primary_contact_phone || undefined,
+      clientName: project.primary_contact_name || undefined,
+      schoolName: project.school_name,
+      requests: requests.map((r) => ({
+        fieldOrSection: `${r.sectionKey ? `${r.sectionKey} - ` : ''}${r.fieldLabel}`,
+        reviewerMessage: r.reviewerMessage,
+        suggestedValue: r.suggestedValue,
+      })),
+      onboardingUrl: fullOnboardingUrl,
+    });
+
+    const currentYear = new Date().getFullYear();
+    await schoolsDb.from('school_project_audit_events').insert([
+      {
+        school_project_id: projectId,
+        audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
+        action: 'change_requests_digest_dispatched',
+        actor_name: 'Ekaagra Reviewer',
+        actor_role: 'internal_reviewer',
+        details: {
+          itemCount: requests.length,
+          emailSent,
+          recipientEmail: project.primary_contact_email,
+          items: requests.map((r) => r.fieldLabel),
+        },
+      },
+    ]);
+
+    return {
+      success: true,
+      count: requests.length,
+      emailSent,
+      emailError,
+      whatsappUrl,
+      contactEmail: project.primary_contact_email,
+      contactPhone: project.primary_contact_phone,
+    };
+  } catch (err: any) {
+    console.error('[ACTION ERROR] sendSchoolChangeRequestsDigestAction:', err);
+    return { success: false, error: err.message };
+  }
+}
+
 export async function createFieldChangeRequestAction(input: {
   projectId: string;
   sectionKey: string;
@@ -810,6 +924,7 @@ export async function createFieldChangeRequestAction(input: {
   reason: string;
   suggestedValue?: string;
   reviewerMessage: string;
+  sendImmediately?: boolean;
 }) {
   const isAdmin = await verifyAdminSession();
   if (!isAdmin) return { success: false, error: 'Unauthorized' };
@@ -884,23 +999,37 @@ export async function createFieldChangeRequestAction(input: {
       },
     ]);
 
-    const notif = await dispatchChangeRequestNotifications({
-      schoolsDb,
-      projectId: input.projectId,
-      fieldOrAssetTitle: input.fieldKey,
-      sectionKey: input.sectionKey,
-      reviewerMessage: input.reviewerMessage,
-      suggestedValue: input.suggestedValue,
-    });
+    let notifResult = {
+      emailSent: false,
+      emailError: undefined as string | undefined,
+      whatsappUrl: '',
+      count: 0,
+      contactEmail: undefined as string | undefined,
+      contactPhone: undefined as string | undefined,
+    };
+    if (input.sendImmediately) {
+      const digest = await sendSchoolChangeRequestsDigestAction(input.projectId);
+      if (digest.success) {
+        notifResult = {
+          emailSent: digest.emailSent ?? false,
+          emailError: digest.emailError,
+          whatsappUrl: digest.whatsappUrl ?? '',
+          count: digest.count ?? 1,
+          contactEmail: digest.contactEmail,
+          contactPhone: digest.contactPhone,
+        };
+      }
+    }
 
     return {
       success: true,
       changeRequest: inserted,
-      emailSent: notif.emailSent,
-      emailError: notif.emailError,
-      whatsappUrl: notif.whatsappUrl,
-      contactEmail: notif.contactEmail,
-      contactPhone: notif.contactPhone,
+      emailSent: notifResult.emailSent,
+      emailError: notifResult.emailError,
+      whatsappUrl: notifResult.whatsappUrl,
+      batchCount: notifResult.count,
+      contactEmail: notifResult.contactEmail,
+      contactPhone: notifResult.contactPhone,
     };
   } catch (err: any) {
     console.error('[ACTION ERROR] createFieldChangeRequestAction:', err);
@@ -912,8 +1041,9 @@ export async function createMediaChangeRequestAction(input: {
   projectId: string;
   assetId: string;
   assetTitle: string;
-  reason: string;
+  reason?: string;
   reviewerMessage: string;
+  sendImmediately?: boolean;
 }) {
   const isAdmin = await verifyAdminSession();
   if (!isAdmin) return { success: false, error: 'Unauthorized' };
@@ -921,62 +1051,31 @@ export async function createMediaChangeRequestAction(input: {
   if (!schoolsDb) return { success: false, error: 'Schools DB not configured' };
 
   try {
-    const { data: inserted, error: crError } = await schoolsDb
+    const { data: inserted, error: insErr } = await schoolsDb
       .from('school_intake_change_requests')
       .insert([
         {
           school_project_id: input.projectId,
-          section_key: 'media',
-          field_key: input.assetId,
+          section_key: 'mediaAssets',
           asset_id: input.assetId,
-          request_type: 'replacement',
-          reason: input.reason,
+          request_type: 'correction',
+          reason: input.reason || 'review_correction',
           request_comment: input.reviewerMessage,
-          current_value: input.assetTitle,
-          previous_value: input.assetTitle,
           requested_by: 'Ekaagra Reviewer',
-          status: 'waiting_for_school',
+          status: 'open',
         },
       ])
       .select()
       .single();
 
-    if (crError) throw crError;
-
-    const { data: project } = await schoolsDb
-      .from('school_projects')
-      .select('metadata')
-      .eq('id', input.projectId)
-      .single();
-
-    if (project) {
-      const meta = project.metadata || {};
-      const mediaReviews = meta.mediaReviews || {};
-      mediaReviews[input.assetId] = {
-        assetId: input.assetId,
-        status: 'changes_requested',
-        notes: input.reviewerMessage,
-        updatedAt: new Date().toISOString(),
-        updatedBy: 'Ekaagra Reviewer',
-      };
-
-      await schoolsDb
-        .from('school_projects')
-        .update({
-          status: 'changes_requested',
-          media_status: 'changes_requested',
-          metadata: { ...meta, mediaReviews },
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', input.projectId);
-    }
+    if (insErr) throw insErr;
 
     const currentYear = new Date().getFullYear();
     await schoolsDb.from('school_project_audit_events').insert([
       {
         school_project_id: input.projectId,
         audit_number: `AUD-SCH-${currentYear}-${Date.now().toString().slice(-6)}`,
-        action: 'media_replacement_requested',
+        action: 'media_change_requested',
         actor_name: 'Ekaagra Reviewer',
         actor_role: 'internal_reviewer',
         details: {
@@ -988,28 +1087,44 @@ export async function createMediaChangeRequestAction(input: {
       },
     ]);
 
-    const notif = await dispatchChangeRequestNotifications({
-      schoolsDb,
-      projectId: input.projectId,
-      fieldOrAssetTitle: input.assetTitle || input.assetId,
-      sectionKey: 'Media Assets',
-      reviewerMessage: input.reviewerMessage,
-    });
+    let notifResult = {
+      emailSent: false,
+      emailError: undefined as string | undefined,
+      whatsappUrl: '',
+      count: 0,
+      contactEmail: undefined as string | undefined,
+      contactPhone: undefined as string | undefined,
+    };
+    if (input.sendImmediately) {
+      const digest = await sendSchoolChangeRequestsDigestAction(input.projectId);
+      if (digest.success) {
+        notifResult = {
+          emailSent: digest.emailSent ?? false,
+          emailError: digest.emailError,
+          whatsappUrl: digest.whatsappUrl ?? '',
+          count: digest.count ?? 1,
+          contactEmail: digest.contactEmail,
+          contactPhone: digest.contactPhone,
+        };
+      }
+    }
 
     return {
       success: true,
       changeRequest: inserted,
-      emailSent: notif.emailSent,
-      emailError: notif.emailError,
-      whatsappUrl: notif.whatsappUrl,
-      contactEmail: notif.contactEmail,
-      contactPhone: notif.contactPhone,
+      emailSent: notifResult.emailSent,
+      emailError: notifResult.emailError,
+      whatsappUrl: notifResult.whatsappUrl,
+      batchCount: notifResult.count,
+      contactEmail: notifResult.contactEmail,
+      contactPhone: notifResult.contactPhone,
     };
   } catch (err: any) {
     console.error('[ACTION ERROR] createMediaChangeRequestAction:', err);
     return { success: false, error: err.message };
   }
 }
+
 
 
 export async function respondToChangeRequestAction(input: {
@@ -1266,7 +1381,8 @@ export async function requestProjectChangesAction(
   projectId: string,
   sectionKey: string,
   requestComment: string,
-  fieldKey?: string | null
+  fieldKey?: string | null,
+  sendImmediately?: boolean
 ) {
   const isAdmin = await verifyAdminSession();
   if (!isAdmin) {
@@ -1314,21 +1430,36 @@ export async function requestProjectChangesAction(
       },
     ]);
 
-    const notif = await dispatchChangeRequestNotifications({
-      schoolsDb,
-      projectId,
-      fieldOrAssetTitle: fieldKey || sectionKey,
-      sectionKey,
-      reviewerMessage: requestComment,
-    });
+    let notifResult = {
+      emailSent: false,
+      emailError: undefined as string | undefined,
+      whatsappUrl: '',
+      count: 0,
+      contactEmail: undefined as string | undefined,
+      contactPhone: undefined as string | undefined,
+    };
+    if (sendImmediately) {
+      const digest = await sendSchoolChangeRequestsDigestAction(projectId);
+      if (digest.success) {
+        notifResult = {
+          emailSent: digest.emailSent ?? false,
+          emailError: digest.emailError,
+          whatsappUrl: digest.whatsappUrl ?? '',
+          count: digest.count ?? 1,
+          contactEmail: digest.contactEmail,
+          contactPhone: digest.contactPhone,
+        };
+      }
+    }
 
     return {
       success: true,
-      emailSent: notif.emailSent,
-      emailError: notif.emailError,
-      whatsappUrl: notif.whatsappUrl,
-      contactEmail: notif.contactEmail,
-      contactPhone: notif.contactPhone,
+      emailSent: notifResult.emailSent,
+      emailError: notifResult.emailError,
+      whatsappUrl: notifResult.whatsappUrl,
+      batchCount: notifResult.count,
+      contactEmail: notifResult.contactEmail,
+      contactPhone: notifResult.contactPhone,
     };
   } catch (err: any) {
     console.error('[ACTION ERROR] requestProjectChangesAction:', err);

@@ -613,6 +613,7 @@ export interface SchoolIntakeChangeRequest {
   request_type?: 'correction' | 'replacement' | 'clarification' | 'content' | string;
   reason?: string | null;
   request_comment: string;
+  reviewer_comment?: string | null;
   suggested_value?: string | null;
   previous_value?: string | null;
   current_value?: string | null;

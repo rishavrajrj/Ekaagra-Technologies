@@ -398,6 +398,168 @@ export default function SchoolOnboardingPortal({ token }: Props) {
     setIsSubmittingCR(false);
   };
 
+  const getFieldCR = useCallback(
+    (sectionKey: string, fieldKey?: string, assetId?: string): SchoolIntakeChangeRequest | undefined => {
+      if (!changeRequests || changeRequests.length === 0) return undefined;
+      const activeList = changeRequests.filter(
+        (cr) => cr.status === 'open' || cr.status === 'waiting_for_school' || cr.status === 'ready_for_review'
+      );
+
+      return activeList.find((cr) => {
+        if (assetId && (cr.asset_id === assetId || cr.field_key === assetId)) {
+          return true;
+        }
+        if (fieldKey) {
+          const crKey = (cr.field_key || '').toLowerCase();
+          const targetKey = fieldKey.toLowerCase();
+          const targetLeaf = targetKey.split('.').pop() || targetKey;
+          const crLeaf = crKey.split('.').pop() || crKey;
+
+          if (crKey === targetKey || crLeaf === targetLeaf) return true;
+          if (crKey === `${sectionKey.toLowerCase()}.${targetLeaf}`) return true;
+          if (targetKey === `${(cr.section_key || '').toLowerCase()}.${crLeaf}`) return true;
+
+          // Normalized aliases
+          const aliasPairs = [
+            ['yearofestablishment', 'establishedyear'],
+            ['officialphone', 'phone'],
+            ['officialphone', 'contactphone'],
+            ['officialemail', 'email'],
+            ['legalinstitutionname', 'legalname'],
+            ['schoolname', 'name'],
+            ['maincampusaddress', 'address'],
+            ['maincampusphone', 'contactphone'],
+            ['principalname', 'principal_name'],
+            ['logourl', 'logo_primary'],
+          ];
+
+          for (const [a, b] of aliasPairs) {
+            if ((targetLeaf === a && crLeaf === b) || (targetLeaf === b && crLeaf === a)) {
+              return true;
+            }
+          }
+        }
+        return false;
+      });
+    },
+    [changeRequests]
+  );
+
+  const getFieldWrapperClass = useCallback(
+    (cr?: SchoolIntakeChangeRequest) => {
+      if (!cr) return '';
+      const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
+      if (isPending) {
+        return 'border-2 border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/20 bg-amber-50/30 dark:bg-amber-950/20 rounded-2xl p-3 sm:p-3.5 space-y-1.5 shadow-xs transition-all';
+      }
+      return 'border-2 border-indigo-300 dark:border-indigo-600 ring-2 ring-indigo-300/20 bg-indigo-50/15 dark:bg-indigo-950/15 rounded-2xl p-3 sm:p-3.5 space-y-1.5 shadow-xs transition-all';
+    },
+    []
+  );
+
+  const renderCRBadge = useCallback(
+    (cr?: SchoolIntakeChangeRequest) => {
+      if (!cr) return null;
+      const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
+      return (
+        <span
+          className={`ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
+            isPending
+              ? 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950 dark:text-rose-200 dark:border-rose-800 animate-pulse'
+              : 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-200 dark:border-indigo-800'
+          }`}
+        >
+          <AlertCircle className="w-3 h-3 shrink-0 text-rose-600 dark:text-rose-400" />
+          <span>{isPending ? 'CHANGES REQUESTED' : 'IN REVIEW'}</span>
+        </span>
+      );
+    },
+    []
+  );
+
+  const renderFieldCRAlert = useCallback(
+    (cr?: SchoolIntakeChangeRequest) => {
+      if (!cr) return null;
+      const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
+
+      return (
+        <div
+          className={`mt-2 rounded-xl p-3 border text-xs transition-all ${
+            isPending
+              ? 'bg-amber-100/90 border-amber-300 text-amber-950 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 shadow-2xs'
+              : 'bg-indigo-50 border-indigo-200 text-indigo-950 dark:bg-indigo-950/30 dark:border-indigo-800 dark:text-indigo-200'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 font-bold">
+              <AlertCircle className={`w-3.5 h-3.5 shrink-0 ${isPending ? 'text-rose-600' : 'text-indigo-600'}`} />
+              <span className="uppercase tracking-wide text-[10px] font-extrabold">
+                {isPending ? 'Reviewer Feedback' : 'Correction Submitted'}
+              </span>
+              <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400">({cr.reason})</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setRespondingCR(cr);
+                setCrResponseText(cr.school_response || '');
+                setCrUpdatedValue(cr.school_updated_value || cr.current_value || '');
+                setCrSubmitError(null);
+              }}
+              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline cursor-pointer"
+            >
+              {isPending ? 'Respond / Explain Fix' : 'Edit Response'}
+            </button>
+          </div>
+
+          <div className="mt-1 font-semibold text-slate-800 dark:text-slate-200">
+            &ldquo;{cr.request_comment}&rdquo;
+          </div>
+
+          {cr.suggested_value && (
+            <div className="mt-1.5 p-1.5 rounded-lg bg-white/90 dark:bg-slate-900 border border-amber-200 dark:border-amber-800 text-[11px] font-mono text-slate-800 dark:text-slate-200 flex items-baseline gap-1.5">
+              <span className="font-bold text-amber-900 dark:text-amber-300 not-font-mono text-[10px] uppercase tracking-wider">
+                Suggested:
+              </span>
+              <span className="font-semibold text-amber-950 dark:text-amber-100">{cr.suggested_value}</span>
+            </div>
+          )}
+
+          {cr.school_response && (
+            <div className="mt-1.5 p-1.5 rounded-lg bg-white/90 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300">
+              <span className="font-bold text-slate-900 dark:text-white text-[10px] uppercase tracking-wider">
+                Your Submitted Note:{' '}
+              </span>
+              <span>{cr.school_response}</span>
+              {cr.school_updated_value && (
+                <div className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 mt-0.5">
+                  Updated to: {cr.school_updated_value}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    },
+    []
+  );
+
+  const sectionCRCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    if (!changeRequests) return counts;
+    changeRequests.forEach((cr) => {
+      if (cr.status === 'open' || cr.status === 'waiting_for_school' || cr.status === 'ready_for_review') {
+        const key = cr.section_key;
+        counts[key] = (counts[key] || 0) + 1;
+        if (key === 'media') {
+          counts['assetChecklist'] = (counts['assetChecklist'] || 0) + 1;
+          counts['brandingDesign'] = (counts['brandingDesign'] || 0) + 1;
+        }
+      }
+    });
+    return counts;
+  }, [changeRequests]);
+
   // Debounced autosave ref
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isDirtyRef = useRef(false);
@@ -1008,6 +1170,16 @@ export default function SchoolOnboardingPortal({ token }: Props) {
   const safeStepIndex = Math.min(currentStepIndex, Math.max(0, applicableSections.length - 1));
   const currentSection = applicableSections[safeStepIndex] || applicableSections[0];
 
+  const activeSectionCRs = useMemo(() => {
+    if (!changeRequests || !currentSection) return [];
+    return changeRequests.filter((cr) => {
+      if (cr.status !== 'open' && cr.status !== 'waiting_for_school' && cr.status !== 'ready_for_review') return false;
+      if (cr.section_key === currentSection.key) return true;
+      if (currentSection.key === 'assetChecklist' && (cr.section_key === 'media' || cr.section_key === 'assetChecklist')) return true;
+      return false;
+    });
+  }, [changeRequests, currentSection]);
+
   // Authoritative resolution of campus-scoped section data
   const campusSectionResolution = useMemo(() => {
     if (
@@ -1453,6 +1625,14 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       )}
                     </div>
                     <span className="truncate flex-1 font-medium" title={sec.title || displayTitle}>{displayTitle}</span>
+                    {Boolean(sectionCRCounts[sec.key]) && (
+                      <span
+                        className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-100 text-rose-700 border border-rose-300 animate-pulse shrink-0"
+                        title={`${sectionCRCounts[sec.key]} change request(s) in this section`}
+                      >
+                        !
+                      </span>
+                    )}
                     <span
                       className={`text-[10px] font-mono ${
                         isNotApplicable
@@ -2055,6 +2235,28 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               </div>
             </div>
 
+            {/* SECTION CHANGE REQUEST ALERT BANNER */}
+            {activeSectionCRs.length > 0 && (
+              <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border-2 border-amber-400 dark:border-amber-600 shadow-2xs flex items-start gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-sm font-bold text-amber-950 dark:text-amber-200">
+                      Action Required: {activeSectionCRs.length} Change Request{activeSectionCRs.length > 1 ? 's' : ''} in this Section
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-100 text-rose-800 border border-rose-200 animate-pulse">
+                      Changes Requested
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
+                    Our verification team has requested revisions for the highlighted field{activeSectionCRs.length > 1 ? 's' : ''} below. Look for the amber boxes with reviewer instructions to make the requested updates.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Render Section Form Bodies */}
             {/* Campus Context Switcher & Inheritance Bar (for campus-scoped & mixed sections when multi-campus) */}
             {currentSection.key !== 'campuses' &&
@@ -2125,128 +2327,178 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-                        <div>
-                          <label className="block font-bold text-[#334155] mb-1">Official School Name *</label>
-                          <input
-                            id="field-school-name"
-                            type="text"
-                            value={intakeData.schoolProfile.schoolName || ''}
-                            onChange={(e) => {
-                              const name = e.target.value;
-                              updateSectionField('schoolProfile', 'schoolName', name);
-                              if (!intakeData.schoolProfile.slug) {
-                                updateSectionField('schoolProfile', 'slug', deriveSlugFromSchoolName(name));
-                              }
-                            }}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
-                            placeholder="e.g. Roshani Public School"
-                          />
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('schoolProfile', 'schoolName');
+                          return (
+                            <div className={getFieldWrapperClass(cr)}>
+                              <label className="block font-bold text-[#334155] mb-1">
+                                <span>Official School Name *</span>
+                                {renderCRBadge(cr)}
+                              </label>
+                              <input
+                                id="field-school-name"
+                                type="text"
+                                value={intakeData.schoolProfile.schoolName || ''}
+                                onChange={(e) => {
+                                  const name = e.target.value;
+                                  updateSectionField('schoolProfile', 'schoolName', name);
+                                  if (!intakeData.schoolProfile.slug) {
+                                    updateSectionField('schoolProfile', 'slug', deriveSlugFromSchoolName(name));
+                                  }
+                                }}
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                                placeholder="e.g. Roshani Public School"
+                              />
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
 
-                        <div>
-                          <label className="block font-bold text-[#334155] mb-1">Institution Display / Short Name</label>
-                          <input
-                            type="text"
-                            value={intakeData.schoolProfile.displayName || intakeData.schoolProfile.shortName || ''}
-                            onChange={(e) => {
-                              updateSectionField('schoolProfile', 'displayName', e.target.value);
-                              updateSectionField('schoolProfile', 'shortName', e.target.value);
-                            }}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
-                            placeholder="e.g. RPS Motihari"
-                          />
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('schoolProfile', 'displayName');
+                          return (
+                            <div className={getFieldWrapperClass(cr)}>
+                              <label className="block font-bold text-[#334155] mb-1">
+                                <span>Institution Display / Short Name</span>
+                                {renderCRBadge(cr)}
+                              </label>
+                              <input
+                                type="text"
+                                value={intakeData.schoolProfile.displayName || intakeData.schoolProfile.shortName || ''}
+                                onChange={(e) => {
+                                  updateSectionField('schoolProfile', 'displayName', e.target.value);
+                                  updateSectionField('schoolProfile', 'shortName', e.target.value);
+                                }}
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                                placeholder="e.g. RPS Motihari"
+                              />
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
 
-                        <div>
-                          <label className="block font-bold text-[#334155] mb-1">
-                            UDISE+ School Code *
-                          </label>
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            pattern="[0-9]{11}"
-                            maxLength={11}
-                            value={intakeData.schoolProfile.udiseCode || ''}
-                            onChange={(e) => {
-                              const cleanDigits = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
-                              updateSectionField('schoolProfile', 'udiseCode', cleanDigits);
-                            }}
-                            className={`w-full px-3.5 py-2.5 rounded-xl bg-white border text-[#131B2E] font-mono text-xs focus:outline-hidden transition shadow-2xs ${
-                              intakeData.schoolProfile.udiseCode && intakeData.schoolProfile.udiseCode.length === 11
-                                ? 'border-emerald-500 focus:ring-3 focus:ring-emerald-500/10'
-                                : 'border-[#E2E8F0] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10'
-                            }`}
-                            placeholder="11-digit UDISE+ Code (e.g. 10234567890)"
-                          />
-                          <span className="text-[10px] text-[#94A3B8] mt-1 block leading-relaxed">
-                            Your school&apos;s official 11-digit UDISE+ Code serves as the canonical external identifier in the Ekaagra platform.
-                          </span>
-                          {intakeData.schoolProfile.udiseCode && intakeData.schoolProfile.udiseCode.length > 0 && intakeData.schoolProfile.udiseCode.length !== 11 && (
-                            <span className="text-[10px] text-amber-600 font-medium mt-0.5 block">
-                              Must be exactly 11 digits ({intakeData.schoolProfile.udiseCode.length}/11 entered).
-                            </span>
-                          )}
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('schoolProfile', 'udiseCode');
+                          return (
+                            <div className={getFieldWrapperClass(cr)}>
+                              <label className="block font-bold text-[#334155] mb-1">
+                                <span>UDISE+ School Code *</span>
+                                {renderCRBadge(cr)}
+                              </label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]{11}"
+                                maxLength={11}
+                                value={intakeData.schoolProfile.udiseCode || ''}
+                                onChange={(e) => {
+                                  const cleanDigits = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
+                                  updateSectionField('schoolProfile', 'udiseCode', cleanDigits);
+                                }}
+                                className={`w-full px-3.5 py-2.5 rounded-xl bg-white border text-[#131B2E] font-mono text-xs focus:outline-hidden transition shadow-2xs ${
+                                  intakeData.schoolProfile.udiseCode && intakeData.schoolProfile.udiseCode.length === 11
+                                    ? 'border-emerald-500 focus:ring-3 focus:ring-emerald-500/10'
+                                    : 'border-[#E2E8F0] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10'
+                                }`}
+                                placeholder="11-digit UDISE+ Code (e.g. 10234567890)"
+                              />
+                              <span className="text-[10px] text-[#94A3B8] mt-1 block leading-relaxed">
+                                Your school&apos;s official 11-digit UDISE+ Code serves as the canonical external identifier in the Ekaagra platform.
+                              </span>
+                              {intakeData.schoolProfile.udiseCode && intakeData.schoolProfile.udiseCode.length > 0 && intakeData.schoolProfile.udiseCode.length !== 11 && (
+                                <span className="text-[10px] text-amber-600 font-medium mt-0.5 block">
+                                  Must be exactly 11 digits ({intakeData.schoolProfile.udiseCode.length}/11 entered).
+                                </span>
+                              )}
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
 
                         {/* Management Type First */}
-                        <div>
-                          <label className="block font-bold text-[#334155] mb-1">Management Type *</label>
-                          <select
-                            value={intakeData.schoolProfile.managementType || 'Society'}
-                            onChange={(e) => updateSectionField('schoolProfile', 'managementType', e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
-                          >
-                            <option value="Society">Society Managed</option>
-                            <option value="Trust">Trust Managed</option>
-                            <option value="Section 8 Company">Section 8 Company</option>
-                            <option value="Private Unaided">Private Unaided</option>
-                            <option value="Private Aided">Private Aided</option>
-                            <option value="Government">Government Institution</option>
-                            <option value="Other">Other</option>
-                          </select>
-                          <span className="text-[10px] text-[#94A3B8] mt-1 block">
-                            Institutional operating governance type.
-                          </span>
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('schoolProfile', 'managementType');
+                          return (
+                            <div className={getFieldWrapperClass(cr)}>
+                              <label className="block font-bold text-[#334155] mb-1">
+                                <span>Management Type *</span>
+                                {renderCRBadge(cr)}
+                              </label>
+                              <select
+                                value={intakeData.schoolProfile.managementType || 'Society'}
+                                onChange={(e) => updateSectionField('schoolProfile', 'managementType', e.target.value)}
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
+                              >
+                                <option value="Society">Society Managed</option>
+                                <option value="Trust">Trust Managed</option>
+                                <option value="Section 8 Company">Section 8 Company</option>
+                                <option value="Private Unaided">Private Unaided</option>
+                                <option value="Private Aided">Private Aided</option>
+                                <option value="Government">Government Institution</option>
+                                <option value="Other">Other</option>
+                              </select>
+                              <span className="text-[10px] text-[#94A3B8] mt-1 block">
+                                Institutional operating governance type.
+                              </span>
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
 
                         {/* Then dynamic entity name based on selected Management Type */}
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="block font-bold text-[#334155] truncate">
-                              {legalConfig.label}
-                            </label>
-                            <span className="text-[10px] font-semibold text-[#4338CA] bg-[#EEF2FF] border border-[#C7D2FE] px-1.5 py-0.5 rounded-md shrink-0 ml-1">
-                              {legalConfig.badge}
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            value={intakeData.schoolProfile.legalInstitutionName || ''}
-                            onChange={(e) => updateSectionField('schoolProfile', 'legalInstitutionName', e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
-                            placeholder={legalConfig.placeholder}
-                          />
-                          <span className="text-[10px] text-[#94A3B8] mt-1 block">
-                            {legalConfig.hint}
-                          </span>
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('schoolProfile', 'legalInstitutionName');
+                          return (
+                            <div className={getFieldWrapperClass(cr)}>
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block font-bold text-[#334155] truncate">
+                                  <span>{legalConfig.label}</span>
+                                  {renderCRBadge(cr)}
+                                </label>
+                                <span className="text-[10px] font-semibold text-[#4338CA] bg-[#EEF2FF] border border-[#C7D2FE] px-1.5 py-0.5 rounded-md shrink-0 ml-1">
+                                  {legalConfig.badge}
+                                </span>
+                              </div>
+                              <input
+                                type="text"
+                                value={intakeData.schoolProfile.legalInstitutionName || ''}
+                                onChange={(e) => updateSectionField('schoolProfile', 'legalInstitutionName', e.target.value)}
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                                placeholder={legalConfig.placeholder}
+                              />
+                              <span className="text-[10px] text-[#94A3B8] mt-1 block">
+                                {legalConfig.hint}
+                              </span>
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
 
-                        <div>
-                          <label className="block font-bold text-[#334155] mb-1">Year of Establishment</label>
-                          <input
-                            type="text"
-                            value={intakeData.schoolProfile.yearOfEstablishment || intakeData.schoolProfile.establishmentYear || ''}
-                            onChange={(e) => {
-                              updateSectionField('schoolProfile', 'yearOfEstablishment', e.target.value);
-                              updateSectionField('schoolProfile', 'establishmentYear', e.target.value);
-                            }}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
-                            placeholder="e.g. 2008"
-                          />
-                          <span className="text-[10px] text-[#94A3B8] mt-1 block">
-                            Year when school was established.
-                          </span>
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('schoolProfile', 'yearOfEstablishment');
+                          return (
+                            <div className={getFieldWrapperClass(cr)}>
+                              <label className="block font-bold text-[#334155] mb-1">
+                                <span>Year of Establishment</span>
+                                {renderCRBadge(cr)}
+                              </label>
+                              <input
+                                type="text"
+                                value={intakeData.schoolProfile.yearOfEstablishment || intakeData.schoolProfile.establishmentYear || ''}
+                                onChange={(e) => {
+                                  updateSectionField('schoolProfile', 'yearOfEstablishment', e.target.value);
+                                  updateSectionField('schoolProfile', 'establishmentYear', e.target.value);
+                                }}
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
+                                placeholder="e.g. 2008"
+                              />
+                              <span className="text-[10px] text-[#94A3B8] mt-1 block">
+                                Year when school was established.
+                              </span>
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   );
@@ -2260,121 +2512,150 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">
-                        Affiliation Board / Body *
-                      </label>
-                      <select
-                        id="field-school-board"
-                        value={intakeData.schoolProfile.board || 'CBSE'}
-                        onChange={(e) => updateSectionField('schoolProfile', 'board', e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
-                      >
-                        <option value="CBSE">CBSE (Central Board of Secondary Education)</option>
-                        <option value="CISCE / ICSE">CISCE / ICSE</option>
-                        <option value="State Board">State Board (BSEB / Other)</option>
-                        <option value="IB">IB (International Baccalaureate)</option>
-                        <option value="Cambridge">Cambridge (IGCSE)</option>
-                        <option value="NIOS">NIOS</option>
-                        <option value="Other">Other / Non-Affiliated</option>
-                      </select>
-                      <span className="text-[10px] text-[#94A3B8] mt-1 block">
-                        Select governing education board for this school.
-                      </span>
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'board');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>Affiliation Board / Body *</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <select
+                            id="field-school-board"
+                            value={intakeData.schoolProfile.board || 'CBSE'}
+                            onChange={(e) => updateSectionField('schoolProfile', 'board', e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
+                          >
+                            <option value="CBSE">CBSE (Central Board of Secondary Education)</option>
+                            <option value="CISCE / ICSE">CISCE / ICSE</option>
+                            <option value="State Board">State Board (BSEB / Other)</option>
+                            <option value="IB">IB (International Baccalaureate)</option>
+                            <option value="Cambridge">Cambridge (IGCSE)</option>
+                            <option value="NIOS">NIOS</option>
+                            <option value="Other">Other / Non-Affiliated</option>
+                          </select>
+                          <span className="text-[10px] text-[#94A3B8] mt-1 block">
+                            Select governing education board for this school.
+                          </span>
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">
-                        {currentBoardConfig.codeLabel || 'CBSE School Code (School No.)'}
-                      </label>
-                      <input
-                        type="text"
-                        value={intakeData.schoolProfile.schoolCode || ''}
-                        onChange={(e) => updateSectionField('schoolProfile', 'schoolCode', e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
-                        placeholder={currentBoardConfig.codePlaceholder}
-                      />
-                      <span className="text-[10px] text-[#94A3B8] mt-1 block">
-                        {currentBoardConfig.codeHelper}
-                      </span>
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'schoolCode');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>{currentBoardConfig.codeLabel || 'CBSE School Code (School No.)'}</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <input
+                            type="text"
+                            value={intakeData.schoolProfile.schoolCode || ''}
+                            onChange={(e) => updateSectionField('schoolProfile', 'schoolCode', e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
+                            placeholder={currentBoardConfig.codePlaceholder}
+                          />
+                          <span className="text-[10px] text-[#94A3B8] mt-1 block">
+                            {currentBoardConfig.codeHelper}
+                          </span>
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">
-                        {currentBoardConfig.affiliationLabel || 'CBSE Affiliation Number'}
-                      </label>
-                      <input
-                        type="text"
-                        value={intakeData.schoolProfile.affiliationNumber || ''}
-                        onChange={(e) => updateSectionField('schoolProfile', 'affiliationNumber', e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
-                        placeholder={currentBoardConfig.affiliationPlaceholder}
-                      />
-                      <span className="text-[10px] text-[#94A3B8] mt-1 block">
-                        {currentBoardConfig.affiliationHelper}
-                      </span>
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'affiliationNumber');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>{currentBoardConfig.affiliationLabel || 'CBSE Affiliation Number'}</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <input
+                            type="text"
+                            value={intakeData.schoolProfile.affiliationNumber || ''}
+                            onChange={(e) => updateSectionField('schoolProfile', 'affiliationNumber', e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
+                            placeholder={currentBoardConfig.affiliationPlaceholder}
+                          />
+                          <span className="text-[10px] text-[#94A3B8] mt-1 block">
+                            {currentBoardConfig.affiliationHelper}
+                          </span>
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">School Type / Level *</label>
-                      <select
-                        value={
-                          intakeData.schoolProfile.schoolType === 'K-12 School'
-                            ? 'K-12 School (Kindergarten to 12th)'
-                            : (intakeData.schoolProfile.schoolType || 'K-12 School (Kindergarten to 12th)')
-                        }
-                        onChange={(e) => {
-                          const newType = e.target.value;
-                          updateSectionField('schoolProfile', 'schoolType', newType);
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'schoolType');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>School Type / Level *</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <select
+                            value={
+                              intakeData.schoolProfile.schoolType === 'K-12 School'
+                                ? 'K-12 School (Kindergarten to 12th)'
+                                : (intakeData.schoolProfile.schoolType || 'K-12 School (Kindergarten to 12th)')
+                            }
+                            onChange={(e) => {
+                              const newType = e.target.value;
+                              updateSectionField('schoolProfile', 'schoolType', newType);
 
-                          // Dynamically synchronize academic structure if unconfirmed
-                          const struct = intakeData.institutionStructure;
-                          const isConfirmed = Boolean(struct?.confirmed || struct?.academicStructureConfirmed);
-                          if (!isConfirmed) {
-                            const freshClasses = getSuggestedClassesForSchoolType(newType);
-                            const derived = deriveClassesOfferedSummary(freshClasses);
-                            updateSectionDirect('institutionStructure', {
-                              ...(struct || {}),
-                              classes: freshClasses,
-                              classesOfferedFrom: derived.classesOfferedFrom,
-                              classesOfferedTo: derived.classesOfferedTo,
-                              totalSectionsEstimated: derived.totalSectionsEstimated,
-                              academicStreams: derived.academicStreams,
-                              structureStatus: 'suggested',
-                              confirmed: false,
-                              academicStructureConfirmed: false,
-                            });
-                          }
-                        }}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
-                      >
-                        <option value="K-12 School (Kindergarten to 12th)">
-                          K-12 School (Complete KG / Nursery to 12th Standard)
-                        </option>
-                        <option value="Senior Secondary School (10+2)">
-                          Senior Secondary School (Class 11 - 12 / 10+2 Intermediate)
-                        </option>
-                        <option value="Secondary School (Up to 10th)">
-                          Secondary / High School (Up to 10th / Matriculation)
-                        </option>
-                        <option value="Middle School (Class 1 to 8)">
-                          Middle / Upper Primary School (Class 1 to 8th)
-                        </option>
-                        <option value="Primary School (Class 1 to 5)">
-                          Primary School (Nursery / KG to Class 5th)
-                        </option>
-                        <option value="Play School / Pre-School">
-                          Play School / Pre-School (Playgroup, Nursery, LKG, UKG)
-                        </option>
-                        <option value="Coaching / Academy">
-                          Coaching Institute / Academy / Junior College
-                        </option>
-                        <option value="Other">Other Institutional Setup</option>
-                      </select>
-                      <span className="text-[10px] text-[#64748B] mt-1 block leading-relaxed">
-                        <span className="font-semibold text-[#4338CA]">Note:</span> <strong>K-12</strong> means complete schooling from <strong>Kindergarten (Nursery/KG) through 12th Standard (10+2)</strong>.
-                      </span>
-                    </div>
+                              const struct = intakeData.institutionStructure;
+                              const isConfirmed = Boolean(struct?.confirmed || struct?.academicStructureConfirmed);
+                              if (!isConfirmed) {
+                                const freshClasses = getSuggestedClassesForSchoolType(newType);
+                                const derived = deriveClassesOfferedSummary(freshClasses);
+                                updateSectionDirect('institutionStructure', {
+                                  ...(struct || {}),
+                                  classes: freshClasses,
+                                  classesOfferedFrom: derived.classesOfferedFrom,
+                                  classesOfferedTo: derived.classesOfferedTo,
+                                  totalSectionsEstimated: derived.totalSectionsEstimated,
+                                  academicStreams: derived.academicStreams,
+                                  structureStatus: 'suggested',
+                                  confirmed: false,
+                                  academicStructureConfirmed: false,
+                                });
+                              }
+                            }}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
+                          >
+                            <option value="K-12 School (Kindergarten to 12th)">
+                              K-12 School (Complete KG / Nursery to 12th Standard)
+                            </option>
+                            <option value="Senior Secondary School (10+2)">
+                              Senior Secondary School (Class 11 - 12 / 10+2 Intermediate)
+                            </option>
+                            <option value="Secondary School (Up to 10th)">
+                              Secondary / High School (Up to 10th / Matriculation)
+                            </option>
+                            <option value="Middle School (Class 1 to 8)">
+                              Middle / Upper Primary School (Class 1 to 8th)
+                            </option>
+                            <option value="Primary School (Class 1 to 5)">
+                              Primary School (Nursery / KG to Class 5th)
+                            </option>
+                            <option value="Play School / Pre-School">
+                              Play School / Pre-School (Playgroup, Nursery, LKG, UKG)
+                            </option>
+                            <option value="Coaching / Academy">
+                              Coaching Institute / Academy / Junior College
+                            </option>
+                            <option value="Other">Other Institutional Setup</option>
+                          </select>
+                          <span className="text-[10px] text-[#64748B] mt-1 block leading-relaxed">
+                            <span className="font-semibold text-[#4338CA]">Note:</span> <strong>K-12</strong> means complete schooling from <strong>Kindergarten (Nursery/KG) through 12th Standard (10+2)</strong>.
+                          </span>
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
                     <div>
                       <label className="block font-bold text-[#334155] mb-1">Gender Category *</label>
@@ -2413,54 +2694,90 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">Official School Email *</label>
-                      <input
-                        id="field-school-email"
-                        type="email"
-                        value={intakeData.schoolProfile.officialEmail || ''}
-                        onChange={(e) => updateSectionField('schoolProfile', 'officialEmail', e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
-                        placeholder="info@school.edu.in"
-                      />
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'officialEmail');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>Official School Email *</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <input
+                            id="field-school-email"
+                            type="email"
+                            value={intakeData.schoolProfile.officialEmail || ''}
+                            onChange={(e) => updateSectionField('schoolProfile', 'officialEmail', e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                            placeholder="info@school.edu.in"
+                          />
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">Official School Phone / Helpline *</label>
-                      <input
-                        id="field-school-phone"
-                        type="tel"
-                        value={intakeData.schoolProfile.officialPhone || ''}
-                        onChange={(e) => updateSectionField('schoolProfile', 'officialPhone', e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
-                        placeholder="+91 98765 43210"
-                      />
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'officialPhone');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>Official School Phone / Helpline *</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <input
+                            id="field-school-phone"
+                            type="tel"
+                            value={intakeData.schoolProfile.officialPhone || ''}
+                            onChange={(e) => updateSectionField('schoolProfile', 'officialPhone', e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                            placeholder="+91 98765 43210"
+                          />
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">Emergency / Alternate Phone</label>
-                      <input
-                        type="tel"
-                        value={intakeData.schoolProfile.emergencyContact || intakeData.schoolProfile.secondaryPhone || ''}
-                        onChange={(e) => {
-                          updateSectionField('schoolProfile', 'emergencyContact', e.target.value);
-                          updateSectionField('schoolProfile', 'secondaryPhone', e.target.value);
-                        }}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
-                        placeholder="Alternate contact phone"
-                      />
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'secondaryPhone') || getFieldCR('schoolProfile', 'emergencyContact');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>Emergency / Alternate Phone</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <input
+                            type="tel"
+                            value={intakeData.schoolProfile.emergencyContact || intakeData.schoolProfile.secondaryPhone || ''}
+                            onChange={(e) => {
+                              updateSectionField('schoolProfile', 'emergencyContact', e.target.value);
+                              updateSectionField('schoolProfile', 'secondaryPhone', e.target.value);
+                            }}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                            placeholder="Alternate contact phone"
+                          />
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">Official WhatsApp Support Number</label>
-                      <input
-                        type="tel"
-                        value={intakeData.schoolProfile.whatsappNumber || ''}
-                        onChange={(e) => updateSectionField('schoolProfile', 'whatsappNumber', e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
-                        placeholder="WhatsApp contact for parent inquiries"
-                      />
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'whatsappNumber');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>Official WhatsApp Support Number</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <input
+                            type="tel"
+                            value={intakeData.schoolProfile.whatsappNumber || ''}
+                            onChange={(e) => updateSectionField('schoolProfile', 'whatsappNumber', e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                            placeholder="WhatsApp contact for parent inquiries"
+                          />
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -2646,16 +2963,25 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-4.5">
-                        <div>
-                          <label htmlFor={`campus-${camp.id || idx}-name`} className="block font-medium text-[#64748B] mb-1.5">Campus Name *</label>
-                          <input
-                            id={`campus-${camp.id || idx}-name`}
-                            type="text"
-                            value={camp.name}
-                            onChange={(e) => updateCampusField(idx, { name: e.target.value })}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
-                          />
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('campuses', camp.isMainCampus ? 'mainCampusName' : 'name');
+                          return (
+                            <div className={getFieldWrapperClass(cr)}>
+                              <label htmlFor={`campus-${camp.id || idx}-name`} className="block font-medium text-[#64748B] mb-1.5">
+                                <span>Campus Name *</span>
+                                {renderCRBadge(cr)}
+                              </label>
+                              <input
+                                id={`campus-${camp.id || idx}-name`}
+                                type="text"
+                                value={camp.name}
+                                onChange={(e) => updateCampusField(idx, { name: e.target.value })}
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                              />
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
                         <div>
                           <label htmlFor={`campus-${camp.id || idx}-code`} className="block font-medium text-[#64748B] mb-1.5">Campus Code</label>
                           <input
@@ -2756,17 +3082,26 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                           </div>
                         </div>
 
-                        <div className="md:col-span-2">
-                          <label htmlFor={idx === 0 ? 'field-campus-address' : `campus-${camp.id || idx}-address`} className="block font-medium text-[#64748B] mb-1.5">Campus Postal Address *</label>
-                          <input
-                            id={idx === 0 ? 'field-campus-address' : `campus-${camp.id || idx}-address`}
-                            type="text"
-                            value={camp.address}
-                            onChange={(e) => updateCampusField(idx, { address: e.target.value })}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
-                            placeholder="Campus street, locality, gate road"
-                          />
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('campuses', camp.isMainCampus ? 'mainCampusAddress' : 'address');
+                          return (
+                            <div className={`md:col-span-2 ${getFieldWrapperClass(cr)}`}>
+                              <label htmlFor={idx === 0 ? 'field-campus-address' : `campus-${camp.id || idx}-address`} className="block font-medium text-[#64748B] mb-1.5">
+                                <span>Campus Postal Address *</span>
+                                {renderCRBadge(cr)}
+                              </label>
+                              <input
+                                id={idx === 0 ? 'field-campus-address' : `campus-${camp.id || idx}-address`}
+                                type="text"
+                                value={camp.address}
+                                onChange={(e) => updateCampusField(idx, { address: e.target.value })}
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                                placeholder="Campus street, locality, gate road"
+                              />
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
 
                         <div>
                           <label htmlFor={`campus-${camp.id || idx}-landmark`} className="block font-medium text-[#64748B] mb-1.5">Landmark / Campus Area</label>
@@ -2968,17 +3303,26 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                           />
                         </div>
 
-                        <div>
-                          <label htmlFor={`campus-${camp.id || idx}-phone`} className="block font-medium text-[#64748B] mb-1.5">Campus Contact Phone</label>
-                          <input
-                            id={`campus-${camp.id || idx}-phone`}
-                            type="tel"
-                            value={camp.contactPhone || ''}
-                            onChange={(e) => updateCampusField(idx, { contactPhone: e.target.value })}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
-                            placeholder="Phone number"
-                          />
-                        </div>
+                        {(() => {
+                          const cr = getFieldCR('campuses', camp.isMainCampus ? 'mainCampusPhone' : 'contactPhone');
+                          return (
+                            <div className={getFieldWrapperClass(cr)}>
+                              <label htmlFor={`campus-${camp.id || idx}-phone`} className="block font-medium text-[#64748B] mb-1.5">
+                                <span>Campus Contact Phone</span>
+                                {renderCRBadge(cr)}
+                              </label>
+                              <input
+                                id={`campus-${camp.id || idx}-phone`}
+                                type="tel"
+                                value={camp.contactPhone || ''}
+                                onChange={(e) => updateCampusField(idx, { contactPhone: e.target.value })}
+                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                                placeholder="Phone number"
+                              />
+                              {renderFieldCRAlert(cr)}
+                            </div>
+                          );
+                        })()}
 
                         <div className="md:col-span-3">
                           <label htmlFor={`campus-${camp.id || idx}-operating-hours`} className="block font-medium text-[#64748B] mb-1.5">Operating Hours</label>
@@ -3229,17 +3573,26 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 <div className="bg-[#FAF7F2] border border-[#E2E8F0] p-4 rounded-2xl space-y-4">
                   <h3 className="font-bold text-[#131B2E] text-sm">{principalDesig} / Head of Institution</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-medium text-[#64748B] mb-1">{principalDesig} Full Name *</label>
-                      <input
-                        id="field-principal-name"
-                        type="text"
-                        value={intakeData.leadership?.principalName || ''}
-                        onChange={(e) => updateSectionField('leadership', 'principalName', e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
-                        placeholder="Dr. / Mr. / Mrs."
-                      />
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('leadership', 'principalName');
+                      return (
+                        <div className={getFieldWrapperClass(cr)}>
+                          <label className="block font-medium text-[#64748B] mb-1">
+                            <span>{principalDesig} Full Name *</span>
+                            {renderCRBadge(cr)}
+                          </label>
+                          <input
+                            id="field-principal-name"
+                            type="text"
+                            value={intakeData.leadership?.principalName || ''}
+                            onChange={(e) => updateSectionField('leadership', 'principalName', e.target.value)}
+                            className="w-full px-3 py-2 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                            placeholder="Dr. / Mr. / Mrs."
+                          />
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
                     <div>
                       <DesignationDropdownWithOther
                         id="principal-designation"
@@ -3267,32 +3620,42 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     </div>
 
                     {/* Principal / Head Photo (Genuine WebP Optimization Pipeline) */}
-                    <div id="field-principal-portrait" className="md:col-span-3">
-                      <PersonPhotoSection
-                        personId={intakeData.leadership?.principalId || 'principal-main'}
-                        personName={intakeData.leadership?.principalName || principalDesig}
-                        personRole="principal"
-                        label={`${principalDesig} / Head Photo`}
-                        helperText={`Professional photograph of the ${principalDesig} / Head of Institution for use on the school's website and leadership sections.`}
-                        image={intakeData.leadership?.principalPhoto}
-                        legacyPhotoUrl={intakeData.leadership?.principalPhotoUrl}
-                        token={token}
-                        candidateAssets={personAssetLibrary}
-                        allReferencedStorageKeys={allReferencedStorageKeys}
-                        onUpdateImage={(newPhoto) => {
-                          const copy = { ...(intakeData.leadership || {}) };
-                          copy.principalPhoto = newPhoto;
-                          copy.principalPhotoUrl = newPhoto?.url || '';
-                          if (!copy.principalId) copy.principalId = 'principal-main';
-                          if (newPhoto) {
-                            setPersonAssetLibrary((prev) =>
-                              prev.some((p) => p.id === newPhoto.id) ? prev : [...prev, newPhoto]
-                            );
-                          }
-                          updateSectionDirect('leadership', copy);
-                        }}
-                      />
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('leadership', 'principalPhoto', 'principal_photo') || getFieldCR('media', 'principal_photo');
+                      return (
+                        <div id="field-principal-portrait" className={`md:col-span-3 ${getFieldWrapperClass(cr)}`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-bold text-xs text-[#131B2E]">Principal Portrait Image</span>
+                            {renderCRBadge(cr)}
+                          </div>
+                          <PersonPhotoSection
+                            personId={intakeData.leadership?.principalId || 'principal-main'}
+                            personName={intakeData.leadership?.principalName || principalDesig}
+                            personRole="principal"
+                            label={`${principalDesig} / Head Photo`}
+                            helperText={`Professional photograph of the ${principalDesig} / Head of Institution for use on the school's website and leadership sections.`}
+                            image={intakeData.leadership?.principalPhoto}
+                            legacyPhotoUrl={intakeData.leadership?.principalPhotoUrl}
+                            token={token}
+                            candidateAssets={personAssetLibrary}
+                            allReferencedStorageKeys={allReferencedStorageKeys}
+                            onUpdateImage={(newPhoto) => {
+                              const copy = { ...(intakeData.leadership || {}) };
+                              copy.principalPhoto = newPhoto;
+                              copy.principalPhotoUrl = newPhoto?.url || '';
+                              if (!copy.principalId) copy.principalId = 'principal-main';
+                              if (newPhoto) {
+                                setPersonAssetLibrary((prev) =>
+                                  prev.some((p) => p.id === newPhoto.id) ? prev : [...prev, newPhoto]
+                                );
+                              }
+                              updateSectionDirect('leadership', copy);
+                            }}
+                          />
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
                     {isFieldVisible('principalMessage') && (
                       <div className="md:col-span-3">
@@ -3650,12 +4013,15 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     Boolean(effectiveLogoUrl?.toLowerCase().includes('.webp'));
                   const isSvg = effectiveLogoUrl?.toLowerCase().includes('.svg');
 
+                  const crLogo = getFieldCR('brandingDesign', 'logoUrl', 'logo_primary') || getFieldCR('media', 'logo_primary') || getFieldCR('assetChecklist', 'logo_primary');
+
                   return (
-                    <div className="bg-[#FAF7F2] border border-[#E2E8F0] rounded-2xl p-5 sm:p-6 shadow-2xs space-y-3.5">
-                      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3">
+                    <div className={`border rounded-2xl p-5 sm:p-6 shadow-2xs space-y-3.5 ${crLogo ? getFieldWrapperClass(crLogo) : 'bg-[#FAF7F2] border-[#E2E8F0]'}`}>
+                      <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 flex-wrap gap-2">
                         <div className="flex items-center space-x-2">
                           <Sparkles className="w-4 h-4 text-[#4338CA]" />
                           <h3 className="font-bold text-sm text-[#131B2E]">Official School Logo / Crest</h3>
+                          {renderCRBadge(crLogo)}
                         </div>
                         {Boolean(effectiveLogoUrl) && (
                           <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-2xs">
@@ -3668,6 +4034,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       <p className="text-xs text-[#64748B] leading-relaxed">
                         Upload the official logo or crest used to represent your institution across its digital presence.
                       </p>
+                      {renderFieldCRAlert(crLogo)}
 
                       {/* Progressive Upload Feedback Bar */}
                       {logoUploadPhase !== 'idle' && (
@@ -4607,6 +4974,13 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 intakeData={intakeData}
                 updateSectionField={updateSectionField}
                 token={token}
+                changeRequests={changeRequests}
+                onRespondToCR={(cr) => {
+                  setRespondingCR(cr);
+                  setCrResponseText(cr.school_response || '');
+                  setCrUpdatedValue(cr.school_updated_value || cr.current_value || '');
+                  setCrSubmitError(null);
+                }}
               />
             )}
 

@@ -1,6 +1,12 @@
 import assert from 'node:assert';
-import { buildSchoolChangeRequestWhatsAppUrl } from '../whatsapp';
-import { sendSchoolChangeRequestEmail } from '../email';
+import {
+  buildSchoolChangeRequestWhatsAppUrl,
+  buildSchoolBatchChangeRequestWhatsAppUrl,
+} from '../whatsapp';
+import {
+  sendSchoolChangeRequestEmail,
+  sendSchoolChangeRequestBatchEmail,
+} from '../email';
 
 console.log('=== RUNNING SCHOOL CHANGE REQUEST NOTIFICATIONS TEST SUITE ===\n');
 
@@ -52,7 +58,40 @@ assert.ok(url3.includes(encodeURIComponent('there')));
 assert.ok(url3.includes(encodeURIComponent('Annual Fee Schedule')));
 console.log('✓ WhatsApp URL without phone falls back to generic link.');
 
-console.log('\n4. Testing sendSchoolChangeRequestEmail execution safety...');
+console.log('\n4. Testing buildSchoolBatchChangeRequestWhatsAppUrl for multiple items...');
+const batchUrl = buildSchoolBatchChangeRequestWhatsAppUrl({
+  clientPhone: '09876543210',
+  clientName: 'Brother Thomas',
+  schoolName: 'St. Paul Academy',
+  items: [
+    {
+      fieldOrSection: 'Year of Establishment',
+      reviewerMessage: 'Please provide exact year.',
+      suggestedValue: '1998',
+    },
+    {
+      fieldOrSection: 'Campus Postal Address',
+      reviewerMessage: 'Pin code is missing.',
+      suggestedValue: '845401',
+    },
+    {
+      fieldOrSection: 'Principal Portrait',
+      reviewerMessage: 'Photo is low resolution, please re-upload.',
+    },
+  ],
+  onboardingUrl: 'https://www.ekaagratechnologies.site/school-onboarding/ONB-2026-BATCH',
+});
+
+assert.ok(batchUrl.includes('https://wa.me/919876543210?text='));
+assert.ok(batchUrl.includes(encodeURIComponent('Adjustments Requested (3 items)')));
+assert.ok(batchUrl.includes(encodeURIComponent('Year of Establishment')));
+assert.ok(batchUrl.includes(encodeURIComponent('Campus Postal Address')));
+assert.ok(batchUrl.includes(encodeURIComponent('Principal Portrait')));
+assert.ok(batchUrl.includes(encodeURIComponent('1998')));
+assert.ok(batchUrl.includes(encodeURIComponent('https://www.ekaagratechnologies.site/school-onboarding/ONB-2026-BATCH')));
+console.log('✓ Consolidated batch WhatsApp URL formatted and numbered all items properly.');
+
+console.log('\n5. Testing sendSchoolChangeRequestEmail execution safety...');
 (async () => {
   const emailRes = await sendSchoolChangeRequestEmail({
     clientName: 'Principal Anita',
@@ -66,6 +105,31 @@ console.log('\n4. Testing sendSchoolChangeRequestEmail execution safety...');
   assert.ok('success' in emailRes);
   assert.ok('method' in emailRes);
   console.log('✓ sendSchoolChangeRequestEmail executed and handled dispatch safely.');
+
+  console.log('\n6. Testing sendSchoolChangeRequestBatchEmail for consolidated single-email dispatch...');
+  const batchEmailRes = await sendSchoolChangeRequestBatchEmail({
+    clientName: 'Chairman Varma',
+    clientEmail: 'varma@dps.edu.in',
+    schoolName: 'Delhi Public School',
+    items: [
+      {
+        fieldLabel: 'Affiliation Board & Number',
+        reviewerMessage: 'Affiliation number is invalid format for CBSE.',
+        suggestedValue: 'CBSE-330123',
+        section: 'School Profile',
+      },
+      {
+        fieldLabel: 'Official School Crest',
+        reviewerMessage: 'Uploaded crest is blurry. Please upload transparent PNG or SVG.',
+        section: 'Branding & Design',
+      },
+    ],
+    onboardingUrl: '/school-onboarding/ONB-DPS-01',
+  });
+
+  assert.ok('success' in batchEmailRes);
+  assert.ok('method' in batchEmailRes);
+  console.log('✓ sendSchoolChangeRequestBatchEmail bundled 2 items into a single email payload safely.');
 
   console.log('\n======================================================');
   console.log('ALL SCHOOL CHANGE REQUEST NOTIFICATION TESTS PASSED!');

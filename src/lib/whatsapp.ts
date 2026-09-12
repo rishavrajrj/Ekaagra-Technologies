@@ -10,8 +10,12 @@ export const DEFAULT_WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER |
  */
 export function sanitizePhoneNumber(phone?: string): string {
   if (!phone) return '';
-  const digitsOnly = phone.replace(/[^0-9]/g, '');
+  let digitsOnly = phone.replace(/[^0-9]/g, '');
   if (!digitsOnly) return '';
+  // If 11-digit starting with 0 (e.g., standard Indian trunk prefix 09876543210)
+  if (digitsOnly.length === 11 && digitsOnly.startsWith('0')) {
+    digitsOnly = digitsOnly.slice(1);
+  }
   // If 10-digit Indian number provided without 91 country code, prepend 91
   if (digitsOnly.length === 10) {
     return `91${digitsOnly}`;
@@ -218,6 +222,58 @@ export function buildSchoolChangeRequestWhatsAppUrl(params: SchoolChangeRequestW
   lines.push(
     '',
     'Please review and submit your correction through your secure onboarding portal:',
+    params.onboardingUrl,
+    '',
+    'Thank you!'
+  );
+
+  return getWhatsAppChatUrl(lines.join('\n'), params.clientPhone);
+}
+
+export interface SchoolBatchChangeRequestWhatsAppParams {
+  clientPhone?: string;
+  clientName?: string;
+  schoolName?: string;
+  requests?: Array<{
+    fieldOrSection: string;
+    reviewerMessage: string;
+    suggestedValue?: string;
+  }>;
+  items?: Array<{
+    fieldOrSection: string;
+    reviewerMessage: string;
+    suggestedValue?: string;
+  }>;
+  onboardingUrl: string;
+}
+
+/**
+ * Builds a direct WhatsApp chat URL to notify school client of multiple consolidated change requests.
+ */
+export function buildSchoolBatchChangeRequestWhatsAppUrl(params: SchoolBatchChangeRequestWhatsAppParams): string {
+  const reqList = params.requests || params.items || [];
+  const count = reqList.length;
+  const lines: string[] = [
+    `Hello ${params.clientName ? params.clientName : 'there'},`,
+    '',
+    `Ekaagra Technologies has reviewed the onboarding submission for *${params.schoolName || 'your school'}*.`,
+    '',
+    count === 1
+      ? '⚠️ *Adjustment Requested (1 item):*'
+      : `⚠️ *Adjustments Requested (${count} items):*`,
+  ];
+
+  reqList.forEach((req, idx) => {
+    lines.push(
+      `${idx + 1}. *${req.fieldOrSection}:* ${req.reviewerMessage}${
+        req.suggestedValue ? ` (Suggested: ${req.suggestedValue})` : ''
+      }`
+    );
+  });
+
+  lines.push(
+    '',
+    'Please review the highlighted items and submit your updates through your secure onboarding portal:',
     params.onboardingUrl,
     '',
     'Thank you!'

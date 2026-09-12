@@ -31,6 +31,7 @@ import {
   resolveChangeRequestAction,
   finalApproveSchoolProjectAction,
   triggerPlatformHandoffAction,
+  sendSchoolChangeRequestsDigestAction,
 } from '@/app/schoolProjectActions';
 import {
   School,
@@ -180,7 +181,29 @@ export default function SchoolProjectWorkspace({
     setIsActionLoading(false);
   };
 
-  const handleSubmitFieldCR = async (e: React.FormEvent) => {
+  const handleDispatchBatchNotification = async () => {
+    setIsActionLoading(true);
+    setActionMessage(null);
+    const res = await sendSchoolChangeRequestsDigestAction(project.id);
+    if (res.success) {
+      const emailDetail = res.emailSent
+        ? `Consolidated email sent to ${res.contactEmail || 'customer'} (${res.count} items).`
+        : `Consolidated notification recorded for ${res.count} item(s).`;
+      setActionMessage({
+        text: `${emailDetail} WhatsApp digest ready.`,
+        type: 'success',
+        whatsappUrl: res.whatsappUrl || undefined,
+      });
+    } else {
+      setActionMessage({
+        text: res.error || 'Failed to send change requests digest',
+        type: 'error',
+      });
+    }
+    setIsActionLoading(false);
+  };
+
+  const handleSubmitFieldCR = async (e: React.FormEvent, sendImmediately: boolean = false) => {
     e.preventDefault();
     if (!fieldCRModal || !fieldCRComment.trim()) return;
     setIsActionLoading(true);
@@ -193,6 +216,7 @@ export default function SchoolProjectWorkspace({
       reason: fieldCRReason,
       suggestedValue: fieldCRSuggested.trim() || undefined,
       reviewerMessage: fieldCRComment.trim(),
+      sendImmediately,
     });
     if (res.success && res.changeRequest) {
       setChangeRequests((prev) => [res.changeRequest as SchoolIntakeChangeRequest, ...prev]);
@@ -210,10 +234,12 @@ export default function SchoolProjectWorkspace({
         return { ...prev, status: 'changes_requested', metadata: { ...meta, fieldReviews } };
       });
       const notifDetail = res.emailSent
-        ? ` (Email notification sent to ${res.contactEmail || 'customer'})`
-        : '';
+        ? ` (Consolidated email sent to ${res.contactEmail || 'customer'})`
+        : sendImmediately
+        ? ''
+        : ' (Saved to review pass. You can add more changes and send all in 1 consolidated email)';
       setActionMessage({
-        text: `Change request submitted and sent to school portal${notifDetail}.`,
+        text: `Change request recorded${notifDetail}.`,
         type: 'success',
         whatsappUrl: res.whatsappUrl || undefined,
       });
@@ -250,7 +276,7 @@ export default function SchoolProjectWorkspace({
     setIsActionLoading(false);
   };
 
-  const handleSubmitMediaCR = async (e: React.FormEvent) => {
+  const handleSubmitMediaCR = async (e: React.FormEvent, sendImmediately: boolean = false) => {
     e.preventDefault();
     if (!mediaCRModal || !mediaCRComment.trim()) return;
     setIsActionLoading(true);
@@ -261,6 +287,7 @@ export default function SchoolProjectWorkspace({
       assetTitle: mediaCRModal.assetTitle,
       reason: mediaCRReason,
       reviewerMessage: mediaCRComment.trim(),
+      sendImmediately,
     });
     if (res.success && res.changeRequest) {
       setChangeRequests((prev) => [res.changeRequest as SchoolIntakeChangeRequest, ...prev]);
@@ -277,10 +304,12 @@ export default function SchoolProjectWorkspace({
         return { ...prev, status: 'changes_requested', media_status: 'changes_requested', metadata: { ...meta, mediaReviews } };
       });
       const notifDetail = res.emailSent
-        ? ` (Email notification sent to ${res.contactEmail || 'customer'})`
-        : '';
+        ? ` (Consolidated email sent to ${res.contactEmail || 'customer'})`
+        : sendImmediately
+        ? ''
+        : ' (Saved to review pass. You can add more changes and send all in 1 consolidated email)';
       setActionMessage({
-        text: `Media replacement request submitted to school portal${notifDetail}.`,
+        text: `Media replacement request recorded${notifDetail}.`,
         type: 'success',
         whatsappUrl: res.whatsappUrl || undefined,
       });
@@ -550,7 +579,48 @@ export default function SchoolProjectWorkspace({
         </div>
       )}
 
-      {/* ─── 5 OPERATIONAL STATUS CARDS ──────────────────────────────────────── */}
+      {/* ─── CONSOLIDATED REVIEW PASS BATCH DISPATCH BAR ────────────────────── */}
+      {(() => {
+        const pendingCRs = changeRequests.filter(
+          (cr) => cr.status === 'open' || cr.status === 'waiting_for_school'
+        );
+        if (pendingCRs.length === 0) return null;
+
+        return (
+          <div className="rounded-2xl p-4 bg-gradient-to-r from-amber-500/10 via-rose-500/10 to-amber-500/10 border border-amber-300 dark:border-amber-700/60 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="p-2 rounded-xl bg-amber-500 text-white shadow-xs shrink-0 mt-0.5">
+                <Mail className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-extrabold text-sm text-[var(--admin-text-main)]">
+                    Review Pass: {pendingCRs.length} Change Request{pendingCRs.length > 1 ? 's' : ''} Awaiting School Action
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-200 dark:bg-amber-950 dark:text-amber-200">
+                    Batch Consolidation Active
+                  </span>
+                </div>
+                <p className="text-xs text-[var(--admin-text-sub)] mt-0.5">
+                  Requested changes are visually highlighted on the customer&apos;s onboarding form. You can consolidate all {pendingCRs.length} item{pendingCRs.length > 1 ? 's' : ''} into a single email digest so the customer is not spammed.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleDispatchBatchNotification}
+                disabled={isActionLoading}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Send All in 1 Email ({pendingCRs.length})</span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
         {/* Card 1: Submission */}
         <div className="bg-[var(--admin-card)] p-4 rounded-2xl border border-[var(--admin-card-border)] shadow-2xs space-y-1.5">
@@ -1908,7 +1978,7 @@ export default function SchoolProjectWorkspace({
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-2">
+                <div className="flex items-center justify-between gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setFieldCRModal(null)}
@@ -1916,14 +1986,26 @@ export default function SchoolProjectWorkspace({
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isActionLoading || !fieldCRComment.trim()}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Send Change Request</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isActionLoading || !fieldCRComment.trim()}
+                      onClick={(e) => handleSubmitFieldCR(e, false)}
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                      title="Save this request and continue reviewing other fields to send together in 1 email"
+                    >
+                      Save Request (Add More)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isActionLoading || !fieldCRComment.trim()}
+                      onClick={(e) => handleSubmitFieldCR(e, true)}
+                      className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Save &amp; Send All Now</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
@@ -1992,7 +2074,7 @@ export default function SchoolProjectWorkspace({
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-3 pt-2">
+                <div className="flex items-center justify-between gap-3 pt-2">
                   <button
                     type="button"
                     onClick={() => setMediaCRModal(null)}
@@ -2000,14 +2082,26 @@ export default function SchoolProjectWorkspace({
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isActionLoading || !mediaCRComment.trim()}
-                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
-                  >
-                    <Send className="w-3.5 h-3.5" />
-                    <span>Send Replacement Request</span>
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isActionLoading || !mediaCRComment.trim()}
+                      onClick={(e) => handleSubmitMediaCR(e, false)}
+                      className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl text-xs transition-colors cursor-pointer"
+                      title="Save this request and continue reviewing other items to send together in 1 email"
+                    >
+                      Save Request (Add More)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isActionLoading || !mediaCRComment.trim()}
+                      onClick={(e) => handleSubmitMediaCR(e, true)}
+                      className="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Save &amp; Send All Now</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
