@@ -244,6 +244,9 @@ export function resolveCanonicalDocuments(
     // 3. Fallback match (backward compatibility only): title substring
     if (!matchedItem) {
       matchedItem = checklistItems.find((i) => {
+        if (i.type === 'image' || i.category === 'campus_photos' || i.category === 'branding' || i.category === 'leadership') {
+          return false;
+        }
         const titleLower = (i.title || '').toLowerCase();
         return req.accepts.some((acc) => titleLower.includes(acc.toLowerCase()));
       });

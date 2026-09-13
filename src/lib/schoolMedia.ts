@@ -165,13 +165,13 @@ export const MEDIA_STATUS_ORDER: SchoolMediaStatus[] = [
 ];
 
 export const MEDIA_STATUS_LABELS: Record<SchoolMediaStatus, { label: string; badgeClass: string }> = {
-  not_started: { label: 'Not Started', badgeClass: 'bg-slate-100 text-slate-700 border-slate-300' },
-  package_downloaded: { label: 'Package Template Downloaded', badgeClass: 'bg-blue-50 text-blue-700 border-blue-300' },
-  package_in_progress: { label: 'Files Being Collected', badgeClass: 'bg-amber-50 text-amber-700 border-amber-300' },
-  package_submitted: { label: 'Media Package Submitted', badgeClass: 'bg-purple-50 text-purple-700 border-purple-300' },
-  under_review: { label: 'Under Review by Tech Team', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-300' },
-  changes_requested: { label: 'Changes / Higher Res Required', badgeClass: 'bg-orange-50 text-orange-700 border-orange-300' },
-  approved: { label: 'Media Package Approved', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-300' },
+  not_started: { label: 'Pending Upload', badgeClass: 'bg-slate-100 text-slate-700 border-slate-300' },
+  package_downloaded: { label: 'Upload Started', badgeClass: 'bg-blue-50 text-blue-700 border-blue-300' },
+  package_in_progress: { label: 'Assets In Progress', badgeClass: 'bg-amber-50 text-amber-700 border-amber-300' },
+  package_submitted: { label: 'Assets Submitted', badgeClass: 'bg-purple-50 text-purple-700 border-purple-300' },
+  under_review: { label: 'Under Review', badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-300' },
+  changes_requested: { label: 'Changes Requested', badgeClass: 'bg-orange-50 text-orange-700 border-orange-300' },
+  approved: { label: 'Assets Approved', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-300' },
 };
 
 export function generateMediaZipName(schoolName: string, projectNumber: string): string {

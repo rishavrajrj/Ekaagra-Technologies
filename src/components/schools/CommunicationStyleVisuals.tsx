@@ -51,6 +51,7 @@ export interface StyleConfig {
   icon: React.ComponentType<{ className?: string }>;
   targetAudience: string;
   personalityTags: string[];
+  demoUrl?: string;
   fictionalSchool: {
     name: string;
     tagline: string;
@@ -75,7 +76,7 @@ export interface StyleConfig {
   }>;
 }
 
-export const COMMUNICATION_STYLE_CONFIGS: readonly StyleConfig[] = [
+export const ALL_COMMUNICATION_STYLE_CONFIGS: readonly StyleConfig[] = [
   {
     value: 'Traditional & Prestigious',
     label: 'Traditional & Prestigious',
@@ -199,6 +200,7 @@ export const COMMUNICATION_STYLE_CONFIGS: readonly StyleConfig[] = [
     targetAudience:
       'Best for schools with high academic rigor, competitive exam excellence, strong scholastic achievements, and curriculum depth.',
     personalityTags: ['Intellectual', 'Academic', 'Research-led', 'Knowledge-driven'],
+    demoUrl: 'https://roshani-public-school.vercel.app/',
     fictionalSchool: {
       name: 'Roshani Public School',
       tagline: 'Shaping Bright Futures • Since 2001',
@@ -361,7 +363,21 @@ export const COMMUNICATION_STYLE_CONFIGS: readonly StyleConfig[] = [
       },
     ],
   },
-] as const;
+];
+
+/**
+ * ACTIVE COMMUNICATION STYLE CONFIGURATIONS
+ * 
+ * Note: Currently, only the Roshani Public School reference design (https://roshani-public-school.vercel.app/)
+ * is active and deployed. To show only this currently available design, COMMUNICATION_STYLE_CONFIGS
+ * exposes the Academic & Scholarly (Roshani Reference) configuration.
+ * 
+ * When new school website designs are created, simply add them here to expose them in the onboarding portal.
+ */
+export const COMMUNICATION_STYLE_CONFIGS: readonly StyleConfig[] = [
+  // Roshani Public School Reference Design (Live: https://roshani-public-school.vercel.app/)
+  ALL_COMMUNICATION_STYLE_CONFIGS.find((s) => s.value === 'Academic & Scholarly')!,
+];
 
 /**
  * MINI WEBSITE PREVIEW
@@ -456,6 +472,15 @@ export function CommunicationStylePreviewModal({
             </div>
 
             <div className="flex items-center space-x-2 shrink-0">
+              <a
+                href={style.demoUrl || 'https://roshani-public-school.vercel.app/'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3 py-1.5 rounded-xl border border-[#C7D2FE] bg-[#EEF2FF] hover:bg-indigo-100 text-[#4338CA] text-xs font-bold shadow-2xs transition inline-flex items-center space-x-1.5"
+              >
+                <span>Live Website</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
               {!isSelected && (
                 <button
                   type="button"
@@ -496,7 +521,7 @@ export function CommunicationStylePreviewModal({
           </div>
 
           {/* Quick Style Switcher Tabs */}
-          {onSwitchStyle && (
+          {onSwitchStyle && COMMUNICATION_STYLE_CONFIGS.length > 1 && (
             <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 pt-1.5 border-t border-slate-200/80 scrollbar-none">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
                 Preview Other Styles:

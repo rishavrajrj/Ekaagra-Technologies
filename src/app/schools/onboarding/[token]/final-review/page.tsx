@@ -14,5 +14,5 @@ export default async function SchoolOnboardingFinalReviewPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  return <SchoolOnboardingPortal token={token} />;
+  return <SchoolOnboardingPortal token={token} initialStep={['final-review']} />;
 }

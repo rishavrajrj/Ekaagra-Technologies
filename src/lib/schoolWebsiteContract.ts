@@ -299,15 +299,17 @@ export function buildSchoolWebsiteDataFromIntake(
   const affiliationNumber = (prof.affiliationNumber || '').trim();
   const udiseCode = (prof.udiseCode || '').trim();
   const schoolCode = (prof.schoolCode || '').trim();
-  const establishedYear = prof.establishedYear || undefined;
+  const establishedYear = prof.yearOfEstablishment || prof.establishedYear || undefined;
   const tagline = (prof.tagline || branding.taglineOrMotto || '').trim();
   const slug = (prof.slug || '').trim();
 
   // About Content
   const aboutText =
-    typeof content.aboutSchool === 'object'
+    content.aboutDescription ||
+    content.aboutUs ||
+    (typeof content.aboutSchool === 'object'
       ? content.aboutSchool?.text || ''
-      : content.aboutSchool || '';
+      : content.aboutSchool || '');
   const visionText =
     typeof content.vision === 'object'
       ? content.vision?.text || ''
@@ -324,7 +326,7 @@ export function buildSchoolWebsiteDataFromIntake(
   const primaryColor = branding.primaryColor || '#4338CA';
   const secondaryColor = branding.secondaryColor || '#312E81';
   const fontFamily = branding.fontFamily || 'Inter, system-ui, sans-serif';
-  const themeVariant = branding.brandTone || 'modern';
+  const themeVariant = branding.themeVariant || branding.brandTone || 'modern';
 
   // Campuses
   const normalizedCampuses = campuses.map((c, idx) => {
@@ -363,6 +365,8 @@ export function buildSchoolWebsiteDataFromIntake(
   const classesOffered: string[] =
     uniqueCanonicalClasses.length > 0
       ? uniqueCanonicalClasses
+      : Array.isArray(structure.gradeLevelsOffered)
+      ? structure.gradeLevelsOffered.map((c: any) => (typeof c === 'string' ? c : c.name || c.className)).filter(Boolean)
       : Array.isArray(structure.classes)
       ? structure.classes.map((c: any) => (typeof c === 'string' ? c : c.name || c.className)).filter(Boolean)
       : [];
@@ -372,15 +376,20 @@ export function buildSchoolWebsiteDataFromIntake(
 
   // Facilities
   const facilityItems: SchoolWebsiteData['facilities'] = [];
-  if (Array.isArray(facilities.items)) {
-    facilities.items.forEach((f: any) => {
+  const rawFacList = Array.isArray(facilities.facilitiesList)
+    ? facilities.facilitiesList
+    : Array.isArray(facilities.items)
+    ? facilities.items
+    : [];
+  if (rawFacList.length > 0) {
+    rawFacList.forEach((f: any) => {
       facilityItems.push({
         key: f.key || f.id || f.name,
         name: f.name || 'Campus Facility',
         category: f.category || 'General',
         isApplicable: f.isApplicable !== false,
         isAvailable: f.isAvailable !== false,
-        capacityOrCount: f.count || f.capacity,
+        capacityOrCount: f.count || f.capacity || f.capacityOrCount,
         description: f.description || '',
         features: Array.isArray(f.features) ? f.features : [],
         imageUrl: f.imageUrl || '',
@@ -390,6 +399,8 @@ export function buildSchoolWebsiteDataFromIntake(
 
   // Transport (Strict Conditional Availability)
   const isTransportOperated =
+    transport.isOperated === true ||
+    transport.hasTransport === true ||
     transport.status === 'yes' ||
     transport.enabled === true ||
     (Boolean(transport.fleet?.length) && transport.status !== 'no');
@@ -445,10 +456,22 @@ export function buildSchoolWebsiteDataFromIntake(
 
   // Contact
   const contact: SchoolWebsiteData['contact'] = {
-    primaryEmail: prof.officialEmail || prof.contactEmail || prof.email || '',
-    primaryPhone: prof.officialPhone || prof.contactPhone || prof.phone || '',
-    secondaryPhone: prof.secondaryPhone || '',
-    address: primaryCampus.address || prof.address || '',
+    primaryEmail:
+      prof.primaryEmail ||
+      prof.officialEmail ||
+      prof.contactEmail ||
+      prof.email ||
+      primaryCampus.contactEmail ||
+      '',
+    primaryPhone:
+      prof.primaryPhone ||
+      prof.officialPhone ||
+      prof.contactPhone ||
+      prof.phone ||
+      primaryCampus.contactPhone ||
+      '',
+    secondaryPhone: prof.secondaryPhone || prof.alternatePhone || '',
+    address: (primaryCampus as any).addressLine1 || primaryCampus.address || prof.address || '',
     city: primaryCampus.city || prof.city || '',
     state: primaryCampus.state || prof.state || '',
     googleMapsUrl: primaryCampus.googleMapsUrl || primaryCampus.googleMapsLink || '',
@@ -489,8 +512,13 @@ export function buildSchoolWebsiteDataFromIntake(
 
   // Resolve authoritative website fee items from feesConfiguration or legacy feeStructure
   let websiteFeeItems: Array<{ category: string; frequency: string; amountINR: number; classes?: string }> = [];
-  if (Array.isArray(fees.items) && fees.items.length > 0) {
-    websiteFeeItems = fees.items.map((item: any) => ({
+  const rawFeeList = Array.isArray(fees.feeCategories)
+    ? fees.feeCategories
+    : Array.isArray(fees.items)
+    ? fees.items
+    : [];
+  if (rawFeeList.length > 0) {
+    websiteFeeItems = rawFeeList.map((item: any) => ({
       category: item.category || item.name || 'Tuition Fee',
       frequency: item.frequency || 'Annual',
       amountINR: Number(item.amountINR || item.amount || 0),
@@ -548,7 +576,7 @@ export function buildSchoolWebsiteDataFromIntake(
     primaryColor,
     secondaryColor,
     fontFamily,
-    navigationStyle: 'sticky',
+    navigationStyle: branding.navigationStyle || 'sticky',
     showAdmissions: Boolean(admissions.isEnrolling !== false),
     showFees: Boolean(fees.hasFeeStructure || websiteFeeItems.length > 0),
     showTransport: isTransportOperated && (scope.optionalModules ? scope.optionalModules.includes('transport') : true),
@@ -579,6 +607,7 @@ export function buildSchoolWebsiteDataFromIntake(
     },
     branding: {
       logoUrl,
+      faviconUrl: branding.favicon || branding.faviconUrl || logoUrl || '',
       primaryColor,
       secondaryColor,
       fontFamily,
@@ -586,12 +615,27 @@ export function buildSchoolWebsiteDataFromIntake(
       tagline,
     },
     hero: {
-      headline: displayName || schoolName || 'Welcome to Our School',
-      subheadline: tagline || (aboutText ? `${aboutText.slice(0, 160)}...` : ''),
+      headline:
+        (intakeData.websiteRequirements as any)?.heroHeadline ||
+        (intakeData.websiteRequirements as any)?.headline ||
+        (intakeData.schoolContent as any)?.headline ||
+        displayName ||
+        schoolName ||
+        'Welcome to Our School',
+      subheadline:
+        (intakeData.websiteRequirements as any)?.heroSubheadline ||
+        (intakeData.websiteRequirements as any)?.subheadline ||
+        tagline ||
+        (aboutText ? `${aboutText.slice(0, 160)}...` : ''),
       imageUrl: heroImageUrl,
-      primaryCtaText: 'Apply for Admission',
+      primaryCtaText:
+        (intakeData.websiteRequirements as any)?.callToActionPrimary ||
+        (intakeData.websiteRequirements as any)?.primaryCtaText ||
+        'Apply for Admission',
       primaryCtaLink: '#admissions',
-      secondaryCtaText: 'Explore Campus',
+      secondaryCtaText:
+        (intakeData.websiteRequirements as any)?.callToActionSecondary ||
+        'Explore Campus',
       secondaryCtaLink: '#facilities',
     },
     about: {
@@ -606,7 +650,11 @@ export function buildSchoolWebsiteDataFromIntake(
       principalName,
       principalDesignation: 'Principal / Head of Institution',
       principalPhotoUrl,
-      principalMessage: intakeData.websiteRequirements?.principalMessageDraft || '',
+      principalMessage:
+        intakeData.leadership?.principalMessage ||
+        (intakeData.leadership as any)?.deskMessage ||
+        intakeData.websiteRequirements?.principalMessageDraft ||
+        '',
       managementMembers: Array.isArray(intakeData.leadership?.managementMembers)
         ? intakeData.leadership.managementMembers.map((m: any) => ({
             name: m.name || '',

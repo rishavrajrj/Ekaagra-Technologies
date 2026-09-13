@@ -24,6 +24,7 @@ import type {
 import { aggregateUniversalAssets, type UniversalVerificationAsset } from './universalVerificationEngine';
 import { validateCampusAcademicPayload } from './campusAcademicScopeService';
 import { buildSchoolWebsiteDataFromIntake, type SchoolWebsiteData } from './schoolWebsiteContract';
+import { resolveCanonicalDocuments } from './canonicalDocuments';
 
 export type SchoolSubmissionStatus = 'draft' | 'submitted' | 'complete' | 'incomplete';
 export type SchoolContentReviewStatus = 'not_started' | 'in_review' | 'changes_requested' | 'ready_for_approval' | 'approved';
@@ -296,6 +297,170 @@ export const CANONICAL_REVIEWABLE_FIELDS: ReviewableFieldDef[] = [
     required: false,
     getter: (p) => p.schoolContent?.mission || p.schoolContent?.vision,
   },
+
+  // 8. Leadership & Governance
+  {
+    key: 'leadership.principalName',
+    sectionKey: 'leadership',
+    label: 'Head of Institution / Principal Name',
+    required: true,
+    getter: (p) => p.leadership?.principalName,
+  },
+  {
+    key: 'leadership.principalDesignation',
+    sectionKey: 'leadership',
+    label: 'Principal Designation',
+    required: false,
+    getter: (p) => p.leadership?.principalDesignation,
+  },
+  {
+    key: 'leadership.managementMembers',
+    sectionKey: 'leadership',
+    label: 'School Management Committee / Trust',
+    required: false,
+    getter: (p) => (p.leadership?.managementMembers?.length ? `${p.leadership.managementMembers.length} Members` : null),
+  },
+
+  // 9. Branding & Visual Identity
+  {
+    key: 'brandingDesign.primaryColor',
+    sectionKey: 'brandingDesign',
+    label: 'Primary Brand Color',
+    required: false,
+    getter: (p) => p.brandingDesign?.primaryColor,
+  },
+  {
+    key: 'brandingDesign.secondaryColor',
+    sectionKey: 'brandingDesign',
+    label: 'Secondary Brand Color',
+    required: false,
+    getter: (p) => p.brandingDesign?.secondaryColor,
+  },
+  {
+    key: 'brandingDesign.visualTone',
+    sectionKey: 'brandingDesign',
+    label: 'Preferred Visual Tone',
+    required: false,
+    getter: (p) => (p.brandingDesign as any)?.brandTone || (p.brandingDesign as any)?.preferredVisualTone || (p.brandingDesign as any)?.visualTone,
+  },
+
+  // 10. Staff & Faculty Configuration
+  {
+    key: 'staffFaculty.totalTeachingStaff',
+    sectionKey: 'staffFaculty',
+    label: 'Total Teaching Staff Count',
+    required: false,
+    getter: (p) => (p.staffFaculty as any)?.teachingStaffCount || (p.staffFaculty as any)?.totalTeachingStaff || (p.staffFaculty as any)?.estimatedTotalStaff,
+  },
+  {
+    key: 'staffFaculty.studentTeacherRatio',
+    sectionKey: 'staffFaculty',
+    label: 'Faculty Departments',
+    required: false,
+    getter: (p) => ((p.staffFaculty as any)?.studentTeacherRatio || ((p.institutionStructure as any)?.studentTeacherRatio) || ((p.staffFaculty as any)?.departments?.length ? `${(p.staffFaculty as any).departments.length} Departments` : null)),
+  },
+
+  // 11. Curriculum & Pedagogy
+  {
+    key: 'curriculum.academicBoard',
+    sectionKey: 'curriculum',
+    label: 'Academic Affiliation Board',
+    required: false,
+    getter: (p) => (p.curriculum as any)?.overview?.board || (p.curriculum as any)?.board || p.schoolProfile?.board,
+  },
+  {
+    key: 'curriculum.pedagogy',
+    sectionKey: 'curriculum',
+    label: 'Curriculum & Pedagogical Framework',
+    required: false,
+    getter: (p) => (p.curriculum as any)?.overview?.academicApproach || (p.curriculum as any)?.pedagogicalApproach || (p.curriculum as any)?.overview?.teachingMethodology,
+  },
+
+  // 12. Transport Management
+  {
+    key: 'transportConfig.transportAvailable',
+    sectionKey: 'transportConfig',
+    label: 'School Transport Service',
+    required: false,
+    getter: (p) => (p.transportConfig ? ((p.transportConfig as any).transportAvailable || (p.transportConfig as any).enabled || (p.transportConfig as any).isOperated ? 'Available' : 'Not Offered') : null),
+  },
+  {
+    key: 'transportConfig.fleetSize',
+    sectionKey: 'transportConfig',
+    label: 'Transport Fleet Size',
+    required: false,
+    getter: (p) => (p.transportConfig as any)?.fleetSize || (p.transportConfig as any)?.vehiclesCount || (p.transportConfig as any)?.busesCount || ((p.transportConfig as any)?.vehicles?.length ? `${(p.transportConfig as any).vehicles.length} Vehicles` : null),
+  },
+
+  // 13. Hostel & Residential
+  {
+    key: 'hostelConfig.hostelAvailable',
+    sectionKey: 'hostelConfig',
+    label: 'Hostel / Boarding Accommodation',
+    required: false,
+    getter: (p) => (p.hostelConfig ? ((p.hostelConfig as any).hostelAvailable ? 'Available' : (p.hostelConfig as any).isAvailable ? 'Available' : 'Day School Only') : null),
+  },
+  {
+    key: 'hostelConfig.capacity',
+    sectionKey: 'hostelConfig',
+    label: 'Boarding Capacity',
+    required: false,
+    getter: (p) => (p.hostelConfig as any)?.capacity || (p.hostelConfig as any)?.totalCapacity || (p.hostelConfig as any)?.capacityBoys,
+  },
+
+  // 14. Library Configuration
+  {
+    key: 'libraryConfig.totalBooks',
+    sectionKey: 'libraryConfig',
+    label: 'Library Catalog / Total Books',
+    required: false,
+    getter: (p) => (p.libraryConfig as any)?.totalBooks || (p.libraryConfig as any)?.bookCountEstimate || (p.libraryConfig as any)?.physical?.totalBooks,
+  },
+
+  // 15. Communication Preferences
+  {
+    key: 'communicationConfig.primaryMode',
+    sectionKey: 'communicationConfig',
+    label: 'Primary Communication Mode',
+    required: false,
+    getter: (p) => ((p.communicationConfig as any)?.primaryMode || ((p.communicationConfig as any)?.enabledChannels?.length ? (p.communicationConfig as any).enabledChannels.join(', ') : (p.communicationConfig as any)?.channelsRequired?.join(', '))),
+  },
+
+  // 16. Domain & Presence
+  {
+    key: 'domainPresence.primaryDomain',
+    sectionKey: 'domainPresence',
+    label: 'Registered Institutional Domain',
+    required: false,
+    getter: (p) => (p.domainPresence as any)?.primaryDomain || (p.domainPresence as any)?.existingDomainName || (p.domainPresence as any)?.preferredNewDomainName || (p.domainPresence as any)?.preferredDomain,
+  },
+
+  // 17. Legal Policies & Statutory Disclosures
+  {
+    key: 'legalPolicies.compliance',
+    sectionKey: 'legalPolicies',
+    label: 'Statutory Policies & Mandatory Disclosures',
+    required: false,
+    getter: (p) => ((p.legalPolicies as any)?.affiliationCompliance ? 'Provided' : (p.legalPolicies as any)?.policies ? `${Object.keys((p.legalPolicies as any).policies).length} Policies` : (p.legalPolicies as any)?.mandatoryDisclosuresProvided ? 'Provided' : null),
+  },
+
+  // 18. Project Delivery & Launch
+  {
+    key: 'projectDelivery.targetLaunchDate',
+    sectionKey: 'projectDelivery',
+    label: 'Target Website Launch Date',
+    required: false,
+    getter: (p) => p.projectDelivery?.targetLaunchDate,
+  },
+
+  // 19. Administrative Provisioning
+  {
+    key: 'usersAccess.adminEmail',
+    sectionKey: 'usersAccess',
+    label: 'School Webmaster / Admin Email',
+    required: false,
+    getter: (p) => (p.usersAccess as any)?.adminEmail || p.usersAccess?.superAdminEmail,
+  },
 ];
 
 /**
@@ -357,6 +522,18 @@ export function evaluateSchoolReviewState(
     fees: { sectionKey: 'fees', sectionLabel: 'Fee Structure', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
     facilities: { sectionKey: 'facilities', sectionLabel: 'Facilities & Amenities', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
     websiteContent: { sectionKey: 'websiteContent', sectionLabel: 'Website Content', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    leadership: { sectionKey: 'leadership', sectionLabel: 'Leadership & Governance', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    brandingDesign: { sectionKey: 'brandingDesign', sectionLabel: 'Branding & Visual Identity', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    staffFaculty: { sectionKey: 'staffFaculty', sectionLabel: 'Staff & Faculty', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    curriculum: { sectionKey: 'curriculum', sectionLabel: 'Curriculum & Pedagogy', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    transportConfig: { sectionKey: 'transportConfig', sectionLabel: 'Transport Management', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    hostelConfig: { sectionKey: 'hostelConfig', sectionLabel: 'Hostel & Residential', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    libraryConfig: { sectionKey: 'libraryConfig', sectionLabel: 'Library Management', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    communicationConfig: { sectionKey: 'communicationConfig', sectionLabel: 'Communication Preferences', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    domainPresence: { sectionKey: 'domainPresence', sectionLabel: 'Domain & Presence', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    legalPolicies: { sectionKey: 'legalPolicies', sectionLabel: 'Legal & Statutory Policies', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    projectDelivery: { sectionKey: 'projectDelivery', sectionLabel: 'Project Delivery & Launch', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
+    usersAccess: { sectionKey: 'usersAccess', sectionLabel: 'Administrative Access', totalFields: 0, verifiedCount: 0, needsReviewCount: 0, changesRequestedCount: 0, status: 'not_started' },
   };
 
   let totalFieldCount = 0;
@@ -494,6 +671,35 @@ export function evaluateSchoolReviewState(
       effMediaStatus = 'approved';
     }
 
+    // INVARIANT GUARD 1: Missing asset (status 'missing' or no URL) cannot be approved
+    const isAssetMissing = asset.status === 'missing' || !asset.url;
+    if (isAssetMissing && effMediaStatus === 'approved') {
+      effMediaStatus = 'pending_review';
+    }
+
+    // INVARIANT GUARD 2: Expired asset cannot be approved and constitutes a critical publication blocker
+    const isExpired = (asset as any).status === 'expired' || Boolean((asset as any).isExpired);
+    if (isExpired) {
+      if (effMediaStatus === 'approved') {
+        effMediaStatus = 'changes_requested';
+      }
+      blockers.push({
+        id: `blocker-media-expired-${asset.id}`,
+        title: `Expired Document / Certificate: ${asset.title}`,
+        reason: 'Statutory validity period has lapsed. A current renewal or extension order is required.',
+        sectionKey: 'media',
+        assetId: asset.id,
+        targetTab: 'media',
+        severity: 'CRITICAL',
+      });
+      actionRequiredItems.push({
+        id: `act-media-expired-${asset.id}`,
+        title: `Renew Expired Document: ${asset.title}`,
+        description: 'Document validity period has expired and requires renewal before launch.',
+        targetTab: 'media',
+      });
+    }
+
     if (asset.status === 'missing' && asset.required) {
       missingRequiredAssetCount++;
       blockers.push({
@@ -531,7 +737,9 @@ export function evaluateSchoolReviewState(
         targetTab: 'media',
       });
     } else {
-      pendingAssetCount++;
+      if (asset.url && asset.status !== 'missing') {
+        pendingAssetCount++;
+      }
       if (asset.required || asset.isPublicationBlocker) {
         blockers.push({
           id: `blocker-media-review-${asset.id}`,
@@ -546,16 +754,51 @@ export function evaluateSchoolReviewState(
     }
   });
 
-  // Calculate Media Review Status
+  // Calculate Media Review Status (Only reviewable / submitted or required assets count)
+  const reviewableAssets = aggregatedAssets.filter((a) => (a.status !== 'missing' && Boolean(a.url)) || a.required || a.isPublicationBlocker);
   let mediaReviewStatus: SchoolMediaReviewStatus = 'not_started';
   if (changesRequestedAssetCount > 0) {
     mediaReviewStatus = 'changes_requested';
-  } else if (aggregatedAssets.length > 0 && approvedAssetCount === aggregatedAssets.length && missingRequiredAssetCount === 0) {
+  } else if (reviewableAssets.length > 0 && approvedAssetCount === reviewableAssets.length && missingRequiredAssetCount === 0) {
+    mediaReviewStatus = 'approved';
+  } else if (reviewableAssets.length === 0 && missingRequiredAssetCount === 0) {
     mediaReviewStatus = 'approved';
   } else if (approvedAssetCount > 0 || pendingAssetCount > 0) {
     mediaReviewStatus = 'in_review';
   } else if (aggregatedAssets.length > 0) {
     mediaReviewStatus = 'not_started';
+  }
+
+  // 4b. Canonical Statutory Documents Compliance Check
+  if (submission) {
+    const canonicalDocs = resolveCanonicalDocuments(payload);
+    canonicalDocs.forEach((doc) => {
+      if (doc.required && doc.status === 'MISSING') {
+        blockers.push({
+          id: `blocker-doc-missing-${doc.checklistId}`,
+          title: `Mandatory Statutory Document Missing: ${doc.title}`,
+          reason: `Statutory compliance certificate (${doc.documentName}) is required by board affiliation standards.`,
+          sectionKey: 'legalPolicies',
+          targetTab: 'media',
+          severity: 'CRITICAL',
+        });
+        actionRequiredItems.push({
+          id: `act-doc-missing-${doc.checklistId}`,
+          title: `Upload ${doc.title}`,
+          description: `Mandatory statutory document (${doc.documentName}) must be uploaded prior to website launch.`,
+          targetTab: 'media',
+        });
+      } else if (doc.expiryStatus === 'expired') {
+        blockers.push({
+          id: `blocker-doc-expired-${doc.checklistId}`,
+          title: `Expired Statutory Document: ${doc.title}`,
+          reason: `The validity period for ${doc.documentName} has expired. A valid renewal or extension order is required.`,
+          sectionKey: 'legalPolicies',
+          targetTab: 'media',
+          severity: 'CRITICAL',
+        });
+      }
+    });
   }
 
   // 5. Academic Scope Validation (Zero Out-of-Scope Classes)
@@ -637,7 +880,10 @@ export function evaluateSchoolReviewState(
   let provisioningStatus: SchoolProvisioningStatus = 'LOCKED';
   if (project.status === 'handed_off') {
     provisioningStatus = 'HANDED_OFF';
-  } else if (websiteReadiness === 'READY' && (project.status === 'approved' || Boolean(finalApproval))) {
+  } else if (
+    websiteReadiness === 'READY' &&
+    (project.status === 'approved' || project.status === 'handoff_ready')
+  ) {
     provisioningStatus = 'READY';
   } else {
     provisioningStatus = 'LOCKED';
@@ -717,8 +963,8 @@ export function evaluateSchoolReviewState(
     {
       id: 'chk-final-approval',
       label: 'Final Administrator Approval',
-      status: project.status === 'approved' || Boolean(finalApproval) ? 'passed' : 'warning',
-      note: project.status === 'approved' ? 'Approved & Locked' : 'Pending final sign-off',
+      status: project.status === 'approved' || project.status === 'handoff_ready' ? 'passed' : 'warning',
+      note: project.status === 'approved' || project.status === 'handoff_ready' ? 'Approved & Locked' : 'Pending final sign-off',
       targetTab: 'provisioning',
     },
     {

@@ -146,6 +146,18 @@ function createMockSubmission(payloadOverrides?: Partial<UniversalIntakeData>, c
       logo: 'https://cdn.example.com/xavier-logo.png',
       heroImageUrl: 'https://cdn.example.com/xavier-hero.jpg',
     },
+    ...(completeness === 100
+      ? {
+          assetChecklist: {
+            items: [
+              { id: 'cert-affiliation', title: 'Affiliation Certificate', type: 'document', fileUrl: 'https://cdn.example.com/cbse-affiliation.pdf', fileName: 'cbse-affiliation.pdf', status: 'uploaded' },
+              { id: 'cert-recognition', title: 'State Recognition NOC', type: 'document', fileUrl: 'https://cdn.example.com/state-noc.pdf', fileName: 'state-noc.pdf', status: 'uploaded' },
+              { id: 'cert-safety', title: 'Fire & Building Safety', type: 'document', fileUrl: 'https://cdn.example.com/safety-noc.pdf', fileName: 'safety-noc.pdf', status: 'uploaded' },
+              { id: 'cert-mandatory-disclosure', title: 'Mandatory Public Disclosure', type: 'document', fileUrl: 'https://cdn.example.com/mandatory-disclosure.pdf', fileName: 'mandatory-disclosure.pdf', status: 'uploaded' },
+            ],
+          },
+        }
+      : {}),
     ...payloadOverrides,
   };
 
@@ -289,6 +301,26 @@ test('evaluateSchoolReviewState: Provisioning is LOCKED until final approval is 
   const resNotApproved = evaluateSchoolReviewState(projectNotApproved, sub, []);
   assert.strictEqual(resNotApproved.websiteReadiness, 'READY');
   assert.strictEqual(resNotApproved.provisioningStatus, 'LOCKED');
+
+  // 1b. Ready but status is 'submitted' with stale metadata.finalApproval -> Provisioning must still be LOCKED
+  const projectStaleApproval = createMockProject({
+    status: 'submitted',
+    completeness_percentage: 100,
+    metadata: {
+      fieldReviews,
+      mediaReviews,
+      finalApproval: {
+        approvedAt: '2026-01-01T00:00:00.000Z',
+        approvedBy: 'Old Admin',
+        notes: 'Old version sign-off',
+      },
+    },
+  });
+  const resStaleApproval = evaluateSchoolReviewState(projectStaleApproval, sub, []);
+  assert.strictEqual(resStaleApproval.websiteReadiness, 'READY');
+  assert.strictEqual(resStaleApproval.provisioningStatus, 'LOCKED');
+  const chkFinalAppr = resStaleApproval.checklist.find((c) => c.id === 'chk-final-approval');
+  assert.strictEqual(chkFinalAppr?.status, 'warning');
 
   // 2. Final approved -> Provisioning READY
   const projectApproved = createMockProject({

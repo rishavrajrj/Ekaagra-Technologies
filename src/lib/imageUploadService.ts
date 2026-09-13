@@ -12,6 +12,7 @@ import {
   validateFileBufferSignature,
   scanAssetForMalware,
   ASSET_UPLOAD_LIMITS,
+  MAX_DOCUMENT_SIZE,
 } from './schoolAssetChecklist';
 import { getSchoolsServerClient } from './schoolsDb';
 import { getSupabaseServerClient } from './supabase';
@@ -85,14 +86,35 @@ export async function processAndUploadCanonicalAsset(
     throw new Error(`File size (${(buffer.length / (1024 * 1024)).toFixed(1)}MB) exceeds maximum limit of 15MB.`);
   }
 
+  // Strict 2 MB document size and format validation
+  if (itemType === 'document') {
+    if (buffer.length > MAX_DOCUMENT_SIZE) {
+      const err: any = new Error('Document exceeds the maximum allowed size of 2 MB.');
+      err.code = 'DOCUMENT_TOO_LARGE';
+      throw err;
+    }
+  }
+
   const ext = path.extname(file.name).toLowerCase();
   if (ASSET_UPLOAD_LIMITS.disallowedDangerousExtensions.includes(ext)) {
     throw new Error(`File extension "${ext}" is blocked for security reasons.`);
   }
 
+  if (itemType === 'document' && ext !== '.pdf') {
+    const err: any = new Error('Invalid file type. Please upload a PDF.');
+    err.code = 'INVALID_FILE_TYPE';
+    throw err;
+  }
+
   const sigValidation = validateFileBufferSignature(buffer, file.name, file.type || '');
   if (!sigValidation.isValid) {
     throw new Error(sigValidation.error || 'File signature validation failed.');
+  }
+
+  if (itemType === 'document' && sigValidation.detectedType !== 'application/pdf') {
+    const err: any = new Error('Invalid file type. Please upload a PDF.');
+    err.code = 'INVALID_FILE_TYPE';
+    throw err;
   }
 
   const malwareScan = await scanAssetForMalware(buffer, file.name);

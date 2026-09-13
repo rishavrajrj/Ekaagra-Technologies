@@ -59,10 +59,25 @@ import Logo from '@/components/ui/Logo';
 import ModalPortal from '@/components/ui/ModalPortal';
 import SchoolIdentityCard from './SchoolIdentityCard';
 import SchoolAssetChecklistSection from './SchoolAssetChecklistSection';
+import LegalPoliciesSection from './LegalPoliciesSection';
 import CampusImagesSection from './CampusImagesSection';
 import PersonPhotoSection from './PersonPhotoSection';
 import DeskMessageEditor from './DeskMessageEditor';
 import SchoolContentSection from './SchoolContentSection';
+import PageChangeRequestBanner from './PageChangeRequestBanner';
+import GlobalChangeRequestDrawer from './GlobalChangeRequestDrawer';
+import ChangeRequestFieldWrapper from './ChangeRequestFieldWrapper';
+import ChangesOnlyView from './ChangesOnlyView';
+import CorrectionInput, { type FileUploadMetadata } from './CorrectionInput';
+import {
+  lookupCanonicalField,
+  normalizePageKey,
+  getPendingChangeCounts,
+  getPagePendingChangeRequests,
+  isRequestActivePending,
+  isRequestAwaitingAdminReview,
+  resolveChangeRequestType,
+} from '@/lib/canonicalFieldRegistry';
 import { getSection6StatusSummary } from '@/lib/schoolContentGenerator';
 import AcademicStructureSection from './AcademicStructureSection';
 import {
@@ -117,9 +132,11 @@ import {
   verifySchoolTokenAction,
   saveSchoolIntakeDraftAction,
   submitSchoolIntakeAction,
+  approveWebsiteSpecificationAction,
   updateProjectProductAction,
   respondToChangeRequestAction,
 } from '@/app/schoolProjectActions';
+import { evaluateWebsitePublicationReadiness } from '@/lib/websiteDataStatus';
 import { useFieldScope } from '@/hooks/useFieldScope';
 import { type ProductId } from '@/lib/fieldScopeRegistry';
 import type {
@@ -188,7 +205,21 @@ import DesignationDropdownWithOther from './DesignationDropdownWithOther';
 import SchoolDomainSelector from './SchoolDomainSelector';
 import AdmissionsSection from './AdmissionsSection';
 import FeeStructureSection from './FeeStructureSection';
-import CurriculumSection from './CurriculumSection';
+import CurriculumSection, { type CurriculumSubTabKey } from './CurriculumSection';
+import {
+  buildHierarchicalNavigation,
+  flattenNavigableSteps,
+  getNextNavigableStep,
+  getPreviousNavigableStep,
+  resolveStepFromSlugOrUrl,
+  buildStepUrlPath,
+  findStepIndex,
+  getStepChangeRequestCount,
+  SECTION_CHILDREN_REGISTRY,
+  type PortalStepNode,
+  type NavigableStep,
+} from '@/lib/schoolNavigationHierarchy';
+import { calculateCurriculumSubStepCompleteness } from '@/lib/academicCompletenessEngine';
 import Step12ProjectDeliverySection from './Step12ProjectDeliverySection';
 import SecurityPrivacySection from './SecurityPrivacySection';
 import { validateSecurityPrivacyData, normalizeSecurityPrivacyData } from '@/lib/securityPrivacyUtils';
@@ -263,10 +294,10 @@ function getLegalEntityConfig(managementType?: string) {
 }
 
 function normalizeBrandTone(tone?: string): string {
-  if (!tone) return 'Modern & Progressive';
+  if (!tone) return 'Academic & Scholarly';
+  if (tone === 'Academic') return 'Academic & Scholarly';
   if (tone === 'Modern') return 'Modern & Progressive';
   if (tone === 'Traditional') return 'Traditional & Prestigious';
-  if (tone === 'Academic') return 'Academic & Scholarly';
   if (tone === 'Minimal') return 'Minimal & Professional';
   if (tone === 'Child-friendly' || tone === 'Vibrant & Child-friendly') return 'Warm & Community-focused';
   if (
@@ -278,52 +309,15 @@ function normalizeBrandTone(tone?: string): string {
   ) {
     return tone;
   }
-  return tone;
+  return 'Academic & Scholarly';
 }
-
-const COMMUNICATION_STYLES = [
-  {
-    value: 'Traditional & Prestigious',
-    label: 'Traditional & Prestigious',
-    badge: 'Heritage & Dignity',
-    description: 'Heritage-driven, formal dignity, and classical institutional distinction.',
-    icon: Award,
-  },
-  {
-    value: 'Modern & Progressive',
-    label: 'Modern & Progressive',
-    badge: 'Innovation & Tech',
-    description: 'Dynamic, future-oriented, and centered on innovation and 21st-century growth.',
-    icon: Sparkles,
-  },
-  {
-    value: 'Academic & Scholarly',
-    label: 'Academic & Scholarly',
-    badge: 'Rigor & Research',
-    description: 'Intellectual rigor, research-led pedagogy, and foundational scholarship.',
-    icon: BookOpen,
-  },
-  {
-    value: 'Warm & Community-focused',
-    label: 'Warm & Community-focused',
-    badge: 'Inclusive & Nurturing',
-    description: 'Compassionate, family-oriented, inclusive, and dedicated to student care.',
-    icon: Users,
-  },
-  {
-    value: 'Minimal & Professional',
-    label: 'Minimal & Professional',
-    badge: 'Clean & Structured',
-    description: 'Clean, structured, and modern clarity with executive institutional tone.',
-    icon: Building2,
-  },
-] as const;
 
 interface Props {
   token: string;
+  initialStep?: string[] | string;
 }
 
-export default function SchoolOnboardingPortal({ token }: Props) {
+export default function SchoolOnboardingPortal({ token, initialStep }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -331,11 +325,13 @@ export default function SchoolOnboardingPortal({ token }: Props) {
   const [changeRequests, setChangeRequests] = useState<SchoolIntakeChangeRequest[]>([]);
   const [customFields, setCustomFields] = useState<SchoolProjectCustomField[]>([]);
   const [customRequirements, setCustomRequirements] = useState<SchoolProjectCustomRequirement[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Form State
   const [intakeData, setIntakeData] = useState<UniversalIntakeData | null>(null);
   const [customData, setCustomData] = useState<Record<string, unknown>>({});
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [activeSubTab, setActiveSubTab] = useState<string | undefined>(undefined);
 
   // Autosave & UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -347,6 +343,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
   const [activeChapterFilter, setActiveChapterFilter] = useState<IntakeChapterKey | 'all'>('all');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showDomainSetupModal, setShowDomainSetupModal] = useState(false);
+  const [showReadOnlySnapshotModal, setShowReadOnlySnapshotModal] = useState(false);
   const [previewingStyle, setPreviewingStyle] = useState<StyleConfig | null>(null);
   const [designationCustomCache, setDesignationCustomCache] = useState<Record<string, string>>({});
   const [isMoreStatsExpanded, setIsMoreStatsExpanded] = useState(false);
@@ -357,24 +354,118 @@ export default function SchoolOnboardingPortal({ token }: Props) {
   const [securitySectionErrors, setSecuritySectionErrors] = useState<Record<string, string>>({});
   const [selectedProductId, setSelectedProductId] = useState<ProductId>('school-complete');
   const [activeCampusId, setActiveCampusId] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'all' | 'changes_only'>('all');
 
   // Operational Change Request remediation states
+  const [isCRDrawerOpen, setIsCRDrawerOpen] = useState(false);
   const [respondingCR, setRespondingCR] = useState<SchoolIntakeChangeRequest | null>(null);
   const [crResponseText, setCrResponseText] = useState('');
   const [crUpdatedValue, setCrUpdatedValue] = useState('');
+  const [crUploadedFile, setCrUploadedFile] = useState<FileUploadMetadata | null>(null);
+  const [isCRValid, setIsCRValid] = useState(false);
   const [isSubmittingCR, setIsSubmittingCR] = useState(false);
   const [crSubmitError, setCrSubmitError] = useState<string | null>(null);
 
+  const handleOpenCRModal = useCallback((cr?: SchoolIntakeChangeRequest | null) => {
+    if (!cr) return;
+    setRespondingCR(cr);
+    setCrResponseText(cr.school_response || '');
+    setCrUpdatedValue(cr.school_updated_value || cr.current_value || '');
+    if (cr.file_url) {
+      setCrUploadedFile({
+        url: cr.file_url,
+        fileName: cr.file_name || 'uploaded_document.pdf',
+        fileSize: cr.file_size || 0,
+        storageKey: cr.file_storage_key || undefined,
+      });
+      setIsCRValid(true);
+    } else {
+      // Check if intakeData already has an uploaded official document for this policy or asset
+      const fieldOrAsset = (cr.asset_id || cr.field_key || '').toLowerCase();
+      let existingFileUrl: string | undefined;
+      let existingFileName: string | undefined;
+      let existingFileSize: number | undefined;
+      let existingStorageKey: string | undefined;
+
+      const policyKeys: Record<string, string> = {
+        'pol-privacy': 'privacy-policy',
+        'privacy-policy': 'privacy-policy',
+        'privacy': 'privacy-policy',
+        'pol-terms': 'terms-and-conditions',
+        'terms-and-conditions': 'terms-and-conditions',
+        'terms': 'terms-and-conditions',
+        'pol-refund': 'fee-refund',
+        'fee-refund': 'fee-refund',
+        'refund': 'fee-refund',
+        'pol-child-safety': 'child-safety',
+        'child-safety': 'child-safety',
+      };
+      const matchedPolicyKey = Object.entries(policyKeys).find(([k]) => fieldOrAsset.includes(k))?.[1];
+      if (matchedPolicyKey && intakeData?.legalPolicies?.policies?.[matchedPolicyKey as any]) {
+        const pol = intakeData.legalPolicies.policies[matchedPolicyKey as any];
+        if (pol.officialDocumentUrl) {
+          existingFileUrl = pol.officialDocumentUrl;
+          existingFileName = pol.officialDocumentName || `${matchedPolicyKey}.pdf`;
+          existingFileSize = pol.officialDocumentSize || 0;
+          existingStorageKey = pol.officialDocumentStorageKey;
+        }
+      }
+
+      if (!existingFileUrl && intakeData?.assetChecklist?.items) {
+        const item = intakeData.assetChecklist.items.find(
+          (ci) => ci.id.toLowerCase() === fieldOrAsset || (ci as any).key?.toLowerCase() === fieldOrAsset
+        );
+        if (item?.fileUrl) {
+          existingFileUrl = item.fileUrl;
+          existingFileName = item.fileName || `${item.id}.pdf`;
+          existingFileSize = item.fileSize || 0;
+          existingStorageKey = item.storageKey;
+        }
+      }
+
+      if (existingFileUrl) {
+        setCrUploadedFile({
+          url: existingFileUrl,
+          fileName: existingFileName || 'official_document.pdf',
+          fileSize: existingFileSize || 0,
+          storageKey: existingStorageKey,
+        });
+        setCrUpdatedValue(existingFileUrl);
+        if (!cr.school_response) {
+          setCrResponseText('Uploaded requested official document for reviewer verification.');
+        }
+        setIsCRValid(true);
+      } else {
+        setCrUploadedFile(null);
+        const reqType = resolveChangeRequestType(cr);
+        if (reqType === 'PDF' || reqType === 'DOCUMENT' || reqType === 'IMAGE') {
+          setIsCRValid(false);
+        } else {
+          setIsCRValid(!!(cr.school_updated_value || cr.current_value));
+        }
+      }
+    }
+    setCrSubmitError(null);
+  }, [intakeData]);
+
   const handleSubmitCRResponse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!respondingCR || !crResponseText.trim()) return;
+    if (!respondingCR || !crResponseText.trim() || !isCRValid) return;
     setIsSubmittingCR(true);
     setCrSubmitError(null);
+
+    const resolvedType = resolveChangeRequestType(respondingCR);
+    const finalUpdatedValue =
+      resolvedType === 'PDF' || resolvedType === 'DOCUMENT' || resolvedType === 'IMAGE'
+        ? crUploadedFile?.url || crUpdatedValue.trim() || undefined
+        : crUpdatedValue.trim() || undefined;
+
     const res = await respondToChangeRequestAction({
       token,
       requestId: respondingCR.id,
       schoolResponse: crResponseText.trim(),
-      updatedValue: crUpdatedValue.trim() || undefined,
+      updatedValue: finalUpdatedValue,
+      fileMetadata: crUploadedFile || undefined,
     });
     if (res.success) {
       setChangeRequests((prev) =>
@@ -384,14 +475,73 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 ...r,
                 status: 'ready_for_review',
                 school_response: crResponseText.trim(),
-                school_updated_value: crUpdatedValue.trim() || r.current_value,
+                school_updated_value: finalUpdatedValue || r.current_value,
+                file_url: crUploadedFile?.url || r.file_url,
+                file_name: crUploadedFile?.fileName || r.file_name,
+                file_size: crUploadedFile?.fileSize || r.file_size,
+                file_storage_key: crUploadedFile?.storageKey || r.file_storage_key,
               }
             : r
         )
       );
+
+      // Directly sync client-side intakeData for policies if applicable
+      const fieldOrAsset = respondingCR.asset_id || respondingCR.field_key || '';
+      if (
+        crUploadedFile &&
+        (fieldOrAsset.includes('policy') ||
+          fieldOrAsset.startsWith('pol-') ||
+          respondingCR.section_key === 'legalPolicies' ||
+          respondingCR.page_key === 'legalPolicies')
+      ) {
+        const policyKey = fieldOrAsset
+          .replace('legalPolicies.', '')
+          .replace('legal-', '')
+          .replace('pol-', '');
+
+        const canonicalKey =
+          policyKey === 'privacy' || policyKey === 'privacy-policy'
+            ? 'privacy-policy'
+            : policyKey === 'terms' || policyKey === 'terms-and-conditions'
+            ? 'terms-and-conditions'
+            : policyKey === 'refund' || policyKey === 'fee-refund'
+            ? 'fee-refund'
+            : policyKey === 'child-safety'
+            ? 'child-safety'
+            : null;
+
+        if (canonicalKey) {
+          setIntakeData((prev) => {
+            if (!prev) return prev;
+            const existingPolicies = (prev.legalPolicies?.policies || {}) as Record<string, any>;
+            const existing = existingPolicies[canonicalKey] || {};
+            const updatedPolicy = {
+              ...existing,
+              officialDocumentUrl: crUploadedFile.url,
+              officialDocumentName: crUploadedFile.fileName,
+              officialDocumentSize: crUploadedFile.fileSize,
+              officialDocumentStorageKey: crUploadedFile.storageKey,
+              officialDocumentUploadedAt: new Date().toISOString(),
+              status: 'document_uploaded',
+            };
+            return {
+              ...prev,
+              legalPolicies: {
+                ...prev.legalPolicies,
+                policies: {
+                  ...existingPolicies,
+                  [canonicalKey]: updatedPolicy,
+                },
+              },
+            };
+          });
+        }
+      }
+
       setRespondingCR(null);
       setCrResponseText('');
       setCrUpdatedValue('');
+      setCrUploadedFile(null);
     } else {
       setCrSubmitError(res.error || 'Failed to submit correction.');
     }
@@ -402,138 +552,238 @@ export default function SchoolOnboardingPortal({ token }: Props) {
     (sectionKey: string, fieldKey?: string, assetId?: string): SchoolIntakeChangeRequest | undefined => {
       if (!changeRequests || changeRequests.length === 0) return undefined;
       const activeList = changeRequests.filter(
-        (cr) => cr.status === 'open' || cr.status === 'waiting_for_school' || cr.status === 'ready_for_review'
+        (cr) =>
+          isRequestActivePending(cr) ||
+          isRequestAwaitingAdminReview(cr) ||
+          cr.status === 'open' ||
+          cr.status === 'waiting_for_school' ||
+          cr.status === 'ready_for_review' ||
+          cr.status === 'school_updated'
       );
 
-      return activeList.find((cr) => {
-        if (assetId && (cr.asset_id === assetId || cr.field_key === assetId)) {
-          return true;
-        }
-        if (fieldKey) {
-          const crKey = (cr.field_key || '').toLowerCase();
-          const targetKey = fieldKey.toLowerCase();
-          const targetLeaf = targetKey.split('.').pop() || targetKey;
-          const crLeaf = crKey.split('.').pop() || crKey;
+      if (assetId) {
+        const found = activeList.find((cr) => cr.asset_id === assetId || cr.field_key === assetId);
+        if (found) return found;
+      }
 
-          if (crKey === targetKey || crLeaf === targetLeaf) return true;
-          if (crKey === `${sectionKey.toLowerCase()}.${targetLeaf}`) return true;
-          if (targetKey === `${(cr.section_key || '').toLowerCase()}.${crLeaf}`) return true;
+      if (fieldKey) {
+        const canonical = lookupCanonicalField(fieldKey, sectionKey);
+        const found = activeList.find((cr) => {
+          const crCanonical = lookupCanonicalField(cr.field_key || cr.asset_id || '', cr.page_key || cr.section_key);
+          if (crCanonical.canonicalKey === canonical.canonicalKey) return true;
+          if (cr.field_key === fieldKey || cr.field_key === canonical.fieldKey) return true;
+          const crLeaf = (cr.field_key || '').split('.').pop()?.toLowerCase();
+          const targetLeaf = fieldKey.split('.').pop()?.toLowerCase();
+          if (crLeaf && targetLeaf && crLeaf === targetLeaf) return true;
+          return false;
+        });
+        if (found) return found;
+      }
 
-          // Normalized aliases
-          const aliasPairs = [
-            ['yearofestablishment', 'establishedyear'],
-            ['officialphone', 'phone'],
-            ['officialphone', 'contactphone'],
-            ['officialemail', 'email'],
-            ['legalinstitutionname', 'legalname'],
-            ['schoolname', 'name'],
-            ['maincampusaddress', 'address'],
-            ['maincampusphone', 'contactphone'],
-            ['principalname', 'principal_name'],
-            ['logourl', 'logo_primary'],
-          ];
-
-          for (const [a, b] of aliasPairs) {
-            if ((targetLeaf === a && crLeaf === b) || (targetLeaf === b && crLeaf === a)) {
-              return true;
-            }
-          }
-        }
-        return false;
-      });
+      return undefined;
     },
     [changeRequests]
   );
 
+  const mapReviewSectionToIntakeSection = useCallback((sectionKey?: string | null, fieldKey?: string | null): string => {
+    if (!sectionKey) return 'schoolProfile';
+    if (sectionKey === 'academicScope') return 'institutionStructure';
+    if (sectionKey === 'websiteContent') {
+      if (fieldKey?.toLowerCase().includes('principal')) return 'leadership';
+      return 'schoolContent';
+    }
+    if (sectionKey === 'media') return 'brandingDesign';
+    if (sectionKey === 'legalPolicies' || sectionKey === 'legal' || sectionKey === 'policies') return 'legalPolicies';
+    return sectionKey;
+  }, []);
+
+  // Check whether project is in submitted / locked state
+  const isProjectSubmitted = useMemo(() => {
+    if (!project) return false;
+    return ['submitted', 'resubmitted', 'under_review', 'approved', 'handoff_ready', 'handed_off'].includes(
+      project.status
+    );
+  }, [project]);
+
+  // Check whether admin has requested changes on the project
+  const isChangesRequested = useMemo(() => {
+    if (!project) return false;
+    if (project.status === 'changes_requested') return true;
+    return Boolean(changeRequests && changeRequests.some((cr) => cr.status === 'open' || cr.status === 'waiting_for_school'));
+  }, [project, changeRequests]);
+
+  const isFieldEditable = useCallback(
+    (sectionKey: string, fieldKey?: string, assetId?: string): boolean => {
+      // If project is submitted and NOT in revision mode, strictly locked
+      if (isProjectSubmitted && !isChangesRequested) {
+        return false;
+      }
+
+      // If in revision mode, ONLY fields with active change requests from admin are editable
+      if (isChangesRequested) {
+        const cr = getFieldCR(sectionKey, fieldKey, assetId);
+        if (cr && (cr.status === 'open' || cr.status === 'waiting_for_school')) {
+          return true;
+        }
+        const fullKey = fieldKey ? `${sectionKey}.${fieldKey}` : sectionKey;
+        const fieldReview =
+          project?.metadata?.fieldReviews?.[fullKey] ||
+          (fieldKey ? project?.metadata?.fieldReviews?.[fieldKey] : undefined);
+        if (fieldReview?.status === 'changes_requested') {
+          return true;
+        }
+        return false;
+      }
+
+      // In initial draft / pre-submission onboarding, all fields are editable unless verified by admin
+      const fullKey = fieldKey ? `${sectionKey}.${fieldKey}` : sectionKey;
+      const fieldReview =
+        project?.metadata?.fieldReviews?.[fullKey] ||
+        (fieldKey ? project?.metadata?.fieldReviews?.[fieldKey] : undefined);
+      if (fieldReview?.status === 'verified' || fieldReview?.status === 'approved') {
+        return false;
+      }
+
+      return true;
+    },
+    [isProjectSubmitted, isChangesRequested, getFieldCR, project]
+  );
+
+  const isSectionEditable = useCallback(
+    (sectionKey: string): boolean => {
+      if (isProjectSubmitted && !isChangesRequested) return false;
+      if (!isChangesRequested) return true;
+      if (!changeRequests || changeRequests.length === 0) return false;
+      return changeRequests.some((cr) => {
+        if (cr.status !== 'open' && cr.status !== 'waiting_for_school') return false;
+        const mappedSec = mapReviewSectionToIntakeSection(cr.section_key, cr.field_key);
+        return (
+          mappedSec === sectionKey ||
+          cr.section_key === sectionKey ||
+          (sectionKey === 'schoolProfile' && (cr.section_key === 'schoolProfile' || cr.section_key === 'identity')) ||
+          (sectionKey === 'campuses' && (cr.section_key === 'campuses' || cr.section_key === 'campusFacilities')) ||
+          (sectionKey === 'leadership' && (cr.section_key === 'leadership' || cr.section_key === 'websiteContent')) ||
+          (sectionKey === 'brandingDesign' && (cr.section_key === 'brandingDesign' || cr.section_key === 'media')) ||
+          (sectionKey === 'institutionStructure' && (cr.section_key === 'institutionStructure' || cr.section_key === 'academicScope'))
+        );
+      });
+    },
+    [isProjectSubmitted, isChangesRequested, changeRequests, mapReviewSectionToIntakeSection]
+  );
+
   const getFieldWrapperClass = useCallback(
-    (cr?: SchoolIntakeChangeRequest) => {
+    (cr?: SchoolIntakeChangeRequest, isEditable = true) => {
+      if (!isEditable && isChangesRequested) {
+        return 'border border-slate-200 bg-slate-50/70 rounded-2xl p-3 sm:p-3.5 space-y-1.5 opacity-85 transition-all';
+      }
       if (!cr) return '';
       const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
       if (isPending) {
-        return 'border-2 border-amber-400 dark:border-amber-500 ring-2 ring-amber-400/20 bg-amber-50/30 dark:bg-amber-950/20 rounded-2xl p-3 sm:p-3.5 space-y-1.5 shadow-xs transition-all';
+        return 'border border-amber-400/80 bg-amber-50/25 ring-2 ring-amber-300/20 rounded-2xl p-3.5 sm:p-4 space-y-2 shadow-2xs transition-all relative';
       }
-      return 'border-2 border-indigo-300 dark:border-indigo-600 ring-2 ring-indigo-300/20 bg-indigo-50/15 dark:bg-indigo-950/15 rounded-2xl p-3 sm:p-3.5 space-y-1.5 shadow-xs transition-all';
+      return 'border border-indigo-200 bg-indigo-50/15 ring-2 ring-indigo-200/20 rounded-2xl p-3 sm:p-3.5 space-y-1.5 shadow-2xs transition-all';
+    },
+    [isChangesRequested]
+  );
+
+  const getFieldInputClass = useCallback(
+    (cr?: SchoolIntakeChangeRequest, baseClass = '', isEditable = true) => {
+      if (!isEditable) {
+        return `${baseClass} !bg-slate-100/90 !text-slate-500 !border-slate-200 !cursor-not-allowed select-none`;
+      }
+      if (!cr) return baseClass;
+      const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
+      if (isPending) {
+        return `${baseClass} !border-amber-400 !bg-amber-50/30 focus:!border-amber-500 focus:!ring-amber-400/25 font-medium`;
+      }
+      return `${baseClass} !border-indigo-300 !bg-indigo-50/15`;
     },
     []
   );
 
   const renderCRBadge = useCallback(
-    (cr?: SchoolIntakeChangeRequest) => {
+    (cr?: SchoolIntakeChangeRequest, isEditable = true) => {
+      if (!isEditable && isChangesRequested) {
+        return (
+          <span className="ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200">
+            <Lock className="w-2.5 h-2.5 text-slate-400" />
+            <span>Locked</span>
+          </span>
+        );
+      }
       if (!cr) return null;
-      const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
-      return (
-        <span
-          className={`ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide border ${
-            isPending
-              ? 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-950 dark:text-rose-200 dark:border-rose-800 animate-pulse'
-              : 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-200 dark:border-indigo-800'
-          }`}
-        >
-          <AlertCircle className="w-3 h-3 shrink-0 text-rose-600 dark:text-rose-400" />
-          <span>{isPending ? 'CHANGES REQUESTED' : 'IN REVIEW'}</span>
-        </span>
-      );
+      const isPending = isRequestActivePending(cr);
+      const isAwaitingAdmin = isRequestAwaitingAdminReview(cr);
+
+      if (isPending) {
+        return (
+          <span className="ml-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+            <span>⚠️</span>
+            <span>Change requested</span>
+          </span>
+        );
+      }
+      if (isAwaitingAdmin) {
+        return (
+          <span className="ml-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">
+            <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Updated — awaiting review</span>
+          </span>
+        );
+      }
+      return null;
     },
-    []
+    [isChangesRequested]
   );
 
   const renderFieldCRAlert = useCallback(
     (cr?: SchoolIntakeChangeRequest) => {
       if (!cr) return null;
-      const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
+      const isPending = isRequestActivePending(cr);
+      const isAwaitingAdmin = isRequestAwaitingAdminReview(cr);
 
       return (
         <div
-          className={`mt-2 rounded-xl p-3 border text-xs transition-all ${
+          className={`mt-2 rounded-xl p-3 border text-xs leading-relaxed transition-all ${
             isPending
-              ? 'bg-amber-100/90 border-amber-300 text-amber-950 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 shadow-2xs'
-              : 'bg-indigo-50 border-indigo-200 text-indigo-950 dark:bg-indigo-950/30 dark:border-indigo-800 dark:text-indigo-200'
+              ? 'bg-white border-amber-200/80 text-slate-800 shadow-2xs'
+              : 'bg-white border-indigo-100 text-slate-800 shadow-2xs'
           }`}
         >
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 font-bold">
-              <AlertCircle className={`w-3.5 h-3.5 shrink-0 ${isPending ? 'text-rose-600' : 'text-indigo-600'}`} />
-              <span className="uppercase tracking-wide text-[10px] font-extrabold">
-                {isPending ? 'Reviewer Feedback' : 'Correction Submitted'}
-              </span>
-              <span className="text-[10px] font-medium text-slate-600 dark:text-slate-400">({cr.reason})</span>
-            </div>
+          <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-1.5">
+            <span className="text-[11px] font-bold text-slate-700">
+              Reviewer note:
+            </span>
+
             <button
               type="button"
-              onClick={() => {
-                setRespondingCR(cr);
-                setCrResponseText(cr.school_response || '');
-                setCrUpdatedValue(cr.school_updated_value || cr.current_value || '');
-                setCrSubmitError(null);
-              }}
-              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 underline cursor-pointer"
+              onClick={() => handleOpenCRModal(cr)}
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 underline cursor-pointer"
             >
-              {isPending ? 'Respond / Explain Fix' : 'Edit Response'}
+              {cr.school_response ? 'Edit note' : 'Add note'}
             </button>
           </div>
 
-          <div className="mt-1 font-semibold text-slate-800 dark:text-slate-200">
-            &ldquo;{cr.request_comment}&rdquo;
-          </div>
+          <p className="mt-1.5 text-slate-800 text-xs italic">
+            &ldquo;{cr.request_comment || cr.reason || 'Please update this field per reviewer requirements.'}&rdquo;
+          </p>
 
           {cr.suggested_value && (
-            <div className="mt-1.5 p-1.5 rounded-lg bg-white/90 dark:bg-slate-900 border border-amber-200 dark:border-amber-800 text-[11px] font-mono text-slate-800 dark:text-slate-200 flex items-baseline gap-1.5">
-              <span className="font-bold text-amber-900 dark:text-amber-300 not-font-mono text-[10px] uppercase tracking-wider">
-                Suggested:
+            <div className="mt-2 p-2 rounded-lg bg-slate-50 border border-slate-200 text-[11px] font-mono text-slate-800 flex items-baseline gap-1.5">
+              <span className="font-bold text-slate-500 uppercase not-font-mono text-[9px] tracking-wider">
+                Suggested value:
               </span>
-              <span className="font-semibold text-amber-950 dark:text-amber-100">{cr.suggested_value}</span>
+              <span className="font-bold text-slate-900">{cr.suggested_value}</span>
             </div>
           )}
 
           {cr.school_response && (
-            <div className="mt-1.5 p-1.5 rounded-lg bg-white/90 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300">
-              <span className="font-bold text-slate-900 dark:text-white text-[10px] uppercase tracking-wider">
-                Your Submitted Note:{' '}
-              </span>
-              <span>{cr.school_response}</span>
+            <div className="mt-2 p-2 rounded-lg bg-emerald-50/70 border border-emerald-200/80 text-[11px] text-emerald-900">
+              <span className="font-bold">Your response: </span>
+              <span className="italic">&ldquo;{cr.school_response}&rdquo;</span>
               {cr.school_updated_value && (
-                <div className="font-mono text-[10px] text-indigo-600 dark:text-indigo-400 mt-0.5">
-                  Updated to: {cr.school_updated_value}
+                <div className="mt-0.5 font-mono text-[10px] text-emerald-800 font-medium">
+                  Updated value: {cr.school_updated_value}
                 </div>
               )}
             </div>
@@ -544,21 +794,45 @@ export default function SchoolOnboardingPortal({ token }: Props) {
     []
   );
 
-  const sectionCRCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    if (!changeRequests) return counts;
-    changeRequests.forEach((cr) => {
-      if (cr.status === 'open' || cr.status === 'waiting_for_school' || cr.status === 'ready_for_review') {
-        const key = cr.section_key;
-        counts[key] = (counts[key] || 0) + 1;
-        if (key === 'media') {
-          counts['assetChecklist'] = (counts['assetChecklist'] || 0) + 1;
-          counts['brandingDesign'] = (counts['brandingDesign'] || 0) + 1;
-        }
-      }
-    });
-    return counts;
+  const getCRDisplayLabel = useCallback((cr: SchoolIntakeChangeRequest) => {
+    const rawKey = cr.field_key || cr.asset_id || '';
+    const friendlyMap: Record<string, string> = {
+      'schoolProfile.schoolName': 'Official School Name',
+      'schoolProfile.displayName': 'Institution Display / Short Name',
+      'schoolProfile.udiseCode': 'UDISE+ School Code',
+      'schoolProfile.managementType': 'Management Type',
+      'schoolProfile.legalInstitutionName': 'Legal Institution Name',
+      'schoolProfile.yearOfEstablishment': 'Year Established',
+      'schoolProfile.board': 'Affiliation Board / Body',
+      'schoolProfile.schoolCode': 'School Code (School No.)',
+      'schoolProfile.affiliationNumber': 'Affiliation / Registration Number',
+      'schoolProfile.schoolType': 'School Category / Type',
+      'schoolProfile.officialEmail': 'Official School Email',
+      'schoolProfile.officialPhone': 'Official School Phone / Helpline',
+      'schoolProfile.secondaryPhone': 'Emergency / Alternate Phone',
+      'schoolProfile.whatsappNumber': 'Official WhatsApp Support Number',
+      'campuses.mainCampusName': 'Main Campus Name',
+      'campuses.mainCampusAddress': 'Main Campus Postal Address',
+      'campuses.mainCampusCity': 'City',
+      'campuses.mainCampusState': 'State',
+      'campuses.mainCampusPin': 'Postal PIN Code',
+      'campuses.mainCampusPhone': 'Campus Contact Phone',
+      'leadership.principalName': 'Principal / Head Name',
+      'brandingDesign.logoUrl': 'Primary School Logo',
+    };
+    if (friendlyMap[rawKey]) return friendlyMap[rawKey];
+    const leaf = rawKey.split('.').pop() || rawKey;
+    return leaf.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
+  }, []);
+
+  const totalPendingCRCount = useMemo(() => {
+    if (!changeRequests) return 0;
+    return changeRequests.filter(isRequestActivePending).length;
   }, [changeRequests]);
+
+  const sectionCRCounts = useMemo(() => {
+    return getPendingChangeCounts(project?.id || '', changeRequests);
+  }, [project?.id, changeRequests]);
 
   // Debounced autosave ref
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -576,12 +850,32 @@ export default function SchoolOnboardingPortal({ token }: Props) {
       }
 
       setProject(res.project);
+      setIsAdmin(Boolean((res as any).isAdmin));
       if (res.project.product_id) {
         setSelectedProductId(res.project.product_id as ProductId);
       }
       setChangeRequests(res.changeRequests || []);
       setCustomFields(res.customFields || []);
       setCustomRequirements(res.customRequirements || []);
+
+      const projectSubmitted = ['submitted', 'resubmitted', 'under_review', 'approved', 'handoff_ready', 'handed_off'].includes(
+        res.project.status
+      );
+      const subSubmitted =
+        res.submission && ['submitted', 'resubmitted', 'under_review', 'approved'].includes(res.submission.status);
+      const isSub = projectSubmitted || Boolean(subSubmitted);
+      const hasPendingCR = Boolean(
+        res.project.status === 'changes_requested' ||
+        (res.changeRequests && res.changeRequests.some((cr: any) => cr.status === 'open' || cr.status === 'waiting_for_school'))
+      );
+
+      // Automatically display final submission confirmation screen if already submitted and no change requests are pending
+      if (isSub && !hasPendingCR) {
+        setIsSubmitSuccess(true);
+        setSubmittedVersion(res.submission?.version_number || 1);
+      } else {
+        setIsSubmitSuccess(false);
+      }
 
       if (res.submission && res.submission.intake_payload) {
         const payload = { ...res.submission.intake_payload };
@@ -1087,6 +1381,10 @@ export default function SchoolOnboardingPortal({ token }: Props) {
   // Manual Draft saving
   const handleSaveDraft = useCallback(async () => {
     if (!intakeData) return;
+    if (isProjectSubmitted && !isChangesRequested) {
+      setSaveMessage({ text: 'Project is submitted and locked. Changes require administrative authorization.', type: 'error' });
+      return;
+    }
     setIsSaving(true);
     setSaveMessage(null);
     const payloadToSave = syncDerivedStatisticsToFacilities(intakeData);
@@ -1101,18 +1399,18 @@ export default function SchoolOnboardingPortal({ token }: Props) {
       setSaveMessage({ text: res.error || 'Failed to save draft', type: 'error' });
     }
     setIsSaving(false);
-  }, [token, intakeData, customData]);
+  }, [token, intakeData, customData, isProjectSubmitted, isChangesRequested]);
 
   // Debounced Autosave effect
   useEffect(() => {
-    if (!intakeData || !isDirtyRef.current) return;
+    if (!intakeData || !isDirtyRef.current || (isProjectSubmitted && !isChangesRequested)) return;
 
     if (autosaveTimeoutRef.current) {
       clearTimeout(autosaveTimeoutRef.current);
     }
 
     autosaveTimeoutRef.current = setTimeout(async () => {
-      if (isDirtyRef.current) {
+      if (isDirtyRef.current && (!isProjectSubmitted || isChangesRequested)) {
         setIsSaving(true);
         const payloadToSave = syncDerivedStatisticsToFacilities(intakeData);
         const res = await saveSchoolIntakeDraftAction(token, payloadToSave, customData);
@@ -1128,12 +1426,15 @@ export default function SchoolOnboardingPortal({ token }: Props) {
     return () => {
       if (autosaveTimeoutRef.current) clearTimeout(autosaveTimeoutRef.current);
     };
-  }, [token, intakeData, customData]);
+  }, [token, intakeData, customData, isProjectSubmitted, isChangesRequested]);
 
   // Final Submission
   const handleSubmit = async () => {
     if (!intakeData || !project) return;
-    if (!intakeData.clientConfirmation?.isConfirmed) {
+    if (isProjectSubmitted && !isChangesRequested) return;
+    const isWebsiteSection = currentSection?.key === 'websiteRequirements';
+
+    if (!intakeData.clientConfirmation?.isConfirmed && !isWebsiteSection) {
       alert('Please check the confirmation declaration box before submitting.');
       return;
     }
@@ -1144,7 +1445,63 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
     setIsSubmitting(true);
     setSaveMessage(null);
-    const payloadToSubmit = syncDerivedStatisticsToFacilities(intakeData);
+    let payloadToSubmit = syncDerivedStatisticsToFacilities(intakeData);
+
+    // If submitting on final websiteRequirements section and website is not yet approved, approve & lock it as part of final sign-off
+    if (isWebsiteSection && !payloadToSubmit.websiteRequirements?.websiteApproved) {
+      const pubReadiness = evaluateWebsitePublicationReadiness(payloadToSubmit);
+      if (pubReadiness.isReady) {
+        const approverInfo = {
+          name:
+            intakeData.usersAccess?.superAdminFullName ||
+            intakeData.clientConfirmation?.confirmedByName ||
+            project.primary_contact_name ||
+            'Authorized Administrator',
+          email:
+            intakeData.usersAccess?.superAdminEmail ||
+            intakeData.clientConfirmation?.confirmedByEmail ||
+            project.primary_contact_email ||
+            '',
+          role: intakeData.usersAccess?.superAdminDesignation || 'Super Administrator',
+        };
+        const appRes = await approveWebsiteSpecificationAction(
+          token,
+          approverInfo,
+          'Final Institutional Website Specification Verified and Approved',
+          payloadToSubmit
+        );
+        if (appRes.success && appRes.approvalRecord) {
+          payloadToSubmit = {
+            ...payloadToSubmit,
+            websiteRequirements: {
+              ...(payloadToSubmit.websiteRequirements || {}),
+              currentApproval: appRes.approvalRecord,
+              websiteApproved: true,
+              websiteApprovedAt: appRes.approvalRecord.approvedAt,
+              websiteApprovedBy: appRes.approvalRecord.approvedBy.name,
+              websiteApprovalNotes: appRes.approvalRecord.notes,
+            },
+            clientConfirmation: {
+              confirmedByEmail: approverInfo.email || '',
+              confirmedByPhone: '',
+              ...(payloadToSubmit.clientConfirmation || {}),
+              isConfirmed: true,
+              confirmedByName: approverInfo.name,
+              confirmedByDesignation: approverInfo.role || 'Super Administrator',
+              confirmedAt: new Date().toISOString(),
+            },
+          };
+          updateSectionField('websiteRequirements', 'currentApproval', appRes.approvalRecord);
+          updateSectionField('websiteRequirements', 'websiteApproved', true);
+          updateSectionField('websiteRequirements', 'websiteApprovedAt', appRes.approvalRecord.approvedAt);
+          updateSectionField('websiteRequirements', 'websiteApprovedBy', appRes.approvalRecord.approvedBy.name);
+          updateSectionField('clientConfirmation', 'isConfirmed', true);
+          updateSectionField('clientConfirmation', 'confirmedByName', approverInfo.name);
+          updateSectionField('clientConfirmation', 'confirmedAt', new Date().toISOString());
+        }
+      }
+    }
+
     const res = await submitSchoolIntakeAction(token, payloadToSubmit, customData);
     if (res.success) {
       setIsSubmitSuccess(true);
@@ -1170,15 +1527,267 @@ export default function SchoolOnboardingPortal({ token }: Props) {
   const safeStepIndex = Math.min(currentStepIndex, Math.max(0, applicableSections.length - 1));
   const currentSection = applicableSections[safeStepIndex] || applicableSections[0];
 
+  // Hierarchical navigation model: Single Source of Truth
+  const hierarchicalNavigation = useMemo(() => {
+    return buildHierarchicalNavigation(applicableSections, intakeData, selectedProductId);
+  }, [applicableSections, intakeData, selectedProductId]);
+
+  const flattenedSteps = useMemo(() => {
+    return flattenNavigableSteps(hierarchicalNavigation);
+  }, [hierarchicalNavigation]);
+
+  // Current active navigable step (considers activeSubTab for sections with child pages)
+  const currentNavigableStep = useMemo<NavigableStep>(() => {
+    if (flattenedSteps.length === 0) {
+      return {
+        id: currentSection?.key || 'schoolProfile',
+        sectionKey: currentSection?.key || 'schoolProfile',
+        title: currentSection?.title || 'School Profile',
+        shortTitle: currentSection?.shortTitle || 'Profile',
+        slug: currentSection?.key || 'schoolProfile',
+        fullPath: currentSection?.key || 'schoolProfile',
+        chapter: currentSection?.chapter || 'identity',
+        isMandatory: true,
+        isChildStep: false,
+      };
+    }
+
+    if (activeSubTab) {
+      const matched = flattenedSteps.find(
+        (s) => s.sectionKey === currentSection?.key && s.subTabKey === activeSubTab
+      );
+      if (matched) return matched;
+    }
+
+    const firstForSection = flattenedSteps.find((s) => s.sectionKey === currentSection?.key);
+    return firstForSection || flattenedSteps[0];
+  }, [flattenedSteps, currentSection, activeSubTab]);
+
+  const nextNavigableStep = useMemo(() => {
+    return getNextNavigableStep(currentNavigableStep, flattenedSteps, intakeData, changeRequests);
+  }, [currentNavigableStep, flattenedSteps, intakeData, changeRequests]);
+
+  const prevNavigableStep = useMemo(() => {
+    return getPreviousNavigableStep(currentNavigableStep, flattenedSteps, intakeData);
+  }, [currentNavigableStep, flattenedSteps, intakeData]);
+
+  // Synchronize browser URL bar without triggering a full page reload
+  const syncUrlToStep = useCallback(
+    (step: NavigableStep) => {
+      if (typeof window === 'undefined') return;
+      const pathname = window.location.pathname;
+      const tokenIndex = pathname.indexOf(token);
+      let basePath = '';
+      if (tokenIndex !== -1) {
+        basePath = pathname.slice(0, tokenIndex + token.length);
+      } else {
+        basePath = `/schools/onboarding/${token}`;
+      }
+
+      const targetPath = buildStepUrlPath(step, basePath);
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState(
+          { stepId: step.id, sectionKey: step.sectionKey, subTabKey: step.subTabKey },
+          '',
+          targetPath
+        );
+      }
+    },
+    [token]
+  );
+
+  // Navigate to any hierarchical step
+  const navigateToStep = useCallback(
+    (step: NavigableStep, updateHistory = true) => {
+      const secIdx = applicableSections.findIndex((s) => s.key === step.sectionKey);
+      if (secIdx !== -1) {
+        setCurrentStepIndex(secIdx);
+      }
+      setActiveSubTab(step.subTabKey || undefined);
+
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (updateHistory) {
+          syncUrlToStep(step);
+        }
+      }
+    },
+    [applicableSections, syncUrlToStep]
+  );
+
+  // Curriculum sub-step individual completeness breakdown
+  const curriculumSubStatuses = useMemo(() => {
+    return calculateCurriculumSubStepCompleteness(intakeData || {});
+  }, [intakeData]);
+
+  // Deep link initial resolution on portal load
+  const initialResolvedRef = useRef(false);
+  useEffect(() => {
+    if (flattenedSteps.length === 0 || initialResolvedRef.current) return;
+    if (initialStep) {
+      const resolved = resolveStepFromSlugOrUrl(initialStep, flattenedSteps);
+      if (resolved) {
+        const secIdx = applicableSections.findIndex((s) => s.key === resolved.sectionKey);
+        if (secIdx !== -1) {
+          setCurrentStepIndex(secIdx);
+        }
+        if (resolved.subTabKey) {
+          setActiveSubTab(resolved.subTabKey);
+        }
+        initialResolvedRef.current = true;
+      }
+    }
+  }, [flattenedSteps, initialStep, applicableSections]);
+
+  // Handle browser back/forward (popstate)
+  useEffect(() => {
+    if (typeof window === 'undefined' || flattenedSteps.length === 0) return;
+
+    const handlePopState = () => {
+      const pathname = window.location.pathname;
+      const tokenIdx = pathname.indexOf(token);
+      let relativePath = '';
+      if (tokenIdx !== -1) {
+        relativePath = pathname.slice(tokenIdx + token.length).replace(/^\/+/, '');
+      }
+      const search = window.location.search;
+      const combined = relativePath ? `${relativePath}${search}` : search;
+
+      const resolved = resolveStepFromSlugOrUrl(combined || relativePath, flattenedSteps);
+      if (resolved) {
+        const secIdx = applicableSections.findIndex((s) => s.key === resolved.sectionKey);
+        if (secIdx !== -1) {
+          setCurrentStepIndex(secIdx);
+        }
+        setActiveSubTab(resolved.subTabKey || undefined);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [flattenedSteps, applicableSections, token]);
+
   const activeSectionCRs = useMemo(() => {
     if (!changeRequests || !currentSection) return [];
     return changeRequests.filter((cr) => {
       if (cr.status !== 'open' && cr.status !== 'waiting_for_school' && cr.status !== 'ready_for_review') return false;
-      if (cr.section_key === currentSection.key) return true;
+      const mappedKey = mapReviewSectionToIntakeSection(cr.section_key, cr.field_key);
+      if (mappedKey === currentSection.key || cr.section_key === currentSection.key) return true;
       if (currentSection.key === 'assetChecklist' && (cr.section_key === 'media' || cr.section_key === 'assetChecklist')) return true;
+      if (currentSection.key === 'legalPolicies' && (cr.section_key === 'policies' || cr.section_key === 'legalPolicies' || cr.section_key === 'legal')) return true;
       return false;
     });
-  }, [changeRequests, currentSection]);
+  }, [changeRequests, currentSection, mapReviewSectionToIntakeSection]);
+
+  const getCRSectionTitle = useCallback(
+    (cr: SchoolIntakeChangeRequest) => {
+      const mappedSecKey = mapReviewSectionToIntakeSection(cr.section_key, cr.field_key);
+      const sec = INTAKE_SECTIONS.find((s) => s.key === mappedSecKey);
+      return sec?.shortTitle || sec?.title || cr.section_key;
+    },
+    [mapReviewSectionToIntakeSection]
+  );
+
+  const scrollToField = useCallback((fieldKey: string) => {
+    const cleanKey = (fieldKey || '').trim();
+    if (!cleanKey) return;
+    const leaf = cleanKey.split('.').pop() || cleanKey;
+    const sanitized = cleanKey.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const canonical = lookupCanonicalField(cleanKey);
+
+    const selectors = [
+      `[data-field-key="${canonical.canonicalKey}"]`,
+      `[data-field-key="${cleanKey}"]`,
+      `[data-field-key="${leaf}"]`,
+      `#${canonical.domAnchor}`,
+      `#field-container-${sanitized}`,
+      `#field-container-${cleanKey}`,
+      `#field-container-${leaf}`,
+      `#field-school-${leaf}`,
+      `#field-${leaf}`,
+      `#field-${cleanKey}`,
+      `#${cleanKey}`,
+      `#${leaf}`,
+    ];
+
+    let targetEl: HTMLElement | null = null;
+    for (const sel of selectors) {
+      try {
+        const el = document.querySelector(sel) as HTMLElement | null;
+        if (el) {
+          targetEl = el;
+          break;
+        }
+      } catch {
+        // ignore selector syntax errors
+      }
+    }
+
+    if (targetEl) {
+      targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      targetEl.classList.add('ring-4', 'ring-amber-400', 'ring-offset-2', 'transition-all', 'duration-300');
+      setTimeout(() => {
+        targetEl?.classList.remove('ring-4', 'ring-amber-400', 'ring-offset-2');
+      }, 3500);
+
+      const inputEl =
+        targetEl.tagName === 'INPUT' || targetEl.tagName === 'SELECT' || targetEl.tagName === 'TEXTAREA'
+          ? targetEl
+          : targetEl.querySelector('input, select, textarea');
+      if (inputEl && 'focus' in inputEl) {
+        (inputEl as HTMLElement).focus();
+      }
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
+  const navigateToField = useCallback(
+    (pageKeyOrSection: string, fieldKey: string) => {
+      setViewMode('all');
+      const norm = normalizePageKey(pageKeyOrSection);
+      const targetSecKey = norm.intakeSectionKey || pageKeyOrSection;
+      const stepIdx = applicableSections.findIndex(
+        (s) => s.key === targetSecKey || s.key === norm.canonicalPageKey || s.key === pageKeyOrSection
+      );
+      if (stepIdx !== -1 && stepIdx !== currentStepIndex) {
+        setCurrentStepIndex(stepIdx);
+      }
+      setTimeout(() => {
+        scrollToField(fieldKey);
+      }, 200);
+    },
+    [applicableSections, currentStepIndex, scrollToField]
+  );
+
+  const handleJumpToField = useCallback(
+    (cr: SchoolIntakeChangeRequest) => {
+      const def = lookupCanonicalField(cr.field_key || cr.asset_id || '', cr.page_key || cr.section_key);
+      navigateToField(def.intakeSectionKey || cr.section_key || '', def.canonicalKey || cr.field_key || '');
+    },
+    [navigateToField]
+  );
+
+  // URL Deep-linking handler (?section=...&field=... or ?field=identity.year_established)
+  useEffect(() => {
+    if (isLoading || !project || !intakeData) return;
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const targetField = params.get('field');
+    const targetSection = params.get('section');
+    if (targetField || targetSection) {
+      const fieldDef = targetField ? lookupCanonicalField(targetField, targetSection || undefined) : null;
+      const sectionToNav = targetSection || fieldDef?.intakeSectionKey || fieldDef?.pageKey;
+      if (sectionToNav) {
+        navigateToField(sectionToNav, targetField || fieldDef?.canonicalKey || '');
+      }
+    }
+  }, [isLoading, project, intakeData, navigateToField]);
+
+  const currentPagePendingCRs = useMemo(() => {
+    if (!currentSection) return [];
+    return getPagePendingChangeRequests(currentSection.key, changeRequests);
+  }, [currentSection, changeRequests]);
 
   // Authoritative resolution of campus-scoped section data
   const campusSectionResolution = useMemo(() => {
@@ -1244,26 +1853,38 @@ export default function SchoolOnboardingPortal({ token }: Props) {
     }
   }, [selectedProductId, token]);
 
-  const navigateToSectionKey = useCallback((sectionKey: IntakeSectionKey) => {
-    const idx = applicableSections.findIndex((s) => s.key === sectionKey);
-    if (idx !== -1) {
-      setCurrentStepIndex(idx);
-      if (typeof window !== 'undefined') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+  const navigateToSectionKey = useCallback(
+    (sectionKey: IntakeSectionKey) => {
+      const targetStep = flattenedSteps.find((s) => s.sectionKey === sectionKey);
+      if (targetStep) {
+        navigateToStep(targetStep);
+      } else {
+        const idx = applicableSections.findIndex((s) => s.key === sectionKey);
+        if (idx !== -1) {
+          setCurrentStepIndex(idx);
+          setActiveSubTab(undefined);
+          if (typeof window !== 'undefined') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }
       }
-    }
-  }, [applicableSections]);
+    },
+    [applicableSections, flattenedSteps, navigateToStep]
+  );
 
   const handlePrevious = useCallback(() => {
     setDomainStepError(null);
     setIntegrationsStepError(null);
-    if (currentStepIndex > 0) {
+    if (prevNavigableStep) {
+      navigateToStep(prevNavigableStep);
+    } else if (currentStepIndex > 0) {
       setCurrentStepIndex((prev) => prev - 1);
+      setActiveSubTab(undefined);
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
-  }, [currentStepIndex]);
+  }, [prevNavigableStep, currentStepIndex, navigateToStep]);
 
   const handleContinue = useCallback(() => {
     if (!currentSection) return;
@@ -1322,8 +1943,27 @@ export default function SchoolOnboardingPortal({ token }: Props) {
       }
     }
 
-    if (currentStepIndex < applicableSections.length - 1) {
+    // Auto-save draft on forward navigation if dirty
+    if (isDirtyRef.current && intakeData) {
+      saveSchoolIntakeDraftAction(token, syncDerivedStatisticsToFacilities(intakeData || {}), customData).catch((err) => {
+        console.error('[ONBOARDING] Autosave draft on continue error:', err);
+      });
+    }
+
+    if (nextNavigableStep) {
+      navigateToStep(nextNavigableStep);
+      const pageCRs = getPagePendingChangeRequests(nextNavigableStep.sectionKey, changeRequests);
+      if (pageCRs.length > 0) {
+        const firstCR = pageCRs[0];
+        const canonical = lookupCanonicalField(firstCR.field_key || firstCR.asset_id || '', firstCR.section_key);
+        const targetKey = canonical.canonicalKey || canonical.fieldKey || firstCR.field_key || '';
+        setTimeout(() => {
+          scrollToField(targetKey);
+        }, 250);
+      }
+    } else if (currentStepIndex < applicableSections.length - 1) {
       setCurrentStepIndex((prev) => prev + 1);
+      setActiveSubTab(undefined);
       if (typeof window !== 'undefined') {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
@@ -1334,8 +1974,14 @@ export default function SchoolOnboardingPortal({ token }: Props) {
     applicableSections.length,
     completeness.sectionStatuses,
     intakeData,
+    customData,
+    token,
     project,
     selectedProductId,
+    nextNavigableStep,
+    navigateToStep,
+    changeRequests,
+    scrollToField,
   ]);
 
   // Loading State
@@ -1427,13 +2073,10 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 </span>
                 <span className="text-xs font-bold text-[#131B2E]">Domain Preference</span>
               </div>
-              <button
-                type="button"
-                onClick={() => setShowDomainSetupModal(true)}
-                className="text-xs font-bold text-[#4338CA] hover:underline cursor-pointer"
-              >
-                Edit Domain
-              </button>
+              <span className="text-[11px] font-semibold text-[#64748B] flex items-center gap-1">
+                <Lock className="w-3 h-3 text-[#94A3B8]" />
+                <span>Locked</span>
+              </span>
             </div>
             <div className="text-xs text-[#334155]">
               {intakeData.domainPresence?.domainChoice === 'DECIDE_LATER' || intakeData.domainPresence?.decideLater ? (
@@ -1459,19 +2102,167 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
           <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
             <button
-              onClick={() => setIsSubmitSuccess(false)}
-              className="px-5 py-2.5 bg-white hover:bg-[#FAF7F2] text-[#131B2E] rounded-xl text-xs font-semibold border border-[#E2E8F0] shadow-xs transition cursor-pointer"
+              type="button"
+              onClick={() => setShowReadOnlySnapshotModal(true)}
+              className="px-5 py-2.5 bg-white hover:bg-[#FAF7F2] text-[#131B2E] rounded-xl text-xs font-semibold border border-[#E2E8F0] shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
             >
-              Review Master Snapshot
+              <FileText className="w-3.5 h-3.5 text-[#4338CA]" />
+              <span>Review Master Snapshot</span>
             </button>
             <Link
               href="/"
-              className="px-5 py-2.5 bg-[#131B2E] hover:bg-[#4338CA] text-white rounded-xl text-xs font-semibold shadow-md transition"
+              className="px-5 py-2.5 bg-[#131B2E] hover:bg-[#4338CA] text-white rounded-xl text-xs font-semibold shadow-md transition flex items-center justify-center gap-1.5"
             >
-              Ekaagra Platform Home
+              <HomeIcon className="w-3.5 h-3.5" />
+              <span>Ekaagra Platform Home</span>
             </Link>
           </div>
         </div>
+
+        {/* Read-Only Master Snapshot Inspection Modal */}
+        {showReadOnlySnapshotModal && (
+          <ModalPortal isOpen={showReadOnlySnapshotModal}>
+            <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+              <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto">
+                <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-900 to-indigo-950 text-white flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
+                      <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-base sm:text-lg tracking-tight">Institutional Master Snapshot</h3>
+                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                          Version {submittedVersion} &bull; Locked
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 mt-0.5">Authoritative record submitted for technical provisioning</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowReadOnlySnapshotModal(false)}
+                    className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="p-6 space-y-6 overflow-y-auto text-xs">
+                  {/* Notice Banner */}
+                  <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2.5">
+                    <Lock className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">
+                      <strong>Submission Locked:</strong> This snapshot represents your verified master institutional data. It is currently locked while our engineering architects provision your infrastructure. To request modifications, contact Ekaagra Technical Administration.
+                    </p>
+                  </div>
+
+                  {/* Identity Summary Card */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <span className="font-bold text-slate-900 flex items-center gap-1.5">
+                        <School className="w-4 h-4 text-indigo-600" />
+                        <span>School Identification</span>
+                      </span>
+                      <span className="font-mono text-[11px] text-slate-500">Project: {project.project_number}</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Official Name:</span>
+                        <span className="font-bold text-slate-800">{intakeData.schoolProfile?.schoolName || project.school_name}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Display / Short Name:</span>
+                        <span className="font-semibold text-slate-800">{intakeData.schoolProfile?.displayName || 'Not specified'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">UDISE+ Code:</span>
+                        <span className="font-mono font-bold text-slate-800">{intakeData.schoolProfile?.udiseCode || 'Recorded'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Management Type:</span>
+                        <span className="font-medium text-slate-800">{intakeData.schoolProfile?.managementType || 'Private Unaided'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Board Affiliation:</span>
+                        <span className="font-medium text-slate-800">{intakeData.schoolProfile?.board || 'CBSE'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Established Year:</span>
+                        <span className="font-medium text-slate-800">{intakeData.schoolProfile?.yearOfEstablishment || intakeData.schoolProfile?.establishmentYear || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primary Contact & Authorization */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <span className="font-bold text-slate-900 flex items-center gap-1.5 border-b border-slate-200 pb-2">
+                      <UserCheck className="w-4 h-4 text-indigo-600" />
+                      <span>Primary Contact &amp; Authorized Sign-Off</span>
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Authorized Signer:</span>
+                        <span className="font-bold text-slate-800">{intakeData.clientConfirmation?.confirmedByName || project.primary_contact_name}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Designation:</span>
+                        <span className="font-medium text-slate-800">{intakeData.clientConfirmation?.confirmedByDesignation || project.primary_contact_designation || 'Principal'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Contact Phone:</span>
+                        <span className="font-mono text-slate-800">{intakeData.schoolProfile?.officialPhone || project.primary_contact_phone}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Contact Email:</span>
+                        <span className="font-mono text-slate-800">{intakeData.schoolProfile?.officialEmail || project.primary_contact_email}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Confirmed At:</span>
+                        <span className="font-mono text-slate-800">{intakeData.clientConfirmation?.confirmedAt ? new Date(intakeData.clientConfirmation.confirmedAt).toLocaleDateString() : 'Recorded'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[11px] text-slate-500 block">Specification Status:</span>
+                        <span className="font-bold text-emerald-700">Verified &amp; Approved</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Campuses & Infrastructure */}
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                    <span className="font-bold text-slate-900 flex items-center gap-1.5 border-b border-slate-200 pb-2">
+                      <Building2 className="w-4 h-4 text-indigo-600" />
+                      <span>Campuses &amp; Facilities ({(intakeData.campuses || []).length || 1})</span>
+                    </span>
+                    <div className="space-y-2">
+                      {(intakeData.campuses || []).map((c, idx) => (
+                        <div key={c.id || idx} className="p-2.5 rounded-xl bg-white border border-slate-200 flex items-center justify-between flex-wrap gap-2">
+                          <div>
+                            <span className="font-bold text-slate-800">{c.name || `Campus ${idx + 1}`}</span>
+                            <span className="text-slate-500 ml-2">({c.city || project.city}, {c.state || project.state})</span>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">
+                            {c.isMainCampus ? 'Main Campus' : 'Branch Campus'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-slate-100 border-t border-slate-200 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowReadOnlySnapshotModal(false)}
+                    className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+                  >
+                    Close Snapshot
+                  </button>
+                </div>
+              </div>
+            </div>
+          </ModalPortal>
+        )}
 
         {/* Post-Onboarding Domain Setup Modal */}
         {showDomainSetupModal && (
@@ -1588,69 +2379,152 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 const isComplete = status === 'complete' || (!isNotApplicable && secPct === 100);
                 const displayTitle = sec.shortTitle;
 
+                const stepNode = hierarchicalNavigation.find((node) => node.sectionKey === sec.key);
+                const hasChildren = Boolean(stepNode?.children && stepNode.children.length > 0);
+
                 return (
-                  <button
-                    key={sec.key}
-                    type="button"
-                    onClick={() => {
-                      setCurrentStepIndex(originalIdx);
-                      if (onSelectSection) onSelectSection();
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className={`w-full flex items-center space-x-2.5 px-2.5 py-2 rounded-xl text-left transition text-xs group cursor-pointer ${
-                      isActive
-                        ? 'bg-[#EEF2FF] text-[#4338CA] font-bold border border-[#C7D2FE] shadow-2xs'
-                        : isComplete
-                        ? 'text-slate-700 hover:bg-[#FAF7F2] hover:text-[#131B2E] border border-transparent'
-                        : 'text-[#64748B] hover:bg-[#FAF7F2] hover:text-[#131B2E] border border-transparent'
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-bold transition ${
-                        isNotApplicable
-                          ? 'bg-slate-100 text-slate-400 border border-slate-200'
+                  <div key={sec.key} className="space-y-0.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const firstChild = hasChildren
+                          ? flattenedSteps.find((s) => s.sectionKey === sec.key)
+                          : null;
+                        if (firstChild) {
+                          navigateToStep(firstChild);
+                        } else {
+                          setCurrentStepIndex(originalIdx);
+                          setActiveSubTab(undefined);
+                        }
+                        if (onSelectSection) onSelectSection();
+                        const pageCRs = getPagePendingChangeRequests(sec.key, changeRequests);
+                        if (pageCRs.length > 0) {
+                          const firstCR = pageCRs[0];
+                          const canonical = lookupCanonicalField(firstCR.field_key || firstCR.asset_id || '', firstCR.section_key);
+                          const targetKey = canonical.canonicalKey || canonical.fieldKey || firstCR.field_key || '';
+                          setTimeout(() => {
+                            scrollToField(targetKey);
+                          }, 200);
+                        } else {
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
+                      className={`w-full flex items-center space-x-2.5 px-2.5 py-2 rounded-xl text-left transition text-xs group cursor-pointer ${
+                        isActive
+                          ? 'bg-[#EEF2FF] text-[#4338CA] font-bold border border-[#C7D2FE] shadow-2xs'
                           : isComplete
-                          ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
-                          : isActive
-                          ? 'bg-[#4338CA] text-white shadow-2xs'
-                          : 'bg-white text-slate-500 border border-slate-200 group-hover:border-slate-300'
+                          ? 'text-slate-700 hover:bg-[#FAF7F2] hover:text-[#131B2E] border border-transparent'
+                          : 'text-[#64748B] hover:bg-[#FAF7F2] hover:text-[#131B2E] border border-transparent'
                       }`}
                     >
-                      {isNotApplicable ? (
-                        <span className="text-xs font-black">−</span>
-                      ) : isComplete ? (
-                        <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                      ) : (
-                        originalIdx + 1
-                      )}
-                    </div>
-                    <span className="truncate flex-1 font-medium" title={sec.title || displayTitle}>{displayTitle}</span>
-                    {Boolean(sectionCRCounts[sec.key]) && (
-                      <span
-                        className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-rose-100 text-rose-700 border border-rose-300 animate-pulse shrink-0"
-                        title={`${sectionCRCounts[sec.key]} change request(s) in this section`}
+                      <div
+                        className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 text-[10px] font-bold transition ${
+                          isNotApplicable
+                            ? 'bg-slate-100 text-slate-400 border border-slate-200'
+                            : Boolean(sectionCRCounts[sec.key])
+                            ? 'bg-rose-50 text-rose-600 border border-rose-200'
+                            : isComplete
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-200'
+                            : isActive
+                            ? 'bg-[#4338CA] text-white shadow-2xs'
+                            : 'bg-white text-slate-500 border border-slate-200 group-hover:border-slate-300'
+                        }`}
                       >
-                        !
-                      </span>
+                        {isNotApplicable ? (
+                          <span className="text-xs font-black">−</span>
+                        ) : Boolean(sectionCRCounts[sec.key]) ? (
+                          <AlertTriangle className="w-3 h-3 text-rose-600" />
+                        ) : isComplete ? (
+                          <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                        ) : (
+                          originalIdx + 1
+                        )}
+                      </div>
+                      <span className="truncate flex-1 font-medium" title={sec.title || displayTitle}>{displayTitle}</span>
+                      {Boolean(sectionCRCounts[sec.key]) ? (
+                        <span
+                          className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 shrink-0 flex items-center gap-1"
+                          title={`${sectionCRCounts[sec.key]} change${sectionCRCounts[sec.key] === 1 ? '' : 's'} requested in this section`}
+                        >
+                          <AlertTriangle className="w-2.5 h-2.5" />
+                          <span>{sectionCRCounts[sec.key]}</span>
+                        </span>
+                      ) : isComplete ? (
+                        <span className="text-[10px] font-bold text-emerald-600 shrink-0">✓</span>
+                      ) : secPct > 0 ? (
+                        <span className="text-[10px] font-medium text-slate-400 font-mono shrink-0">{secPct}%</span>
+                      ) : null}
+                    </button>
+
+                    {/* Nested Child Steps */}
+                    {hasChildren && (
+                      <div className="ml-5 pl-2.5 border-l-2 border-[#CBD5E1]/60 space-y-0.5 mt-0.5 mb-1">
+                        {stepNode!.children!.map((child, cIdx) => {
+                          const isChildActive = isActive && (activeSubTab === child.subTabKey || (!activeSubTab && cIdx === 0));
+                          const isCurriculum = sec.key === 'curriculum';
+                          const childComplete = isCurriculum && (child.subTabKey === 'overview' || child.subTabKey === 'class_curriculum' || child.subTabKey === 'subjects')
+                            ? curriculumSubStatuses[child.subTabKey as 'overview' | 'class_curriculum' | 'subjects']?.isComplete
+                            : isComplete;
+                          const childCRCount = getStepChangeRequestCount(
+                            { ...child, isChildStep: true, parentSectionKey: sec.key },
+                            changeRequests
+                          );
+
+                          return (
+                            <button
+                              key={child.id}
+                              type="button"
+                              onClick={() => {
+                                const matchedNav = flattenedSteps.find(
+                                  (s) => s.sectionKey === sec.key && s.subTabKey === child.subTabKey
+                                );
+                                if (matchedNav) {
+                                  navigateToStep(matchedNav);
+                                }
+                                if (onSelectSection) onSelectSection();
+                              }}
+                              className={`w-full flex items-center justify-between px-2 py-1.5 rounded-lg text-left transition text-[11px] group cursor-pointer ${
+                                isChildActive
+                                  ? 'bg-[#EEF2FF] text-[#4338CA] font-bold border border-[#C7D2FE]'
+                                  : 'text-[#64748B] hover:bg-[#FAF7F2] hover:text-[#131B2E] border border-transparent'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-2 truncate">
+                                <div
+                                  className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 text-[8px] font-bold ${
+                                    childCRCount > 0
+                                      ? 'bg-rose-100 text-rose-700'
+                                      : childComplete
+                                      ? 'bg-emerald-100 text-emerald-700'
+                                      : isChildActive
+                                      ? 'bg-[#4338CA] text-white'
+                                      : 'bg-slate-100 text-slate-500'
+                                  }`}
+                                >
+                                  {childCRCount > 0 ? (
+                                    '!'
+                                  ) : childComplete ? (
+                                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                                  ) : (
+                                    cIdx + 1
+                                  )}
+                                </div>
+                                <span className="truncate">{child.shortTitle}</span>
+                              </div>
+
+                              {childCRCount > 0 ? (
+                                <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
+                                  {childCRCount}
+                                </span>
+                              ) : childComplete ? (
+                                <span className="text-[10px] font-bold text-emerald-600 shrink-0">✓</span>
+                              ) : null}
+                            </button>
+                          );
+                        })}
+                      </div>
                     )}
-                    <span
-                      className={`text-[10px] font-mono ${
-                        isNotApplicable
-                          ? 'text-slate-400 font-medium'
-                          : isComplete
-                          ? 'text-emerald-600 font-bold'
-                          : isActive
-                          ? 'text-[#4338CA] font-semibold'
-                          : 'text-[#94A3B8]'
-                      }`}
-                    >
-                      {isNotApplicable
-                        ? '—'
-                        : isComplete
-                        ? '100%'
-                        : `${secPct}%`}
-                    </span>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -1714,6 +2588,25 @@ export default function SchoolOnboardingPortal({ token }: Props) {
             </span>
             <span>Step {currentStepIndex + 1}/{applicableSections.length}</span>
           </div>
+
+          {totalPendingCRCount > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setIsCRDrawerOpen(true);
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-full mt-2 p-2 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-between text-[11px] text-amber-950 font-bold hover:bg-amber-100/70 transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-1.5">
+                <span>⚠️</span>
+                <span>{totalPendingCRCount} {totalPendingCRCount === 1 ? 'change' : 'changes'} requested</span>
+              </div>
+              <span className="text-[10px] text-amber-800 font-bold underline">
+                Review
+              </span>
+            </button>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 scrollbar-thin scrollbar-thumb-[#CBD5E1]">
@@ -1767,6 +2660,22 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               </span>
               <span>Step {currentStepIndex + 1}/{applicableSections.length}</span>
             </div>
+
+            {totalPendingCRCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsCRDrawerOpen(true)}
+                className="w-full mt-2 p-2 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-between text-[11px] text-amber-950 font-bold hover:bg-amber-100/70 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>⚠️</span>
+                  <span>{totalPendingCRCount} {totalPendingCRCount === 1 ? 'change' : 'changes'} requested</span>
+                </div>
+                <span className="text-[10px] text-amber-800 font-bold underline">
+                  Review
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1840,18 +2749,19 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               />
             </div>
 
-            <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
-              {/* Mobile Compact Progress Badge */}
-              <span className="sm:hidden font-mono font-extrabold text-[10px] text-[#4338CA] bg-[#EEF2FF] px-2 py-1 rounded-lg border border-[#C7D2FE] shrink-0" title="Master Form Progress">
-                {completeness.percentage}%
+            <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+              {/* Step indicator */}
+              <span className="hidden sm:inline-flex items-center text-xs font-bold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-lg">
+                Step {currentStepIndex + 1} of {applicableSections.length}
               </span>
 
-              <div className="hidden sm:flex items-center space-x-2 bg-[#FAF7F2] px-3 py-1.5 rounded-full border border-[#E2E8F0] text-xs shrink-0">
-                <span className="text-[#64748B]">Progress:</span>
+              {/* Progress */}
+              <div className="flex items-center space-x-2 bg-[#FAF7F2] px-3 py-1.5 rounded-full border border-[#E2E8F0] text-xs shrink-0">
+                <span className="text-[#64748B] hidden sm:inline">Progress:</span>
                 <span className={`font-bold ${completeness.percentage >= 90 ? 'text-emerald-700' : 'text-[#4338CA]'}`}>
                   {completeness.percentage}%
                 </span>
-                <div className="w-12 bg-[#E2E8F0] h-1.5 rounded-full overflow-hidden">
+                <div className="w-12 bg-[#E2E8F0] h-1.5 rounded-full overflow-hidden hidden sm:block">
                   <div
                     className="bg-[#4338CA] h-full rounded-full transition-all duration-300"
                     style={{ width: `${completeness.percentage}%` }}
@@ -1859,52 +2769,29 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 </div>
               </div>
 
-              <div className="hidden md:flex items-center space-x-1.5 text-[11px] text-[#94A3B8] shrink-0">
-                {isSaving ? (
-                  <span className="text-amber-500 flex items-center space-x-1 font-medium">
-                    <div className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-                    <span>Saving...</span>
-                  </span>
-                ) : lastSavedTime ? (
-                  <span className="text-[#64748B]">Saved {lastSavedTime}</span>
-                ) : null}
-              </div>
+              {/* Change request count pill */}
+              {totalPendingCRCount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setIsCRDrawerOpen(true)}
+                  className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer shrink-0"
+                  title="View all requested changes across sections"
+                >
+                  <span>⚠️</span>
+                  <span>{totalPendingCRCount} {totalPendingCRCount === 1 ? 'change' : 'changes'} requested</span>
+                </button>
+              )}
 
+              {/* Save Draft */}
               <button
                 onClick={handleSaveDraft}
                 disabled={isSaving}
-                className="inline-flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 border border-[#E2E8F0] hover:border-[#CBD5E1] bg-white hover:bg-[#FAF7F2] text-[#334155] text-xs font-semibold rounded-xl transition shadow-xs shrink-0 cursor-pointer"
+                className="inline-flex items-center space-x-1.5 px-2.5 sm:px-3 py-1.5 border border-[#E2E8F0] hover:border-[#CBD5E1] bg-white hover:bg-[#FAF7F2] text-[#334155] text-xs font-semibold rounded-xl transition shadow-2xs shrink-0 cursor-pointer"
                 title="Save draft progress"
               >
                 <Save className="w-3.5 h-3.5 text-[#64748B]" />
                 <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save Draft'}</span>
               </button>
-
-              {currentStepIndex < applicableSections.length - 1 ? (
-                <button
-                  type="button"
-                  onClick={handleContinue}
-                  className="inline-flex items-center space-x-1 sm:space-x-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#4338CA] hover:bg-[#3730A3] text-white text-xs font-bold rounded-xl shadow-xs transition active:scale-[0.98] cursor-pointer shrink-0"
-                  aria-label="Next Section"
-                >
-                  <span>Next</span>
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={isSubmitting || !completeness.isSubmissionReady}
-                  className={`inline-flex items-center space-x-1 sm:space-x-1.5 px-3 sm:px-4 py-1.5 sm:py-2 text-white text-xs font-bold rounded-xl shadow-xs transition shrink-0 ${
-                    completeness.isSubmissionReady
-                      ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'
-                      : 'bg-[#FAF7F2] text-[#94A3B8] cursor-not-allowed border border-[#E2E8F0]'
-                  }`}
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSubmitting ? 'Submitting...' : 'Submit Master'}</span>
-                </button>
-              )}
             </div>
           </div>
 
@@ -1936,119 +2823,99 @@ export default function SchoolOnboardingPortal({ token }: Props) {
         {/* Main Content Area */}
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-          {/* OPERATIONAL CHANGE REQUEST REMEDIATION BANNER */}
-          {changeRequests.some((cr) => cr.status === 'open' || cr.status === 'waiting_for_school' || cr.status === 'ready_for_review') && (
-            <div className="bg-amber-500/10 border-2 border-amber-500/30 rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
-              <div className="flex items-start justify-between flex-wrap gap-3">
-                <div className="flex items-start space-x-3.5">
-                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
-                    <AlertTriangle className="w-5 h-5" />
+          {/* 1. COMPACT ACTION REQUIRED SUMMARY */}
+          {totalPendingCRCount > 0 && (
+            <div className="bg-amber-50/70 border border-amber-300/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">⚠️</span>
+                    <h2 className="text-sm sm:text-base font-bold text-amber-950">
+                      {totalPendingCRCount} {totalPendingCRCount === 1 ? 'change' : 'changes'} requested
+                    </h2>
                   </div>
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <h2 className="text-base sm:text-lg font-bold text-slate-900">
-                        Action Required: Reviewer Requested Adjustments
-                      </h2>
-                      <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                        {changeRequests.filter(cr => cr.status === 'open' || cr.status === 'waiting_for_school').length} Pending
-                      </span>
-                    </div>
-                    <p className="text-xs sm:text-sm text-slate-600 mt-1">
-                      Our verification team has reviewed your intake submission and identified specific items requiring your clarification or correction before public website generation.
-                    </p>
-                  </div>
+                  <p className="text-xs text-slate-600">
+                    Your application has {totalPendingCRCount} {totalPendingCRCount === 1 ? 'item that needs' : 'items that need'} correction before approval.
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCRDrawerOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs shadow-2xs transition-all active:scale-[0.98] cursor-pointer self-start sm:self-center shrink-0"
+                >
+                  <span>Review {totalPendingCRCount} {totalPendingCRCount === 1 ? 'Change' : 'Changes'}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* Items List */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                {changeRequests
-                  .filter((cr) => cr.status === 'open' || cr.status === 'waiting_for_school' || cr.status === 'ready_for_review')
-                  .map((cr) => {
-                    const isPending = cr.status === 'open' || cr.status === 'waiting_for_school';
-                    return (
-                      <div
-                        key={cr.id}
-                        className={`rounded-2xl p-4 border transition-all ${
-                          isPending
-                            ? 'bg-white border-amber-200 shadow-xs'
-                            : 'bg-emerald-50/60 border-emerald-200'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                              {cr.section_key}
-                            </span>
-                            <span className="text-xs font-bold text-slate-900 truncate">
-                              {cr.field_key || cr.asset_id || 'Field Correction'}
-                            </span>
-                          </div>
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                              isPending
-                                ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                                : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                            }`}
-                          >
-                            {isPending ? 'Action Needed' : 'Correction Submitted'}
-                          </span>
-                        </div>
-
-                        <div className="space-y-1.5 text-xs text-slate-700">
-                          <div>
-                            <span className="font-semibold text-slate-900">Reviewer Note: </span>
-                            <span className="text-amber-900 font-medium">{cr.request_comment || cr.reason}</span>
-                          </div>
-
-                          {cr.suggested_value && (
-                            <div className="bg-amber-50/80 rounded-lg p-2 border border-amber-100 text-xs">
-                              <span className="font-semibold text-amber-900">Suggested: </span>
-                              <span className="font-mono text-amber-800">{cr.suggested_value}</span>
-                            </div>
-                          )}
-
-                          {cr.school_response && (
-                            <div className="bg-slate-50 rounded-lg p-2 border border-slate-200 text-xs">
-                              <span className="font-semibold text-slate-800">Your Response: </span>
-                              <span className="text-slate-600">{cr.school_response}</span>
-                              {cr.school_updated_value && (
-                                <div className="mt-1 font-mono text-[11px] text-slate-700 font-medium truncate">
-                                  Updated to: {cr.school_updated_value}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                          <span className="text-[11px] text-slate-400">
-                            Requested {new Date(cr.created_at).toLocaleDateString()}
-                          </span>
+              {/* Compact table / list */}
+              <div className="bg-white rounded-xl border border-amber-200/80 overflow-hidden shadow-2xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 bg-amber-100/40 px-3.5 py-1.5 text-[11px] font-bold text-amber-900 border-b border-amber-200/60">
+                  <span>Field</span>
+                  <span className="hidden sm:block">What needs to be done</span>
+                </div>
+                <div className="divide-y divide-slate-100 text-xs">
+                  {changeRequests
+                    .filter(isRequestActivePending)
+                    .slice(0, 5)
+                    .map((cr, idx) => {
+                      const def = lookupCanonicalField(cr.field_key || cr.asset_id || '', cr.page_key || cr.section_key);
+                      const fieldName = cr.field_label || def.fieldLabel || 'Field';
+                      return (
+                        <div
+                          key={cr.id || idx}
+                          className="grid grid-cols-1 sm:grid-cols-2 px-3.5 py-2 hover:bg-slate-50 items-center justify-between gap-1"
+                        >
                           <button
                             type="button"
-                            onClick={() => {
-                              setRespondingCR(cr);
-                              setCrResponseText(cr.school_response || '');
-                              setCrUpdatedValue(cr.school_updated_value || cr.current_value || '');
-                              setCrSubmitError(null);
-                            }}
-                            className={`text-xs font-semibold px-3 py-1.5 rounded-xl transition-all flex items-center space-x-1.5 ${
-                              isPending
-                                ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-xs'
-                                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
-                            }`}
+                            onClick={() => handleJumpToField(cr)}
+                            className="text-left font-bold text-indigo-700 hover:text-indigo-900 hover:underline truncate cursor-pointer"
                           >
-                            <span>{isPending ? 'Provide Correction' : 'Update Response'}</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
+                            {fieldName}
                           </button>
+                          <span className="text-slate-600 text-[11px] truncate italic">
+                            &ldquo;{cr.request_comment || cr.reason || 'Correction requested'}&rdquo;
+                          </span>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                </div>
               </div>
             </div>
           )}
+
+          {/* VIEW MODE SWITCHER (All Information vs Changes Only) */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="inline-flex items-center bg-slate-200/70 p-1 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setViewMode('all')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+                  viewMode === 'all'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                All information
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('changes_only')}
+                className={`px-3 py-1 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                  viewMode === 'changes_only'
+                    ? 'bg-white text-slate-900 shadow-2xs font-bold'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <span>Changes only</span>
+                {totalPendingCRCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-amber-100 text-amber-900 font-mono font-bold">
+                    {totalPendingCRCount}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
 
           {/* PROJECT SCOPE BANNER */}
           <div className="bg-[#131B2E] text-white rounded-2xl p-3.5 sm:p-4 shadow-xs border border-slate-800 relative overflow-hidden transition-all">
@@ -2165,6 +3032,19 @@ export default function SchoolOnboardingPortal({ token }: Props) {
             )}
           </div>
 
+          {viewMode === 'changes_only' ? (
+            <ChangesOnlyView
+              changeRequests={changeRequests || []}
+              onNavigateToField={(secKey, fieldKey) => {
+                setViewMode('all');
+                navigateToField(secKey, fieldKey);
+              }}
+              onSaveAllChanges={handleSaveDraft}
+              isSaving={isSaving}
+              onSwitchToAllInformation={() => setViewMode('all')}
+              onOpenResponseModal={(cr) => handleOpenCRModal(cr)}
+            />
+          ) : (
           <div className="bg-white rounded-2xl sm:rounded-3xl border border-[#E2E8F0] p-4 sm:p-6 md:p-8 shadow-xs space-y-6 scroll-mt-24 sm:scroll-mt-28">
             {/* Header of Active Section */}
             <div className="border-b border-[#E2E8F0] pb-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -2203,6 +3083,16 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
                     <span>NOT APPLICABLE</span>
                   </span>
+                ) : activeSectionCRs.length > 0 ? (
+                  <span className="text-xs px-2.5 py-1 rounded-lg border font-semibold flex items-center space-x-1.5 bg-amber-50 text-amber-900 border-amber-300 shadow-2xs">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span>⚠️ {activeSectionCRs.length} change{activeSectionCRs.length > 1 ? 's' : ''} requested</span>
+                  </span>
+                ) : isChangesRequested && !isSectionEditable(currentSection.key) ? (
+                  <span className="text-xs px-2.5 py-1 rounded-lg border font-medium flex items-center space-x-1.5 bg-slate-50 text-slate-600 border-slate-200 shadow-2xs">
+                    <Lock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                    <span>Locked</span>
+                  </span>
                 ) : currentSection.key === 'schoolContent' ? (
                   (() => {
                     const s6Summary = getSection6StatusSummary(intakeData);
@@ -2210,7 +3100,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       return (
                         <span className="text-xs px-2.5 py-1 rounded-lg border font-semibold flex items-center space-x-1.5 bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs">
                           <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <span>✓ Approved</span>
+                          <span>Approved</span>
                         </span>
                       );
                     }
@@ -2224,38 +3114,41 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 ) : (completeness.sectionPercentages[currentSection.key] ?? 0) === 100 ? (
                   <span className="text-xs px-2.5 py-1 rounded-lg border font-semibold flex items-center space-x-1.5 bg-emerald-50 text-emerald-700 border-emerald-200 shadow-2xs">
                     <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>✓ 100% Filled</span>
+                    <span>Complete</span>
                   </span>
                 ) : (
-                  <span className="text-xs px-2.5 py-1 rounded-lg border font-medium flex items-center space-x-1.5 bg-amber-50/70 text-amber-800 border-amber-200/80 shadow-2xs">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                    <span>{completeness.sectionPercentages[currentSection.key] ?? 0}% Filled</span>
+                  <span className="text-xs px-2.5 py-1 rounded-lg border font-medium flex items-center space-x-1.5 bg-slate-100 text-slate-600 border-slate-200 shadow-2xs">
+                    <span>Incomplete</span>
                   </span>
                 )}
               </div>
             </div>
 
             {/* SECTION CHANGE REQUEST ALERT BANNER */}
-            {activeSectionCRs.length > 0 && (
-              <div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-amber-500/15 via-rose-500/10 to-amber-500/15 border-2 border-amber-400 dark:border-amber-600 shadow-2xs flex items-start gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                  <AlertTriangle className="w-5 h-5" />
-                </div>
+            <PageChangeRequestBanner
+              pageTitle={currentSection.title}
+              requests={activeSectionCRs}
+              onScrollToField={scrollToField}
+            />
+
+            {/* Section Locked Banner when in changes_requested mode and this section has no change requests */}
+            {isChangesRequested && !isSectionEditable(currentSection.key) && (
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-start space-x-3 text-xs shadow-2xs mb-6">
+                <Lock className="w-5 h-5 text-slate-500 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-sm font-bold text-amber-950 dark:text-amber-200">
-                      Action Required: {activeSectionCRs.length} Change Request{activeSectionCRs.length > 1 ? 's' : ''} in this Section
-                    </h3>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-100 text-rose-800 border border-rose-200 animate-pulse">
-                      Changes Requested
+                  <div className="flex items-center space-x-2">
+                    <span className="font-bold text-slate-700">
+                      Section Locked (No Changes Requested)
                     </span>
                   </div>
-                  <p className="text-xs text-amber-900/90 dark:text-amber-300/90 leading-relaxed">
-                    Our verification team has requested revisions for the highlighted field{activeSectionCRs.length > 1 ? 's' : ''} below. Look for the amber boxes with reviewer instructions to make the requested updates.
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    This section was verified and locked upon submission. Only fields specifically requested for revision by the verification team are editable.
                   </p>
                 </div>
               </div>
             )}
+
+            <fieldset disabled={isChangesRequested && !isSectionEditable(currentSection.key)} className={isChangesRequested && !isSectionEditable(currentSection.key) ? "contents pointer-events-none opacity-80 select-none" : "contents"}>
 
             {/* Render Section Form Bodies */}
             {/* Campus Context Switcher & Inheritance Bar (for campus-scoped & mixed sections when multi-campus) */}
@@ -2312,6 +3205,15 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 </div>
             )}
 
+            {/* PERSISTENT PAGE-LEVEL CHANGE REQUEST BANNER */}
+            {currentPagePendingCRs.length > 0 && (
+              <PageChangeRequestBanner
+                pageTitle={currentSection.title}
+                requests={currentPagePendingCRs}
+                onScrollToField={(fieldKey) => scrollToField(fieldKey)}
+              />
+            )}
+
             {/* SECTION 1: IDENTITY */}
             {currentSection.key === 'schoolProfile' && (
               <div className="space-y-6">
@@ -2329,15 +3231,17 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
                         {(() => {
                           const cr = getFieldCR('schoolProfile', 'schoolName');
+                          const isEditable = isFieldEditable('schoolProfile', 'schoolName');
                           return (
-                            <div className={getFieldWrapperClass(cr)}>
+                            <div className={getFieldWrapperClass(cr, isEditable)}>
                               <label className="block font-bold text-[#334155] mb-1">
                                 <span>Official School Name *</span>
-                                {renderCRBadge(cr)}
+                                {renderCRBadge(cr, isEditable)}
                               </label>
                               <input
                                 id="field-school-name"
                                 type="text"
+                                disabled={!isEditable}
                                 value={intakeData.schoolProfile.schoolName || ''}
                                 onChange={(e) => {
                                   const name = e.target.value;
@@ -2346,7 +3250,11 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                     updateSectionField('schoolProfile', 'slug', deriveSlugFromSchoolName(name));
                                   }
                                 }}
-                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                                className={getFieldInputClass(
+                                  cr,
+                                  "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs",
+                                  isEditable
+                                )}
                                 placeholder="e.g. Roshani Public School"
                               />
                               {renderFieldCRAlert(cr)}
@@ -2356,20 +3264,26 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                         {(() => {
                           const cr = getFieldCR('schoolProfile', 'displayName');
+                          const isEditable = isFieldEditable('schoolProfile', 'displayName');
                           return (
-                            <div className={getFieldWrapperClass(cr)}>
+                            <div className={getFieldWrapperClass(cr, isEditable)}>
                               <label className="block font-bold text-[#334155] mb-1">
                                 <span>Institution Display / Short Name</span>
-                                {renderCRBadge(cr)}
+                                {renderCRBadge(cr, isEditable)}
                               </label>
                               <input
                                 type="text"
+                                disabled={!isEditable}
                                 value={intakeData.schoolProfile.displayName || intakeData.schoolProfile.shortName || ''}
                                 onChange={(e) => {
                                   updateSectionField('schoolProfile', 'displayName', e.target.value);
                                   updateSectionField('schoolProfile', 'shortName', e.target.value);
                                 }}
-                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                                className={getFieldInputClass(
+                                  cr,
+                                  "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs",
+                                  isEditable
+                                )}
                                 placeholder="e.g. RPS Motihari"
                               />
                               {renderFieldCRAlert(cr)}
@@ -2379,27 +3293,33 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                         {(() => {
                           const cr = getFieldCR('schoolProfile', 'udiseCode');
+                          const isEditable = isFieldEditable('schoolProfile', 'udiseCode');
                           return (
-                            <div className={getFieldWrapperClass(cr)}>
+                            <div className={getFieldWrapperClass(cr, isEditable)}>
                               <label className="block font-bold text-[#334155] mb-1">
                                 <span>UDISE+ School Code *</span>
-                                {renderCRBadge(cr)}
+                                {renderCRBadge(cr, isEditable)}
                               </label>
                               <input
                                 type="text"
                                 inputMode="numeric"
                                 pattern="[0-9]{11}"
                                 maxLength={11}
+                                disabled={!isEditable}
                                 value={intakeData.schoolProfile.udiseCode || ''}
                                 onChange={(e) => {
                                   const cleanDigits = e.target.value.replace(/[^0-9]/g, '').slice(0, 11);
                                   updateSectionField('schoolProfile', 'udiseCode', cleanDigits);
                                 }}
-                                className={`w-full px-3.5 py-2.5 rounded-xl bg-white border text-[#131B2E] font-mono text-xs focus:outline-hidden transition shadow-2xs ${
-                                  intakeData.schoolProfile.udiseCode && intakeData.schoolProfile.udiseCode.length === 11
-                                    ? 'border-emerald-500 focus:ring-3 focus:ring-emerald-500/10'
-                                    : 'border-[#E2E8F0] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10'
-                                }`}
+                                className={getFieldInputClass(
+                                  cr,
+                                  `w-full px-3.5 py-2.5 rounded-xl bg-white border text-[#131B2E] font-mono text-xs focus:outline-hidden transition shadow-2xs ${
+                                    intakeData.schoolProfile.udiseCode && intakeData.schoolProfile.udiseCode.length === 11
+                                      ? 'border-emerald-500 focus:ring-3 focus:ring-emerald-500/10'
+                                      : 'border-[#E2E8F0] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10'
+                                  }`,
+                                  isEditable
+                                )}
                                 placeholder="11-digit UDISE+ Code (e.g. 10234567890)"
                               />
                               <span className="text-[10px] text-[#94A3B8] mt-1 block leading-relaxed">
@@ -2418,16 +3338,22 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         {/* Management Type First */}
                         {(() => {
                           const cr = getFieldCR('schoolProfile', 'managementType');
+                          const isEditable = isFieldEditable('schoolProfile', 'managementType');
                           return (
-                            <div className={getFieldWrapperClass(cr)}>
+                            <div className={getFieldWrapperClass(cr, isEditable)}>
                               <label className="block font-bold text-[#334155] mb-1">
                                 <span>Management Type *</span>
-                                {renderCRBadge(cr)}
+                                {renderCRBadge(cr, isEditable)}
                               </label>
                               <select
+                                disabled={!isEditable}
                                 value={intakeData.schoolProfile.managementType || 'Society'}
                                 onChange={(e) => updateSectionField('schoolProfile', 'managementType', e.target.value)}
-                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
+                                className={getFieldInputClass(
+                                  cr,
+                                  "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium",
+                                  isEditable
+                                )}
                               >
                                 <option value="Society">Society Managed</option>
                                 <option value="Trust">Trust Managed</option>
@@ -2448,12 +3374,13 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         {/* Then dynamic entity name based on selected Management Type */}
                         {(() => {
                           const cr = getFieldCR('schoolProfile', 'legalInstitutionName');
+                          const isEditable = isFieldEditable('schoolProfile', 'legalInstitutionName');
                           return (
-                            <div className={getFieldWrapperClass(cr)}>
+                            <div className={getFieldWrapperClass(cr, isEditable)}>
                               <div className="flex items-center justify-between mb-1">
                                 <label className="block font-bold text-[#334155] truncate">
                                   <span>{legalConfig.label}</span>
-                                  {renderCRBadge(cr)}
+                                  {renderCRBadge(cr, isEditable)}
                                 </label>
                                 <span className="text-[10px] font-semibold text-[#4338CA] bg-[#EEF2FF] border border-[#C7D2FE] px-1.5 py-0.5 rounded-md shrink-0 ml-1">
                                   {legalConfig.badge}
@@ -2461,9 +3388,14 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                               </div>
                               <input
                                 type="text"
+                                disabled={!isEditable}
                                 value={intakeData.schoolProfile.legalInstitutionName || ''}
                                 onChange={(e) => updateSectionField('schoolProfile', 'legalInstitutionName', e.target.value)}
-                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                                className={getFieldInputClass(
+                                  cr,
+                                  "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs",
+                                  isEditable
+                                )}
                                 placeholder={legalConfig.placeholder}
                               />
                               <span className="text-[10px] text-[#94A3B8] mt-1 block">
@@ -2476,20 +3408,27 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                         {(() => {
                           const cr = getFieldCR('schoolProfile', 'yearOfEstablishment');
+                          const isEditable = isFieldEditable('schoolProfile', 'yearOfEstablishment');
                           return (
-                            <div className={getFieldWrapperClass(cr)}>
-                              <label className="block font-bold text-[#334155] mb-1">
+                            <div id="field-container-yearOfEstablishment" className={getFieldWrapperClass(cr, isEditable)}>
+                              <label htmlFor="field-school-yearOfEstablishment" className="block font-bold text-[#334155] mb-1">
                                 <span>Year of Establishment</span>
-                                {renderCRBadge(cr)}
+                                {renderCRBadge(cr, isEditable)}
                               </label>
                               <input
+                                id="field-school-yearOfEstablishment"
                                 type="text"
+                                disabled={!isEditable}
                                 value={intakeData.schoolProfile.yearOfEstablishment || intakeData.schoolProfile.establishmentYear || ''}
                                 onChange={(e) => {
                                   updateSectionField('schoolProfile', 'yearOfEstablishment', e.target.value);
                                   updateSectionField('schoolProfile', 'establishmentYear', e.target.value);
                                 }}
-                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
+                                className={getFieldInputClass(
+                                  cr,
+                                  "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs",
+                                  isEditable
+                                )}
                                 placeholder="e.g. 2008"
                               />
                               <span className="text-[10px] text-[#94A3B8] mt-1 block">
@@ -2514,17 +3453,23 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     {(() => {
                       const cr = getFieldCR('schoolProfile', 'board');
+                      const isEditable = isFieldEditable('schoolProfile', 'board');
                       return (
-                        <div className={getFieldWrapperClass(cr)}>
-                          <label className="block font-bold text-[#334155] mb-1">
+                        <div id="field-container-board" className={getFieldWrapperClass(cr, isEditable)}>
+                          <label htmlFor="field-school-board" className="block font-bold text-[#334155] mb-1">
                             <span>Affiliation Board / Body *</span>
-                            {renderCRBadge(cr)}
+                            {renderCRBadge(cr, isEditable)}
                           </label>
                           <select
                             id="field-school-board"
+                            disabled={!isEditable}
                             value={intakeData.schoolProfile.board || 'CBSE'}
                             onChange={(e) => updateSectionField('schoolProfile', 'board', e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium",
+                              isEditable
+                            )}
                           >
                             <option value="CBSE">CBSE (Central Board of Secondary Education)</option>
                             <option value="CISCE / ICSE">CISCE / ICSE</option>
@@ -2544,17 +3489,24 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                     {(() => {
                       const cr = getFieldCR('schoolProfile', 'schoolCode');
+                      const isEditable = isFieldEditable('schoolProfile', 'schoolCode');
                       return (
-                        <div className={getFieldWrapperClass(cr)}>
-                          <label className="block font-bold text-[#334155] mb-1">
+                        <div id="field-container-schoolCode" className={getFieldWrapperClass(cr, isEditable)}>
+                          <label htmlFor="field-school-schoolCode" className="block font-bold text-[#334155] mb-1">
                             <span>{currentBoardConfig.codeLabel || 'CBSE School Code (School No.)'}</span>
-                            {renderCRBadge(cr)}
+                            {renderCRBadge(cr, isEditable)}
                           </label>
                           <input
+                            id="field-school-schoolCode"
                             type="text"
+                            disabled={!isEditable}
                             value={intakeData.schoolProfile.schoolCode || ''}
                             onChange={(e) => updateSectionField('schoolProfile', 'schoolCode', e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs",
+                              isEditable
+                            )}
                             placeholder={currentBoardConfig.codePlaceholder}
                           />
                           <span className="text-[10px] text-[#94A3B8] mt-1 block">
@@ -2567,17 +3519,24 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                     {(() => {
                       const cr = getFieldCR('schoolProfile', 'affiliationNumber');
+                      const isEditable = isFieldEditable('schoolProfile', 'affiliationNumber');
                       return (
-                        <div className={getFieldWrapperClass(cr)}>
-                          <label className="block font-bold text-[#334155] mb-1">
+                        <div id="field-container-affiliationNumber" className={getFieldWrapperClass(cr, isEditable)}>
+                          <label htmlFor="field-school-affiliationNumber" className="block font-bold text-[#334155] mb-1">
                             <span>{currentBoardConfig.affiliationLabel || 'CBSE Affiliation Number'}</span>
-                            {renderCRBadge(cr)}
+                            {renderCRBadge(cr, isEditable)}
                           </label>
                           <input
+                            id="field-school-affiliationNumber"
                             type="text"
+                            disabled={!isEditable}
                             value={intakeData.schoolProfile.affiliationNumber || ''}
                             onChange={(e) => updateSectionField('schoolProfile', 'affiliationNumber', e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs"
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] font-mono text-xs placeholder:text-[#94A3B8] transition shadow-2xs",
+                              isEditable
+                            )}
                             placeholder={currentBoardConfig.affiliationPlaceholder}
                           />
                           <span className="text-[10px] text-[#94A3B8] mt-1 block">
@@ -2590,13 +3549,15 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                     {(() => {
                       const cr = getFieldCR('schoolProfile', 'schoolType');
+                      const isEditable = isFieldEditable('schoolProfile', 'schoolType');
                       return (
-                        <div className={getFieldWrapperClass(cr)}>
+                        <div className={getFieldWrapperClass(cr, isEditable)}>
                           <label className="block font-bold text-[#334155] mb-1">
                             <span>School Type / Level *</span>
-                            {renderCRBadge(cr)}
+                            {renderCRBadge(cr, isEditable)}
                           </label>
                           <select
+                            disabled={!isEditable}
                             value={
                               intakeData.schoolProfile.schoolType === 'K-12 School'
                                 ? 'K-12 School (Kindergarten to 12th)'
@@ -2624,7 +3585,11 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                 });
                               }
                             }}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium"
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs font-medium",
+                              isEditable
+                            )}
                           >
                             <option value="K-12 School (Kindergarten to 12th)">
                               K-12 School (Complete KG / Nursery to 12th Standard)
@@ -2657,32 +3622,61 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       );
                     })()}
 
-                    <div>
-                      <label className="block font-bold text-[#334155] mb-1">Gender Category *</label>
-                      <select
-                        value={intakeData.schoolProfile.genderCategory || 'co_ed'}
-                        onChange={(e) => {
-                          const v = e.target.value as any;
-                          updateSectionField('schoolProfile', 'genderCategory', v);
-                          updateSectionField('schoolProfile', 'coEdStatus', v);
-                        }}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs"
-                      >
-                        <option value="co_ed">Co-Educational</option>
-                        <option value="boys">Boys Only</option>
-                        <option value="girls">Girls Only</option>
-                      </select>
-                      <span className="text-[10px] text-[#94A3B8] mt-1 block">
-                        Student gender enrollment policy.
-                      </span>
-                    </div>
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'genderCategory');
+                      const isEditable = isFieldEditable('schoolProfile', 'genderCategory');
+                      return (
+                        <div className={getFieldWrapperClass(cr, isEditable)}>
+                          <label className="block font-bold text-[#334155] mb-1">
+                            <span>Gender Category *</span>
+                            {renderCRBadge(cr, isEditable)}
+                          </label>
+                          <select
+                            disabled={!isEditable}
+                            value={intakeData.schoolProfile.genderCategory || 'co_ed'}
+                            onChange={(e) => {
+                              const v = e.target.value as any;
+                              updateSectionField('schoolProfile', 'genderCategory', v);
+                              updateSectionField('schoolProfile', 'coEdStatus', v);
+                            }}
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] transition shadow-2xs",
+                              isEditable
+                            )}
+                          >
+                            <option value="co_ed">Co-Educational</option>
+                            <option value="boys">Boys Only</option>
+                            <option value="girls">Girls Only</option>
+                          </select>
+                          <span className="text-[10px] text-[#94A3B8] mt-1 block">
+                            Student gender enrollment policy.
+                          </span>
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
 
-                    <SchoolAccommodationSelector
-                      value={intakeData.schoolProfile.residentialStatus}
-                      onChange={(val) => updateSectionField('schoolProfile', 'residentialStatus', val)}
-                      label="School Accommodation Type *"
-                      helperText="Select how students are accommodated at the school."
-                    />
+                    {(() => {
+                      const cr = getFieldCR('schoolProfile', 'residentialStatus');
+                      const isEditable = isFieldEditable('schoolProfile', 'residentialStatus');
+                      return (
+                        <div className={getFieldWrapperClass(cr, isEditable)}>
+                          <div className={!isEditable ? "pointer-events-none opacity-80" : ""}>
+                            <SchoolAccommodationSelector
+                              value={intakeData.schoolProfile.residentialStatus}
+                              onChange={(val) => {
+                                if (isEditable) updateSectionField('schoolProfile', 'residentialStatus', val);
+                              }}
+                              label="School Accommodation Type *"
+                              helperText="Select how students are accommodated at the school."
+                            />
+                          </div>
+                          {renderCRBadge(cr, isEditable)}
+                          {renderFieldCRAlert(cr)}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -2696,18 +3690,24 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                     {(() => {
                       const cr = getFieldCR('schoolProfile', 'officialEmail');
+                      const isEditable = isFieldEditable('schoolProfile', 'officialEmail');
                       return (
-                        <div className={getFieldWrapperClass(cr)}>
-                          <label className="block font-bold text-[#334155] mb-1">
+                        <div id="field-container-officialEmail" className={getFieldWrapperClass(cr, isEditable)}>
+                          <label htmlFor="field-school-email" className="block font-bold text-[#334155] mb-1">
                             <span>Official School Email *</span>
-                            {renderCRBadge(cr)}
+                            {renderCRBadge(cr, isEditable)}
                           </label>
                           <input
                             id="field-school-email"
                             type="email"
+                            disabled={!isEditable}
                             value={intakeData.schoolProfile.officialEmail || ''}
                             onChange={(e) => updateSectionField('schoolProfile', 'officialEmail', e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs",
+                              isEditable
+                            )}
                             placeholder="info@school.edu.in"
                           />
                           {renderFieldCRAlert(cr)}
@@ -2717,18 +3717,24 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                     {(() => {
                       const cr = getFieldCR('schoolProfile', 'officialPhone');
+                      const isEditable = isFieldEditable('schoolProfile', 'officialPhone');
                       return (
-                        <div className={getFieldWrapperClass(cr)}>
-                          <label className="block font-bold text-[#334155] mb-1">
+                        <div id="field-container-officialPhone" className={getFieldWrapperClass(cr, isEditable)}>
+                          <label htmlFor="field-school-phone" className="block font-bold text-[#334155] mb-1">
                             <span>Official School Phone / Helpline *</span>
-                            {renderCRBadge(cr)}
+                            {renderCRBadge(cr, isEditable)}
                           </label>
                           <input
                             id="field-school-phone"
                             type="tel"
+                            disabled={!isEditable}
                             value={intakeData.schoolProfile.officialPhone || ''}
                             onChange={(e) => updateSectionField('schoolProfile', 'officialPhone', e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs",
+                              isEditable
+                            )}
                             placeholder="+91 98765 43210"
                           />
                           {renderFieldCRAlert(cr)}
@@ -2738,20 +3744,26 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                     {(() => {
                       const cr = getFieldCR('schoolProfile', 'secondaryPhone') || getFieldCR('schoolProfile', 'emergencyContact');
+                      const isEditable = isFieldEditable('schoolProfile', 'secondaryPhone') || isFieldEditable('schoolProfile', 'emergencyContact');
                       return (
-                        <div className={getFieldWrapperClass(cr)}>
+                        <div id="field-container-secondaryPhone" className={getFieldWrapperClass(cr, isEditable)}>
                           <label className="block font-bold text-[#334155] mb-1">
                             <span>Emergency / Alternate Phone</span>
-                            {renderCRBadge(cr)}
+                            {renderCRBadge(cr, isEditable)}
                           </label>
                           <input
                             type="tel"
+                            disabled={!isEditable}
                             value={intakeData.schoolProfile.emergencyContact || intakeData.schoolProfile.secondaryPhone || ''}
                             onChange={(e) => {
                               updateSectionField('schoolProfile', 'emergencyContact', e.target.value);
                               updateSectionField('schoolProfile', 'secondaryPhone', e.target.value);
                             }}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs",
+                              isEditable
+                            )}
                             placeholder="Alternate contact phone"
                           />
                           {renderFieldCRAlert(cr)}
@@ -2761,17 +3773,23 @@ export default function SchoolOnboardingPortal({ token }: Props) {
 
                     {(() => {
                       const cr = getFieldCR('schoolProfile', 'whatsappNumber');
+                      const isEditable = isFieldEditable('schoolProfile', 'whatsappNumber');
                       return (
-                        <div className={getFieldWrapperClass(cr)}>
+                        <div className={getFieldWrapperClass(cr, isEditable)}>
                           <label className="block font-bold text-[#334155] mb-1">
                             <span>Official WhatsApp Support Number</span>
-                            {renderCRBadge(cr)}
+                            {renderCRBadge(cr, isEditable)}
                           </label>
                           <input
                             type="tel"
+                            disabled={!isEditable}
                             value={intakeData.schoolProfile.whatsappNumber || ''}
                             onChange={(e) => updateSectionField('schoolProfile', 'whatsappNumber', e.target.value)}
-                            className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs"
+                            className={getFieldInputClass(
+                              cr,
+                              "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden text-[#131B2E] placeholder:text-[#94A3B8] transition shadow-2xs",
+                              isEditable
+                            )}
                             placeholder="WhatsApp contact for parent inquiries"
                           />
                           {renderFieldCRAlert(cr)}
@@ -2791,38 +3809,48 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                     <h3 className="text-sm font-bold text-[#131B2E]">Campus & Branch Facilities</h3>
                     <p className="text-xs text-[#94A3B8]">Add multiple branches if your institution operates separate primary or senior wings.</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const list = intakeData.campuses || [];
-                      const nextNum = list.length + 1;
-                      const mainCamp = list[0] || intakeData.schoolProfile;
-                      updateSectionDirect('campuses', [
-                        ...list,
-                        {
-                          id: `campus-${Date.now()}`,
-                          name: `Campus ${nextNum}`,
-                          code: `CMP-${nextNum}`,
-                          address: '',
-                          country: mainCamp.country || 'India',
-                          otherCountry: mainCamp.otherCountry || '',
-                          state: mainCamp.state || project.state || '',
-                          otherStateProvince: mainCamp.otherStateProvince || '',
-                          district: mainCamp.district || '',
-                          otherDistrict: mainCamp.otherDistrict || '',
-                          city: mainCamp.city || '',
-                          pin: '',
-                          contactPhone: mainCamp.contactPhone || mainCamp.officialPhone || '',
-                          isMainCampus: false,
-                          facilities: [],
-                        },
-                      ]);
-                    }}
-                    className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-2xs rounded-xl text-xs font-semibold shadow-xs"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Campus</span>
-                  </button>
+                  {(() => {
+                    const isAddCampusAllowed = !isChangesRequested || isFieldEditable('campuses', 'campuses');
+                    return (
+                      <button
+                        type="button"
+                        disabled={!isAddCampusAllowed}
+                        onClick={() => {
+                          const list = intakeData.campuses || [];
+                          const nextNum = list.length + 1;
+                          const mainCamp = list[0] || intakeData.schoolProfile;
+                          updateSectionDirect('campuses', [
+                            ...list,
+                            {
+                              id: `campus-${Date.now()}`,
+                              name: `Campus ${nextNum}`,
+                              code: `CMP-${nextNum}`,
+                              address: '',
+                              country: mainCamp.country || 'India',
+                              otherCountry: mainCamp.otherCountry || '',
+                              state: mainCamp.state || project.state || '',
+                              otherStateProvince: mainCamp.otherStateProvince || '',
+                              district: mainCamp.district || '',
+                              otherDistrict: mainCamp.otherDistrict || '',
+                              city: mainCamp.city || '',
+                              pin: '',
+                              contactPhone: mainCamp.contactPhone || mainCamp.officialPhone || '',
+                              isMainCampus: false,
+                              facilities: [],
+                            },
+                          ]);
+                        }}
+                        className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-xs transition ${
+                          isAddCampusAllowed
+                            ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-2xs cursor-pointer'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                        }`}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Campus</span>
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 {/* INSTITUTIONAL ACADEMIC SCOPE OVERVIEW BANNER */}
@@ -3085,7 +4113,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                         {(() => {
                           const cr = getFieldCR('campuses', camp.isMainCampus ? 'mainCampusAddress' : 'address');
                           return (
-                            <div className={`md:col-span-2 ${getFieldWrapperClass(cr)}`}>
+                            <div id="field-container-mainCampusAddress" className={`md:col-span-2 ${getFieldWrapperClass(cr)}`}>
                               <label htmlFor={idx === 0 ? 'field-campus-address' : `campus-${camp.id || idx}-address`} className="block font-medium text-[#64748B] mb-1.5">
                                 <span>Campus Postal Address *</span>
                                 {renderCRBadge(cr)}
@@ -3095,7 +4123,10 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                                 type="text"
                                 value={camp.address}
                                 onChange={(e) => updateCampusField(idx, { address: e.target.value })}
-                                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                                className={getFieldInputClass(
+                                  cr,
+                                  "w-full px-3.5 py-2.5 rounded-xl bg-white border border-[#E2E8F0] text-[#131B2E] hover:border-[#CBD5E1] focus:border-[#4338CA] focus:ring-3 focus:ring-[#4338CA]/10 focus:outline-hidden transition shadow-2xs"
+                                )}
                                 placeholder="Campus street, locality, gate road"
                               />
                               {renderFieldCRAlert(cr)}
@@ -3697,34 +4728,44 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                       <h3 className="font-bold text-[#131B2E] text-sm">Managing Committee &amp; Directors</h3>
                       <p className="text-[11px] text-[#64748B]">Board of trustees, directors, and governing body members with credentials and desk messages.</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const members = intakeData.leadership?.managementMembers || [];
-                        updateSectionField('leadership', 'managementMembers', [
-                          ...members,
-                          {
-                            id: `mgmt-${Date.now()}`,
-                            name: '',
-                            designation: '',
-                            role: '',
-                            email: '',
-                            phone: '',
-                            qualification: '',
-                            deskMessage: '',
-                            deskMessageSource: 'generated',
-                            biography: '',
-                            photoUrl: '',
-                            photo: null,
-                            displayOnWebsite: true,
-                          },
-                        ]);
-                      }}
-                      className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-[#4338CA] hover:bg-[#3730A3] text-white shadow-xs rounded-xl text-xs font-semibold transition shrink-0"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Committee Member</span>
-                    </button>
+                  {(() => {
+                    const isAddMemberAllowed = !isChangesRequested || isFieldEditable('leadership', 'managementMembers');
+                    return (
+                      <button
+                        type="button"
+                        disabled={!isAddMemberAllowed}
+                        onClick={() => {
+                          const members = intakeData.leadership?.managementMembers || [];
+                          updateSectionField('leadership', 'managementMembers', [
+                            ...members,
+                            {
+                              id: `mgmt-${Date.now()}`,
+                              name: '',
+                              designation: '',
+                              role: '',
+                              email: '',
+                              phone: '',
+                              qualification: '',
+                              deskMessage: '',
+                              deskMessageSource: 'generated',
+                              biography: '',
+                              photoUrl: '',
+                              photo: null,
+                              displayOnWebsite: true,
+                            },
+                          ]);
+                        }}
+                        className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold shadow-xs transition shrink-0 ${
+                          isAddMemberAllowed
+                            ? 'bg-[#4338CA] hover:bg-[#3730A3] text-white cursor-pointer'
+                            : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                        }`}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add Committee Member</span>
+                      </button>
+                    );
+                  })()}
                   </div>
 
                   <div className="space-y-4">
@@ -4014,14 +5055,15 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   const isSvg = effectiveLogoUrl?.toLowerCase().includes('.svg');
 
                   const crLogo = getFieldCR('brandingDesign', 'logoUrl', 'logo_primary') || getFieldCR('media', 'logo_primary') || getFieldCR('assetChecklist', 'logo_primary');
+                  const isLogoEditable = isFieldEditable('brandingDesign', 'logoUrl', 'logo_primary');
 
                   return (
-                    <div className={`border rounded-2xl p-5 sm:p-6 shadow-2xs space-y-3.5 ${crLogo ? getFieldWrapperClass(crLogo) : 'bg-[#FAF7F2] border-[#E2E8F0]'}`}>
+                    <div className={`border rounded-2xl p-5 sm:p-6 shadow-2xs space-y-3.5 ${crLogo ? getFieldWrapperClass(crLogo, isLogoEditable) : 'bg-[#FAF7F2] border-[#E2E8F0]'}`}>
                       <div className="flex items-center justify-between border-b border-[#E2E8F0] pb-3 flex-wrap gap-2">
                         <div className="flex items-center space-x-2">
                           <Sparkles className="w-4 h-4 text-[#4338CA]" />
                           <h3 className="font-bold text-sm text-[#131B2E]">Official School Logo / Crest</h3>
-                          {renderCRBadge(crLogo)}
+                          {renderCRBadge(crLogo, isLogoEditable)}
                         </div>
                         {Boolean(effectiveLogoUrl) && (
                           <span className="inline-flex items-center space-x-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full shadow-2xs">
@@ -4135,8 +5177,8 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             <button
                               type="button"
                               onClick={() => logoInputRef.current?.click()}
-                              disabled={isUploadingLogo}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-white text-xs font-semibold text-[#334155] hover:bg-[#FAF7F2] hover:border-[#CBD5E1] transition shadow-2xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#4338CA]/20 disabled:opacity-50"
+                              disabled={isUploadingLogo || !isLogoEditable}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-[#E2E8F0] bg-white text-xs font-semibold text-[#334155] hover:bg-[#FAF7F2] hover:border-[#CBD5E1] transition shadow-2xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-[#4338CA]/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Upload className="w-3.5 h-3.5 text-[#64748B]" />
                               <span>Change File</span>
@@ -4144,8 +5186,8 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             <button
                               type="button"
                               onClick={handleRemoveLogo}
-                              disabled={isUploadingLogo}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition shadow-2xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 disabled:opacity-50"
+                              disabled={isUploadingLogo || !isLogoEditable}
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-xs font-semibold text-rose-700 hover:bg-rose-100 transition shadow-2xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                               <span>Remove</span>
@@ -4158,33 +5200,43 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                             role="button"
                             tabIndex={0}
                             onKeyDown={(e) => {
-                              if (e.key === 'Enter' || e.key === ' ') {
+                              if ((e.key === 'Enter' || e.key === ' ') && isLogoEditable) {
                                 e.preventDefault();
                                 logoInputRef.current?.click();
                               }
                             }}
                             onDragOver={(e) => {
+                              if (!isLogoEditable) return;
                               e.preventDefault();
                               setIsDraggingLogo(true);
                             }}
                             onDragLeave={() => setIsDraggingLogo(false)}
                             onDrop={(e) => {
+                              if (!isLogoEditable) return;
                               e.preventDefault();
                               setIsDraggingLogo(false);
                               if (e.dataTransfer.files?.[0]) handleLogoUpload(e.dataTransfer.files[0]);
                             }}
-                            onClick={() => logoInputRef.current?.click()}
-                            className={`border-2 border-dashed rounded-2xl p-6 sm:p-7 text-center cursor-pointer transition-all duration-150 focus:outline-hidden focus:ring-3 focus:ring-[#4338CA]/20 ${
-                              isDraggingLogo
-                                ? 'border-[#4338CA] bg-indigo-50/60 scale-[1.005]'
-                                : 'border-[#CBD5E1] bg-white hover:border-[#4338CA]/60 hover:bg-[#FAF7F2]'
+                            onClick={() => {
+                              if (isLogoEditable) logoInputRef.current?.click();
+                            }}
+                            className={`border-2 border-dashed rounded-2xl p-6 sm:p-7 text-center transition-all duration-150 focus:outline-hidden focus:ring-3 focus:ring-[#4338CA]/20 ${
+                              !isLogoEditable
+                                ? 'border-slate-200 bg-slate-50/60 opacity-80 cursor-not-allowed'
+                                : isDraggingLogo
+                                ? 'border-[#4338CA] bg-indigo-50/60 scale-[1.005] cursor-pointer'
+                                : 'border-[#CBD5E1] bg-white hover:border-[#4338CA]/60 hover:bg-[#FAF7F2] cursor-pointer'
                             }`}
                           >
                             <div className="mx-auto w-11 h-11 rounded-2xl bg-[#EEF2FF] border border-[#C7D2FE] flex items-center justify-center text-[#4338CA] mb-2.5 shadow-2xs">
                               <Upload className="w-5 h-5" />
                             </div>
                             <div className="text-xs font-bold text-[#131B2E]">
-                              Drag and drop your official logo here, or <span className="text-[#4338CA] underline underline-offset-2">browse files</span>
+                              {isLogoEditable ? (
+                                <>Drag and drop your official logo here, or <span className="text-[#4338CA] underline underline-offset-2">browse files</span></>
+                              ) : (
+                                <span>Logo is verified &amp; locked</span>
+                              )}
                             </div>
                             <p className="text-[11px] text-[#64748B] mt-1">
                               High-resolution PNG, JPG or SVG (Transparent background recommended, up to 15MB)
@@ -4375,17 +5427,25 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   <div className="flex items-center space-x-2.5 p-3 rounded-xl bg-indigo-50/70 border border-indigo-100 text-xs text-[#4338CA]">
                     <Sparkles className="w-4 h-4 shrink-0 text-[#4338CA]" />
                     <p className="leading-relaxed">
-                      Not sure which style to choose? Preview each option to see how your school website could look and feel.
+                      {COMMUNICATION_STYLE_CONFIGS.length === 1
+                        ? "Currently active design template: Roshani Public School reference layout. Preview the live website or inspect the components below. Additional design styles will be added as new templates are created."
+                        : "Not sure which style to choose? Preview each option to see how your school website could look and feel."}
                     </p>
                   </div>
 
                   <div
                     role="radiogroup"
                     aria-label="Brand / Communication Style"
-                    className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+                    className={
+                      COMMUNICATION_STYLE_CONFIGS.length === 1
+                        ? 'max-w-xl'
+                        : 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4'
+                    }
                   >
                     {COMMUNICATION_STYLE_CONFIGS.map((style) => {
-                      const isSelected = normalizeBrandTone(intakeData.brandingDesign.brandTone) === style.value;
+                      const isSelected =
+                        COMMUNICATION_STYLE_CONFIGS.length === 1 ||
+                        normalizeBrandTone(intakeData?.brandingDesign?.brandTone) === style.value;
                       const IconComponent = style.icon;
 
                       return (
@@ -4452,11 +5512,24 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                               <span className="uppercase tracking-wider text-[9px] font-bold text-slate-400">
                                 Website Preview
                               </span>
-                              <span className="text-[9px] text-[#4338CA] font-medium group-hover:underline">
-                                Roshani School Preview
-                              </span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewingStyle(style);
+                                }}
+                                className="text-[9px] text-[#4338CA] font-medium hover:underline cursor-pointer"
+                              >
+                                Full Screen Preview
+                              </button>
                             </div>
-                            <div className="rounded-lg overflow-hidden border border-slate-200/80 shadow-2xs h-[245px] w-full bg-slate-50 flex flex-col">
+                            <div
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewingStyle(style);
+                              }}
+                              className="rounded-lg overflow-hidden border border-slate-200/80 shadow-2xs h-[245px] w-full bg-slate-50 flex flex-col cursor-pointer hover:ring-2 hover:ring-[#4338CA]/30 transition"
+                            >
                               <MiniWebsitePreview style={style} />
                             </div>
                           </div>
@@ -4473,22 +5546,18 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                               {style.badge}
                             </span>
 
-                            <button
-                              type="button"
+                            <a
+                              href={style.demoUrl || 'https://roshani-public-school.vercel.app/'}
+                              target="_blank"
+                              rel="noopener noreferrer"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setPreviewingStyle(style);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.stopPropagation();
-                                }
                               }}
                               className="inline-flex items-center space-x-1 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-[11px] font-semibold text-[#4338CA] transition shadow-2xs cursor-pointer shrink-0"
                             >
                               <span>View Website Sample</span>
                               <ExternalLink className="w-3 h-3 text-[#4338CA]" />
-                            </button>
+                            </a>
                           </div>
                         </div>
                       );
@@ -4520,14 +5589,21 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               <UniversalVerificationPage
                 token={token}
                 intakeData={intakeData}
+                isAdmin={isAdmin}
                 updateSectionField={updateSectionField}
                 updateSectionDirect={updateSectionDirect}
+                changeRequests={changeRequests}
+                onRespondToCR={(cr) => handleOpenCRModal(cr)}
                 onNavigateToBranding={() => {
                   const brandSecIdx = INTAKE_SECTIONS.findIndex((s) => s.key === 'brandingDesign');
                   if (brandSecIdx !== -1) setCurrentStepIndex(brandSecIdx);
                 }}
                 onNavigateToSection={navigateToSectionKey}
                 setPreviewingStyle={setPreviewingStyle}
+                onSubmitSuccess={(ver) => {
+                  setIsSubmitSuccess(true);
+                  setSubmittedVersion(ver || 1);
+                }}
               />
             )}
 
@@ -4585,6 +5661,16 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 project={effectiveProject || project}
                 activeCampusId={activeCampusId}
                 onNavigateToSection={navigateToSectionKey}
+                activeSubTab={(activeSubTab as CurriculumSubTabKey) || 'overview'}
+                onSubTabChange={(tab) => {
+                  setActiveSubTab(tab);
+                  const matchedStep = flattenedSteps.find(
+                    (s) => s.sectionKey === 'curriculum' && s.subTabKey === tab
+                  );
+                  if (matchedStep) {
+                    syncUrlToStep(matchedStep);
+                  }
+                }}
               />
             )}
 
@@ -4975,12 +6061,21 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                 updateSectionField={updateSectionField}
                 token={token}
                 changeRequests={changeRequests}
-                onRespondToCR={(cr) => {
-                  setRespondingCR(cr);
-                  setCrResponseText(cr.school_response || '');
-                  setCrUpdatedValue(cr.school_updated_value || cr.current_value || '');
-                  setCrSubmitError(null);
-                }}
+                onRespondToCR={(cr) => handleOpenCRModal(cr)}
+              />
+            )}
+
+            {/* SECTION: LEGAL POLICIES & STATUTORY DISCLOSURES */}
+            {currentSection.key === 'legalPolicies' && (
+              <LegalPoliciesSection
+                intakeData={intakeData}
+                updateSectionDirect={updateSectionDirect}
+                updateSectionField={updateSectionField}
+                token={token}
+                schoolName={intakeData.schoolProfile?.schoolName || project?.school_name}
+                changeRequests={changeRequests}
+                onRespondToCR={(cr) => handleOpenCRModal(cr)}
+                isFieldEditable={isFieldEditable}
               />
             )}
 
@@ -4989,7 +6084,7 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               'schoolProfile', 'campuses', 'leadership', 'brandingDesign',
               'websiteRequirements', 'schoolContent', 'institutionStructure', 'feesConfiguration',
               'transportConfig', 'hostelConfig', 'usersAccess', 'admissions', 'assetChecklist',
-              'communicationConfig'
+              'communicationConfig', 'legalPolicies'
             ].includes(currentSection.key) && (
               <div className="space-y-4 text-xs">
                 {currentSection.key !== 'domainPresence' &&
@@ -5350,6 +6445,8 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               </div>
             )}
 
+            </fieldset>
+
             {/* Bottom Step Navigation Bar */}
             <div className="border-t border-[#E2E8F0] pt-6 sm:pt-7 space-y-3.5">
               {currentSection.key === 'domainPresence' && domainStepError && (
@@ -5372,58 +6469,86 @@ export default function SchoolOnboardingPortal({ token }: Props) {
               )}
 
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-                <div className="order-2 sm:order-1 flex-1 flex justify-start">
+                <div className="order-2 sm:order-1 flex-1 flex items-center justify-start gap-2">
                   <button
                     type="button"
-                    disabled={currentStepIndex === 0}
+                    disabled={!prevNavigableStep && currentStepIndex === 0}
                     onClick={handlePrevious}
                     className={`w-full sm:w-auto inline-flex items-center justify-center space-x-1.5 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs font-semibold border transition ${
-                      currentStepIndex === 0
+                      !prevNavigableStep && currentStepIndex === 0
                         ? 'border-[#E2E8F0] bg-[#FAF7F2] text-[#94A3B8] cursor-not-allowed'
                         : 'border-[#CBD5E1] bg-white hover:bg-[#FAF7F2] text-[#334155] shadow-2xs hover:border-[#94A3B8] active:scale-[0.98] cursor-pointer'
                     }`}
-                    aria-label="Previous Section"
+                    aria-label={
+                      prevNavigableStep
+                        ? currentNavigableStep.isChildStep && !currentNavigableStep.isFirstChild
+                          ? `Previous: ${prevNavigableStep.shortTitle}`
+                          : 'Previous Section'
+                        : 'Previous Section'
+                    }
+                    title={
+                      prevNavigableStep
+                        ? `Go back to ${prevNavigableStep.shortTitle}`
+                        : undefined
+                    }
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    <span>Previous <span className="hidden sm:inline">Section</span></span>
+                    <span>
+                      Previous{' '}
+                      <span className="hidden sm:inline">
+                        {currentNavigableStep.isChildStep && !currentNavigableStep.isFirstChild ? '' : 'Section'}
+                      </span>
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveDraft}
+                    disabled={isSaving}
+                    className="hidden sm:inline-flex items-center justify-center space-x-1.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold border border-[#CBD5E1] bg-white hover:bg-[#FAF7F2] text-[#334155] shadow-2xs hover:border-[#94A3B8] transition active:scale-[0.98] cursor-pointer disabled:opacity-60"
+                  >
+                    <Save className="w-3.5 h-3.5 text-slate-500" />
+                    <span>{isSaving ? 'Saving...' : 'Save Draft'}</span>
                   </button>
                 </div>
 
                 <div className="order-1 sm:order-2 text-xs text-[#64748B] font-mono text-center font-semibold shrink-0 px-2">
                   Section {currentStepIndex + 1} of {applicableSections.length}
+                  {currentNavigableStep.isChildStep && typeof currentNavigableStep.childIndex === 'number' && (
+                    <span className="text-[#94A3B8] font-normal"> · Step {currentNavigableStep.childIndex + 1} of {currentNavigableStep.totalChildren}</span>
+                  )}
                 </div>
 
                 <div className="order-3 sm:order-3 flex-1 flex justify-end">
-                  {currentStepIndex < applicableSections.length - 1 ? (
+                  {nextNavigableStep && currentSection.key !== 'websiteRequirements' ? (
                     <button
                       type="button"
                       onClick={handleContinue}
                       className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-4 sm:px-5 py-2.5 bg-[#4338CA] hover:bg-[#3730A3] text-white rounded-xl text-xs font-bold shadow-xs transition active:scale-[0.98] cursor-pointer"
-                      aria-label="Continue to next section"
+                      aria-label={
+                        nextNavigableStep.sectionKey === 'websiteRequirements'
+                          ? 'Go to Final Review'
+                          : `Continue to ${nextNavigableStep.shortTitle || nextNavigableStep.title}`
+                      }
+                      title={
+                        nextNavigableStep.sectionKey === 'websiteRequirements'
+                          ? 'Go to Final Review'
+                          : `Continue to ${nextNavigableStep.shortTitle || nextNavigableStep.title}`
+                      }
                     >
-                      <span>Continue</span>
+                      <span>
+                        {nextNavigableStep.sectionKey === 'websiteRequirements'
+                          ? 'Go to Final Review'
+                          : 'Continue'}
+                      </span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleSubmit}
-                      disabled={isSubmitting || !completeness.isSubmissionReady}
-                      className={`w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-4 sm:px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-xs transition ${
-                        completeness.isSubmissionReady
-                          ? 'bg-emerald-600 hover:bg-emerald-700 cursor-pointer'
-                          : 'bg-[#FAF7F2] text-[#94A3B8] cursor-not-allowed border border-[#E2E8F0]'
-                      }`}
-                      aria-label="Submit master onboarding data"
-                    >
-                      <Send className="w-4 h-4" />
-                      <span>{isSubmitting ? 'Submitting...' : 'Submit Master Data'}</span>
-                    </button>
-                  )}
+                  ) : null}
                 </div>
               </div>
             </div>
           </div>
+          )}
         </main>
       </div>
 
@@ -5488,19 +6613,24 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   </div>
                 )}
 
-                {/* Updated value input */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-                    Corrected Value or URL
-                  </label>
-                  <input
-                    type="text"
-                    value={crUpdatedValue}
-                    onChange={(e) => setCrUpdatedValue(e.target.value)}
-                    placeholder="e.g. correct title, updated phone, or high-res image link"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-hidden focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
+                {/* Dynamic Correction Input */}
+                <CorrectionInput
+                  request={respondingCR}
+                  requestType={resolveChangeRequestType(respondingCR)}
+                  value={crUpdatedValue}
+                  token={token}
+                  initialFile={crUploadedFile}
+                  onChange={(val) => setCrUpdatedValue(val)}
+                  onFileUploaded={(meta) => {
+                    setCrUploadedFile(meta);
+                    setCrUpdatedValue(meta.url);
+                  }}
+                  onFileRemoved={() => {
+                    setCrUploadedFile(null);
+                    setCrUpdatedValue('');
+                  }}
+                  onValidChange={setIsCRValid}
+                />
 
                 {/* Explanation / Notes input */}
                 <div>
@@ -5517,19 +6647,40 @@ export default function SchoolOnboardingPortal({ token }: Props) {
                   />
                 </div>
 
+                {(!crResponseText.trim() || !isCRValid) && (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
+                    {!isCRValid && (
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>Please attach the requested PDF document or provide the required value above.</span>
+                      </div>
+                    )}
+                    {!crResponseText.trim() && (
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>Please enter a short clarification note to the reviewer.</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex items-center justify-end space-x-3 pt-2">
                   <button
                     type="button"
-                    onClick={() => setRespondingCR(null)}
-                    className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+                    onClick={() => {
+                      setRespondingCR(null);
+                      setCrSubmitError(null);
+                      setCrUploadedFile(null);
+                    }}
+                    className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 cursor-pointer"
                     disabled={isSubmittingCR}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={isSubmittingCR || !crResponseText.trim()}
-                    className="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl shadow-xs flex items-center space-x-2 transition-all"
+                    disabled={isSubmittingCR || !crResponseText.trim() || !isCRValid}
+                    className="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-xs flex items-center space-x-2 transition-all cursor-pointer"
                   >
                     {isSubmittingCR && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                     <span>Submit Correction for Re-Review</span>
@@ -5540,6 +6691,17 @@ export default function SchoolOnboardingPortal({ token }: Props) {
           </div>
         </ModalPortal>
       )}
+
+      {/* GLOBAL CHANGE REQUEST DRAWER */}
+      <GlobalChangeRequestDrawer
+        isOpen={isCRDrawerOpen}
+        onClose={() => setIsCRDrawerOpen(false)}
+        changeRequests={changeRequests}
+        onNavigateToField={(pageKey, fieldKey) => {
+          setIsCRDrawerOpen(false);
+          navigateToField(pageKey, fieldKey);
+        }}
+      />
     </div>
   );
 }

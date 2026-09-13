@@ -501,7 +501,11 @@ export type CustomFieldType =
 
 export type IntakeChangeRequestStatus =
   | 'open'
+  | 'pending'
+  | 'changes_requested'
+  | 'needs_revision'
   | 'waiting_for_school'
+  | 'school_updated'
   | 'ready_for_review'
   | 'approved'
   | 'rejected'
@@ -604,13 +608,25 @@ export interface SchoolIntakeSubmission {
   created_at: string;
 }
 
+export type ChangeRequestType =
+  | 'TEXT'
+  | 'URL'
+  | 'IMAGE'
+  | 'PDF'
+  | 'DOCUMENT'
+  | 'FIELD'
+  | 'MULTI_FIELD';
+
 export interface SchoolIntakeChangeRequest {
   id: string;
   school_project_id: string;
   section_key: string;
+  page_key?: string | null;
+  form_section_key?: string | null;
   field_key?: string | null;
+  field_label?: string | null;
   asset_id?: string | null;
-  request_type?: 'correction' | 'replacement' | 'clarification' | 'content' | string;
+  request_type?: ChangeRequestType | 'correction' | 'replacement' | 'clarification' | 'content' | string;
   reason?: string | null;
   request_comment: string;
   reviewer_comment?: string | null;
@@ -619,6 +635,12 @@ export interface SchoolIntakeChangeRequest {
   current_value?: string | null;
   school_response?: string | null;
   school_updated_value?: string | null;
+  school_updated_at?: string | null;
+  file_name?: string | null;
+  file_size?: number | null;
+  file_url?: string | null;
+  file_storage_key?: string | null;
+  revision_number?: number;
   requested_by: string;
   status: IntakeChangeRequestStatus;
   resolution_notes?: string | null;
@@ -1034,6 +1056,7 @@ export interface CampusBranchData {
   name: string;
   code?: string;
   address: string;
+  addressLine1?: string;
   addressLine2?: string;
   landmark?: string;
   city: string;
@@ -4973,6 +4996,26 @@ export interface AssetChecklistData {
   customNotes?: string;
 }
 
+export type InstitutionalPolicyStatus = 'template' | 'customized' | 'approved' | 'document_uploaded' | 'needs_review';
+
+export interface InstitutionalPolicyItem {
+  id: 'privacy-policy' | 'terms-and-conditions' | 'fee-refund' | 'child-safety' | string;
+  title: string;
+  shortTitle?: string;
+  description?: string;
+  status: InstitutionalPolicyStatus;
+  textContent?: string;
+  officialDocumentUrl?: string;
+  officialDocumentName?: string;
+  officialDocumentSize?: number;
+  officialDocumentUploadedAt?: string;
+  officialDocumentStorageKey?: string;
+  lastEditedAt?: string;
+  approvedAt?: string;
+  approvedBy?: string;
+  source?: string;
+}
+
 export interface LegalPolicyData {
   privacyPolicyRequired?: boolean;
   termsRequired?: boolean;
@@ -4984,6 +5027,7 @@ export interface LegalPolicyData {
   childSafetyPolicyRequired?: boolean;
   grievanceContact?: string;
   mandatoryDisclosuresProvided?: boolean;
+  policies?: Record<string, InstitutionalPolicyItem>;
 }
 
 export type TargetLaunchTimelineOption =
@@ -5386,6 +5430,9 @@ export interface MediaAssetItem {
   quantityGuidance?: string;
   readinessStatus: MediaAssetReadinessStatus;
   referenceLocation?: string;
+  url?: string;
+  fileName?: string;
+  fileSize?: number;
   ownershipStatus?: MediaAssetOwnership;
   consentRequired?: boolean;
   consentObtained?: boolean;

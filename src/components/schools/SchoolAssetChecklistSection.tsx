@@ -32,6 +32,7 @@ import {
   Download,
   EyeOff,
   Check,
+  ShieldCheck,
 } from 'lucide-react';
 import type {
   UniversalIntakeData,
@@ -52,6 +53,52 @@ import {
 } from '@/lib/schoolAssetChecklist';
 import ModalPortal from '@/components/ui/ModalPortal';
 import ContentRecommendationAssistant from './ContentRecommendationAssistant';
+
+export interface PortalAssetCategoryDefinition {
+  key: string;
+  number: string;
+  title: string;
+  description: string;
+  matchCategories: readonly AssetChecklistCategory[];
+}
+
+export const PORTAL_ASSET_CATEGORIES: readonly PortalAssetCategoryDefinition[] = [
+  {
+    key: 'branding',
+    number: '1',
+    title: 'Branding Assets',
+    description: 'School master logo, crest/seal, and website favicon.',
+    matchCategories: ['branding'],
+  },
+  {
+    key: 'campus_photos',
+    number: '2',
+    title: 'Campus & Facilities Media',
+    description: 'Campus grounds, smart classrooms, laboratories, library, sports fields, and auditorium photography.',
+    matchCategories: ['campus_photos'],
+  },
+  {
+    key: 'leadership',
+    number: '3',
+    title: 'People & Leadership',
+    description: 'Official portraits for the Principal, Trustees, and School Leadership.',
+    matchCategories: ['leadership'],
+  },
+  {
+    key: 'certificates',
+    number: '4',
+    title: 'Institutional / Statutory Documents',
+    description: 'Mandatory statutory compliance certificates: Board Affiliation, Recognition Order / NOC, Society/Trust Deed, Building & Fire Safety NOC, and Appendix IX Public Disclosure.',
+    matchCategories: ['certificates'],
+  },
+  {
+    key: 'other_documents',
+    number: '5',
+    title: 'Other Website Documents',
+    description: 'Official school prospectus, fee circular, academic calendar, and admission disclosures.',
+    matchCategories: ['admissions', 'academic_content'],
+  },
+] as const;
 
 interface SchoolAssetChecklistSectionProps {
   intakeData: UniversalIntakeData;
@@ -74,7 +121,7 @@ export default function SchoolAssetChecklistSection({
   }, [intakeData]);
 
   // 2. Filter and search state
-  const [selectedCategory, setSelectedCategory] = useState<AssetChecklistCategory | 'all'>('all');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'required' | 'pending' | 'provided'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -82,7 +129,7 @@ export default function SchoolAssetChecklistSection({
   const [uploadPhase, setUploadPhase] = useState<Record<string, UploadPhase>>({});
   const [copiedUrlId, setCopiedUrlId] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<{ id: string; message: string } | null>(null);
+  const [uploadError, setUploadError] = useState<{ id: string; message: string; title?: string } | null>(null);
   const [previewImage, setPreviewImage] = useState<{
     url: string;
     fileUrl?: string;
@@ -110,8 +157,8 @@ export default function SchoolAssetChecklistSection({
       if (customEvent.detail) {
         if (customEvent.detail.subsection) {
           const sub = customEvent.detail.subsection;
-          if (sub === 'certificates' || ASSET_CATEGORIES.some((c) => c.key === sub)) {
-            setSelectedCategory(sub as any);
+          if (sub === 'certificates' || PORTAL_ASSET_CATEGORIES.some((c) => c.key === sub) || ASSET_CATEGORIES.some((c) => c.key === sub)) {
+            setSelectedCategory(sub);
           } else {
             setSelectedCategory('all');
           }
@@ -651,13 +698,18 @@ export default function SchoolAssetChecklistSection({
       } else {
         // Single file upload (Image or Document)
         const file = files[0];
+        const isDoc = item.type === 'document';
         const validation = validateSchoolAssetFile(
           { name: file.name, size: file.size, type: file.type },
-          item.type === 'document' ? 'document' : 'image'
+          isDoc ? 'document' : 'image'
         );
 
         if (!validation.isValid) {
-          setUploadError({ id: item.id, message: validation.error || 'Invalid file format.' });
+          setUploadError({
+            id: item.id,
+            message: validation.error || (isDoc ? 'Invalid document file.' : 'Invalid file format.'),
+            title: isDoc && validation.code === 'DOCUMENT_TOO_LARGE' ? 'File is too large' : undefined,
+          });
           setUploadPhase((prev) => ({ ...prev, [item.id]: 'error' }));
           return;
         }
@@ -671,24 +723,55 @@ export default function SchoolAssetChecklistSection({
           formData.append('itemId', item.id);
           formData.append('itemType', item.type);
 
-          setUploadPhase((prev) => ({ ...prev, [item.id]: 'optimizing' }));
+          setUploadPhase((prev) => ({ ...prev, [item.id]: isDoc ? 'uploading' : 'optimizing' }));
           const res = await fetch('/api/school-assets/upload', {
             method: 'POST',
             body: formData,
           });
 
-          if (res.ok) {
-            const data = await res.json();
-            if (data.success && data.asset?.url) {
-              fileUrl = data.asset.url;
-              optimizedData = data.asset;
-            }
+          const data = await res.json().catch(() => null);
+
+          if (!res.ok || !data?.success) {
+            const isOversized = data?.code === 'DOCUMENT_TOO_LARGE' || res.status === 413;
+            const errorMsg = isOversized
+              ? 'Document exceeds the maximum allowed size of 2 MB.'
+              : data?.message || data?.error || 'Upload failed. Please try again.';
+
+            setUploadError({
+              id: item.id,
+              message: errorMsg,
+              title: isOversized ? 'File is too large' : undefined,
+            });
+            setUploadPhase((prev) => ({ ...prev, [item.id]: 'error' }));
+            return;
           }
-        } catch {
-          // Fallback to Data URL
+
+          if (data?.success && data?.asset?.url) {
+            fileUrl = data.asset.url;
+            optimizedData = data.asset;
+          }
+        } catch (fetchErr: any) {
+          const isNetworkError = typeof navigator !== 'undefined' && !navigator.onLine;
+          setUploadError({
+            id: item.id,
+            message: isNetworkError
+              ? 'Upload could not be completed. Check your connection and try again.'
+              : (fetchErr?.message || 'Upload failed. Please try again.'),
+          });
+          setUploadPhase((prev) => ({ ...prev, [item.id]: 'error' }));
+          return;
         }
 
         if (!fileUrl) {
+          // Documents must never silently fall back to Data URL if upload failed
+          if (isDoc) {
+            setUploadError({
+              id: item.id,
+              message: 'Upload failed. Please try again.',
+            });
+            setUploadPhase((prev) => ({ ...prev, [item.id]: 'error' }));
+            return;
+          }
           fileUrl = await readFileAsDataUrl(file);
         }
 
@@ -713,7 +796,7 @@ export default function SchoolAssetChecklistSection({
           isManualOverride: true,
         });
 
-        // Safe replace cleanup: remove old storage object only if not reused elsewhere
+        // Safe replace cleanup: remove old storage object only after successful new upload and if not reused elsewhere
         if (oldStorageKey && optimizedData?.storageKey && oldStorageKey !== optimizedData.storageKey && token) {
           const isReusedElsewhere = items.some(
             (other) => other.id !== item.id && other.storageKey === oldStorageKey
@@ -755,9 +838,21 @@ export default function SchoolAssetChecklistSection({
   // Filter items based on active criteria
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      // Category filter
-      if (selectedCategory !== 'all' && item.category !== selectedCategory) {
+      // Exclude policies from checklist since they are canonically maintained in Legal & Policies
+      if (item.category === 'policies') {
         return false;
+      }
+
+      // Category filter matching the 5 explicit portal asset categories
+      if (selectedCategory !== 'all') {
+        const matchedGroup = PORTAL_ASSET_CATEGORIES.find((g) => g.key === selectedCategory);
+        if (matchedGroup) {
+          if (!matchedGroup.matchCategories.includes(item.category)) {
+            return false;
+          }
+        } else if (item.category !== selectedCategory) {
+          return false;
+        }
       }
 
       // Status filter
@@ -813,11 +908,13 @@ export default function SchoolAssetChecklistSection({
     [changeRequests]
   );
 
-  // Group filtered items by category
+  // Group filtered items into the 5 authoritative portal groups
   const groupedItems = useMemo(() => {
-    const groups: { category: AssetCategoryInfo; items: AssetChecklistItem[] }[] = [];
-    ASSET_CATEGORIES.forEach((cat) => {
-      const catItems = filteredItems.filter((i) => i.category === cat.key);
+    const groups: { category: PortalAssetCategoryDefinition; items: AssetChecklistItem[] }[] = [];
+    PORTAL_ASSET_CATEGORIES.forEach((cat) => {
+      const catItems = filteredItems.filter((i) =>
+        (cat.matchCategories as readonly string[]).includes(i.category)
+      );
       if (catItems.length > 0) {
         groups.push({ category: cat, items: catItems });
       }
@@ -825,7 +922,7 @@ export default function SchoolAssetChecklistSection({
     return groups;
   }, [filteredItems]);
 
-  const getCategoryIcon = (key: AssetChecklistCategory) => {
+  const getCategoryIcon = (key: string) => {
     switch (key) {
       case 'branding':
         return <Palette className="w-4 h-4 text-[#4338CA]" />;
@@ -833,25 +930,24 @@ export default function SchoolAssetChecklistSection({
         return <Camera className="w-4 h-4 text-[#4338CA]" />;
       case 'leadership':
         return <Users className="w-4 h-4 text-[#4338CA]" />;
-      case 'academic_content':
-        return <BookOpen className="w-4 h-4 text-[#4338CA]" />;
-      case 'admissions':
-        return <Award className="w-4 h-4 text-[#4338CA]" />;
       case 'certificates':
         return <FileCheck className="w-4 h-4 text-[#4338CA]" />;
-      case 'policies':
-        return <FileText className="w-4 h-4 text-[#4338CA]" />;
+      case 'other_documents':
+      case 'admissions':
+      case 'academic_content':
+        return <BookOpen className="w-4 h-4 text-[#4338CA]" />;
       default:
         return <Building2 className="w-4 h-4 text-[#4338CA]" />;
     }
   };
 
   const formatFileSize = (bytes?: number) => {
-    if (!bytes) return '';
+    if (!bytes || bytes <= 0) return '';
     if (bytes < 1024 * 1024) {
-      return `${(bytes / 1024).toFixed(1)} KB`;
+      return `${Math.round(bytes / 1024)} KB`;
     }
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    const mb = bytes / (1024 * 1024);
+    return `${mb.toFixed(1)} MB`;
   };
 
   return (
@@ -1080,7 +1176,7 @@ export default function SchoolAssetChecklistSection({
           >
             All Groups
           </button>
-          {ASSET_CATEGORIES.map((cat) => (
+          {PORTAL_ASSET_CATEGORIES.map((cat) => (
             <button
               key={cat.key}
               type="button"
@@ -1091,9 +1187,19 @@ export default function SchoolAssetChecklistSection({
                   : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'
               }`}
             >
-              {cat.letter}. {cat.title.split('&')[0].trim()}
+              {cat.number}. {cat.title}
             </button>
           ))}
+        </div>
+
+        {/* Informative banner separating Statutory Certificates from Published Policies */}
+        <div className="mt-3 p-3 bg-indigo-50/70 border border-indigo-200/80 rounded-xl text-xs text-indigo-950 flex items-start justify-between gap-3">
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+            <span className="leading-relaxed">
+              <strong>Statutory vs. Policies Separation:</strong> Institutional certificates (Affiliation, NOC, Fire Safety, Public Disclosures) are stored here under <strong>Group 4</strong>. Published institutional rules (Privacy, Terms, Refund, Child Safety) are managed under <strong>Legal &amp; Policies</strong>.
+            </span>
+          </div>
         </div>
       </div>
 
@@ -1132,7 +1238,7 @@ export default function SchoolAssetChecklistSection({
                   </div>
                   <div>
                     <h4 className="font-bold text-xs sm:text-sm text-[#131B2E]">
-                      Group {category.letter}: {category.title}
+                      Group {category.number}: {category.title}
                     </h4>
                     <p className="text-[11px] text-[#64748B] leading-tight">
                       {category.description}
@@ -1156,7 +1262,7 @@ export default function SchoolAssetChecklistSection({
                       changeRequest={itemCR}
                       onRespondToCR={onRespondToCR}
                       uploadPhase={uploadPhase[item.id] || 'idle'}
-                      uploadError={uploadError?.id === item.id ? uploadError.message : null}
+                      uploadError={uploadError?.id === item.id ? uploadError : null}
                       onUpload={(files) => handleFileUpload(item, files)}
                       onUpdate={(updates) => updateItemInState(item.id, updates)}
                       onPreview={(url, title, meta) => setPreviewImage({ url, fileUrl: url, title, ...meta })}
@@ -1206,7 +1312,7 @@ interface ChecklistItemRowProps {
   changeRequest?: SchoolIntakeChangeRequest;
   onRespondToCR?: (cr: SchoolIntakeChangeRequest) => void;
   uploadPhase: 'idle' | 'uploading' | 'optimizing' | 'complete' | 'error';
-  uploadError: string | null;
+  uploadError: { message: string; title?: string } | string | null;
   onUpload: (files: FileList | null) => void;
   onUpdate: (updates: Partial<AssetChecklistItem>) => void;
   onPreview: (url: string, title: string, meta?: any) => void;
@@ -1445,6 +1551,12 @@ function ChecklistItemRow({
             </div>
           )}
 
+          {item.type === 'document' && (
+            <p className="text-[11px] text-[#64748B] italic pt-0.5">
+              Tip: For scanned documents, use approximately 150–200 DPI and PDF compression to keep the file under 2 MB.
+            </p>
+          )}
+
           {/* Reviewer Change Request Alert Box */}
           {changeRequest && (
             <div className="mt-2.5 p-3 rounded-xl border bg-amber-100/90 border-amber-300 text-amber-950 dark:bg-amber-950/40 dark:border-amber-700 dark:text-amber-200 text-xs space-y-1.5 shadow-2xs">
@@ -1488,10 +1600,21 @@ function ChecklistItemRow({
           {uploadError && (
             <div
               role="alert"
-              className="mt-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 p-2.5 rounded-xl flex items-center space-x-2"
+              aria-live="polite"
+              className="mt-2 text-xs text-rose-800 bg-rose-50 border border-rose-200 p-2.5 rounded-xl flex items-start space-x-2 shadow-2xs"
             >
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-              <span>{uploadError}</span>
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
+              <div className="space-y-0.5">
+                {typeof uploadError === 'object' && uploadError.title && (
+                  <div className="font-bold flex items-center gap-1 text-rose-900">
+                    <span aria-hidden="true">⚠</span>
+                    <span>{uploadError.title}</span>
+                  </div>
+                )}
+                <div className="leading-relaxed">
+                  {typeof uploadError === 'string' ? uploadError : uploadError.message}
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -1794,12 +1917,16 @@ function ChecklistItemRow({
                     <FileText className="w-5 h-5" />
                   </div>
 
-                  <div className="text-xs min-w-[120px] max-w-[180px]">
+                  <div className="text-xs min-w-[120px] max-w-[200px]">
                     <div className="font-semibold text-[#131B2E] truncate" title={item.fileName || 'Document.pdf'}>
                       {item.fileName || 'Uploaded PDF'}
                     </div>
-                    <div className="text-[10px] text-[#64748B]">
-                      {item.fileSize ? formatFileSize(item.fileSize) : 'PDF Document'}
+                    <div className="text-[10px] text-[#64748B] flex items-center gap-1.5 mt-0.5">
+                      <span>{item.fileSize ? formatFileSize(item.fileSize) : 'PDF Document'}</span>
+                      <span className="text-emerald-700 font-semibold flex items-center gap-0.5 bg-emerald-50 border border-emerald-200/60 px-1.5 py-0.2 rounded text-[10px]">
+                        <Check className="w-3 h-3 text-emerald-600" />
+                        <span>Uploaded</span>
+                      </span>
                     </div>
                   </div>
 
@@ -1820,7 +1947,7 @@ function ChecklistItemRow({
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploading}
                       className="p-1.5 text-[#4338CA] hover:bg-[#EEF2FF] rounded-lg transition"
-                      title="Replace document"
+                      title="Replace document (PDF only, max 2 MB)"
                       aria-label={`Replace document for ${item.title}`}
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${isUploading ? 'animate-spin' : ''}`} />
@@ -1837,7 +1964,7 @@ function ChecklistItemRow({
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-start sm:items-end gap-1">
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -1846,19 +1973,30 @@ function ChecklistItemRow({
                       isNotApplicable ? 'opacity-50 cursor-not-allowed' : ''
                     }`}
                     aria-label={`Upload document for ${item.title}`}
+                    aria-describedby={`doc-limit-hint-${item.id}`}
                   >
                     <Upload className={`w-3.5 h-3.5 ${isUploading ? 'animate-spin' : ''}`} />
                     <span>{isUploading ? 'Uploading...' : 'Upload PDF'}</span>
                   </button>
+                  <div
+                    id={`doc-limit-hint-${item.id}`}
+                    className="text-[10px] text-[#64748B] font-medium"
+                  >
+                    PDF only · Maximum 2 MB
+                  </div>
                 </div>
               )}
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf"
-                onChange={(e) => onUpload(e.target.files)}
+                accept=".pdf,application/pdf"
+                onChange={(e) => {
+                  onUpload(e.target.files);
+                  e.target.value = '';
+                }}
                 className="hidden"
                 aria-label={`Upload PDF file for ${item.title}`}
+                title="PDF document, maximum file size 2 MB."
               />
             </div>
           )}

@@ -39,6 +39,8 @@ import {
 import CampusAcademicScopeSummary from './CampusAcademicScopeSummary';
 import ModalPortal from '@/components/ui/ModalPortal';
 
+export type CurriculumSubTabKey = 'overview' | 'class_curriculum' | 'subjects';
+
 interface CurriculumSectionProps {
   intakeData: UniversalIntakeData;
   updateSectionField: (section: keyof UniversalIntakeData, field: string, value: any) => void;
@@ -46,6 +48,8 @@ interface CurriculumSectionProps {
   project?: SchoolProject | null;
   activeCampusId?: string;
   onNavigateToSection?: (sectionKey: any) => void;
+  activeSubTab?: CurriculumSubTabKey;
+  onSubTabChange?: (tab: CurriculumSubTabKey) => void;
 }
 
 const SUBJECT_CATEGORIES: SubjectCategoryType[] = [
@@ -91,6 +95,8 @@ export default function CurriculumSection({
   project,
   activeCampusId,
   onNavigateToSection,
+  activeSubTab: controlledSubTab,
+  onSubTabChange,
 }: CurriculumSectionProps) {
   // 1. Classes inherited from Campus Academic Scope (Single Source of Truth)
   const campusScope = useCampusAcademicScope(activeCampusId, intakeData);
@@ -155,7 +161,13 @@ export default function CurriculumSection({
   );
 
   // Active view: overview | class_curriculum | subjects
-  const [activeSubTab, setActiveSubTab] = useState<'overview' | 'class_curriculum' | 'subjects'>('overview');
+  const [internalSubTab, setInternalSubTab] = useState<CurriculumSubTabKey>('overview');
+  const activeSubTab = controlledSubTab || internalSubTab;
+
+  const handleSelectSubTab = (tab: CurriculumSubTabKey) => {
+    setInternalSubTab(tab);
+    onSubTabChange?.(tab);
+  };
 
   // Selected Class in Class-wise Curriculum
   const [selectedClassId, setSelectedClassId] = useState<string>(activeClasses[0]?.id || 'cls_1');
@@ -411,7 +423,7 @@ export default function CurriculumSection({
             <button
               key={tab.id}
               type="button"
-              onClick={() => setActiveSubTab(tab.id as any)}
+              onClick={() => handleSelectSubTab(tab.id as any)}
               className={`px-4 py-2.5 rounded-xl font-bold text-xs transition cursor-pointer flex items-center space-x-2 ${
                 isActive
                   ? 'bg-indigo-600 text-white shadow-2xs ring-1 ring-indigo-500'

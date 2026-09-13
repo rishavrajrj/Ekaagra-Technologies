@@ -489,8 +489,7 @@ export function calculateCurriculumCompleteness(
   // 3. Subject Catalog
   const hasSubjectsInCatalog =
     (Array.isArray(curr.subjects) && curr.subjects.length > 0) ||
-    (Array.isArray(data.institutionStructure?.subjects) && data.institutionStructure.subjects.length > 0) ||
-    (Array.isArray(curr.classCurricula) && curr.classCurricula.some((c) => Array.isArray(c.subjects) && c.subjects.length > 0));
+    (Array.isArray(data.institutionStructure?.subjects) && data.institutionStructure.subjects.length > 0);
 
   if (hasSubjectsInCatalog) {
     filled++;
@@ -501,9 +500,10 @@ export function calculateCurriculumCompleteness(
   // 4. Class-wise Curriculum Mapping
   const hasClassCurricula =
     Array.isArray(curr.classCurricula) &&
+    curr.classCurricula.length > 0 &&
     curr.classCurricula.some((c) => Array.isArray(c.subjects) && c.subjects.length > 0);
 
-  if (hasClassCurricula || hasSubjectsInCatalog) {
+  if (hasClassCurricula) {
     filled++;
   } else {
     missingFields.push('Curriculum: Class-wise subject assignment');
@@ -515,6 +515,38 @@ export function calculateCurriculumCompleteness(
     missingFields,
     isComplete: percentage === 100 && missingFields.length === 0,
     score: { total, filled },
+  };
+}
+
+/**
+ * Returns completion status for each individual child sub-page of Curriculum.
+ */
+export function calculateCurriculumSubStepCompleteness(
+  data: Partial<UniversalIntakeData>
+): Record<'overview' | 'class_curriculum' | 'subjects', { isComplete: boolean; label: string }> {
+  const curr = data.curriculum || ({} as Partial<CurriculumData>);
+  const board = (curr.overview?.board || data.schoolProfile?.board || '').trim();
+  const approach = (
+    curr.overview?.academicApproach ||
+    curr.overview?.learningPhilosophy ||
+    curr.overview?.teachingMethodology ||
+    ''
+  ).trim();
+  const overviewComplete = board.length > 0 && approach.length > 0;
+
+  const hasClassCurricula =
+    Array.isArray(curr.classCurricula) &&
+    curr.classCurricula.length > 0 &&
+    curr.classCurricula.some((c) => Array.isArray(c.subjects) && c.subjects.length > 0);
+
+  const hasSubjectsInCatalog =
+    (Array.isArray(curr.subjects) && curr.subjects.length > 0) ||
+    (Array.isArray(data.institutionStructure?.subjects) && data.institutionStructure.subjects.length > 0);
+
+  return {
+    overview: { isComplete: overviewComplete, label: 'Curriculum Overview' },
+    class_curriculum: { isComplete: hasClassCurricula, label: 'Class-wise Curriculum' },
+    subjects: { isComplete: hasSubjectsInCatalog, label: 'Subject Catalog' },
   };
 }
 

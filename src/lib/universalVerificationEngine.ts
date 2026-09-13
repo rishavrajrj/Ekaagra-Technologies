@@ -30,6 +30,7 @@ import { getEffectiveMediaRegistry } from './mediaRegistryUtils';
 import {
   resolveCanonicalDocuments,
   CANONICAL_DOCUMENT_IDS,
+  CANONICAL_STATUTORY_REQUIREMENTS,
   isValidUploadedDocument,
 } from './canonicalDocuments';
 import {
@@ -95,7 +96,7 @@ export interface UniversalVerificationAsset {
   id: string;
   key?: string;
   title: string;
-  category: 'branding' | 'campus' | 'academics' | 'facilities' | 'people' | 'promotional' | 'compliance';
+  category: 'branding' | 'campus' | 'academics' | 'facilities' | 'people' | 'promotional' | 'compliance' | 'documents';
   sourceSection: string;
   sourceSectionLabel: string;
   sourceField?: string;
@@ -116,6 +117,7 @@ export interface UniversalVerificationAsset {
   verifiedBy?: string;
   remediationAnchor?: string;
   destination?: any;
+  isDocument?: boolean;
 }
 
 export interface UniversalVerificationDocument {
@@ -714,7 +716,9 @@ export function aggregateUniversalAssets(
   // 1. Branding: Logo
   const logoUrl =
     intakeData.brandingDesign?.logoUrl ||
+    (intakeData.brandingDesign as any)?.logo ||
     (intakeData.schoolProfile as any)?.logoUrl ||
+    (intakeData.schoolProfile as any)?.logo ||
     (intakeData.brandingDesign as any)?.logoPreview;
   if (logoUrl) {
     const assetId = 'asset-brand-logo';
@@ -931,26 +935,122 @@ export function aggregateUniversalAssets(
       return;
     }
 
-    if (item.type === 'image' || (item.fileType && item.fileType.startsWith('image/'))) {
+    const isDoc =
+      item.type === 'document' ||
+      item.fileType === 'application/pdf' ||
+      item.fileType?.includes('pdf') ||
+      item.category === 'certificates' ||
+      item.category === 'policies' ||
+      item.fileName?.toLowerCase().endsWith('.pdf') ||
+      url?.toLowerCase().endsWith('.pdf');
+
+    const isImg =
+      item.type === 'image' ||
+      (item.fileType && item.fileType.startsWith('image/')) ||
+      (!isDoc && Boolean(url));
+
+    if (isImg || isDoc) {
       const assetId = item.id || `checklist-${item.category}-${item.title}`;
-      const isProvided = item.status === 'provided' && Boolean(url);
+      const isProvided = (item.status === 'provided' || (item.status as string) === 'verified') && Boolean(url);
       assetMap.set(assetId, {
         id: assetId,
         title: item.title,
-        category: catMap[item.category] || 'promotional',
+        category: catMap[item.category] || (isDoc ? 'compliance' : 'promotional'),
         sourceSection: 'assetChecklist',
-        sourceSectionLabel: 'Assets & Documents',
+        sourceSectionLabel: isDoc ? 'Assets & Documents (Statutory)' : 'Assets & Documents',
         sourceField: item.id,
         url: isProvided ? url : undefined,
         fileName: item.fileName,
-        fileType: item.fileType,
+        fileType: item.fileType || (isDoc ? 'application/pdf' : undefined),
         fileSize: item.fileSize,
-        status: isProvided ? 'verified' : item.requirement === 'required' ? 'missing' : 'optional',
-        required: item.requirement === 'required',
-        isPublicationBlocker: Boolean(item.isPublicationBlocker),
-        usages: [item.intendedUse || 'General Website'],
+        status: isProvided ? 'verified' : item.status === 'not_applicable' ? 'not_applicable' : item.requirement === 'required' ? 'missing' : 'optional',
+        required: isDoc ? false : item.requirement === 'required',
+        isPublicationBlocker: isDoc ? false : Boolean(item.isPublicationBlocker),
+        usages: [item.intendedUse || (isDoc ? 'Statutory Compliance' : 'General Website')],
         caption: item.description,
+        isDocument: isDoc,
       });
+    }
+  });
+
+  // 7. Canonical Statutory Documents (Ensure all resolved statutory documents are tracked in assetMap)
+  const canonicalDocs = resolveCanonicalDocuments(intakeData);
+  canonicalDocs.forEach((doc) => {
+    const existing = Array.from(assetMap.values()).find(
+      (a) => a.id === doc.checklistId || a.id === doc.id
+    );
+    if (!existing) {
+      assetMap.set(doc.checklistId || doc.id, {
+        id: doc.checklistId || doc.id,
+        title: doc.documentName || doc.title,
+        category: 'compliance',
+        sourceSection: 'assetChecklist',
+        sourceSectionLabel: 'Statutory Compliance & Certificates',
+        sourceField: doc.checklistId,
+        url: doc.fileUrl,
+        fileName: doc.fileName || (doc.fileUrl ? `${doc.checklistId}.pdf` : undefined),
+        fileType: 'application/pdf',
+        fileSize: doc.fileSize,
+        status: doc.fileUrl && doc.isVerified ? 'verified' : doc.isNotApplicable ? 'not_applicable' : 'missing',
+        required: false, // Critical: non-blocker under Assets pillar to avoid double-counting with Pillar 5 (Compliance)
+        isPublicationBlocker: false,
+        usages: ['Statutory Disclosures', 'Mandatory Appendix IX'],
+        isDocument: true,
+      });
+    } else {
+      existing.isDocument = true;
+      if (!existing.fileName && doc.fileName) existing.fileName = doc.fileName;
+      if (!existing.fileSize && doc.fileSize) existing.fileSize = doc.fileSize;
+      if (!existing.fileType) existing.fileType = 'application/pdf';
+    }
+  });
+
+  // 8. Legal Policies Uploaded Documents
+  if (intakeData.legalPolicies?.policies) {
+    Object.entries(intakeData.legalPolicies.policies).forEach(([policyKey, policy]: [string, any]) => {
+      if (policy && policy.officialDocumentUrl && policy.status === 'document_uploaded') {
+        const docId = `policy-doc-${policyKey}`;
+        const existing = Array.from(assetMap.values()).find(
+          (a) => a.id === docId || (a.url && a.url === policy.officialDocumentUrl)
+        );
+        if (!existing) {
+          assetMap.set(docId, {
+            id: docId,
+            title: policy.title ? `${policy.title} (Official Document)` : `Legal Policy Document (${policyKey})`,
+            category: 'compliance',
+            sourceSection: 'legalPolicies',
+            sourceSectionLabel: 'Legal & Policies',
+            sourceField: `policies.${policyKey}`,
+            url: policy.officialDocumentUrl,
+            fileName: policy.officialDocumentFileName || `${policyKey}-policy.pdf`,
+            fileType: 'application/pdf',
+            fileSize: policy.officialDocumentFileSize,
+            status: 'verified',
+            required: false,
+            isPublicationBlocker: false,
+            usages: ['Legal & Compliance', 'Website Footer'],
+            caption: policy.summary || 'Official uploaded school policy document',
+            isDocument: true,
+          });
+        } else {
+          existing.isDocument = true;
+        }
+      }
+    });
+  }
+
+  // 9. Flag any existing asset with PDF or document extension as isDocument
+  Array.from(assetMap.values()).forEach((asset) => {
+    if (
+      asset.fileType === 'application/pdf' ||
+      asset.fileType?.includes('pdf') ||
+      asset.category === 'compliance' ||
+      asset.category === 'documents' ||
+      asset.fileName?.toLowerCase().endsWith('.pdf') ||
+      asset.url?.toLowerCase().endsWith('.pdf') ||
+      asset.url?.toLowerCase().includes('.pdf')
+    ) {
+      asset.isDocument = true;
     }
   });
 
@@ -1898,6 +1998,50 @@ export async function buildUniversalSubmissionZip(
   );
   root.file('verification-manifest.json', manifestJson);
 
+  // 3b. Metadata Manifests Folder
+  const metadataFolder = root.folder('metadata');
+  if (metadataFolder) {
+    const documentManifest = documents.map((d) => ({
+      id: d.id,
+      name: d.documentName,
+      type: d.type,
+      status: d.status,
+      fileName: d.fileName,
+      fileUrl: d.fileUrl,
+      fileSize: d.fileSize,
+      required: d.required,
+      isPublicationBlocker: d.isPublicationBlocker,
+    }));
+    metadataFolder.file('document-manifest.json', JSON.stringify(documentManifest, null, 2));
+
+    metadataFolder.file(
+      'document-requirements.json',
+      JSON.stringify(CANONICAL_STATUTORY_REQUIREMENTS, null, 2)
+    );
+
+    const reviewStatus = {
+      submissionId: submissionMeta.submissionId,
+      overallReadiness: readiness.overallScore,
+      isReadyForSubmission: readiness.isReadyForSubmission,
+      categoryScores: readiness.categoryScores,
+      publicationBlockersCount: readiness.publicationBlockers.length,
+      recommendationsCount: readiness.recommendations.length,
+      timestamp: submissionMeta.submittedAt,
+    };
+    metadataFolder.file('review-status.json', JSON.stringify(reviewStatus, null, 2));
+
+    const validationResults = {
+      blockers: readiness.publicationBlockers,
+      documentsValidation: documents.map((doc) => ({
+        id: doc.id,
+        name: doc.documentName,
+        status: doc.status,
+        valid: doc.status === 'verified' || doc.status === 'ready',
+      })),
+    };
+    metadataFolder.file('validation-results.json', JSON.stringify(validationResults, null, 2));
+  }
+
   // 4. Asset Folders
   const assetsFolder = root.folder('assets');
   if (assetsFolder) {
@@ -1918,3 +2062,5 @@ export async function buildUniversalSubmissionZip(
 
   return await zip.generateAsync({ type: 'blob' });
 }
+
+export { exportCompleteSchoolProjectZip } from './schoolCompleteExportEngine';

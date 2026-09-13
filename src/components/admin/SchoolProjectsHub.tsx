@@ -18,7 +18,8 @@ import {
   Building2,
   ArrowRight,
   Sparkles,
-  Download,
+  ExternalLink,
+  Image as ImageIcon,
   CreditCard,
   Briefcase,
   Plus,
@@ -47,6 +48,10 @@ import type {
 } from '@/lib/types';
 import { MEDIA_STATUS_LABELS } from '@/lib/schoolMedia';
 import { INTAKE_SECTIONS } from '@/lib/schoolIntake';
+import {
+  aggregateUniversalAssets,
+  aggregateUniversalDocuments,
+} from '@/lib/universalVerificationEngine';
 
 const STATUS_COLORS: Record<SchoolProjectStatus, { bg: string; text: string; border: string }> = {
   draft: { bg: 'bg-[var(--admin-surface-secondary)]', text: 'text-[var(--admin-text-sub)]', border: 'border-[var(--admin-border)]' },
@@ -668,7 +673,7 @@ export default function SchoolProjectsHub() {
                       <span>Approve Intake (Create Snapshot)</span>
                     </button>
 
-                    {/* Step 41/42 Handoff Button */}
+                    {/* Platform Provisioning Handoff Button */}
                     <button
                       onClick={handlePlatformHandoff}
                       disabled={isSubmittingAction || projectDetails.project.status === 'handed_off' || !projectDetails.approvedSnapshot}
@@ -684,7 +689,7 @@ export default function SchoolProjectsHub() {
                       <span>
                         {projectDetails.project.status === 'handed_off'
                           ? 'Handed Off to Platform'
-                          : 'Trigger Step 42 Provisioning'}
+                          : 'Trigger Platform Provisioning'}
                       </span>
                     </button>
                   </div>
@@ -725,40 +730,98 @@ export default function SchoolProjectsHub() {
                   </div>
                 </div>
 
-                {/* 3. Media Status Control */}
-                <div className="p-4 bg-[var(--admin-surface-secondary)] rounded-2xl border border-[var(--admin-border)] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--admin-text-muted)]">
-                      Campus Media Package Workflow
-                    </span>
-                    <span className="text-[10px] text-[var(--admin-text-muted)]">
-                      14 Structured Asset Folders
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <select
-                      value={projectDetails.project.media_status}
-                      onChange={(e) => handleUpdateMedia(e.target.value as SchoolMediaStatus)}
-                      className="px-3 py-2 bg-[var(--admin-card)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl font-bold text-xs"
-                    >
-                      <option value="not_started">Not Started</option>
-                      <option value="package_downloaded">Folder Package Downloaded</option>
-                      <option value="package_in_progress">Files Being Collected</option>
-                      <option value="package_submitted">Media Package Submitted</option>
-                      <option value="under_review">Under Review by Team</option>
-                      <option value="changes_requested">Higher-Res Photos Required</option>
-                      <option value="approved">Media Approved</option>
-                    </select>
+                {/* 3. Direct Digital Media & Cloud Asset Engine */}
+                {(() => {
+                  const intakePayload = projectDetails.currentSubmission?.intake_payload || {};
+                  const aggregatedAssets = aggregateUniversalAssets(intakePayload);
+                  const aggregatedDocs = aggregateUniversalDocuments(intakePayload);
 
-                    <a
-                      href="/api/school-media/template"
-                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-[var(--admin-card)] hover:bg-[var(--admin-hover-overlay)] border border-[var(--admin-border)] rounded-xl text-xs font-bold text-[var(--admin-accent)]"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      <span>Download Media Kit Guidelines</span>
-                    </a>
-                  </div>
-                </div>
+                  const verifiedAssetsCount = aggregatedAssets.filter(
+                    (a) => a.status === 'verified' && Boolean(a.url || a.storageKey)
+                  ).length;
+                  const verifiedDocsCount = aggregatedDocs.filter(
+                    (d) => d.status === 'verified' && Boolean(d.fileUrl || d.storageKey)
+                  ).length;
+                  const totalAssetsCount = aggregatedAssets.length;
+                  const totalDocsCount = aggregatedDocs.length;
+
+                  return (
+                    <div className="p-4 bg-[var(--admin-surface-secondary)] rounded-2xl border border-[var(--admin-border)] space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <div className="flex items-center gap-1.5">
+                          <ImageIcon className="w-4 h-4 text-[var(--admin-accent)]" />
+                          <span className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--admin-text-primary)]">
+                            Direct Media &amp; Digital Assets
+                          </span>
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                          <CheckCircle2 className="w-3 h-3" />
+                          WebP Optimized • Cloud Storage
+                        </span>
+                      </div>
+
+                      {/* Live Asset Statistics */}
+                      <div className="grid grid-cols-2 gap-2 text-[11px]">
+                        <div className="p-2.5 bg-[var(--admin-card)] rounded-xl border border-[var(--admin-border)]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase text-[var(--admin-text-muted)]">
+                              Photos &amp; Media
+                            </span>
+                            <span className="font-mono text-[10px] font-bold text-[var(--admin-accent)]">
+                              {verifiedAssetsCount} / {totalAssetsCount}
+                            </span>
+                          </div>
+                          <div className="text-xs font-bold text-[var(--admin-text-primary)] mt-1">
+                            {verifiedAssetsCount > 0 ? `${verifiedAssetsCount} Uploaded` : 'No photos yet'}
+                          </div>
+                        </div>
+
+                        <div className="p-2.5 bg-[var(--admin-card)] rounded-xl border border-[var(--admin-border)]">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase text-[var(--admin-text-muted)]">
+                              Statutory Docs
+                            </span>
+                            <span className="font-mono text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                              {verifiedDocsCount} / {totalDocsCount}
+                            </span>
+                          </div>
+                          <div className="text-xs font-bold text-[var(--admin-text-primary)] mt-1">
+                            {verifiedDocsCount > 0 ? `${verifiedDocsCount} Attached` : 'No docs yet'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Controls: Status & Review */}
+                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                        <div className="flex-1 min-w-[180px]">
+                          <select
+                            value={projectDetails.project.media_status}
+                            onChange={(e) => handleUpdateMedia(e.target.value as SchoolMediaStatus)}
+                            className="w-full px-3 py-2 bg-[var(--admin-card)] border border-[var(--admin-border)] text-[var(--admin-text-primary)] rounded-xl font-bold text-xs"
+                          >
+                            <option value="not_started">Pending Upload</option>
+                            <option value="package_downloaded">Upload Started</option>
+                            <option value="package_in_progress">Assets In Progress</option>
+                            <option value="package_submitted">Assets Submitted</option>
+                            <option value="under_review">Under Review</option>
+                            <option value="changes_requested">Replacement Requested</option>
+                            <option value="approved">Assets Approved</option>
+                          </select>
+                        </div>
+
+                        <Link
+                          href={`/admin/school-projects/${projectDetails.project.id}`}
+                          className="inline-flex items-center gap-1.5 px-3 py-2 bg-[var(--admin-card)] hover:bg-[var(--admin-hover-overlay)] border border-[var(--admin-border)] rounded-xl text-xs font-bold text-[var(--admin-accent)] transition-colors min-h-[38px]"
+                          title="Open dedicated workspace to review and inspect all uploaded assets"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Review In Workspace</span>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })()}
+
 
                 {/* 4. Active Change Requests List */}
                 {projectDetails.changeRequests.length > 0 && (

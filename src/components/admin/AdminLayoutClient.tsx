@@ -129,16 +129,35 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   const currentTheme = mounted ? theme : 'dark';
   const isDark = currentTheme === 'dark';
 
-  // Synchronize documentElement theme attributes so body, portals, and root inherit seamlessly
+  // Synchronize documentElement and body theme attributes so portals and root inherit seamlessly
   useEffect(() => {
     if (typeof document !== 'undefined') {
       document.documentElement.setAttribute('data-admin-theme', currentTheme);
+      document.body.setAttribute('data-admin-theme', currentTheme);
+      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
       if (isDark) {
         document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        document.body.classList.add('dark');
+        document.body.classList.remove('light');
       } else {
         document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.body.classList.remove('dark');
+        document.body.classList.add('light');
       }
     }
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.documentElement.removeAttribute('data-admin-theme');
+        document.body.removeAttribute('data-admin-theme');
+        document.documentElement.style.colorScheme = 'light';
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.body.classList.remove('dark');
+        document.body.classList.add('light');
+      }
+    };
   }, [currentTheme, isDark]);
 
   // Body scroll locking when drawer or modal is active
@@ -156,13 +175,24 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   const toggleTheme = () => {
     const nextTheme = theme === 'dark' ? 'light' : 'dark';
     setTheme(nextTheme);
+    const nextIsDark = nextTheme === 'dark';
     try {
       localStorage.setItem('ekaagra_admin_theme', nextTheme);
-      document.documentElement.setAttribute('data-admin-theme', nextTheme);
-      if (nextTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
+      if (typeof document !== 'undefined') {
+        document.documentElement.setAttribute('data-admin-theme', nextTheme);
+        document.body.setAttribute('data-admin-theme', nextTheme);
+        document.documentElement.style.colorScheme = nextIsDark ? 'dark' : 'light';
+        if (nextIsDark) {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
+          document.body.classList.add('dark');
+          document.body.classList.remove('light');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+          document.body.classList.remove('dark');
+          document.body.classList.add('light');
+        }
       }
     } catch {
       // ignore

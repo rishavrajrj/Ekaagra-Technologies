@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyOnboardingToken } from '@/lib/schoolHandoff';
-import { CANONICAL_ASSET_CHECKLIST_ITEMS } from '@/lib/schoolAssetChecklist';
+import {
+  CANONICAL_ASSET_CHECKLIST_ITEMS,
+  MAX_DOCUMENT_SIZE,
+  validateSchoolDocumentFile,
+} from '@/lib/schoolAssetChecklist';
 import { processAndUploadCanonicalAsset } from '@/lib/imageUploadService';
 
 export const dynamic = 'force-dynamic';
@@ -50,10 +54,50 @@ export async function POST(req: NextRequest) {
 
     // 2. Determine whether asset is private/sensitive
     const canonicalDef = CANONICAL_ASSET_CHECKLIST_ITEMS.find((c) => c.id === itemId);
-    const isPrivate = canonicalDef?.isPrivate ?? (itemType === 'document');
+    const isDocument = canonicalDef?.type === 'document' || itemType === 'document';
+    const isPrivate = canonicalDef?.isPrivate ?? isDocument;
+
+    // Strict Server-Side Document Validation (PDF Only, Max 2 MB = 2,097,152 bytes)
+    if (isDocument) {
+      const docValidation = validateSchoolDocumentFile({
+        name: file.name,
+        size: file.size,
+        type: file.type,
+      });
+
+      if (!docValidation.isValid) {
+        const statusCode = docValidation.code === 'DOCUMENT_TOO_LARGE' ? 413 : 400;
+        return NextResponse.json(
+          {
+            success: false,
+            code: docValidation.code || 'VALIDATION_ERROR',
+            error: docValidation.code === 'DOCUMENT_TOO_LARGE'
+              ? 'Document exceeds the maximum allowed size of 2 MB.'
+              : (docValidation.error || 'Invalid document file.'),
+            message: docValidation.code === 'DOCUMENT_TOO_LARGE'
+              ? 'Document exceeds the maximum allowed size of 2 MB.'
+              : (docValidation.error || 'Invalid document file.'),
+          },
+          { status: statusCode }
+        );
+      }
+    }
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Buffer length byte guard
+    if (isDocument && buffer.length > MAX_DOCUMENT_SIZE) {
+      return NextResponse.json(
+        {
+          success: false,
+          code: 'DOCUMENT_TOO_LARGE',
+          error: 'Document exceeds the maximum allowed size of 2 MB.',
+          message: 'Document exceeds the maximum allowed size of 2 MB.',
+        },
+        { status: 413 }
+      );
+    }
 
     // 3. Delegate to Centralized Canonical Upload Service (Sharp WebP optimization & strict validation)
     const assetResult = await processAndUploadCanonicalAsset({
@@ -83,9 +127,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (err: any) {
     console.error('[ROUTE ERROR] /api/school-assets/upload:', err);
+    const statusCode = err.code === 'DOCUMENT_TOO_LARGE' ? 413 : 400;
     return NextResponse.json(
-      { success: false, error: err.message || 'Internal server error during upload.' },
-      { status: 400 }
+      {
+        success: false,
+        code: err.code || 'UPLOAD_FAILED',
+        error: err.message || 'Internal server error during upload.',
+        message: err.message || 'Internal server error during upload.',
+      },
+      { status: statusCode }
     );
   }
 }

@@ -67,6 +67,10 @@ import {
   calculateCurriculumCompleteness,
   calculateAcademicCompleteness,
 } from './academicCompletenessEngine';
+import {
+  calculateLegalPoliciesCompleteness,
+  initializeLegalPolicies,
+} from './legalPolicyUtils';
 
 export {
   isHostelApplicable,
@@ -2599,7 +2603,7 @@ export function createInitialIntakeData(params: {
         { id: 'ast-6', section: 'media', title: 'Annual Function / Sports Meet Highlights', status: 'pending' },
       ],
     },
-    legalPolicies: {
+    legalPolicies: initializeLegalPolicies({
       privacyPolicyRequired: true,
       termsRequired: true,
       refundPolicyRequired: true,
@@ -2610,7 +2614,13 @@ export function createInitialIntakeData(params: {
       childSafetyPolicyRequired: true,
       grievanceContact: `${params.contactName || 'Principal Office'}, ${params.contactPhone || ''}`,
       mandatoryDisclosuresProvided: true,
-    },
+    }, {
+      schoolProfile: {
+        schoolName: params.schoolName || '',
+        officialEmail: params.contactEmail || '',
+        officialPhone: params.contactPhone || '',
+      } as any
+    }),
     projectDelivery: {
       targetLaunchTimeline: 'within-3-4-weeks',
       targetLaunchDate: '',
@@ -3576,7 +3586,18 @@ export function calculateIntakeCompleteness(
 
   // 26. Legal Policies
   if (isSectionApplicable('legalPolicies', productId)) {
-    sectionScores['legalPolicies'] = { total: 1, filled: 1 };
+    const policyComp = calculateLegalPoliciesCompleteness(data.legalPolicies);
+    sectionScores['legalPolicies'] = {
+      total: policyComp.total,
+      filled: policyComp.readyCount,
+    };
+    if (!policyComp.isComplete) {
+      Object.entries(policyComp.policyStates).forEach(([, state]) => {
+        if (!state.ready) {
+          missingFields.push(`Legal & Policies: ${state.label} (${state.status === 'template' ? 'Needs School Approval' : 'Pending'})`);
+        }
+      });
+    }
   }
 
   // 27. Project Delivery

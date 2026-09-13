@@ -65,6 +65,29 @@ export async function GET(req: NextRequest) {
       authenticatedProjectId = verification.project.id;
     }
 
+    // Proxy remote URLs for authenticated admin/session
+    if (rawKey.startsWith('http://') || rawKey.startsWith('https://')) {
+      try {
+        const remoteResp = await fetch(rawKey);
+        if (remoteResp.ok) {
+          const arrayBuf = await remoteResp.arrayBuffer();
+          const mime = remoteResp.headers.get('content-type') || 'application/octet-stream';
+          const fileBuf = Buffer.from(arrayBuf);
+          const detection = detectRasterImageType(fileBuf, sanitizeDownloadFileName(requestedName || 'asset'));
+          return new NextResponse(new Uint8Array(fileBuf), {
+            headers: {
+              'Content-Type': mime.includes('octet-stream') ? detection.detectedMime : mime,
+              'Content-Length': fileBuf.length.toString(),
+              'X-Content-Type-Options': 'nosniff',
+              'Cache-Control': 'public, max-age=3600',
+            },
+          });
+        }
+      } catch (err: any) {
+        console.warn('[ASSET DOWNLOAD] Failed to proxy remote URL:', err?.message);
+      }
+    }
+
     // 2. Strict Tenant Ownership Verification
     // Non-admin requests MUST match the exact project ID prefix of the storageKey
     if (!isAdmin && authenticatedProjectId) {

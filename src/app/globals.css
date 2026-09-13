@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *, [data-admin-theme="dark"], [data-admin-theme="dark"] *));
 @import "leaflet/dist/leaflet.css";
 
 @theme {
@@ -1293,8 +1294,10 @@ html:not(.dark) [data-admin-theme] {
   
   /* Typography */
   --admin-text-main: #182033;
+  --admin-text-primary: #182033;
   --admin-text-sub: #667085;
   --admin-text-muted: #8D99AE;
+  --admin-hover-overlay: #EAE6DD;
 
   /* Header */
   --admin-header-bg: rgba(255, 253, 248, 0.92);
@@ -1331,6 +1334,8 @@ html:not(.dark) [data-admin-theme] {
 .dark[data-admin-theme="dark"],
 html.dark [data-admin-theme],
 html.dark {
+  color-scheme: dark;
+
   /* Surfaces */
   --admin-canvas: #080D1A;
   --admin-sidebar: #0A1020;
@@ -1346,8 +1351,10 @@ html.dark {
 
   /* Typography */
   --admin-text-main: #F5F7FF;
+  --admin-text-primary: #F5F7FF;
   --admin-text-sub: #9AA8C1;
   --admin-text-muted: #71809A;
+  --admin-hover-overlay: #1C2940;
 
   /* Header */
   --admin-header-bg: rgba(10, 16, 32, 0.92);
@@ -1414,14 +1421,19 @@ html.dark {
 [data-admin-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
 [data-admin-theme="light"] select,
 [data-admin-theme="light"] textarea {
-  background-color: #FFFDF9 !important;
-  color: #182033 !important;
-  border-color: #DDD9D0 !important;
+  background-color: var(--admin-card, #FFFDF9) !important;
+  color: var(--admin-text-main, #182033) !important;
+  border-color: var(--admin-border, #DDD9D0) !important;
+}
+
+[data-admin-theme="light"] select option {
+  background-color: var(--admin-card, #FFFDF9) !important;
+  color: var(--admin-text-main, #182033) !important;
 }
 
 [data-admin-theme="light"] input::placeholder,
 [data-admin-theme="light"] textarea::placeholder {
-  color: #8D99AE !important;
+  color: var(--admin-text-muted, #8D99AE) !important;
 }
 
 [data-admin-theme="light"] tr:hover,
@@ -1465,15 +1477,27 @@ html.dark {
 
 [data-admin-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
 [data-admin-theme="dark"] select,
-[data-admin-theme="dark"] textarea {
-  background-color: #0F172A !important;
-  color: #F5F7FF !important;
-  border-color: #263450 !important;
+[data-admin-theme="dark"] textarea,
+.dark[data-admin-theme] input:not([type="checkbox"]):not([type="radio"]),
+.dark[data-admin-theme] select,
+.dark[data-admin-theme] textarea {
+  color-scheme: dark;
+  background-color: var(--admin-surface-secondary, #172238) !important;
+  color: var(--admin-text-main, #F5F7FF) !important;
+  border-color: var(--admin-border, #263450) !important;
+}
+
+[data-admin-theme="dark"] select option,
+.dark[data-admin-theme] select option {
+  background-color: var(--admin-card, #111A2D) !important;
+  color: var(--admin-text-main, #F5F7FF) !important;
 }
 
 [data-admin-theme="dark"] input::placeholder,
-[data-admin-theme="dark"] textarea::placeholder {
-  color: #71809A !important;
+[data-admin-theme="dark"] textarea::placeholder,
+.dark[data-admin-theme] input::placeholder,
+.dark[data-admin-theme] textarea::placeholder {
+  color: var(--admin-text-muted, #71809A) !important;
 }
 
 [data-admin-theme="dark"] tr:hover,

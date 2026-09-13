@@ -550,6 +550,15 @@ console.log('\nTEST 13: Unified Academic Completeness 3/3 Guarantee');
       subjects: [
         { id: 's1', name: 'Science', category: 'Science', isMandatory: true, applicableClasses: [] },
       ],
+      classCurricula: [
+        {
+          className: 'Class 1',
+          classId: 'c1',
+          subjects: ['s1'],
+          learningAreas: ['Core'],
+          learningObjectives: ['Foundations'],
+        },
+      ],
     },
   };
 

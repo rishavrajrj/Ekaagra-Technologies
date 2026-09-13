@@ -1,11 +1,11 @@
-﻿import type { Metadata } from 'next';
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { verifyAdminSession } from '@/lib/adminAuth';
 import SchoolProjectsHub from '@/components/admin/SchoolProjectsHub';
 
 export const metadata: Metadata = {
   title: 'School Projects & Universal Intake Hub | Ekaagra Technologies',
-  description: 'Manage confirmed school projects, intake reviews, media assets, and Step 41/42 handoffs.',
+  description: 'Manage confirmed school projects, intake reviews, media assets, and platform provisioning handoffs.',
 };
 
 export const dynamic = 'force-dynamic';

@@ -11,8 +11,11 @@ import { toWebpFileName } from './imageUtils';
 import { calculateContentSourceFingerprint } from './contentRecommendationService';
 import crypto from 'crypto';
 
+export const MAX_DOCUMENT_SIZE = 2 * 1024 * 1024; // 2,097,152 bytes (strict 2 MB)
+
 export const ASSET_UPLOAD_LIMITS = {
-  maxSizeBytes: 15 * 1024 * 1024, // 15MB
+  maxSizeBytes: 15 * 1024 * 1024, // 15MB general/image limit
+  maxDocumentSizeBytes: MAX_DOCUMENT_SIZE, // 2,097,152 bytes (strict 2 MB)
   allowedImageExtensions: ['.jpg', '.jpeg', '.png', '.webp', '.svg', '.heic', '.heif', '.avif', '.bmp', '.tiff', '.tif'],
   allowedImageMimeTypes: [
     'image/jpeg',
@@ -418,7 +421,7 @@ export const CANONICAL_ASSET_CHECKLIST_ITEMS: Omit<AssetChecklistItem, 'status'>
     type: 'document',
     intendedUse: 'Linked for parent download on the Fees & Structure transparency page.',
     allowedFormats: ['PDF'],
-    maxSizeBytes: ASSET_UPLOAD_LIMITS.maxSizeBytes,
+    maxSizeBytes: MAX_DOCUMENT_SIZE,
     allowNotApplicable: false,
     isPublicationBlocker: true,
     isPrivate: false,
@@ -466,8 +469,8 @@ export const CANONICAL_ASSET_CHECKLIST_ITEMS: Omit<AssetChecklistItem, 'status'>
     requirement: 'statutory',
     type: 'document',
     intendedUse: 'Mandatory statutory proof displayed on the Board Affiliation disclosure page.',
-    allowedFormats: ['PDF', 'JPG', 'JPEG', 'PNG'],
-    maxSizeBytes: ASSET_UPLOAD_LIMITS.maxSizeBytes,
+    allowedFormats: ['PDF'],
+    maxSizeBytes: MAX_DOCUMENT_SIZE,
     allowNotApplicable: false,
     isPublicationBlocker: true,
     isPrivate: true,
@@ -480,8 +483,8 @@ export const CANONICAL_ASSET_CHECKLIST_ITEMS: Omit<AssetChecklistItem, 'status'>
     requirement: 'statutory',
     type: 'document',
     intendedUse: 'Uploaded to the institutional credentials and statutory verification section.',
-    allowedFormats: ['PDF', 'JPG', 'JPEG', 'PNG'],
-    maxSizeBytes: ASSET_UPLOAD_LIMITS.maxSizeBytes,
+    allowedFormats: ['PDF'],
+    maxSizeBytes: MAX_DOCUMENT_SIZE,
     allowNotApplicable: false,
     isPublicationBlocker: true,
     isPrivate: true,
@@ -494,8 +497,8 @@ export const CANONICAL_ASSET_CHECKLIST_ITEMS: Omit<AssetChecklistItem, 'status'>
     requirement: 'conditional',
     type: 'document',
     intendedUse: 'Archived under legal governance verification and compliance records.',
-    allowedFormats: ['PDF', 'JPG', 'JPEG', 'PNG'],
-    maxSizeBytes: ASSET_UPLOAD_LIMITS.maxSizeBytes,
+    allowedFormats: ['PDF'],
+    maxSizeBytes: MAX_DOCUMENT_SIZE,
     allowNotApplicable: true,
     conditionRule: 'management_trust_or_society',
     isPublicationBlocker: false,
@@ -509,8 +512,8 @@ export const CANONICAL_ASSET_CHECKLIST_ITEMS: Omit<AssetChecklistItem, 'status'>
     requirement: 'statutory',
     type: 'document',
     intendedUse: 'Uploaded to comply with statutory public disclosure requirements on the website.',
-    allowedFormats: ['PDF', 'JPG', 'JPEG', 'PNG'],
-    maxSizeBytes: ASSET_UPLOAD_LIMITS.maxSizeBytes,
+    allowedFormats: ['PDF'],
+    maxSizeBytes: MAX_DOCUMENT_SIZE,
     allowNotApplicable: false,
     isPublicationBlocker: false,
     isPrivate: true,
@@ -524,7 +527,7 @@ export const CANONICAL_ASSET_CHECKLIST_ITEMS: Omit<AssetChecklistItem, 'status'>
     type: 'document',
     intendedUse: 'Prominently linked on the school website homepage footer as legally required by CBSE/ICSE.',
     allowedFormats: ['PDF'],
-    maxSizeBytes: ASSET_UPLOAD_LIMITS.maxSizeBytes,
+    maxSizeBytes: MAX_DOCUMENT_SIZE,
     allowNotApplicable: false,
     isPublicationBlocker: true,
     isPrivate: false,
@@ -759,12 +762,81 @@ export async function scanAssetForMalware(
 }
 
 /**
+ * Canonical Document Validation for all school documents (PDF only, strictly <= 2 MB / 2,097,152 bytes)
+ */
+export function validateSchoolDocumentFile(file: {
+  name: string;
+  size: number;
+  type?: string;
+}): {
+  isValid: boolean;
+  code?: 'DOCUMENT_TOO_LARGE' | 'INVALID_FILE_TYPE' | 'EMPTY_FILE' | 'NO_FILE';
+  error?: string;
+} {
+  if (!file || !file.name) {
+    return { isValid: false, code: 'NO_FILE', error: 'No file provided.' };
+  }
+
+  if (file.size <= 0) {
+    return { isValid: false, code: 'EMPTY_FILE', error: 'File is empty (0 bytes).' };
+  }
+
+  const ext = `.${file.name.split('.').pop()?.toLowerCase() || ''}`;
+
+  // Reject dangerous extensions immediately
+  if (ASSET_UPLOAD_LIMITS.disallowedDangerousExtensions.includes(ext)) {
+    return {
+      isValid: false,
+      code: 'INVALID_FILE_TYPE',
+      error: `File extension "${ext}" is blocked for security reasons.`,
+    };
+  }
+
+  // Reject non-PDF extension
+  if (!ASSET_UPLOAD_LIMITS.allowedDocumentExtensions.includes(ext)) {
+    return {
+      isValid: false,
+      code: 'INVALID_FILE_TYPE',
+      error: 'Invalid file type. Please upload a PDF.',
+    };
+  }
+
+  // If MIME type is provided and non-empty, ensure it's application/pdf
+  if (file.type && file.type.trim()) {
+    const normMime = file.type.toLowerCase().trim();
+    if (!ASSET_UPLOAD_LIMITS.allowedDocumentMimeTypes.includes(normMime)) {
+      return {
+        isValid: false,
+        code: 'INVALID_FILE_TYPE',
+        error: 'Invalid file type. Please upload a PDF.',
+      };
+    }
+  }
+
+  // Strict 2 MB byte limit check (2 * 1024 * 1024 = 2,097,152 bytes)
+  if (file.size > MAX_DOCUMENT_SIZE) {
+    const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+    return {
+      isValid: false,
+      code: 'DOCUMENT_TOO_LARGE',
+      error: `This PDF is ${sizeMb} MB. The maximum allowed size is 2 MB. Please compress the PDF and try again.`,
+    };
+  }
+
+  return { isValid: true };
+}
+
+/**
  * Validate a file before uploading (client or metadata check)
  */
 export function validateSchoolAssetFile(
   file: { name: string; size: number; type: string },
   itemType: 'image' | 'document' | 'gallery'
-): { isValid: boolean; error?: string } {
+): { isValid: boolean; code?: string; error?: string } {
+  if (itemType === 'document') {
+    return validateSchoolDocumentFile(file);
+  }
+
   if (!file || !file.name) {
     return { isValid: false, error: 'No file provided.' };
   }
@@ -791,21 +863,12 @@ export function validateSchoolAssetFile(
     };
   }
 
-  if (itemType === 'document') {
-    if (!ASSET_UPLOAD_LIMITS.allowedDocumentExtensions.includes(ext)) {
-      return {
-        isValid: false,
-        error: 'Unsupported file type. Please upload a PDF document (.pdf).',
-      };
-    }
-  } else {
-    // image or gallery
-    if (!ASSET_UPLOAD_LIMITS.allowedImageExtensions.includes(ext)) {
-      return {
-        isValid: false,
-        error: 'Unsupported file type. Please upload an image file (JPG, PNG, WebP, or SVG).',
-      };
-    }
+  // image or gallery
+  if (!ASSET_UPLOAD_LIMITS.allowedImageExtensions.includes(ext)) {
+    return {
+      isValid: false,
+      error: 'Unsupported file type. Please upload an image file (JPG, PNG, WebP, or SVG).',
+    };
   }
 
   return { isValid: true };

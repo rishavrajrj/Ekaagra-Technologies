@@ -19,7 +19,7 @@ import {
   History,
 } from 'lucide-react';
 import type { PersonImageData, CampusImageData } from '@/lib/types';
-import { formatBytes, formatOptimizationStats } from '@/lib/imageUtils';
+import { formatBytes } from '@/lib/imageUtils';
 import {
   PRINCIPAL_IMAGE_TYPES,
   TRUSTEE_IMAGE_TYPES,
@@ -69,7 +69,6 @@ export default function PersonPhotoSection({
   const [uploadPhase, setUploadPhase] = useState<'idle' | 'uploading' | 'optimizing' | 'validating' | 'done' | 'error'>('idle');
   const [uploadMessage, setUploadMessage] = useState<string>('');
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [copiedUrl, setCopiedUrl] = useState(false);
   const [showLightbox, setShowLightbox] = useState(false);
   const [showAiModal, setShowAiModal] = useState(false);
   const [showReusePicker, setShowReusePicker] = useState(false);
@@ -338,18 +337,6 @@ export default function PersonPhotoSection({
     }
   };
 
-  // Copy URL to clipboard
-  const handleCopyUrl = () => {
-    if (!currentPhoto) return;
-    const directUrl = currentPhoto.storageKey
-      ? `${window.location.origin}/api/school-assets/download?token=${encodeURIComponent(token)}&key=${encodeURIComponent(currentPhoto.storageKey)}`
-      : (currentPhoto.url.startsWith('http') ? currentPhoto.url : `${window.location.origin}${currentPhoto.url}`);
-
-    navigator.clipboard.writeText(directUrl);
-    setCopiedUrl(true);
-    setTimeout(() => setCopiedUrl(false), 2000);
-  };
-
   // Copy AI prompt to clipboard
   const handleCopyPrompt = () => {
     navigator.clipboard.writeText(aiPromptText);
@@ -477,14 +464,6 @@ export default function PersonPhotoSection({
               </button>
               <button
                 type="button"
-                onClick={handleCopyUrl}
-                title="Copy URL"
-                className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-slate-800 transition shadow-xs cursor-pointer"
-              >
-                {copiedUrl ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                type="button"
                 onClick={triggerFileInput}
                 title="Replace Image"
                 className="p-1.5 rounded-lg bg-white/90 hover:bg-white text-indigo-700 transition shadow-xs cursor-pointer"
@@ -508,23 +487,6 @@ export default function PersonPhotoSection({
               <div className="font-semibold text-[#131B2E] truncate" title={currentPhoto.fileName}>
                 {currentPhoto.fileName}
               </div>
-              <div className="flex items-center justify-between text-[#64748B] text-[10px] pt-0.5">
-                <span>
-                  {currentPhoto.width && currentPhoto.height
-                    ? `${currentPhoto.width} × ${currentPhoto.height} px`
-                    : 'Standard WebP Portrait'}
-                </span>
-                {currentPhoto.optimizedSize && (
-                  <span className="font-semibold font-mono text-[#334155]">
-                    {formatBytes(currentPhoto.optimizedSize)}
-                  </span>
-                )}
-              </div>
-              {currentPhoto.originalSize && currentPhoto.optimizedSize && currentPhoto.originalSize > currentPhoto.optimizedSize && (
-                <div className="text-[9px] text-emerald-700 font-medium pt-0.5">
-                  {formatOptimizationStats(currentPhoto.originalSize, currentPhoto.optimizedSize)?.percentage}% smaller than original
-                </div>
-              )}
             </div>
 
             {/* Per-Image Classification Dropdown using canonical editor */}

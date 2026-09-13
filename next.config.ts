@@ -40,6 +40,26 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/SCH-:suffix',
+        destination: '/school-onboarding/SCH-:suffix',
+      },
+      {
+        source: '/REQ-:suffix',
+        destination: '/school-onboarding/REQ-:suffix',
+      },
+      {
+        source: '/ONB-:suffix',
+        destination: '/school-onboarding/ONB-:suffix',
+      },
+      {
+        source: '/school-project/:token',
+        destination: '/school-onboarding/:token',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

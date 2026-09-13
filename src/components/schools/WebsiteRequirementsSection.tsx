@@ -84,12 +84,14 @@ import { COMMUNICATION_STYLE_CONFIGS, type StyleConfig } from './CommunicationSt
 import { deriveSlugFromSchoolName } from '@/lib/schoolIntake';
 
 function normalizeBrandTone(tone?: string): string {
-  if (!tone) return 'Modern & Vibrant';
+  if (!tone) return 'Academic & Scholarly';
   const lower = tone.toLowerCase().trim();
+  if (lower.includes('acad') || lower.includes('schol')) return 'Academic & Scholarly';
   if (lower.includes('trad') || lower.includes('prestig')) return 'Traditional & Prestigious';
-  if (lower.includes('mod') || lower.includes('vibr')) return 'Modern & Vibrant';
-  if (lower.includes('min') || lower.includes('clean')) return 'Minimal & Contemporary';
-  return 'Modern & Vibrant';
+  if (lower.includes('mod') || lower.includes('prog') || lower.includes('vibr')) return 'Modern & Progressive';
+  if (lower.includes('min') || lower.includes('prof') || lower.includes('clean')) return 'Minimal & Professional';
+  if (lower.includes('warm') || lower.includes('comm')) return 'Warm & Community-focused';
+  return 'Academic & Scholarly';
 }
 
 export interface WebsiteRequirementsSectionProps {
@@ -117,7 +119,7 @@ export function WebsiteRequirementsSection({
 }: WebsiteRequirementsSectionProps) {
   const brandTone = normalizeBrandTone(intakeData.brandingDesign?.brandTone);
   const activeStyleConfig =
-    COMMUNICATION_STYLE_CONFIGS.find((s: StyleConfig) => s.value === brandTone) || COMMUNICATION_STYLE_CONFIGS[1];
+    COMMUNICATION_STYLE_CONFIGS.find((s: StyleConfig) => s.value === brandTone) || COMMUNICATION_STYLE_CONFIGS[0];
   const ActiveIcon = activeStyleConfig.icon;
 
   const campuses = intakeData.campuses || [];
@@ -1212,15 +1214,16 @@ export function WebsiteRequirementsSection({
           </div>
 
           <div className="flex items-center space-x-2 shrink-0 self-start sm:self-auto">
-            {setPreviewingStyle && (
-              <button
-                type="button"
-                onClick={() => setPreviewingStyle(activeStyleConfig)}
+            {activeStyleConfig && (
+              <a
+                href={activeStyleConfig.demoUrl || 'https://roshani-public-school.vercel.app/'}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-[#CBD5E1] bg-white text-xs font-semibold text-[#4338CA] hover:bg-[#EEF2FF] hover:border-[#C7D2FE] transition shadow-2xs cursor-pointer"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span>View Sample Mockup</span>
-              </button>
+                <span>View Sample Website</span>
+              </a>
             )}
             {onNavigateToBranding && (
               <button

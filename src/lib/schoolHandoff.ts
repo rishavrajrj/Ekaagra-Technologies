@@ -349,7 +349,7 @@ export async function verifyOnboardingToken(token: string): Promise<{
     if (isUuid) {
       projQuery = projQuery.eq('id', cleanToken);
     } else {
-      projQuery = projQuery.ilike('project_number', cleanToken);
+      projQuery = projQuery.or(`project_number.ilike.${cleanToken},lead_reference.ilike.${cleanToken}`);
     }
     const { data: matchedProject } = await projQuery.maybeSingle();
 
